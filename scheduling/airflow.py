@@ -5,14 +5,8 @@ from pyspark.sql import SQLContext
 from python_etl import main
 
 if __name__ == "__main__":
-    # Figure out what group of functions we're running
-    periodicity_functions = {
-        'daily': main.daily,
-        'weekly': main.weekly,
-    }
-
     parser = argparse.ArgumentParser(description='')
-    parser.add_argument('periodicity', choices=periodicity_functions.keys())
+    parser.add_argument('periodicity', choices=main.job_groups.keys())
     args = parser.parse_args()
 
     # Initialize Spark objects
@@ -21,4 +15,4 @@ if __name__ == "__main__":
     sqlContext = SQLContext(sc)
 
     # Run
-    periodicity_functions[args.periodicity](sc, sqlContext)
+    main.job_groups[args.periodicity](sc, sqlContext)

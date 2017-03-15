@@ -1,12 +1,17 @@
 import example_job
 
-def weekly(sc, sqlContext):
-    pass
+def job_group_closure(jobs):
+    def run(sc, sqlContext):
+        map(lambda func: func(sc, sqlContext), jobs)
 
-def daily(sc, sqlContext):
-    example_job.etl_job(sc, sqlContext)
-    example_job.etl_job(sc, sqlContext)
-    example_job.etl_job(sc, sqlContext)
-    print "carpe diem"
+    return run
 
-jobs = [example_job.etl_job]*3
+job_periodicity_config = {
+    'daily': [
+        example_job.etl_job,
+    ],
+    'weekly': [],
+}
+
+job_groups = map(lambda (k, v): (k, job_group_closure(v)),
+                 job_periodicity_config.items())
