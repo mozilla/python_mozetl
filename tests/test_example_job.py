@@ -1,6 +1,6 @@
 import pytest
 from pyspark import SparkConf, SparkContext
-from python_etl import *
+from python_etl.example_job import *
 
 # Initialize a spark context:
 @pytest.fixture(scope="session")
