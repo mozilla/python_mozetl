@@ -1,26 +1,41 @@
-"""Compute churn / retention information for unique segments of Firefox
-users acquired during a specific period of time.
+""" Firefox Desktop Churn and Retention Cohorts
 
-Usage: churn.py [options]
+Tracked in Bug 1226379 [1]. The underlying dataset is generated via
+the telemetry-batch-view [2] code, and is generated once a day. The
+aggregated churn data is updated weekly.
 
---h --help
---date=<date>         datestring in form YYYYmmdd [default: today's date].
---bucket=<bucket>     output bucket in s3
---prefix=<prefix>     output prefix associated with s3 bucket
---no-lag              do not account for the 10 day collection period
---backfill            backfill from the start date
+Due to the client reporting latency, we need to wait 10 days for the
+data to stabilize. If the date is passed into report through the
+environment, it is assumed that the date is at least a week greater
+than the report start date.  For example, if today is `20170323`, then
+this notebook `20170316` in the `environment.date`. This notebook will
+set date back 10 days to `20170306`, and then pin the date to nearest
+Sunday. This date happens to be a Monday, so the date will be set to
+`20170305`.
+
+Code is based on the previous FHR analysis code [3].  Details and
+definitions are in Bug 1198537 [4].
+
+The production location of this dataset can be found in the following
+location: `s3://telemetry-parquet/churn/v2`.
+
+[1] https://bugzilla.mozilla.org/show_bug.cgi?id=1226379
+[2] https://git.io/vSBAt
+[3] https://github.com/mozilla/churn-analysis
+[4] https://bugzilla.mozilla.org/show_bug.cgi?id=1198537
 """
 
+import re
+from datetime import date, datetime, timedelta
+
+import click
+import requests
+from moztelemetry.standards import snap_to_beginning_of_week
+
+import pyspark.sql.functions as F
 from pyspark.sql import SparkSession
 from pyspark.sql.types import DoubleType
-import requests
-from datetime import timedelta, date, datetime
 from pyspark.sql.window import Window
-import pyspark.sql.functions as F
-from moztelemetry.standards import snap_to_beginning_of_week
-import re
-import sys
-from docopt import docopt
 
 source_columns = [
     "app_version",
@@ -43,9 +58,6 @@ source_columns = [
     "total_uri_count",
     "unique_domains_count"
 ]
-
-
-# Define some helper functions for reorganizing the data.
 
 # Bug 1289573: Support values like "mozilla86" and "mozilla86-utility-existing"
 funnelcake_pattern = re.compile("^mozilla[0-9]+.*$")
@@ -566,57 +578,38 @@ def backfill(df, start_date_yyyymmdd, bucket, prefix):
             print e
 
 
-def main():
-    """Tracked in Bug 1226379 [1]. The underlying dataset is generated via
-    the telemetry-batch-view [2] code, and is generated once a
-    day. The aggregated churn data is updated weekly.
-
-    Due to the client reporting latency, we need to wait 10 days for
-    the data to stabilize. If the date is passed into report through
-    the environment, it is assumed that the date is at least a week
-    greater than the report start date.  For example, if today is
-    `20170323`, then this notebook `20170316` in the
-    `environment.date`. This notebook will set date back 10 days to
-    `20170306`, and then pin the date to nearest Sunday. This date
-    happens to be a Monday, so the date will be set to `20170305`.
-
-    Code is based on the previous FHR analysis code [3].  Details and
-    definitions are in Bug 1198537 [4].
-
-    The production location of this dataset can be found in the
-    following location: `s3://telemetry-parquet/churn/v2`.
-
-    [1] https://bugzilla.mozilla.org/show_bug.cgi?id=1226379
-    [2] https://git.io/vSBAt
-    [3] https://github.com/mozilla/churn-analysis
-    [4] https://bugzilla.mozilla.org/show_bug.cgi?id=1198537
+@click.command()
+@click.option('-d', '--date', 'start_date',
+              default=fmt(datetime.now() - timedelta(7)),
+              help="datestring in form YYYYmmdd")
+@click.option('-b', '--bucket',
+              default='net-mozaws-prod-us-west-2-pipeline-analysis',
+              help="output s3 bucket")
+@click.option('-p', '--prefix', default='telemetry-test-bucket/churn-test',
+              help="output prefix associated with the s3 bucket")
+@click.option('--lag/--no-lag', default=True,
+              help="account for the 10 day collection period")
+@click.option('--backfill/--no-backfill', default=False,
+              help="backfill from the start date")
+def main(start_date, bucket, prefix, lag, backfill):
+    """Compute churn / retention information for unique segments of Firefox
+users acquired during a specific period of time.
     """
     spark = (SparkSession
              .builder
              .appName("churn")
              .getOrCreate())
 
-    # TODO: Validate input with schema library
-    args = docopt(__doc__, sys.argv[1:])
-
-    default_date = fmt(datetime.now() - timedelta(7))
-    default_bucket = 'net-mozaws-prod-us-west-2-pipeline-analysis'
-    default_prefix = 'telemetry-test-bucket/churn-test'
     version = 'v2'
-
-    start_date = args.get('--date', default_date)
-    bucket = args.get('--bucket', default_bucket)
-    prefix = args.get('--prefix', default_prefix)
     s3_path = "s3://{}/{}/{}".format(bucket, prefix, version)
 
     # If this job is scheduled, we need the input date to lag a total of
     # 10 days of slack for incoming data. Airflow subtracts 7 days to
     # account for the weekly nature of this report.
-    if args['--no-lag']:
-        week_start_date = start_date
-    else:
-        offset_date = datetime.strptime(start_date, "%Y%m%d") - timedelta(10)
-        week_start_date = snap_to_beginning_of_week(offset_date, "Sunday")
+    week_start_date = start_date
+    if lag:
+        offset_start = datetime.strptime(start_date, "%Y%m%d") - timedelta(10)
+        week_start_date = snap_to_beginning_of_week(offset_start, "Sunday")
 
     try:
         source_df = spark.read.option("mergeSchema", "true").parquet(s3_path)
@@ -625,7 +618,7 @@ def main():
                      .withColumnRenamed('app_version', 'version'))
 
         # Note that main_summary_v3 only goes back to 20160312
-        if args['--backfill']:
+        if backfill:
             backfill(subset_df, fmt(week_start_date), bucket, prefix)
         else:
             compute_churn_week(df=subset_df,
