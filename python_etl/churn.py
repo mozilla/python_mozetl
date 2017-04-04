@@ -4,11 +4,11 @@ users acquired during a specific period of time.
 Usage: churn.py [options]
 
 --h --help
---date        datestring in form YYYYmmdd
---bucket      output bucket in s3
---prefix      output prefix associated with s3 bucket
---no-lag      do not account for the 10 day collection period
---backfill    backfill from the start date
+--date=<date>         datestring in form YYYYmmdd [default: today's date].
+--bucket=<bucket>     output bucket in s3
+--prefix=<prefix>     output prefix associated with s3 bucket
+--no-lag              do not account for the 10 day collection period
+--backfill            backfill from the start date
 """
 
 from pyspark.sql import SparkSession
@@ -18,7 +18,6 @@ from datetime import timedelta, date, datetime
 from pyspark.sql.window import Window
 import pyspark.sql.functions as F
 from moztelemetry.standards import snap_to_beginning_of_week
-import os
 import re
 import sys
 from docopt import docopt
@@ -568,9 +567,9 @@ def backfill(df, start_date_yyyymmdd, bucket, prefix):
 
 
 def main():
-    """Tracked in Bug 1226379 [1]. The underlying dataset is
-    generated via the telemetry-batch-view [2] code, and is generated
-    once a day. The aggregated churn data is updated weekly.
+    """Tracked in Bug 1226379 [1]. The underlying dataset is generated via
+    the telemetry-batch-view [2] code, and is generated once a
+    day. The aggregated churn data is updated weekly.
 
     Due to the client reporting latency, we need to wait 10 days for
     the data to stabilize. If the date is passed into report through
@@ -584,6 +583,9 @@ def main():
     Code is based on the previous FHR analysis code [3].  Details and
     definitions are in Bug 1198537 [4].
 
+    The production location of this dataset can be found in the
+    following location: `s3://telemetry-parquet/churn/v2`.
+
     [1] https://bugzilla.mozilla.org/show_bug.cgi?id=1226379
     [2] https://git.io/vSBAt
     [3] https://github.com/mozilla/churn-analysis
@@ -594,50 +596,44 @@ def main():
              .appName("churn")
              .getOrCreate())
 
+    # TODO: Validate input with schema library
     args = docopt(__doc__, sys.argv[1:])
 
-    # TODO: fix args and use default values
-    manual = False
-    if manual:
-        # This sets the start date to the beginning of the churn period
-        os.environ['date'] = fmt(datetime.now() - timedelta(7))
-        os.environ['bucket'] = 'net-mozaws-prod-us-west-2-pipeline-analysis'
-        os.environ['prefix'] = 'amiyaguchi/churn_dev/v2'
+    default_date = fmt(datetime.now() - timedelta(7))
+    default_bucket = 'net-mozaws-prod-us-west-2-pipeline-analysis'
+    default_prefix = 'telemetry-test-bucket/churn-test'
+    version = 'v2'
 
-    env_date = os.environ.get('date')
-    if not env_date:
-        raise ValueError("date not provided")
-    bucket = os.environ.get('bucket', 'telemetry-parquet')
-    prefix = os.environ.get('prefix', 'churn/v2')
+    start_date = args.get('--date', default_date)
+    bucket = args.get('--bucket', default_bucket)
+    prefix = args.get('--prefix', default_prefix)
+    s3_path = "s3://{}/{}/{}".format(bucket, prefix, version)
 
     # If this job is scheduled, we need the input date to lag a total of
     # 10 days of slack for incoming data. Airflow subtracts 7 days to
     # account for the weekly nature of this report.
-    week_start_date = snap_to_beginning_of_week(
-        datetime.strptime(env_date, "%Y%m%d") - timedelta(10),
-        "Sunday")
-
-    s3_path = "s3://{}/{}".format(bucket, prefix)
+    if args['--no-lag']:
+        week_start_date = start_date
+    else:
+        offset_date = datetime.strptime(start_date, "%Y%m%d") - timedelta(10)
+        week_start_date = snap_to_beginning_of_week(offset_date, "Sunday")
 
     try:
-        df = (spark.read
-              .option("mergeSchema", "true")
-              .parquet(s3_path))
+        source_df = spark.read.option("mergeSchema", "true").parquet(s3_path)
+        subset_df = (source_df
+                     .select(source_columns)
+                     .withColumnRenamed('app_version', 'version'))
 
-        dataset = (df.select(source_columns)
-                   .withColumnRenamed('app_version', 'version'))
-
-        compute_churn_week(df=dataset,
-                           week_start=fmt(week_start_date),
-                           bucket=bucket,
-                           prefix=prefix)
+        # Note that main_summary_v3 only goes back to 20160312
+        if args['--backfill']:
+            backfill(subset_df, fmt(week_start_date), bucket, prefix)
+        else:
+            compute_churn_week(df=subset_df,
+                               week_start=fmt(week_start_date),
+                               bucket=bucket,
+                               prefix=prefix)
     finally:
         spark.stop()
-
-    # TODO: move this comment else where
-    # 20151101 is world start, but main_summary v3 only goes back to 20160312
-    # Uncomment to manually backfill this job
-    # backfill(dataset, '20170101', bucket, prefix)
 
 
 if __name__ == '__main__':
