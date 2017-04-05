@@ -411,7 +411,7 @@ def get_newest_per_client(df):
     return selectable_by_client.filter(selectable_by_client['row_number'] == 1)
 
 
-def compute_churn_week(df, week_start, bucket, prefix):
+def compute_churn_week(df, week_start):
     """Compute the churn data for this week. Note that it takes 10 days
     from the end of this period for all the activity to arrive. This data
     should be from Sunday through Saturday.
@@ -547,17 +547,7 @@ def compute_churn_week(df, week_start, bucket, prefix):
                            'unique_domains_count')
     )
 
-    # Write to s3 as parquet, file size is on the order of 40MB. We
-    # bump the version number because v1 is the path to the old
-    # telemetry-batch-view churn data.
-    parquet_s3_path = ("s3://{}/{}/week_start={}"
-                       .format(bucket, prefix, week_start))
-    print("{}: Writing output as parquet to {}"
-          .format(datetime.utcnow(), parquet_s3_path))
-    records_df.repartition(1).write.parquet(parquet_s3_path, mode="overwrite")
-
-    print("Finished week from {} to {} at {}"
-          .format(week_start, week_end, datetime.utcnow()))
+    return records_df
 
 
 def daterange(start_date, end_date):
@@ -565,17 +555,35 @@ def daterange(start_date, end_date):
         yield (start_date + timedelta(n * 7)).strftime("%Y%m%d")
 
 
-def backfill(df, start_date_yyyymmdd, bucket, prefix):
-    """ Import data from a start date to an end date"""
-    start_date = snap_to_beginning_of_week(
-        datetime.strptime(start_date_yyyymmdd, "%Y%m%d"),
-        "Sunday")
-    end_date = datetime.utcnow() - timedelta(1)  # yesterday
+def process_backfill(start_date, end_date, callback):
+    """ Import data from a start date to an end date.
+
+    :start_date ds: starting date in yyyymmdd
+    :end_date ds: ending date in yyymmdd
+    :callback: a callback accepting a datestring in format yyyymmdd
+    """
+    start_date = datetime.strptime(start_date, "%Y%m%d")
+    end_date = datetime.strptime(end_date, "%Y%m%d")
     for d in daterange(start_date, end_date):
         try:
-            compute_churn_week(df, d, bucket, prefix)
+            callback(d)
         except Exception as e:
             print e
+
+
+def process_week(df, week_start, bucket, prefix):
+    result_df = compute_churn_week(df, week_start)
+
+    # Write to s3 as parquet, file size is on the order of 40MB. We
+    # bump the version number because v1 is the path to the old
+    # telemetry-batch-view churn data.
+    s3_path = "s3://{}/{}/week_start={}".format(bucket, prefix, week_start)
+    print("{}: Writing output as parquet to {}"
+          .format(datetime.utcnow(), s3_path))
+
+    result_df.repartition(1).write.parquet(s3_path, mode="overwrite")
+
+    print("Finished week {} at {}".format(week_start, datetime.utcnow()))
 
 
 @click.command()
@@ -619,12 +627,13 @@ users acquired during a specific period of time.
 
         # Note that main_summary_v3 only goes back to 20160312
         if backfill:
-            backfill(subset_df, fmt(week_start_date), bucket, prefix)
+            week_end_date = fmt(datetime.utcnow() - timedelta(1))
+            process_backfill(
+                fmt(week_start_date),
+                week_end_date,
+                lambda d: process_week(subset_df, d, bucket, prefix))
         else:
-            compute_churn_week(df=subset_df,
-                               week_start=fmt(week_start_date),
-                               bucket=bucket,
-                               prefix=prefix)
+            process_week(subset_df, fmt(week_start_date), bucket, prefix)
     finally:
         spark.stop()
 
