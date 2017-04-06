@@ -401,8 +401,11 @@ record_columns = [
 
 
 def get_newest_per_client(df):
-    windowSpec = Window.partitionBy(
-        F.col('client_id')).orderBy(F.col('timestamp').desc())
+    windowSpec = (
+        Window
+        .partitionBy(F.col('client_id'))
+        .orderBy(F.col('timestamp').desc()))
+
     rownum_by_timestamp = (F.row_number().over(windowSpec))
     selectable_by_client = df.select(
         rownum_by_timestamp.alias('row_number'),
@@ -451,6 +454,9 @@ def compute_churn_week(df, week_start):
           .filter(df['subsession_start_date'] >= week_start_hyphenated)
           .filter(df['subsession_start_date'] < week_end_excl)
     )
+
+    # rename the app_version field
+    current_week = current_week.withColumnRenamed("app_version", "version")
 
     # clean some of the aggregate fields
     current_week = current_week.na.fill(
@@ -622,8 +628,7 @@ users acquired during a specific period of time.
     try:
         source_df = spark.read.option("mergeSchema", "true").parquet(s3_path)
         subset_df = (source_df
-                     .select(source_columns)
-                     .withColumnRenamed('app_version', 'version'))
+                     .select(source_columns))
 
         # Note that main_summary_v3 only goes back to 20160312
         if backfill:

@@ -1,4 +1,5 @@
 import json
+from datetime import timedelta, datetime
 
 import pytest
 
@@ -32,40 +33,140 @@ Su Mo Tu We Th Fr Sa
 29 30 31
 """
 
+default_sample = {
+    "app_version":           "57.0.0",
+    "attribution": {
+        "source": "source-value",
+        "medium": "medium-value",
+        "campaign": "campaign-value",
+        "content": "content-value"
+    },
+    "channel":               "release",
+    "client_id":             "client-id",
+    "country":               "US",
+    "default_search_engine": "wikipedia",
+    "distribution_id":       "mozilla42",
+    "locale":                "en-US",
+    "normalized_channel":    "release",
+    "profile_creation_date": 17181,
+    "submission_date_s3":    "20170115",
+    "subsession_length":     1000,
+    "subsession_start_date": "2017-01-15",
+    "sync_configured":       False,
+    "sync_count_desktop":    1,
+    "sync_count_mobile":     1,
+    "timestamp":             1491244610603260700,  # microseconds
+    "total_uri_count":       20,
+    "unique_domains_count":  3
+}
 
-def create_row():
-    sample = {
-        "app_version":           "50.0.1",
-        "attribution":           None,
-        "channel":               "release",
-        "client_id":             "client-id",
-        "country":               "US",
-        "default_search_engine": "wikipedia",
-        "distribution_id":       None,
-        "locale":                "en-US",
-        "normalized_channel":    "release",
-        "profile_creation_date": 17000,
-        "submission_date_s3":    "20170118",
-        "subsession_length":     1000,
-        "subsession_start_date": "01/15/2017 00:00",
-        "sync_configured":       False,
-        "sync_count_desktop":    None,
-        "sync_count_mobile":     None,
-        "timestamp":             1491244610603260700,
-        "total_uri_count":       20,
-        "unique_domains_count":  3
+
+def seconds_since_epoch(date):
+    """ Calculate the total number of seconds since unix epoch.
+
+    :date datetime: datetime to calculate seconds
+    """
+    epoch = datetime.utcfromtimestamp(0)
+    return int((date - epoch).total_seconds())
+
+
+def generate_dates(subsession_date, submission_offset=0, creation_offset=0):
+    """ Generate a tuple containing information about all pertinent dates
+    in the input for the churn dataset.
+
+    :date datetime.date: date as seen by the client
+    :submission_offset int: offset into the future for submission_date_s3
+    :creation_offset int: offset into the past for the profile creation date
+    """
+
+    submission_date = subsession_date + timedelta(submission_offset)
+    profile_creation_date = subsession_date - timedelta(creation_offset)
+
+    # variables for conversion
+    seconds_in_day = 60 * 60 * 24
+    microseconds_in_second = 10**6
+
+    date_snippet = {
+        "subsession_start_date": (
+            datetime.strftime(subsession_date, "%Y-%m-%d")
+        ),
+        "submission_date_s3": (
+            datetime.strftime(submission_date, "%Y%m%d")
+        ),
+        "profile_creation_date": (
+            seconds_since_epoch(profile_creation_date) / seconds_in_day
+        ),
+        "timestamp": (
+            seconds_since_epoch(submission_date) * microseconds_in_second
+        )
     }
-    return json.dumps(sample)
+
+    return date_snippet
 
 
-@pytest.fixture
-def main_df(spark):
-    jsonRDD = spark.sparkContext.parallelize([create_row()])
+def generate_samples(snippets=None):
+    """ Generate samples from the default sample. Snippets overwrite specific
+    fields in the default sample.
+
+    :snippets list(dict): A list of dictionary attributes to update
+    """
+    if snippets is None:
+        return [json.dumps(default_sample)]
+
+    samples = []
+    for snippet in snippets:
+        sample = default_sample.copy()
+        sample.update(snippet)
+        samples.append(json.dumps(sample))
+    return samples
+
+
+def samples_to_df(spark, samples):
+    jsonRDD = spark.sparkContext.parallelize(samples)
     return spark.read.json(jsonRDD)
 
 
-def test_something(main_df):
-    expected = 1000
-    actual = main_df.select("subsession_length").collect()[0].subsession_length
+def snippets_to_df(spark, snippets):
+    samples = generate_samples(snippets)
+    return samples_to_df(spark, samples)
 
-    assert actual == expected
+
+# Generate the datasets
+# Sunday, also the first day in this collection period.
+subsession_start = datetime(2017, 1, 15)
+week_start_ds = datetime.strftime(subsession_start, "%Y%m%d")
+
+
+@pytest.fixture
+def late_submissions_df(spark):
+    # All pings within 17 days of the submission start date are valid.
+    # However, only pings with ssd within the 7 day retention period
+    # are used for computation. Generate pings for this case.
+
+    late_submission = generate_dates(subsession_start, submission_offset=18)
+    early_subsession = generate_dates(subsession_start - timedelta(7))
+
+    snippets = [late_submission, early_subsession]
+    return snippets_to_df(spark, snippets)
+
+
+@pytest.fixture
+def single_profile_df(spark):
+    recent_ping = generate_dates(
+        subsession_start + timedelta(3), creation_offset=3)
+
+    # create a duplicate ping for this user, earlier than the previous
+    old_ping = generate_dates(subsession_start)
+
+    snippets = [recent_ping, old_ping]
+    return snippets_to_df(spark, snippets)
+
+
+def test_ignored_submissions(late_submissions_df):
+    df = churn.compute_churn_week(late_submissions_df, week_start_ds)
+    assert df.count() == 0
+
+
+def test_latest_submission(single_profile_df):
+    df = churn.compute_churn_week(single_profile_df, week_start_ds)
+    assert df.count() == 1
