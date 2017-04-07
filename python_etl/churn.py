@@ -455,8 +455,10 @@ def compute_churn_week(df, week_start):
           .filter(df['subsession_start_date'] < week_end_excl)
     )
 
-    # rename the app_version field
-    current_week = current_week.withColumnRenamed("app_version", "version")
+    # take a subset and rename the app_version field
+    current_week = (current_week
+                    .select(source_columns)
+                    .withColumnRenamed("app_version", "version"))
 
     # clean some of the aggregate fields
     current_week = current_week.na.fill(
@@ -626,9 +628,7 @@ users acquired during a specific period of time.
         week_start_date = snap_to_beginning_of_week(offset_start, "Sunday")
 
     try:
-        source_df = spark.read.option("mergeSchema", "true").parquet(s3_path)
-        subset_df = (source_df
-                     .select(source_columns))
+        main_df = spark.read.option("mergeSchema", "true").parquet(s3_path)
 
         # Note that main_summary_v3 only goes back to 20160312
         if backfill:
@@ -636,9 +636,9 @@ users acquired during a specific period of time.
             process_backfill(
                 fmt(week_start_date),
                 week_end_date,
-                lambda d: process_week(subset_df, d, bucket, prefix))
+                lambda d: process_week(main_df, d, bucket, prefix))
         else:
-            process_week(subset_df, fmt(week_start_date), bucket, prefix)
+            process_week(main_df, fmt(week_start_date), bucket, prefix)
     finally:
         spark.stop()
 

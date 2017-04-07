@@ -194,7 +194,7 @@ def multi_profile_df(spark):
     user_2 = cohort_2.copy()
     user_2.update({
         "country": "CA",
-        "channel": "release",
+        "channel": "beta",
         "subsession_length": seconds_in_hour
     })
 
@@ -230,3 +230,11 @@ def test_multiple_cohort_weeks(multi_profile_df):
     expect = set([0, 1, 2])
 
     assert actual == expect
+
+
+def test_cohort_by_channel(multi_profile_df):
+    df = churn.compute_churn_week(multi_profile_df, week_start_ds)
+    rows = df.where(df.channel == 'release').collect()
+
+    assert rows[0].n_profiles == 2
+    assert rows[0].usage_hours == 4
