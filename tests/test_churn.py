@@ -162,6 +162,46 @@ def single_profile_df(spark):
     return snippets_to_df(spark, snippets)
 
 
+@pytest.fixture
+def multi_profile_df(spark):
+
+    # generate different cohort of users based on creation date
+    cohort_0 = generate_dates(subsession_start, creation_offset=14)
+    cohort_1 = generate_dates(subsession_start, creation_offset=7)
+    cohort_2 = generate_dates(subsession_start, creation_offset=0)
+
+    # US has a user on release and beta
+    # CA has a user on release
+    # release users use firefox for 2 hours
+    # beta users use firefox for 1 hour
+
+    seconds_in_hour = 60 * 60
+
+    user_0 = cohort_0.copy()
+    user_0.update({
+        "country": "US",
+        "channel": "release",
+        "subsession_length": seconds_in_hour * 2
+    })
+
+    user_1 = cohort_1.copy()
+    user_1.update({
+        "country": "US",
+        "channel": "release",
+        "subsession_length": seconds_in_hour * 2
+    })
+
+    user_2 = cohort_2.copy()
+    user_2.update({
+        "country": "CA",
+        "channel": "release",
+        "subsession_length": seconds_in_hour
+    })
+
+    snippets = [user_0, user_1, user_2]
+    return snippets_to_df(spark, snippets)
+
+
 def test_ignored_submissions(late_submissions_df):
     df = churn.compute_churn_week(late_submissions_df, week_start_ds)
     assert df.count() == 0
@@ -170,3 +210,23 @@ def test_ignored_submissions(late_submissions_df):
 def test_latest_submission(single_profile_df):
     df = churn.compute_churn_week(single_profile_df, week_start_ds)
     assert df.count() == 1
+
+
+def test_current_acqusition_week(single_profile_df):
+    df = churn.compute_churn_week(single_profile_df, week_start_ds)
+    rows = df.collect()
+
+    actual = rows[0].current_week
+    expect = 0
+
+    assert actual == expect
+
+
+def test_multiple_cohort_weeks(multi_profile_df):
+    df = churn.compute_churn_week(multi_profile_df, week_start_ds)
+    rows = df.select('current_week').collect()
+
+    actual = set([row.current_week for row in rows])
+    expect = set([0, 1, 2])
+
+    assert actual == expect
