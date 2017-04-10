@@ -4,6 +4,7 @@ from datetime import timedelta, datetime
 import pytest
 
 from pyspark.sql import SparkSession
+from pyspark.sql.types import StructType
 from python_etl import churn
 
 
@@ -32,6 +33,7 @@ Su Mo Tu We Th Fr Sa
 22 23 24 25 26 27 28
 29 30 31
 """
+
 
 default_sample = {
     "app_version":           "57.0.0",
@@ -179,22 +181,25 @@ def multi_profile_df(spark):
 
     user_0 = cohort_0.copy()
     user_0.update({
+        "client_id": "user_0",
         "country": "US",
-        "channel": "release",
+        "normalized_channel": "release",
         "subsession_length": seconds_in_hour * 2
     })
 
     user_1 = cohort_1.copy()
     user_1.update({
+        "client_id": "user_1",
         "country": "US",
-        "channel": "release",
+        "normalized_channel": "release",
         "subsession_length": seconds_in_hour * 2
     })
 
     user_2 = cohort_2.copy()
     user_2.update({
+        "client_id": "user_2",
         "country": "CA",
-        "channel": "beta",
+        "normalized_channel": "beta",
         "subsession_length": seconds_in_hour
     })
 
@@ -234,7 +239,8 @@ def test_multiple_cohort_weeks(multi_profile_df):
 
 def test_cohort_by_channel(multi_profile_df):
     df = churn.compute_churn_week(multi_profile_df, week_start_ds)
-    rows = df.where(df.channel == 'release').collect()
+    rows = df.where(df.channel == 'release-cck-mozilla42').collect()
 
+    assert len(rows) == 1
     assert rows[0].n_profiles == 2
     assert rows[0].usage_hours == 4
