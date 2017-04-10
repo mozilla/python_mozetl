@@ -34,7 +34,9 @@ from moztelemetry.standards import snap_to_beginning_of_week
 
 import pyspark.sql.functions as F
 from pyspark.sql import SparkSession
-from pyspark.sql.types import DoubleType
+from pyspark.sql.types import (
+    DoubleType, StructField, StructType, StringType, LongType
+)
 from pyspark.sql.window import Window
 
 source_columns = [
@@ -375,30 +377,6 @@ def fmt(d, date_format="%Y%m%d"):
 
 MAX_SUBSESSION_LENGTH = 60 * 60 * 48  # 48 hours in seconds.
 
-record_columns = [
-    'channel',
-    'geo',
-    'is_funnelcake',
-    'acquisition_period',
-    'start_version',
-    'sync_usage',
-    'current_version',
-    'current_week',
-    'source',
-    'medium',
-    'campaign',
-    'content',
-    'distribution_id',
-    'default_search_engine',
-    'locale',
-    'is_active',
-    'n_profiles',
-    'usage_hours',
-    'sum_squared_usage_hours',
-    'total_uri_count',
-    'unique_domains_count'
-]
-
 
 def get_newest_per_client(df):
     windowSpec = (
@@ -509,7 +487,7 @@ def compute_churn_week(df, week_start):
                 x.get('start_version', 'unknown'),
                 x.get('sync_usage', 'unknown'),
                 x.get('current_version', 'unknown'),
-                x.get('current_week', 'unknown'),
+                x.get('current_week', -1),
                 x.get('source', 'unknown'),
                 x.get('medium', 'unknown'),
                 x.get('campaign', 'unknown'),
@@ -520,20 +498,44 @@ def compute_churn_week(df, week_start):
                 x.get('is_active', 'unknown')
             ), (
                 1,  # active users
-                x.get('usage_hours', 0),
-                x.get('squared_usage_hours', 0),
+                x.get('usage_hours', 0.0),
+                x.get('squared_usage_hours', 0.0),
                 x.get('total_uri_count', 0),
                 x.get('unique_domains_count', 0)
             )
         )
     )
 
+    churn_schema = StructType([
+        StructField('channel',                 StringType(), True),
+        StructField('geo',                     StringType(), True),
+        StructField('is_funnelcake',           StringType(), True),
+        StructField('acquisition_period',      StringType(), True),
+        StructField('start_version',           StringType(), True),
+        StructField('sync_usage',              StringType(), True),
+        StructField('current_version',         StringType(), True),
+        StructField('current_week',            LongType(),   True),
+        StructField('source',                  StringType(), True),
+        StructField('medium',                  StringType(), True),
+        StructField('campaign',                StringType(), True),
+        StructField('content',                 StringType(), True),
+        StructField('distribution_id',         StringType(), True),
+        StructField('default_search_engine',   StringType(), True),
+        StructField('locale',                  StringType(), True),
+        StructField('is_active',               StringType(), True),
+        StructField('n_profiles',              LongType(),   True),
+        StructField('usage_hours',             DoubleType(), True),
+        StructField('sum_squared_usage_hours', DoubleType(), True),
+        StructField('total_uri_count',         LongType(),   True),
+        StructField('unique_domains_count',    LongType(),   True)
+    ])
+
     def reduce_func(x, y):
         return tuple(map(sum, zip(x, y)))
 
     aggregated = countable.reduceByKey(reduce_func)
 
-    records_df = aggregated.map(lambda x: x[0] + x[1]).toDF(record_columns)
+    records_df = aggregated.map(lambda x: x[0] + x[1]).toDF(churn_schema)
 
     # Apply some post-processing for other aggregates
     # (i.e. unique_domains_count). This needs to be done when you want
