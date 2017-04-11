@@ -353,3 +353,37 @@ def test_fully_nulled_dimensions(nulled_columns_df):
     assert rows[0].distribution_id == 'unknown'
     assert rows[0].default_search_engine == 'unknown'
     assert rows[0].locale == 'unknown'
+
+
+def test_empty_total_uri_count(spark):
+    input_df = snippets_to_df(spark, [{'total_uri_count': None}])
+    df = churn.compute_churn_week(input_df, week_start_ds)
+    rows = df.collect()
+
+    assert rows[0].total_uri_count == 0
+
+
+def test_total_uri_count_per_client(spark):
+    snippets = [{'total_uri_count': 1}, {'total_uri_count': 2}]
+    input_df = snippets_to_df(spark, snippets)
+    df = churn.compute_churn_week(input_df, week_start_ds)
+    rows = df.collect()
+
+    assert rows[0].total_uri_count == 3
+
+
+def test_average_unique_domains_count(spark):
+    snippets = [
+        # averages to 4
+        {'client_id': '1', 'unique_domains_count': 6},
+        {'client_id': '1', 'unique_domains_count': 2},
+        # averages to 8
+        {'client_id': '2', 'unique_domains_count': 12},
+        {'client_id': '2', 'unique_domains_count': 4}
+    ]
+    input_df = snippets_to_df(spark, snippets)
+    df = churn.compute_churn_week(input_df, week_start_ds)
+    rows = df.collect()
+
+    # (4 + 8) / 2 == 6
+    assert rows[0].unique_domains_count_per_profile == 6
