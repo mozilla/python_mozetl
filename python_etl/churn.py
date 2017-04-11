@@ -319,9 +319,8 @@ def convert(d2v, week_start, datum):
                           else 0.0)
     out["squared_usage_hours"] = out["usage_hours"] ** 2
 
-    # d.get does not default to 0, so make sure that its an int here
-    out["total_uri_count"] = datum.total_uri_count or 0
-    out["unique_domains_count"] = datum.unique_domains_count or 0
+    out["total_uri_count"] = datum.total_uri_count_per_client
+    out["unique_domains_count"] = datum.average_unique_domains_count_per_client
 
     # Incoming subsession_start_date looks like "2016-02-22T00:00:00.0-04:00"
     client_date = None
@@ -446,32 +445,32 @@ def compute_churn_week(df, week_start):
         0, ["total_uri_count", "unique_domains_count"])
 
     # Clamp broken subsession values in the [0, MAX_SUBSESSION_LENGTH] range.
-    clamped_subsession = (
-        current_week
-        .select(
-            F.col('client_id'),
-            F.when(
-                F.col('subsession_length') > MAX_SUBSESSION_LENGTH,
-                MAX_SUBSESSION_LENGTH)
-            .otherwise(
-                F.when(F.col('subsession_length') < 0, 0)
-                .otherwise(F.col('subsession_length')))
-            .alias('subsession_length'))
+    clamped_subsession_subquery = (
+        F.when(F.col('subsession_length') > MAX_SUBSESSION_LENGTH,
+               MAX_SUBSESSION_LENGTH)
+        .otherwise(
+            F.when(F.col('subsession_length') < 0, 0)
+            .otherwise(F.col('subsession_length')))
     )
 
-    # Compute the overall usage time for each client by summing the subsession
-    # lengths.
-    grouped_usage_time = (
-        clamped_subsession
+    # Compute per client aggregates lost during newest client computation
+    per_client_aggregates = (
+        current_week
+        .select('client_id',
+                'total_uri_count',
+                'unique_domains_count',
+                clamped_subsession_subquery.alias('subsession_length'))
         .groupby('client_id')
-        .sum('subsession_length')
-        .withColumnRenamed('sum(subsession_length)', 'usage_seconds')
+        .agg(F.sum('subsession_length').alias('usage_seconds'),
+             F.sum('total_uri_count').alias('total_uri_count_per_client'),
+             F.avg('unique_domains_count')
+             .alias('average_unique_domains_count_per_client'))
     )
 
     # Get the newest ping per client and append to original dataframe
     newest_per_client = get_newest_per_client(current_week)
     newest_with_usage = newest_per_client.join(
-        grouped_usage_time, 'client_id', 'inner')
+        per_client_aggregates, 'client_id', 'inner')
 
     converted = newest_with_usage.rdd.map(
         lambda x: convert(d2v, week_start, x))
@@ -504,7 +503,7 @@ def compute_churn_week(df, week_start):
                 x.get('usage_hours', 0.0),
                 x.get('squared_usage_hours', 0.0),
                 x.get('total_uri_count', 0),
-                x.get('unique_domains_count', 0)
+                x.get('unique_domains_count', 0.0)
             )
         )
     )
@@ -530,7 +529,7 @@ def compute_churn_week(df, week_start):
         StructField('usage_hours',             DoubleType(), True),
         StructField('sum_squared_usage_hours', DoubleType(), True),
         StructField('total_uri_count',         LongType(),   True),
-        StructField('unique_domains_count',    LongType(),   True)
+        StructField('unique_domains_count',    DoubleType(),   True)
     ])
 
     def reduce_func(x, y):
@@ -552,12 +551,15 @@ def compute_churn_week(df, week_start):
     # Create new derived columns and any unecessary ones
     records_df = (
         records_df
-        .withColumn('average_unique_domains_count',
+        # The total number of unique domains divided by the number of profiles
+        # over a set of dimensions. This should be aggregated using a weighted
+        # mean, i.e. sum(unique_domains_count_per_profile * n_profiles)
+        .withColumn('unique_domains_count_per_profile',
                     average_udf(F.col('unique_domains_count'),
                                 F.col('n_profiles')))
+        # This value is meaningless because of overlapping domains between
+        # profiles
         .drop('unique_domains_count')
-        .withColumnRenamed('average_unique_domains_count',
-                           'unique_domains_count')
     )
 
     return records_df
