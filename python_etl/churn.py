@@ -285,9 +285,12 @@ def convert(d2v, week_start, datum):
             out[field] = datum.attribution[field]
 
     # bug 1323598
-    out['distribution_id'] = datum.distribution_id
-    out['default_search_engine'] = datum.default_search_engine
-    out['locale'] = datum.locale
+    if datum.distribution_id:
+        out['distribution_id'] = datum.distribution_id
+    if datum.default_search_engine:
+        out['default_search_engine'] = datum.default_search_engine
+    if datum.locale:
+        out['locale'] = datum.locale
 
     deviceCount = 0
     if datum.sync_count_desktop is not None:
