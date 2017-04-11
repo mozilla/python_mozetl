@@ -4,7 +4,11 @@ from datetime import timedelta, datetime
 import pytest
 
 from pyspark.sql import SparkSession
-from pyspark.sql.types import StructType
+from pyspark.sql import functions as F
+from pyspark.sql.types import (
+    StructField, StructType, StringType,
+    LongType, IntegerType, BooleanType
+)
 from python_etl import churn
 
 
@@ -32,8 +36,41 @@ Su Mo Tu We Th Fr Sa
 15 16 17 18 19 20 21
 22 23 24 25 26 27 28
 29 30 31
+
+# General guidelines
+
+There are a few gotches that you should look out for while creating
+new tests for this suite that are all churn specific.
+
+* assign rows new client_ids if you want them to show up as unique
+rows in the output datafrane
+
 """
 
+main_schema = StructType([
+    StructField("app_version",           StringType(), True),
+    StructField("attribution",           StructType([
+        StructField("source",            StringType(), True),
+        StructField("medium",            StringType(), True),
+        StructField("campaign",          StringType(), True),
+        StructField("content",           StringType(), True)]), True),
+    StructField("channel",               StringType(),  True),
+    StructField("client_id",             StringType(),  True),
+    StructField("country",               StringType(),  True),
+    StructField("default_search_engine", StringType(),  True),
+    StructField("distribution_id",       StringType(),  True),
+    StructField("locale",                StringType(),  True),
+    StructField("normalized_channel",    StringType(),  True),
+    StructField("profile_creation_date", LongType(),    True),
+    StructField("submission_date_s3",    StringType(),  False),
+    StructField("subsession_length",     LongType(),    True),
+    StructField("subsession_start_date", StringType(),  True),
+    StructField("sync_configured",       BooleanType(), True),
+    StructField("sync_count_desktop",    IntegerType(), True),
+    StructField("sync_count_mobile",     IntegerType(), True),
+    StructField("timestamp",             LongType(),    True),
+    StructField("total_uri_count",       IntegerType(), True),
+    StructField("unique_domains_count", IntegerType(), True)])
 
 default_sample = {
     "app_version":           "57.0.0",
@@ -125,7 +162,7 @@ def generate_samples(snippets=None):
 
 def samples_to_df(spark, samples):
     jsonRDD = spark.sparkContext.parallelize(samples)
-    return spark.read.json(jsonRDD)
+    return spark.read.json(jsonRDD, schema=main_schema)
 
 
 def snippets_to_df(spark, snippets):
@@ -237,10 +274,82 @@ def test_multiple_cohort_weeks(multi_profile_df):
     assert actual == expect
 
 
-def test_cohort_by_channel(multi_profile_df):
+def test_cohort_by_channel_count(multi_profile_df):
     df = churn.compute_churn_week(multi_profile_df, week_start_ds)
     rows = df.where(df.channel == 'release-cck-mozilla42').collect()
 
-    assert len(rows) == 1
+    assert len(rows) == 2
+
+
+def test_cohort_by_channel_aggregates(multi_profile_df):
+    df = churn.compute_churn_week(multi_profile_df, week_start_ds)
+    rows = (
+        df
+        .groupBy(df.channel)
+        .agg(F.sum('n_profiles').alias('n_profiles'),
+             F.sum('usage_hours').alias('usage_hours'))
+        .where(df.channel == 'release-cck-mozilla42')
+        .collect()
+    )
     assert rows[0].n_profiles == 2
     assert rows[0].usage_hours == 4
+
+
+@pytest.fixture
+def nulled_columns_df(spark):
+    partial_attribution = {
+        'client_id': 'partial',
+        'attribution': {
+            'content': 'content'
+        }
+    }
+
+    nulled_row = {
+        'client_id': 'fully_nulled',
+        'attribution': None,
+        'distribution_id': None,
+        'default_search_engine': None,
+        'locale': None,
+    }
+
+    snippets = [partial_attribution, nulled_row]
+    return snippets_to_df(spark, snippets)
+
+
+def test_nulled_stub_attribution_content(nulled_columns_df):
+    df = churn.compute_churn_week(nulled_columns_df, week_start_ds)
+    rows = (
+        df
+        .select('content')
+        .distinct()
+        .collect()
+    )
+    actual = set([r.content for r in rows])
+    expect = set(['content', 'unknown'])
+
+    assert actual == expect
+
+
+def test_nulled_stub_attribution_medium(nulled_columns_df):
+    input_df = nulled_columns_df.where("client_id = 'fully_nulled'")
+    df = churn.compute_churn_week(input_df, week_start_ds)
+    rows = (
+        df
+        .select('medium')
+        .distinct()
+        .collect()
+    )
+    actual = set([r.medium for r in rows])
+    expect = set(['unknown'])
+
+    assert actual == expect
+
+
+def test_fully_nulled_dimensions(nulled_columns_df):
+    input_df = nulled_columns_df.where("client_id = 'fully_nulled'")
+    df = churn.compute_churn_week(input_df, week_start_ds)
+    rows = df.collect()
+
+    assert rows[0].distribution_id == 'unknown'
+    assert rows[0].default_search_engine == 'unknown'
+    assert rows[0].locale == 'unknown'
