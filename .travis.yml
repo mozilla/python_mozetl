@@ -1,0 +1,22 @@
+language: python
+python:
+    - "2.7"
+cache:
+    directories:
+        - $HOME/spark
+addons:
+    apt:
+        packages:
+            - libsnappy-dev
+before_install: 
+    - export PATH=$HOME/.local/bin:$PATH
+install: 
+    - pip install tox-travis codecov
+    - "[ -f spark ] || mkdir spark && cd spark && wget http://d3kbcqa49mib13.cloudfront.net/spark-2.0.0-bin-hadoop2.7.tgz && cd .."
+    - tar -xf ./spark/spark-2.0.0-bin-hadoop2.7.tgz
+    - export SPARK_HOME=`pwd`/spark-2.0.0-bin-hadoop2.7
+    - export PYTHONPATH=${SPARK_HOME}/python/:$(echo ${SPARK_HOME}/python/lib/py4j-*-src.zip):${PYTHONPATH}
+script: 
+    - tox
+after_success:
+    - codecov
