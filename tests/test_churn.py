@@ -44,7 +44,8 @@ new tests for this suite that are all churn specific.
 
 * assign rows new client_ids if you want them to show up as unique
 rows in the output datafrane
-
+* create test fixtures for data shared across multiple tests
+* use snippets to create small datasets for single purpose use
 """
 
 main_schema = StructType([
@@ -89,7 +90,7 @@ default_sample = {
     "normalized_channel":    "release",
     "profile_creation_date": 17181,
     "submission_date_s3":    "20170115",
-    "subsession_length":     1000,
+    "subsession_length":     3600,
     "subsession_start_date": "2017-01-15",
     "sync_configured":       False,
     "sync_count_desktop":    1,
@@ -143,30 +144,36 @@ def generate_dates(subsession_date, submission_offset=0, creation_offset=0):
     return date_snippet
 
 
-def generate_samples(snippets=None):
+def generate_samples(snippets=None, base_sample=default_sample):
     """ Generate samples from the default sample. Snippets overwrite specific
     fields in the default sample.
 
     :snippets list(dict): A list of dictionary attributes to update
     """
     if snippets is None:
-        return [json.dumps(default_sample)]
+        return [json.dumps(base_sample)]
 
     samples = []
     for snippet in snippets:
-        sample = default_sample.copy()
+        sample = base_sample.copy()
         sample.update(snippet)
         samples.append(json.dumps(sample))
     return samples
 
 
 def samples_to_df(spark, samples):
+    """ Turn a list of dictionaries into a dataframe. """
     jsonRDD = spark.sparkContext.parallelize(samples)
     return spark.read.json(jsonRDD, schema=main_schema)
 
 
-def snippets_to_df(spark, snippets):
-    samples = generate_samples(snippets)
+def snippets_to_df(spark, snippets, base_sample=default_sample):
+    """ Turn a list of snippets into a fully instantiated dataframe.
+
+    A snippet are attributes that overwrite the base dictionary. This allows
+    for the generation of new rows without excess repetition.
+    """
+    samples = generate_samples(snippets, base_sample)
     return samples_to_df(spark, samples)
 
 
@@ -244,17 +251,25 @@ def multi_profile_df(spark):
     return snippets_to_df(spark, snippets)
 
 
-def test_ignored_submissions(late_submissions_df):
+def test_ignored_submissions_outside_of_period(late_submissions_df):
     df = churn.compute_churn_week(late_submissions_df, week_start_ds)
     assert df.count() == 0
 
 
-def test_latest_submission(single_profile_df):
+def test_latest_submission_from_client_exists(single_profile_df):
     df = churn.compute_churn_week(single_profile_df, week_start_ds)
     assert df.count() == 1
 
 
-def test_current_acqusition_week(single_profile_df):
+def test_profile_usage_length(single_profile_df):
+    # there are two pings each with 1 hour of usage
+    df = churn.compute_churn_week(single_profile_df, week_start_ds)
+    rows = df.collect()
+
+    assert rows[0].usage_hours == 2
+
+
+def test_current_cohort_week_is_zero(single_profile_df):
     df = churn.compute_churn_week(single_profile_df, week_start_ds)
     rows = df.collect()
 
@@ -264,7 +279,7 @@ def test_current_acqusition_week(single_profile_df):
     assert actual == expect
 
 
-def test_multiple_cohort_weeks(multi_profile_df):
+def test_multiple_cohort_weeks_exist(multi_profile_df):
     df = churn.compute_churn_week(multi_profile_df, week_start_ds)
     rows = df.select('current_week').collect()
 
@@ -296,7 +311,7 @@ def test_cohort_by_channel_aggregates(multi_profile_df):
 
 
 @pytest.fixture
-def nulled_columns_df(spark):
+def nulled_attribution_df(spark):
     partial_attribution = {
         'client_id': 'partial',
         'attribution': {
@@ -304,20 +319,17 @@ def nulled_columns_df(spark):
         }
     }
 
-    nulled_row = {
-        'client_id': 'fully_nulled',
+    nulled_attribution = {
+        'client_id': 'nulled',
         'attribution': None,
-        'distribution_id': None,
-        'default_search_engine': None,
-        'locale': None,
     }
 
-    snippets = [partial_attribution, nulled_row]
+    snippets = [partial_attribution, nulled_attribution]
     return snippets_to_df(spark, snippets)
 
 
-def test_nulled_stub_attribution_content(nulled_columns_df):
-    df = churn.compute_churn_week(nulled_columns_df, week_start_ds)
+def test_nulled_stub_attribution_content(nulled_attribution_df):
+    df = churn.compute_churn_week(nulled_attribution_df, week_start_ds)
     rows = (
         df
         .select('content')
@@ -330,9 +342,8 @@ def test_nulled_stub_attribution_content(nulled_columns_df):
     assert actual == expect
 
 
-def test_nulled_stub_attribution_medium(nulled_columns_df):
-    input_df = nulled_columns_df.where("client_id = 'fully_nulled'")
-    df = churn.compute_churn_week(input_df, week_start_ds)
+def test_nulled_stub_attribution_medium(nulled_attribution_df):
+    df = churn.compute_churn_week(nulled_attribution_df, week_start_ds)
     rows = (
         df
         .select('medium')
@@ -345,8 +356,14 @@ def test_nulled_stub_attribution_medium(nulled_columns_df):
     assert actual == expect
 
 
-def test_fully_nulled_dimensions(nulled_columns_df):
-    input_df = nulled_columns_df.where("client_id = 'fully_nulled'")
+def test_simple_string_dimensions(spark):
+    input_df = snippets_to_df(spark, [
+        {
+            'distribution_id': None,
+            'default_search_engine': None,
+            'locale': None
+        }
+    ])
     df = churn.compute_churn_week(input_df, week_start_ds)
     rows = df.collect()
 
