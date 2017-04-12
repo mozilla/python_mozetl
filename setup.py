@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from setuptools import setup, find_packages
 
+
 setup(
     name='mozetl',
     version='0.1',
@@ -11,6 +12,7 @@ setup(
     packages=find_packages(exclude=['tests']),
     install_requires=[
         'python_moztelemetry',  # TODO: pin version
-        'click'
+        'click',
+        'requests'
     ],
 )
