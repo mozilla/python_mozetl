@@ -475,6 +475,55 @@ def compute_churn_week(df, week_start):
     converted = newest_with_usage.rdd.map(
         lambda x: convert(d2v, week_start, x))
 
+    """
+    - channel (appUpdateChannel)
+    - geo (bucketed into top 30 countries + "rest of world")
+    - is_funnelcake (contains "-cck-"?)
+    - acquisition_period (cohort_week)
+    - start_version (effective version on profile creation date)
+    - sync_usage ("no", "single" or "multiple" devices)
+    - current_version (current appVersion)
+    - current_week (week)
+    - source (associated attribution)
+    - medium (associated with attribution)
+    - campaign (associated with attribution)
+    - content (associated with attribution)
+    - distribution_id (funnelcake associated with profile)
+    - default_search_engine
+    - locale
+    - is_active (were the client_ids active this week or not)
+    - n_profiles (count of matching client_ids)
+    - usage_hours (sum of the per-client subsession lengths,
+            clamped in the [0, MAX_SUBSESSION_LENGTH] range)
+    - sum_squared_usage_hours (the sum of squares of the usage hours)
+    - total_uri_count (sum of per-client uri counts)
+    - unique_domains_count_per_profile (average of the average unique
+             domains per-client)
+    """
+    churn_schema = StructType([
+        StructField('channel',                 StringType(), True),
+        StructField('geo',                     StringType(), True),
+        StructField('is_funnelcake',           StringType(), True),
+        StructField('acquisition_period',      StringType(), True),
+        StructField('start_version',           StringType(), True),
+        StructField('sync_usage',              StringType(), True),
+        StructField('current_version',         StringType(), True),
+        StructField('current_week',            LongType(),   True),
+        StructField('source',                  StringType(), True),
+        StructField('medium',                  StringType(), True),
+        StructField('campaign',                StringType(), True),
+        StructField('content',                 StringType(), True),
+        StructField('distribution_id',         StringType(), True),
+        StructField('default_search_engine',   StringType(), True),
+        StructField('locale',                  StringType(), True),
+        StructField('is_active',               StringType(), True),
+        StructField('n_profiles',              LongType(),   True),
+        StructField('usage_hours',             DoubleType(), True),
+        StructField('sum_squared_usage_hours', DoubleType(), True),
+        StructField('total_uri_count',         LongType(),   True),
+        StructField('unique_domains_count',    DoubleType(), True)
+    ])
+
     # Don't bother to filter out non-good records - they will appear
     # as 'unknown' in the output.
     countable = converted.map(
@@ -508,30 +557,6 @@ def compute_churn_week(df, week_start):
         )
     )
 
-    churn_schema = StructType([
-        StructField('channel',                 StringType(), True),
-        StructField('geo',                     StringType(), True),
-        StructField('is_funnelcake',           StringType(), True),
-        StructField('acquisition_period',      StringType(), True),
-        StructField('start_version',           StringType(), True),
-        StructField('sync_usage',              StringType(), True),
-        StructField('current_version',         StringType(), True),
-        StructField('current_week',            LongType(),   True),
-        StructField('source',                  StringType(), True),
-        StructField('medium',                  StringType(), True),
-        StructField('campaign',                StringType(), True),
-        StructField('content',                 StringType(), True),
-        StructField('distribution_id',         StringType(), True),
-        StructField('default_search_engine',   StringType(), True),
-        StructField('locale',                  StringType(), True),
-        StructField('is_active',               StringType(), True),
-        StructField('n_profiles',              LongType(),   True),
-        StructField('usage_hours',             DoubleType(), True),
-        StructField('sum_squared_usage_hours', DoubleType(), True),
-        StructField('total_uri_count',         LongType(),   True),
-        StructField('unique_domains_count',    DoubleType(),   True)
-    ])
-
     def reduce_func(x, y):
         return tuple(map(sum, zip(x, y)))
 
@@ -548,7 +573,7 @@ def compute_churn_week(df, week_start):
         return float(total) / n
     average_udf = F.udf(average, DoubleType())
 
-    # Create new derived columns and any unecessary ones
+    # Create new derived columns and drop any unnecessary ones
     records_df = (
         records_df
         # The total number of unique domains divided by the number of profiles
