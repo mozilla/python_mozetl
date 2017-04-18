@@ -1,24 +1,7 @@
 import pytest
 from pyspark.sql import SparkSession
 from python_etl import *
-
-# Initialize a spark context:
-
-
-@pytest.fixture(scope="session")
-def spark_context(request):
-    spark = (SparkSession
-             .builder
-             .appName("python_etl_test")
-             .getOrCreate())
-
-    sc = spark.sparkContext
-
-    # teardown
-    request.addfinalizer(lambda: spark.stop())
-
-    return sc
-
+from utils import *
 
 # Generate some data
 def create_row(client_id, os):
