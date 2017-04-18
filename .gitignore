@@ -1,10 +1,9 @@
 *.pyc
 
-.cache/
-
 dist/
 build/
 .tox/
 .coverage
-*.egg-info/
+.cache/
 
+*.egg-info/
