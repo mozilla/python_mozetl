@@ -13,3 +13,5 @@ if __name__ == "__main__":
 
     # Run job
     pulse.etl_job(sc, sqlContext)
+
+    sc.stop()
