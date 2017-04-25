@@ -1,7 +1,6 @@
 import pytest
-from pyspark.sql import SparkSession
-from python_etl import *
-from utils import *
+from mozetl import transform_pings
+
 
 # Generate some data
 def create_row(client_id, os):
