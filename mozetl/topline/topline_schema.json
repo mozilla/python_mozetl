@@ -1,0 +1,109 @@
+{
+  "fields":[
+    {
+      "metadata":{
+
+      },
+      "name":"geo",
+      "nullable":true,
+      "type":"string"
+    },
+    {
+      "metadata":{
+
+      },
+      "name":"channel",
+      "nullable":true,
+      "type":"string"
+    },
+    {
+      "metadata":{
+
+      },
+      "name":"os",
+      "nullable":true,
+      "type":"string"
+    },
+    {
+      "metadata":{
+
+      },
+      "name":"hours",
+      "nullable":true,
+      "type":"double"
+    },
+    {
+      "metadata":{
+
+      },
+      "name":"crashes",
+      "nullable":true,
+      "type":"long"
+    },
+    {
+      "metadata":{
+
+      },
+      "name":"google",
+      "nullable":true,
+      "type":"long"
+    },
+    {
+      "metadata":{
+
+      },
+      "name":"bing",
+      "nullable":true,
+      "type":"long"
+    },
+    {
+      "metadata":{
+
+      },
+      "name":"yahoo",
+      "nullable":true,
+      "type":"long"
+    },
+    {
+      "metadata":{
+
+      },
+      "name":"other",
+      "nullable":true,
+      "type":"long"
+    },
+    {
+      "metadata":{
+
+      },
+      "name":"actives",
+      "nullable":true,
+      "type":"long"
+    },
+    {
+      "metadata":{
+
+      },
+      "name":"new_records",
+      "nullable":true,
+      "type":"long"
+    },
+    {
+      "metadata":{
+
+      },
+      "name":"default",
+      "nullable":true,
+      "type":"long"
+    },
+    {
+      "metadata":{
+
+      },
+      "name":"report_start",
+      "nullable":true,
+      "type":"integer"
+    }
+  ],
+  "type":"struct"
+}
