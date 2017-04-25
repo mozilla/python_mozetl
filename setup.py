@@ -11,5 +11,6 @@ setup(
     packages=find_packages(exclude=['tests']),
     install_requires=[
         'python_moztelemetry',  # TODO: pin version
+        'click'
     ],
 )
