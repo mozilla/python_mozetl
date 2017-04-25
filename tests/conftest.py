@@ -7,7 +7,7 @@ def spark_context(request):
     """Initialize a spark context"""
     spark = (SparkSession
              .builder
-             .appName("python_etl_test")
+             .appName("python_mozetl_test")
              .getOrCreate())
 
     sc = spark.sparkContext
@@ -18,6 +18,9 @@ def spark_context(request):
     return sc
 
 
-def row_to_dict(row):
+@pytest.fixture(scope="session")
+def row_to_dict():
     """Convert pyspark.Row to dict for easier unordered comparison"""
-    return {key: row[key] for key in row.__fields__}
+    def func(row):
+        return {key: row[key] for key in row.__fields__}
+    return func

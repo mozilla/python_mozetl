@@ -4,7 +4,7 @@ from pyspark.sql.types import (LongType, DoubleType, BooleanType, StringType,
                                StructField)
 from pyspark.sql import Row
 
-from ..basic_etl import DataFrameConfig, convert_pings
+from ..basic import DataFrameConfig, convert_pings
 from .utils import testpilot_etl_boilerplate
 
 

@@ -1,8 +1,8 @@
 import pytest
 import json
 from pyspark.sql import SQLContext, Row
-from python_etl.testpilot.pulse import transform_pings
-from utils import spark_context, row_to_dict
+
+from mozetl.testpilot.pulse import transform_pings
 
 
 def create_row():
@@ -15,7 +15,7 @@ def simple_rdd(spark_context):
     return spark_context.parallelize([create_row()])
 
 
-def test_simple_transform(simple_rdd, spark_context):
+def test_simple_transform(row_to_dict, simple_rdd, spark_context):
     actual = transform_pings(SQLContext(spark_context), simple_rdd).take(1)[0]
 
     empty_request_keys = ["sub_frame", "stylesheet", "script", "image",

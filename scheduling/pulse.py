@@ -1,7 +1,7 @@
 import os
 from pyspark import SparkConf, SparkContext
 from pyspark.sql import SQLContext
-from python_etl.testpilot import pulse
+from mozetl.testpilot import pulse
 
 if __name__ == "__main__":
     conf = SparkConf().setAppName('pulse_etl')

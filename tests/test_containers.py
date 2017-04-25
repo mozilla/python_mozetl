@@ -1,6 +1,5 @@
 from pyspark.sql import SQLContext
-from python_etl.testpilot.containers import transform_pings
-from utils import row_to_dict, spark_context
+from mozetl.testpilot.containers import transform_pings
 
 
 def create_ping_rdd(sc, payload):
@@ -24,7 +23,7 @@ def create_row(overrides):
     return {key: overrides.get(key, None) for key in keys}
 
 
-def test_open_container_ping(spark_context):
+def test_open_container_ping(row_to_dict, spark_context):
     input_payload = {
         'uuid': 'a',
         'userContextId': 10,
@@ -44,7 +43,7 @@ def test_open_container_ping(spark_context):
     assert row_to_dict(actual) == create_row(result_payload)
 
 
-def test_edit_container_ping(spark_context):
+def test_edit_container_ping(row_to_dict, spark_context):
     input_payload = {
         'uuid': 'b',
         'event': 'edit-containers'
@@ -58,7 +57,7 @@ def test_edit_container_ping(spark_context):
     assert row_to_dict(actual) == create_row(input_payload)
 
 
-def test_hide_container_ping(spark_context):
+def test_hide_container_ping(row_to_dict, spark_context):
     input_payload = {
         'uuid': 'a',
         'userContextId': 'firefox-default',
