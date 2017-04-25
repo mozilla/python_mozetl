@@ -7,11 +7,13 @@ def testpilot_etl_boilerplate(transform_func, s3_path):
         if submission_date is None:
             submission_date = (date.today() - timedelta(1)).strftime("%Y%m%d")
 
-        pings = Dataset.from_source("telemetry")\
-            .where(docType="testpilottest")\
-            .where(submissionDate=submission_date)\
-            .where(appName="Firefox")\
-            .records(sc)
+        pings = Dataset.from_source(
+            "telemetry"
+        ).where(
+            docType="testpilottest",
+            submissionDate=submission_date,
+            appName="Firefox",
+        ).records(sc)
 
         transformed_pings = transform_func(sqlContext, pings)
 

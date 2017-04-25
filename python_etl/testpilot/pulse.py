@@ -1,19 +1,20 @@
-from python_etl.basic_etl import DataFrameConfig, convert_pings
-from utils import testpilot_etl_boilerplate
-
 import dateutil.parser
 from pyspark.sql.types import (LongType, DoubleType, BooleanType, StringType,
                                TimestampType, ArrayType, MapType, StructType,
                                StructField)
 from pyspark.sql import Row
 
+from ..basic_etl import DataFrameConfig, convert_pings
+from .utils import testpilot_etl_boilerplate
 
-class Request:
-    def __option__(func):
-        return lambda x: func(x) if x is not None else None
 
-    int_type = (__option__(int), LongType())
-    float_type = (__option__(float), DoubleType())
+def _option_or_none(func):
+    return lambda x: func(x) if x is not None else None
+
+
+class Request(object):
+    int_type = (_option_or_none(int), LongType())
+    float_type = (_option_or_none(float), DoubleType())
 
     field_types = {
         'num': int_type,
@@ -25,19 +26,27 @@ class Request:
     StructType = StructType([
         # For some reason, field_types needs to be sorted. Use
         # PYTHONHASHSEED = 3201792604 to reproduce failure
-        StructField(key, field_types[key][1], True) for key in sorted(field_types)
+        StructField(
+            key,
+            field_types[key][1],
+            True
+        ) for key in sorted(field_types)
     ])
 
     def __init__(self, request_dict):
-        args = {field: conversion(request_dict.get(field))
-                for field, (conversion, sql_type) in Request.field_types.items()}
+        args = {
+            field: conversion(request_dict.get(field))
+            for field, (conversion, sql_type) in Request.field_types.iteritems()
+        }
         self.row = Row(**args)
 
 
+def _requests_to_rows(requests):
+    out = {k: Request(v).row for k, v in requests.iteritems()}
+    return out
+
+
 def transform_pings(sqlContext, pings):
-    def requests_to_rows(requests):
-        out = {k: Request(v).row for k, v in requests.items()}
-        return out
 
     RequestsType = MapType(StringType(), Request.StructType)
 
@@ -75,7 +84,7 @@ def transform_pings(sqlContext, pings):
             ("variants", "payload/variants", None, StringType()),
             ("timestamp", "payload/timestamp", None, LongType()),
             ("version", "payload/version", None, StringType()),
-            ("requests", "payload/payload/requests", requests_to_rows, RequestsType),
+            ("requests", "payload/payload/requests", _requests_to_rows, RequestsType),
             ("disconnectRequests", "payload/payload/disconnectRequests", None, LongType()),
             ("consoleErrors", "payload/payload/consoleErrors", None, LongType()),
             ("e10sStatus", "payload/payload/e10sStatus", None, LongType()),

@@ -1,7 +1,7 @@
-from python_etl.basic_etl import convert_pings, DataFrameConfig
-from utils import testpilot_etl_boilerplate
-
 from pyspark.sql.types import StringType, LongType
+
+from .utils import testpilot_etl_boilerplate
+from ..basic_etl import convert_pings, DataFrameConfig
 
 
 def transform_pings(sqlContext, pings):
