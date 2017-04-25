@@ -1,9 +1,11 @@
-from click.testing import CliRunner
-import pytest
 import json
+import os
 
+from click.testing import CliRunner
+
+import pytest
+from mozetl.topline import historical_backfill as backfill
 from pyspark.sql import SparkSession
-from python_etl.topline import historical_backfill as backfill
 
 
 @pytest.fixture(scope="session")
@@ -63,10 +65,11 @@ def test_excludes_all_rows(spark, tmpdir):
         {'geo': 'all'},
         {'os': 'all'},
         {'channel': 'all'},
+        {}  # There must be a single data point
     ]
     input_df = snippets_to_df(spark, snippets, default_sample,
                               backfill.historical_schema)
-    path = str(tmpdir.join('test/mode=weekly'))
+    path = str(tmpdir.join('test/mode=weekly/'))
     backfill.backfill_topline_summary(input_df, path)
 
     df = spark.read.parquet(path)
@@ -88,7 +91,7 @@ def test_partitions_by_report_date(spark, tmpdir):
     backfill.backfill_topline_summary(input_df, path)
 
     # number of folders are correct
-    partitions = [s for s in outdir.listdir() if s.startswith('report_date')]
+    partitions = [s for s in os.listdir(path) if s.startswith('report_start')]
     assert len(partitions) == 2
 
     # folder names are correct
@@ -109,9 +112,12 @@ def test_cli_monthly(spark, tmpdir, monkeypatch):
     # add a csv file to the test folder
     toplevel = tmpdir
     input_csv = toplevel.join('test.csv')
-    input_csv.write(','.join(input_df.columns) + '\n')
+
+    csv_data = ','.join(input_df.columns) + '\n'
     for row in input_df.collect():
-        input_csv.write(','.join(unicode(x) for x in row) + '\n')
+        csv_data += ','.join([unicode(x) for x in row]) + '\n'
+
+    input_csv.write(csv_data)
 
     # create the output directory
     testdir = toplevel.join('test')
@@ -119,7 +125,7 @@ def test_cli_monthly(spark, tmpdir, monkeypatch):
 
     # change s3_path to use file:// protocol
     def mock_create_s3_path(bucket, prefix):
-        return backfill.create_s3_path(bucket, prefix, 'file')
+        return "file://{}/{}".format(bucket, prefix)
     monkeypatch.setattr(backfill, 'create_s3_path', mock_create_s3_path)
 
     # Run the application via the cli
