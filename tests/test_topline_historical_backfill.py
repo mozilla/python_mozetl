@@ -5,6 +5,7 @@ from click.testing import CliRunner
 
 import pytest
 from mozetl.topline import historical_backfill as backfill
+from mozetl.topline.schema import historical_schema
 from pyspark.sql import SparkSession
 
 
@@ -83,7 +84,7 @@ def test_excludes_rows_containing_all(spark, tmpdir):
         {}  # There must be a single data point
     ]
     input_df = snippets_to_df(spark, snippets, default_sample,
-                              backfill.historical_schema)
+                              historical_schema)
     path = str(tmpdir.join('test/mode=weekly/'))
     backfill.backfill_topline_summary(input_df, path)
 
@@ -100,7 +101,7 @@ def test_partitions_by_report_date(spark, tmpdir):
         {'date': '2016-01-08'}
     ]
     input_df = snippets_to_df(spark, snippets, default_sample,
-                              backfill.historical_schema)
+                              historical_schema)
     outdir = tmpdir.join('test/mode=weekly')
     path = str(outdir)
     backfill.backfill_topline_summary(input_df, path)
@@ -122,7 +123,7 @@ def test_cli_monthly(spark, tmpdir, monkeypatch):
         {'date': '2016-01-08'}
     ]
     input_df = snippets_to_df(spark, snippets, default_sample,
-                              backfill.historical_schema)
+                              historical_schema)
 
     # add a csv file to the test folder
     toplevel = tmpdir
