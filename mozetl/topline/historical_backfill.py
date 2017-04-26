@@ -63,8 +63,8 @@ historical_schema = schema_from_json('historical_schema.json')
 topline_schema = schema_from_json('topline_schema.json')
 
 
-def create_s3_path(bucket, prefix, protocol="s3"):
-    return "{}://{}/{}".format(bucket, prefix, protocol)
+def format_output_path(bucket, prefix):
+    return "s3://{}/{}".format(bucket, prefix)
 
 
 def backfill_topline_summary(historical_df, path):
@@ -93,23 +93,23 @@ def backfill_topline_summary(historical_df, path):
 
 
 @click.command()
-@click.argument('s3_path')
+@click.argument('source_s3_path')
 @click.argument('mode', type=click.Choice(['weekly', 'monthly']))
 @click.argument('bucket')
 @click.option('--prefix', default='topline_summary/v1')
-def main(s3_path, mode, bucket, prefix):
+def main(source_s3_path, mode, bucket, prefix):
     spark = (SparkSession
              .builder
              .appName('topline_historical_backfill')
              .getOrCreate())
 
     logging.info("Running historical backfill for {} executive report at {}."
-                 .format(mode, s3_path))
+                 .format(mode, source_s3_path))
 
-    historical_df = spark.read.csv(s3_path,
+    historical_df = spark.read.csv(source_s3_path,
                                    schema=historical_schema,
                                    header=True)
-    output_path = create_s3_path(bucket, '{}/mode={}'.format(prefix, mode))
+    output_path = format_output_path(bucket, '{}/mode={}'.format(prefix, mode))
     backfill_topline_summary(historical_df, output_path)
 
     logging.info("Finished historical backfill job.")

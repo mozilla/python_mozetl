@@ -42,6 +42,11 @@ default_sample = {
 
 
 def generate_samples(snippets, base_sample):
+    """ Generate samples from the default sample. Snippets overwrite specific
+    fields in the default sample.
+
+    :snippets list<dict>: A list of dictionary attributes to update
+    """
     if snippets is None:
         return [json.dumps(base_sample)]
 
@@ -54,13 +59,23 @@ def generate_samples(snippets, base_sample):
 
 
 def snippets_to_df(spark, snippets, base_sample, schema):
+    """ Turn a list of snippets into a fully instantiated dataframe.
+
+    Snippets are attributes that overwrite the base dictionary. This allows
+    for the generation of new rows without excess repetition.
+
+    :spark SparkSession:  spark session to generate dataframes
+    :snippets list<dict>: dictionary attributes to overwrite
+    :base_sample dict:    base dictionary for snippets
+    :schema SparkStruct:  schema for output dataframe
+    """
     samples = generate_samples(snippets, base_sample)
     jsonRDD = spark.sparkContext.parallelize(samples)
     return spark.read.json(jsonRDD, schema=schema)
 
 
-# does not include all rows from original data
-def test_excludes_all_rows(spark, tmpdir):
+# does not include rows containing `all` from original data
+def test_excludes_rows_containing_all(spark, tmpdir):
     snippets = [
         {'geo': 'all'},
         {'os': 'all'},
@@ -124,9 +139,10 @@ def test_cli_monthly(spark, tmpdir, monkeypatch):
     output_path = str(testdir)
 
     # change s3_path to use file:// protocol
-    def mock_create_s3_path(bucket, prefix):
+    def mock_format_output_path(bucket, prefix):
         return "file://{}/{}".format(bucket, prefix)
-    monkeypatch.setattr(backfill, 'create_s3_path', mock_create_s3_path)
+    monkeypatch.setattr(backfill, 'format_output_path',
+                        mock_format_output_path)
 
     # Run the application via the cli
     runner = CliRunner()

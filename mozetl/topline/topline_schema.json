@@ -102,7 +102,7 @@
       },
       "name":"report_start",
       "nullable":true,
-      "type":"integer"
+      "type":"string"
     }
   ],
   "type":"struct"
