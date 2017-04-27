@@ -81,6 +81,7 @@ def main(source_s3_path, mode, bucket, prefix):
     output_path = format_output_path(bucket, '{}/mode={}'.format(prefix, mode))
     backfill_topline_summary(historical_df, output_path)
 
+    spark.stop()
     logging.info("Finished historical backfill job.")
 
 
