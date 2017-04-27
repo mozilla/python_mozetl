@@ -190,6 +190,8 @@ def main(report_start, mode, bucket, prefix, input_bucket, input_prefix):
     # write this data to the dashboard location
     write_dashboard_data(dashboard_data, bucket, prefix, mode)
 
+    spark.stop()
+
 
 if __name__ == '__main__':
     main()
