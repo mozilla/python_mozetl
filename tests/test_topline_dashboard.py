@@ -147,7 +147,7 @@ def test_write_dashboard_contains_csv(simple_df):
 
     body = (
         conn
-        .Object(bucket, prefix + '/v4-weekly.csv')
+        .Object(bucket, prefix + '/topline-weekly.csv')
         .get()['Body']
         .read().decode('utf-8')
     )
@@ -170,7 +170,7 @@ def test_write_dashboard_handles_existing_key(simple_df, multi_df):
 
     body = (
         conn
-        .Object(bucket, prefix + '/v4-weekly.csv')
+        .Object(bucket, prefix + '/topline-weekly.csv')
         .get()['Body']
         .read().decode('utf-8')
     )
@@ -205,7 +205,6 @@ def test_cli_monthly(simple_df, tmpdir, monkeypatch):
     # Run the application via the cli
     runner = CliRunner()
     args = [
-        '20160101',
         'monthly',
         bucket,
         prefix,
@@ -217,7 +216,7 @@ def test_cli_monthly(simple_df, tmpdir, monkeypatch):
     # read results using boto
     body = (
         conn
-        .Object(bucket, prefix + '/v4-monthly.csv')
+        .Object(bucket, prefix + '/topline-monthly.csv')
         .get()['Body']
         .read().decode('utf-8')
     )
