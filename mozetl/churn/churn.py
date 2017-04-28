@@ -7,11 +7,11 @@ aggregated churn data is updated weekly.
 Due to the client reporting latency, we need to wait 10 days for the
 data to stabilize. If the date is passed into report through the
 environment, it is assumed that the date is at least a week greater
-than the report start date.  For example, if today is `20170323`, then
-this notebook `20170316` in the `environment.date`. This notebook will
-set date back 10 days to `20170306`, and then pin the date to nearest
-Sunday. This date happens to be a Monday, so the date will be set to
-`20170305`.
+than the report start date.  For example, if today is `20170323`,
+airflow will set the environment date to be '20170316'. The date is
+then set back 10 days to `20170306`, and pinned to the nearest
+Sunday. This example date happens to be a Monday, so the update will
+be set to `20170305`.
 
 Code is based on the previous FHR analysis code [3].  Details and
 definitions are in Bug 1198537 [4].
@@ -25,6 +25,7 @@ location: `s3://telemetry-parquet/churn/v2`.
 [4] https://bugzilla.mozilla.org/show_bug.cgi?id=1198537
 """
 
+import logging
 import re
 from datetime import date, datetime, timedelta
 
@@ -32,12 +33,15 @@ import click
 import requests
 from moztelemetry.standards import snap_to_beginning_of_week
 
-import pyspark.sql.functions as F
-from pyspark.sql import SparkSession
-from pyspark.sql.types import (
-    DoubleType, StructField, StructType, StringType, LongType
-)
+from pyspark.sql import SparkSession, functions as F
+from pyspark.sql.types import (DoubleType, LongType, StringType, StructField,
+                               StructType)
 from pyspark.sql.window import Window
+
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 
 source_columns = [
     "app_version",
@@ -352,32 +356,9 @@ def convert(d2v, week_start, datum):
     return out
 
 
-# Build the "effective version" cache:
-d2v = make_d2v(get_release_info())
-
-
 def fmt(d, date_format="%Y%m%d"):
     return datetime.strftime(d, date_format)
 
-
-# ### Compute the aggregates
-#
-# Run the aggregation code, detecting files that are missing.
-#
-# The fields we want in the output are:
-#  - channel (appUpdateChannel)
-#  - geo (bucketed into top 30 countries + "rest of world")
-#  - is_funnelcake (contains "-cck-"?)
-#  - acquisition_period (cohort_week)
-#  - start_version (effective version on profile creation date)
-#  - sync_usage ("no", "single" or "multiple" devices)
-#  - current_version (current appVersion)
-#  - current_week (week)
-#  - is_active (were the client_ids active this week or not)
-#  - n_profiles (count of matching client_ids)
-#  - usage_hours (sum of the per-client subsession lengths,
-#        clamped in the[0, MAX_SUBSESSION_LENGTH] range)
-#  - sum_squared_usage_hours (the sum of squares of the usage hours)
 
 MAX_SUBSESSION_LENGTH = 60 * 60 * 48  # 48 hours in seconds.
 
@@ -411,20 +392,20 @@ def compute_churn_week(df, week_start):
 
     # Verify that the start date is a Sunday
     if week_start_date.weekday() != 6:
-        print("Week start date {} is not a Sunday".format(week_start))
-        return
+        msg = "Week start date {} is not a Sunday".format(week_start)
+        raise RuntimeError(msg)
 
     # If the data for this week can still be coming, don't try to compute the
     # churn.
     week_end_slop = fmt(week_end_date + timedelta(10))
     today = fmt(datetime.utcnow())
     if week_end_slop >= today:
-        print("Skipping week of {} to {} - Data is still arriving until {}."
-              .format(week_start, week_end, week_end_slop))
-        return
+        msg = ("Skipping week of {} to {} - Data is still arriving until {}."
+               .format(week_start, week_end, week_end_slop))
+        raise RuntimeError(msg)
 
-    print("Starting week from {} to {} at {}"
-          .format(week_start, week_end, datetime.utcnow()))
+    logger.info("Starting week from {} to {}".format(week_start, week_end))
+
     # the subsession_start_date field has a different form than
     # submission_date_s3, so needs to be formatted with hyphens.
     week_end_excl = fmt(week_end_date + timedelta(1), date_format="%Y-%m-%d")
@@ -473,6 +454,9 @@ def compute_churn_week(df, week_start):
     newest_per_client = get_newest_per_client(current_week)
     newest_with_usage = newest_per_client.join(
         per_client_aggregates, 'client_id', 'inner')
+
+    # Build the "effective version" cache:
+    d2v = make_d2v(get_release_info())
 
     converted = newest_with_usage.rdd.map(
         lambda x: convert(d2v, week_start, x))
@@ -593,8 +577,9 @@ def compute_churn_week(df, week_start):
 
 
 def daterange(start_date, end_date):
-    for n in range(int((end_date - start_date).days) // 7):
-        yield (start_date + timedelta(n * 7)).strftime("%Y%m%d")
+    delta = int((end_date - start_date).days)
+    for k in range(0, delta, 7):
+        yield (start_date + timedelta(k)).strftime("%Y%m%d")
 
 
 def process_backfill(start_date, end_date, callback):
@@ -604,13 +589,19 @@ def process_backfill(start_date, end_date, callback):
     :end_date ds: ending date in yyymmdd
     :callback: a callback accepting a datestring in format yyyymmdd
     """
+    logger.info("Running backfill from {} to {}".format(start_date, end_date))
+
     start_date = datetime.strptime(start_date, "%Y%m%d")
     end_date = datetime.strptime(end_date, "%Y%m%d")
     for d in daterange(start_date, end_date):
         try:
             callback(d)
-        except Exception as e:
-            print e
+        except Exception:
+            logger.exception("Exception during backfill for {}".format(d))
+
+
+def format_spark_path(bucket, prefix):
+    return 's3://{}/{}'.format(bucket, prefix)
 
 
 def process_week(df, week_start, bucket, prefix):
@@ -619,60 +610,87 @@ def process_week(df, week_start, bucket, prefix):
     # Write to s3 as parquet, file size is on the order of 40MB. We
     # bump the version number because v1 is the path to the old
     # telemetry-batch-view churn data.
-    s3_path = "s3://{}/{}/week_start={}".format(bucket, prefix, week_start)
-    print("{}: Writing output as parquet to {}"
-          .format(datetime.utcnow(), s3_path))
+    path = format_spark_path(
+        bucket,
+        '{}/week_start={}'.format(prefix, week_start)
+    )
+    logger.info("Writing output as parquet to {}".format(path))
 
-    result_df.repartition(1).write.parquet(s3_path, mode="overwrite")
+    result_df.repartition(1).write.parquet(path, mode="overwrite")
+    logger.info("Finished week {}".format(week_start))
 
-    print("Finished week {} at {}".format(week_start, datetime.utcnow()))
+
+def adjust_start_date(start_date, use_lag):
+    """ Adjust reporting start date to the nearest sunday, optionally
+    taking into account telemetry client latency.
+
+    This lag period accounts for telemetry pings that need to be sent
+    relative to the reporting period. For example, a client could have
+    a backlog of stored telemetry pings from being disconnected to the
+    internet. The 10 day period accounts for a majority of pings while
+    being concious about reporting latency.
+
+    :start_date datestring: reporting start date
+    :use_lag bool:          adjust for client latency
+    :return datestring:     closest sunday that accounts for latency
+    """
+    if use_lag:
+        lag_time = timedelta(10)
+    else:
+        lag_time = timedelta(0)
+
+    offset_start = datetime.strptime(start_date, "%Y%m%d") - lag_time
+    week_start_date = snap_to_beginning_of_week(offset_start, "Sunday")
+    return fmt(week_start_date)
 
 
 @click.command()
-@click.option('-d', '--date', 'start_date',
-              default=fmt(datetime.now() - timedelta(7)),
-              help="datestring in form YYYYmmdd")
-@click.option('-b', '--bucket',
-              default='net-mozaws-prod-us-west-2-pipeline-analysis',
-              help="output s3 bucket")
-@click.option('-p', '--prefix', default='telemetry-test-bucket/churn-test',
+@click.argument('start_date')
+@click.argument('bucket')
+@click.option('-p', '--prefix', default='churn/v2',
               help="output prefix associated with the s3 bucket")
+@click.option('--input-bucket', default='telemetry-parquet',
+              help="input bucket containing main_summary")
+@click.option('--input-prefix', default='main_summary/v3',
+              help="input prefix containing main_summary")
 @click.option('--lag/--no-lag', default=True,
               help="account for the 10 day collection period")
 @click.option('--backfill/--no-backfill', default=False,
               help="backfill from the start date")
-def main(start_date, bucket, prefix, lag, backfill):
-    """Compute churn / retention information for unique segments of Firefox
-users acquired during a specific period of time.
+def main(start_date, bucket, prefix,
+         input_bucket, input_prefix, lag, backfill):
+    """Compute churn / retention information for unique segments of
+    Firefox users acquired during a specific period of time.
     """
     spark = (SparkSession
              .builder
              .appName("churn")
              .getOrCreate())
 
-    version = 'v2'
-    s3_path = "s3://{}/{}/{}".format(bucket, prefix, version)
-
     # If this job is scheduled, we need the input date to lag a total of
     # 10 days of slack for incoming data. Airflow subtracts 7 days to
     # account for the weekly nature of this report.
-    week_start_date = start_date
-    if lag:
-        offset_start = datetime.strptime(start_date, "%Y%m%d") - timedelta(10)
-        week_start_date = snap_to_beginning_of_week(offset_start, "Sunday")
+    week_start_date = adjust_start_date(start_date, lag)
 
     try:
-        main_df = spark.read.option("mergeSchema", "true").parquet(s3_path)
+        main_summary_path = format_spark_path(input_bucket, input_prefix)
+        main_df = (
+            spark.read
+            .option("mergeSchema", "true")
+            .parquet(main_summary_path)
+        )
 
         # Note that main_summary_v3 only goes back to 20160312
         if backfill:
             week_end_date = fmt(datetime.utcnow() - timedelta(1))
             process_backfill(
-                fmt(week_start_date),
+                week_start_date,
                 week_end_date,
                 lambda d: process_week(main_df, d, bucket, prefix))
         else:
-            process_week(main_df, fmt(week_start_date), bucket, prefix)
+            process_week(main_df, week_start_date, bucket, prefix)
+    except Exception:
+        logger.exception("Exception for {}".format(week_start_date))
     finally:
         spark.stop()
 
