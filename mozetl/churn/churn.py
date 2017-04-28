@@ -282,7 +282,9 @@ def convert(d2v, week_start, datum):
     attribution_fields = ["source", "medium", "campaign", "content"]
     if datum.attribution:
         for field in attribution_fields:
-            out[field] = datum.attribution[field]
+            value = datum.attribution[field]
+            if value:
+                out[field] = value
 
     # bug 1323598
     if datum.distribution_id:
