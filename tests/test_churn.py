@@ -1,6 +1,8 @@
 import json
+import os
 from datetime import timedelta, datetime
 
+from click.testing import CliRunner
 import pytest
 
 from pyspark.sql import SparkSession
@@ -251,6 +253,52 @@ def multi_profile_df(spark):
     return snippets_to_df(spark, snippets)
 
 
+@pytest.fixture
+def release_info():
+    info = {
+        "major": {
+            "52.0": "2017-03-07"
+        },
+        "minor": {
+            "51.0.1": "2017-01-26",
+            "52.0.1": "2017-03-17",
+            "52.0.2": "2017-03-29"
+        }
+    }
+
+    return info
+
+
+@pytest.fixture(autouse=True)
+def no_get_release_info(release_info, monkeypatch):
+    """ Disable get_release_info because of requests change over time. """
+
+    def mock_get_release_info():
+        return release_info
+    monkeypatch.setattr(churn, 'get_release_info', mock_get_release_info)
+
+    # disable fetch_json to cover all the bases
+    monkeypatch.delattr(churn, 'fetch_json')
+
+
+def test_date_to_version_range(release_info):
+    result = churn.make_d2v(release_info)
+
+    start = datetime.strptime(
+        release_info['minor']['51.0.1'], '%Y-%m-%d')
+    end = datetime.strptime(
+        release_info['minor']['52.0.2'], '%Y-%m-%d')
+
+    assert len(result) == (end - start).days + 1
+    assert result['2017-03-08'] == '52.0'
+    assert result['2017-03-17'] == '52.0.1'
+
+
+# testing d2v conflicting stability releases on the same day
+# testing effective version
+# testing effective release-channel version
+
+
 def test_ignored_submissions_outside_of_period(late_submissions_df):
     df = churn.compute_churn_week(late_submissions_df, week_start_ds)
     assert df.count() == 0
@@ -404,3 +452,85 @@ def test_average_unique_domains_count(spark):
 
     # (4 + 8) / 2 == 6
     assert rows[0].unique_domains_count_per_profile == 6
+
+
+def test_adjust_start_date_pins_to_sunday_no_lag():
+    # A wednesday
+    args = ['20170118', False]
+    actual = churn.adjust_start_date(*args)
+    expected = '20170115'
+
+    assert actual == expected
+
+
+def test_adjust_start_date_accounts_for_lag():
+    # Going back 10 days happens to be Sunday
+    args = ['20170118', True]
+    actual = churn.adjust_start_date(*args)
+    expected = '20170108'
+
+    assert actual == expected
+
+
+def test_process_backfill():
+    actual = []
+    expected = ['20170101', '20170108', '20170115', '20170122']
+
+    def callback(date):
+        actual.append(date)
+
+    args = ['20170101', '20170125', callback]
+    churn.process_backfill(*args)
+
+    assert actual == expected
+
+
+def test_cli(spark, multi_profile_df, tmpdir, monkeypatch):
+
+    # use the file:// prefix
+    def mock_format_spark_path(bucket, prefix):
+        return 'file://{}/{}'.format(bucket, prefix)
+    monkeypatch.setattr(churn, 'format_spark_path', mock_format_spark_path)
+
+    # write `main_summary` to disk
+    bucket = str(tmpdir)
+    input_prefix = 'main_summary/v3'
+    output_prefix = 'churn/v2'
+
+    path = churn.format_spark_path(bucket, input_prefix)
+
+    multi_profile_df.write.partitionBy('submission_date_s3').parquet(path)
+
+    runner = CliRunner()
+    args = [
+        week_start_ds,
+        bucket,
+        '--input-bucket', bucket,
+        '--input-prefix', input_prefix,
+        '--no-lag',  # week_start_ds already accounts for the lag time
+    ]
+    result = runner.invoke(churn.main, args)
+    assert result.exit_code == 0
+
+    # check that the files are correctly partitioned
+    folder = os.path.join(bucket, output_prefix)
+    assert any(item.startswith('week_start') for item in os.listdir(folder))
+
+    # check that there is only a single partition
+    folder = os.path.join(folder, 'week_start={}'.format(week_start_ds))
+    assert len([item for item in os.listdir(folder)
+                if item.endswith('.parquet')]) == 1
+
+    # check that the dataset conforms to expected output
+    path = churn.format_spark_path(bucket, output_prefix)
+    df = spark.read.parquet(path)
+    rows = (
+        df
+        .groupBy(df.channel)
+        .agg(F.sum('n_profiles').alias('n_profiles'),
+             F.sum('usage_hours').alias('usage_hours'))
+        .where(df.channel == 'release-cck-mozilla42')
+        .collect()
+    )
+    assert rows[0].n_profiles == 2
+    assert rows[0].usage_hours == 4
