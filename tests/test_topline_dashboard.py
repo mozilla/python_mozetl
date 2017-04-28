@@ -157,6 +157,29 @@ def test_write_dashboard_contains_csv(simple_df):
 
 
 @mock_s3
+def test_write_dashboard_handles_existing_key(simple_df, multi_df):
+    bucket = 'test-bucket'
+    prefix = 'test-prefix'
+
+    conn = boto3.resource('s3', region_name='us-west-2')
+    conn.create_bucket(Bucket=bucket)
+
+    # dataframe is not reformatted, but not necessary
+    topline.write_dashboard_data(simple_df, bucket, prefix, 'weekly')
+    topline.write_dashboard_data(multi_df, bucket, prefix, 'weekly')
+
+    body = (
+        conn
+        .Object(bucket, prefix + '/v4-weekly.csv')
+        .get()['Body']
+        .read().decode('utf-8')
+    )
+
+    # header + 3x row = 4
+    assert len(body.rstrip().split('\n')) == 4
+
+
+@mock_s3
 def test_cli_monthly(simple_df, tmpdir, monkeypatch):
     # set up moto with a fake bucket
     bucket = 'test-bucket'
