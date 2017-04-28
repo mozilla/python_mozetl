@@ -18,6 +18,14 @@ def spark_context(request):
     return sc
 
 
+@pytest.fixture(autouse=True)
+def no_spark_stop(monkeypatch):
+    """ Disable stopping the shared spark session during tests """
+    def nop(*args, **kwargs):
+        print("Disabled spark.stop for testing")
+    monkeypatch.setattr("pyspark.sql.SparkSession.stop", nop)
+
+
 @pytest.fixture(scope="session")
 def row_to_dict():
     """Convert pyspark.Row to dict for easier unordered comparison"""
