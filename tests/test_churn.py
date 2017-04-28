@@ -9,7 +9,7 @@ from pyspark.sql.types import (
     StructField, StructType, StringType,
     LongType, IntegerType, BooleanType
 )
-from python_etl import churn
+from mozetl.churn import churn
 
 
 # Initialize a spark context
