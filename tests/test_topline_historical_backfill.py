@@ -22,6 +22,14 @@ def spark(request):
     return spark
 
 
+@pytest.fixture(autouse=True)
+def no_spark_stop(monkeypatch):
+    """ Disable stopping the shared spark session during tests """
+    def nop(*args, **kwargs):
+        print("Disabled spark.stop for testing")
+    monkeypatch.setattr("pyspark.sql.SparkSession.stop", nop)
+
+
 default_sample = {
     "geo": "US",
     "channel": "nightly",
