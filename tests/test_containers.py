@@ -16,7 +16,7 @@ def create_row(overrides):
     keys = ["uuid", "userContextId", "clickedContainerTabCount", "eventSource",
             "event", "hiddenContainersCount", "shownContainersCount",
             "totalContainersCount", "totalContainerTabsCount",
-            "totalNonContainerTabsCount", "test"]
+            "totalNonContainerTabsCount", "pageRequestCount", "test"]
 
     overrides['test'] = '@testpilot-containers'
 
@@ -66,6 +66,22 @@ def test_hide_container_ping(row_to_dict, spark_context):
         'hiddenContainersCount': 2,
         'shownContainersCount': 3,
         'totalContainersCount': 5,
+    }
+
+    actual = transform_pings(
+        SQLContext(spark_context),
+        create_ping_rdd(spark_context, input_payload)
+    ).take(1)[0]
+
+    assert row_to_dict(actual) == create_row(input_payload)
+
+
+def test_close_container_tab_ping(row_to_dict, spark_context):
+    input_payload = {
+        "uuid": 'a',
+        "userContextId": 'firefox-default',
+        "event": "page-requests-completed-per-tab",
+        "pageRequestCount": 2,
     }
 
     actual = transform_pings(
