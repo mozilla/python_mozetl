@@ -19,6 +19,7 @@ def transform_pings(sqlContext, pings):
             ("totalContainersCount", "payload/payload/totalContainersCount", None, LongType()),
             ("totalContainerTabsCount", "payload/payload/totalContainerTabsCount", None, LongType()),
             ("totalNonContainerTabsCount", "payload/payload/totalNonContainerTabsCount", None, LongType()),
+            ("pageRequestCount", "payload/payload/pageRequestCount", None, LongType()),
             ("test", "payload/test", None, StringType()),
         ], lambda ping: ping['payload/test'] == "@testpilot-containers")
     )
