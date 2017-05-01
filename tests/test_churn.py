@@ -73,7 +73,7 @@ main_schema = StructType([
     StructField("sync_count_mobile",     IntegerType(), True),
     StructField("timestamp",             LongType(),    True),
     StructField("total_uri_count",       IntegerType(), True),
-    StructField("unique_domains_count", IntegerType(), True)])
+    StructField("unique_domains_count",  IntegerType(), True)])
 
 default_sample = {
     "app_version":           "57.0.0",
@@ -97,7 +97,7 @@ default_sample = {
     "sync_configured":       False,
     "sync_count_desktop":    1,
     "sync_count_mobile":     1,
-    "timestamp":             1491244610603260700,  # microseconds
+    "timestamp":             1484438400000000000,  # nanoseconds
     "total_uri_count":       20,
     "unique_domains_count":  3
 }
@@ -126,7 +126,7 @@ def generate_dates(subsession_date, submission_offset=0, creation_offset=0):
 
     # variables for conversion
     seconds_in_day = 60 * 60 * 24
-    microseconds_in_second = 10**6
+    nanoseconds_in_second = 10**9
 
     date_snippet = {
         "subsession_start_date": (
@@ -139,7 +139,7 @@ def generate_dates(subsession_date, submission_offset=0, creation_offset=0):
             seconds_since_epoch(profile_creation_date) / seconds_in_day
         ),
         "timestamp": (
-            seconds_since_epoch(submission_date) * microseconds_in_second
+            seconds_since_epoch(submission_date) * nanoseconds_in_second
         )
     }
 
