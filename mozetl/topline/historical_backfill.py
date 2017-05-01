@@ -24,7 +24,7 @@ import logging
 
 import click
 
-from mozetl.topline.schema import historical_schema, topline_schema
+from .schema import historical_schema, topline_schema
 from pyspark.sql import SparkSession, functions as F
 
 
