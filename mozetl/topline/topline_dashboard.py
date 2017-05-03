@@ -122,16 +122,17 @@ def write_dashboard_data(df, bucket, prefix, mode):
 
     # create a temporary directory to dump files into
     path = tempfile.mkdtemp()
+    filepath = os.path.join(path, 'temp.csv')
 
-    # write dataframe to working directory
-    df.repartition(1).write.csv(path, header=True, mode="overwrite")
-
-    # find the file that was created
-    filepath = None
-    for name in os.listdir(path):
-        if name.endswith(".csv"):
-            filepath = os.path.join(path, name)
-            break
+    with open(filepath, 'wb') as f:
+        f.write(','.join(df.columns) + '\n')
+        rows = df.collect()
+        for row in rows:
+            try:
+                f.write(','.join([unicode(c) for c in row]))
+                f.write('\n')
+            except UnicodeEncodeError:
+                logger.exception("exception while processing csv")
 
     # name of the output key
     key = "{}/topline-{}.csv".format(prefix, mode)
