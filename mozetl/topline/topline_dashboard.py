@@ -28,7 +28,7 @@ import click
 
 from pyspark.sql import SparkSession, functions as F
 from mozetl.topline.schema import topline_schema, historical_schema
-
+from mozetl import utils
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -122,16 +122,9 @@ def write_dashboard_data(df, bucket, prefix, mode):
 
     # create a temporary directory to dump files into
     path = tempfile.mkdtemp()
+    filepath = os.path.join(path, 'temp.csv')
 
-    # write dataframe to working directory
-    df.repartition(1).write.csv(path, header=True, mode="overwrite")
-
-    # find the file that was created
-    filepath = None
-    for name in os.listdir(path):
-        if name.endswith(".csv"):
-            filepath = os.path.join(path, name)
-            break
+    utils.write_csv(df, filepath)
 
     # name of the output key
     key = "{}/topline-{}.csv".format(prefix, mode)
