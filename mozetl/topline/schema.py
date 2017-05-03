@@ -1,9 +1,11 @@
 import json
-import os
 from pyspark.sql.types import StructType
 
+import pkg_resources
+import mozetl.topline
 
-def schema_from_json(path, relative=True):
+
+def schema_from_json(path):
     """ Create a pyspark schema from the json representation.
 
     The json representation must be from a StructType. This can be
@@ -16,14 +18,9 @@ def schema_from_json(path, relative=True):
     >>> json_data = spark.read.parquet(path).schema.json()
 
     :path str: Path the the json data
-    :relative bool: Use the relative path to the current file.
     """
-
-    if relative:
-        path = os.path.join(os.path.dirname(__file__), path)
-
-    with open(path) as json_data:
-        data = json.load(json_data)
+    json_data = pkg_resources.resource_stream(mozetl.topline.__name__, path)
+    data = json.load(json_data)
     return StructType.fromJson(data)
 
 
