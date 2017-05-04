@@ -10,6 +10,6 @@ if __name__ == "__main__":
     sc.addPyFile(os.path.join('dist', os.listdir('dist')[0]))
 
     # Run job
-    generate_counts.run_etl_job(sc)
+    generate_counts.run_spinner_etl(sc)
 
     sc.stop()
