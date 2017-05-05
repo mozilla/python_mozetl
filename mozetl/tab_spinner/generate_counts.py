@@ -1,10 +1,18 @@
 import ujson as json
 
+from pyspark.sql import SparkSession
 from datetime import datetime, timedelta
 from moztelemetry.dataset import Dataset
 from .utils import get_short_and_long_spinners
 
-def run_spinner_etl(sc):
+def run_spinner_etl():
+    spark = SparkSession
+             .builder
+             .appName("tab_spinner_etl")
+             .getOrCreate()
+
+    sc = spark.sparkContext()
+
     nightly_build_channels = ["nightly", "aurora"]
     sample_size = 1.0
 
@@ -43,3 +51,8 @@ def run_spinner_etl(sc):
 
         with open(filename, 'w') as f:
             f.write(results_json)
+
+    spark.stop()
+
+if __name__ == '__main__':
+    run_spinner_etl()
