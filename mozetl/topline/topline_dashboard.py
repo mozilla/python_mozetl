@@ -28,7 +28,7 @@ import click
 
 from pyspark.sql import SparkSession, functions as F
 from mozetl.topline.schema import topline_schema, historical_schema
-
+from mozetl import utils
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -124,15 +124,7 @@ def write_dashboard_data(df, bucket, prefix, mode):
     path = tempfile.mkdtemp()
     filepath = os.path.join(path, 'temp.csv')
 
-    with open(filepath, 'wb') as f:
-        f.write(','.join(df.columns) + '\n')
-        rows = df.collect()
-        for row in rows:
-            try:
-                f.write(','.join([unicode(c) for c in row]))
-                f.write('\n')
-            except UnicodeEncodeError:
-                logger.exception("exception while processing csv")
+    utils.write_csv(df, filepath)
 
     # name of the output key
     key = "{}/topline-{}.csv".format(prefix, mode)
