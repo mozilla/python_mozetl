@@ -235,7 +235,8 @@ def is_funnelcake(distro):
 top_countries = set(
     ["US", "DE", "FR", "RU", "BR", "IN", "PL", "ID", "GB", "CN",
      "IT", "JP", "CA", "ES", "UA", "MX", "AU", "VN", "EG", "AR",
-     "PH", "NL", "IR", "CZ", "HU", "TR", "RO", "GR", "AT", "CH"])
+     "PH", "NL", "IR", "CZ", "HU", "TR", "RO", "GR", "AT", "CH",
+     "HK", "TW", "BE", "FI", "VE", "SE", "DZ", "MY"])
 
 
 def top_country(country):

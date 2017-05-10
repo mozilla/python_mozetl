@@ -534,3 +534,12 @@ def test_cli(spark, multi_profile_df, tmpdir, monkeypatch):
     )
     assert rows[0].n_profiles == 2
     assert rows[0].usage_hours == 4
+
+
+def test_top_countries():
+    assert churn.top_country("US") == "US"
+    assert churn.top_country("HK") == "HK"
+    assert churn.top_country("MR") == "ROW"
+    assert churn.top_country("??") == "ROW"
+    assert churn.top_country("Random") == "ROW"
+    assert churn.top_country(None) == "ROW"
