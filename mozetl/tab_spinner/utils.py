@@ -2,17 +2,21 @@ import pandas as pd
 
 from moztelemetry import get_pings_properties
 
+
 def windows_only(p):
     return p["environment/system/os/name"] == "Windows_NT"
 
+
 def e10s_enabled_only(p):
     return p["environment/settings/e10sEnabled"]
+
 
 def long_spinners_keyed_by_build_and_client(ping):
     return ((ping["application/buildId"][:8],
              ping["clientId"]),
             (ping["payload/histograms/FX_TAB_SWITCH_SPINNER_VISIBLE_LONG_MS"],
              ping["payload/histograms/FX_TAB_SWITCH_SPINNER_VISIBLE_MS"]))
+
 
 def add_tuple_series(x, y):
     long_x = x[0]
@@ -30,6 +34,7 @@ def add_tuple_series(x, y):
         short_y = pd.Series()
 
     return (long_x.add(long_y, fill_value=0.0), short_x.add(short_y, fill_value=0.0))
+
 
 def bucket_by_long_severity_per_client(spinner_pair):
     buildId = spinner_pair[0][0]
@@ -63,6 +68,7 @@ def bucket_by_long_severity_per_client(spinner_pair):
         severity[named_index[1]] = 1
 
     return (buildId, severity)
+
 
 def bucket_by_short_severity_per_client(spinner_pair):
     buildId = spinner_pair[0][0]
@@ -99,11 +105,13 @@ def bucket_by_short_severity_per_client(spinner_pair):
 
     return (buildId, severity)
 
+
 def to_percentages(build_severities):
     severities = build_severities[1]
     total_clients = severities.sum()
     if total_clients > 0:
         return (build_severities[0], severities / total_clients)
+
 
 def collect_aggregated_spinners(rdd, map_func):
     collected_percentages = rdd \
@@ -114,6 +122,7 @@ def collect_aggregated_spinners(rdd, map_func):
         .collect()
 
     return sorted(collected_percentages, key=lambda result: result[0])
+
 
 def get_short_and_long_spinners(pings):
 
@@ -129,9 +138,9 @@ def get_short_and_long_spinners(pings):
     windows_pings_only = ping_props.filter(windows_only)
     e10s_enabled_on_windows_pings_only = windows_pings_only.filter(e10s_enabled_only)
     grouped_spinners = e10s_enabled_on_windows_pings_only \
-                       .repartition(200) \
-                       .map(long_spinners_keyed_by_build_and_client) \
-                       .reduceByKey(add_tuple_series)
+        .repartition(200) \
+        .map(long_spinners_keyed_by_build_and_client) \
+        .reduceByKey(add_tuple_series)
 
     final_result_long = collect_aggregated_spinners(
         grouped_spinners,
