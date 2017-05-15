@@ -5,14 +5,21 @@ from datetime import datetime, timedelta
 from moztelemetry.dataset import Dataset
 from .utils import get_short_and_long_spinners
 
+
 def run_spinner_etl(sc):
     nightly_build_channels = ["nightly", "aurora"]
     sample_size = 1.0
 
     probe_available = datetime(2016, 9, 8)
-    days_to_look_back = 180
-    start_date = max(probe_available, datetime.today() - timedelta(days=days_to_look_back)).strftime("%Y%m%d")
+    look_back_date = datetime.today() - timedelta(days=180)
+    start_date = max(probe_available, look_back_date).strftime("%Y%m%d")
     end_date = datetime.today().strftime("%Y%m%d")
+
+    def appBuildId_filter(b):
+        return (
+            (b.startswith(start_date) or b > start_date) and
+            (b.startswith(end_date) or b < end_date)
+        )
 
     print "Start Date: {}, End Date: {}".format(start_date, end_date)
 
@@ -24,14 +31,14 @@ def run_spinner_etl(sc):
         old_infra_pings = Dataset.from_source("telemetry-oldinfra") \
             .where(docType='main') \
             .where(submissionDate=lambda b: b < "20161201") \
-            .where(appBuildId=lambda b: (b.startswith(start_date) or b > start_date) and (b.startswith(end_date) or b < end_date)) \
+            .where(appBuildId=appBuildId_filter) \
             .where(appUpdateChannel=build_type) \
             .records(sc, sample=sample_size)
 
         new_infra_pings = Dataset.from_source("telemetry") \
             .where(docType='main') \
             .where(submissionDate=lambda b: (b.startswith("20161201") or b > "20161201")) \
-            .where(appBuildId=lambda b: (b.startswith(start_date) or b > start_date) and (b.startswith(end_date) or b < end_date)) \
+            .where(appBuildId=appBuildId_filter) \
             .where(appUpdateChannel=build_type) \
             .records(sc, sample=sample_size)
 
@@ -47,7 +54,7 @@ def run_spinner_etl(sc):
             f.write(results_json)
 
         s3_client.upload_file(
-            filename, 
-            'telemetry-public-analysis-2', 
+            filename,
+            'telemetry-public-analysis-2',
             'spinner-severity-generator/data/{}'.format(filename)
         )
