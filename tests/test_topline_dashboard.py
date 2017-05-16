@@ -59,25 +59,16 @@ def snippets_to_df(spark, snippets, base_sample, schema):
     return spark.read.json(jsonRDD, schema=schema)
 
 
-def patch_iterator(monkeypatch, rows):
-    # toLocalIterator does not work when mocking with moto. Patch this
-    # to return the right result
-    def mock_iterator(self):
-        return rows
-    monkeypatch.setattr("pyspark.sql.DataFrame.toLocalIterator", mock_iterator)
-
-
 @pytest.fixture()
-def simple_df(spark, monkeypatch):
+def simple_df(spark):
     snippets = None
     input_df = snippets_to_df(spark, snippets,
                               default_sample, topline_schema)
-    patch_iterator(monkeypatch, input_df.collect())
     return input_df
 
 
 @pytest.fixture()
-def multi_df(spark, monkeypatch):
+def multi_df(spark):
     snippets = [
         {'geo': 'CA'},
         {'channel': 'release'},
@@ -85,7 +76,6 @@ def multi_df(spark, monkeypatch):
     ]
     input_df = snippets_to_df(spark, snippets,
                               default_sample, topline_schema)
-    patch_iterator(monkeypatch, input_df.collect())
     return input_df
 
 
@@ -204,16 +194,6 @@ def test_cli_monthly(simple_df, tmpdir, monkeypatch):
         return "file://{}/{}".format(bucket, prefix)
     monkeypatch.setattr(topline, 'format_spark_path',
                         mock_format_spark_path)
-
-    # mock the write_csv to avoid the hoops that need to be jumped
-    # because of moto.
-    def mock_write_csv(df, path):
-        save = os.path.join(str(tmpdir), 'test_write_csv')
-        df.coalesce(1).write.csv('file://' + save,
-                                 header=True, mode="overwrite")
-        filename = [s for s in os.listdir(save) if s.endswith('.csv')][0]
-        os.rename(os.path.join(save, filename), path)
-    monkeypatch.setattr('mozetl.utils.write_csv', mock_write_csv)
 
     # write test data to local path
     input_bucket = str(tmpdir)
