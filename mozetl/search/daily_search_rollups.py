@@ -1,7 +1,22 @@
+"""
+# Daily main_summary to Vertica Search Rollups
 
-# coding: utf-8
+This job is added by Bug 1364530 and was originally located
+[1]. Search rollups are computed and then ingested by Vertica.
 
-# In[ ]:
+[1] https://gist.github.com/SamPenrose/856aa21191ef9f0de18c94220cd311a8
+"""
+import csv
+import datetime as DT
+import smtplib
+import subprocess
+import sys
+import time
+from email.message import Message
+
+from pyspark.sql import SparkSession
+import click
+
 
 READ_VERSION = 4
 READ_STEM = 's3://telemetry-parquet/main_summary/v{}/'.format(READ_VERSION)
@@ -9,12 +24,14 @@ READ_TAIL = 'submission_date_s3={}/'
 DAY_READ_PATH = READ_STEM + READ_TAIL
 
 WRITE_VERSION = 1
-BASH_WRITE_STEM = 's3://net-mozaws-prod-us-west-2-pipeline-analysis/'     'spenrose/search/to_vertica/'
+BASH_WRITE_STEM = 's3://net-mozaws-prod-us-west-2-pipeline-analysis/spenrose/search/to_vertica/'
 ROLLUP_WRITE_STEM = BASH_WRITE_STEM + 'daily/'
 MANIFEST_WRITE_STEM = BASH_WRITE_STEM + 'manifests/'
 
 PROFILE_DAY = 'profile_day'
 PROFILE_COLUMN = 'concat(client_id, submission_date) as {}'.format(PROFILE_DAY)
+
+
 def add_profile_day(frame):
     return frame.selectExpr(
         "*",
@@ -22,9 +39,6 @@ def add_profile_day(frame):
     )
 
 
-# In[ ]:
-
-import time
 TEMP_TABLE_TEMPLATE = 'rollup_temp_{}'
 
 # SELECT_ROLLUP_TEMPLATE says: gather all permutations of
@@ -83,7 +97,8 @@ WHERE
   {}.profile_day = share_table.profile_day
 """
 
-def roll_up_searches(frame):
+
+def roll_up_searches(spark, frame):
     try:
         frame[PROFILE_DAY]
     except Exception:
@@ -92,7 +107,7 @@ def roll_up_searches(frame):
     nulls_frame = frame.where('search_counts is null')
     temp_table = TEMP_TABLE_TEMPLATE.format(int(time.time()))
     select_rollup = SELECT_ROLLUP_TEMPLATE.format(temp_table)
- 
+
     exploded = frame.selectExpr(
         "submission_date",
         "profile_day",
@@ -125,20 +140,21 @@ def roll_up_searches(frame):
     select_share = SELECT_SHARE.format(
         share_temp, share_temp, share_temp, share_temp)
     unwrapped_all.registerTempTable(share_temp)
-    shared = sqlContext.sql(select_share)
+    shared = spark.sql(select_share)
     shared.registerTempTable(temp_table)
-    searches_by_period = sqlContext.sql(select_rollup)
+    searches_by_period = spark.sql(select_rollup)
     return searches_by_period
 
 
-# In[ ]:
-
-import datetime as DT, subprocess, sys
 BASENAME = 'daily-rollup-of-searches-submitted-{}-format-{}.csv'
+
+
 def get_s3_write_path(date):
     return ROLLUP_WRITE_STEM + BASENAME.format(date, WRITE_VERSION)
 
-def main(date=None, rerun=False):
+
+def generate_daily_search_rollup(spark, date=None, rerun=False):
+    """ Generate the daily search roll-up by sharding over sample_id. """
     date = date or DT.date.today().isoformat()
     if not rerun:
         # See if the output exists already.
@@ -148,7 +164,7 @@ def main(date=None, rerun=False):
             bn = BASENAME.format(date, WRITE_VERSION)
             report(bn, "not written", ["already exists"])
             sys.exit(1)
-        
+
     # This will throw an AnalysisException if the path doesn't exist.
     day_path = DAY_READ_PATH.format(date.replace('-', ''))
     local = []
@@ -157,8 +173,8 @@ def main(date=None, rerun=False):
         print i,
         sys.stdout.flush()
         sample_path = day_path + 'sample_id={}/'.format(i)
-        frame = sqlContext.read.parquet(sample_path)
-        search_frame = roll_up_searches(frame)
+        frame = spark.read.parquet(sample_path)
+        search_frame = roll_up_searches(spark, frame)
         results = search_frame.collect()
         local.extend(results)
         search_frame.unpersist()
@@ -167,14 +183,12 @@ def main(date=None, rerun=False):
     return local
 
 
-# In[ ]:
-
 def to_iso(eight):
     return '-'.join([eight[:4], eight[4:6], eight[6:]])
 
-import csv, subprocess, sys
 
 def coalesce(rows):
+    """ Perform a groupByKey operation to calculate aggregates. """
     d = {}
     for r in rows:
         k = (r.submission_date, r.search_provider or 'NO_SEARCHES', r.country,
@@ -189,13 +203,15 @@ def coalesce(rows):
                 share + round(r.profile_share, 2))
     return d
 
+
 def dump_dict(d, basename):
+    """ Write the search roll ups to s3. """
     bad = []
     processed = DT.date.today().strftime('%Y-%m-%d')
     with open(basename, 'w') as f:
         writer = csv.writer(f)
         for k, v in d.iteritems():
-            (submission_date, search_provider, country, locale, 
+            (submission_date, search_provider, country, locale,
              distribution_id, default_provider) = k
             search_count, profile_count, profile_share = v
             try:
@@ -213,13 +229,13 @@ def dump_dict(d, basename):
     return bad
 
 
-# In[ ]:
-
 def write_manifest(date, version, *paths):
+    """ Write a manifest file with the location of the daily rollup files. """
     text = '\n'.join(paths) + '\n'
     tries = version + 10
     while True:
-        manifest_basename = 'daily-search-rollup-manifest-{}-v{}.txt'.format(date, version)
+        manifest_basename = 'daily-search-rollup-manifest-{}-v{}.txt'.format(
+            date, version)
         path = MANIFEST_WRITE_STEM + manifest_basename
         if subprocess.call("aws s3 ls {}".format(path), shell=True):
             break
@@ -231,11 +247,11 @@ def write_manifest(date, version, *paths):
     copy = "aws s3 cp {} {}".format(manifest_basename, MANIFEST_WRITE_STEM)
     subprocess.check_call(copy, shell=True)
 
-import smtplib
-from email.message import Message
 
-owner = 'spenrose' # XXX read from environment
+owner = 'spenrose'  # XXX read from environment
 owner += '@mozilla.com'
+
+
 def report(date, path, bad):
     subject = "Daily search rollups for {}".format(date)
     if bad:
@@ -245,7 +261,7 @@ def report(date, path, bad):
         body += '\nproblem rows:\n'
         for row in bad[:10]:
             body += str(row) + '\n'
-    
+
     msg = Message()
     msg.set_payload(body)
     msg['Subject'] = subject
@@ -255,22 +271,26 @@ def report(date, path, bad):
     smtp.sendmail(owner, owner, msg.as_string())
 
 
-# In[ ]:
+@click.command()
+def main():
+    spark = (SparkSession
+             .builder
+             .appName("topline_dashboard")
+             .getOrCreate())
 
-date = (DT.date.today()-DT.timedelta(1)).isoformat()
-rows = main(date)
-dicty = coalesce(rows)
-basename = BASENAME.format(date, WRITE_VERSION)
-bad = dump_dict(dicty, basename)
-path = get_s3_write_path(date)
-try:
-    write_manifest(DT.date.today().isoformat(), 1, path)
-except Exception:
-    report(date, path, ["Manifest writing failed"])
-report(date, path, bad)
+    date = (DT.date.today() - DT.timedelta(1)).isoformat()
+    rows = generate_daily_search_rollup(spark, date)
+    dicty = coalesce(rows)
+
+    basename = BASENAME.format(date, WRITE_VERSION)
+    bad = dump_dict(dicty, basename)
+    path = get_s3_write_path(date)
+    try:
+        write_manifest(DT.date.today().isoformat(), 1, path)
+    except Exception:
+        report(date, path, ["Manifest writing failed"])
+    report(date, path, bad)
 
 
-# In[ ]:
-
-
-
+if __name__ == '__main__':
+    main()
