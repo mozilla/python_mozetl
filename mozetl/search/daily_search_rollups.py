@@ -4,7 +4,12 @@
 This job is added by Bug 1364530 and was originally located
 [1]. Search rollups are computed and then ingested by Vertica.
 
+Please note that this job has not been reviewed or tested. Previous
+discussion here [2]. We have an open bugs for tests here [3].
+
 [1] https://gist.github.com/SamPenrose/856aa21191ef9f0de18c94220cd311a8
+[2] mozilla/mozilla-reports#23
+[3] https://bugzilla.mozilla.org/show_bug.cgi?id=1365653
 """
 import csv
 import datetime as DT
