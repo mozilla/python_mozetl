@@ -652,7 +652,7 @@ def adjust_start_date(start_date, use_lag):
               help="output prefix associated with the s3 bucket")
 @click.option('--input-bucket', default='telemetry-parquet',
               help="input bucket containing main_summary")
-@click.option('--input-prefix', default='main_summary/v3',
+@click.option('--input-prefix', default='main_summary/v4',
               help="input prefix containing main_summary")
 @click.option('--lag/--no-lag', default=True,
               help="account for the 10 day collection period")
