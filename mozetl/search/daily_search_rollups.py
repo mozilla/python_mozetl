@@ -57,6 +57,11 @@ TEMP_TABLE_TEMPLATE = 'rollup_temp_{}'
 # default search engine (or locale or geo), or a profile may be shared by
 # multiple users on a day (causing all the other fields to vary if the
 # users are on widely distributed machines).
+#
+# Restrict to a whitelist of search_source's to avoid double counting while
+# we test our new search_count telemetry developed in:
+# https://bugzilla.mozilla.org/show_bug.cgi?id=1367554
+# https://bugzilla.mozilla.org/show_bug.cgi?id=1368089
 SELECT_ROLLUP_TEMPLATE = """
 SELECT
   submission_date,
@@ -72,6 +77,8 @@ FROM
   {}
 WHERE
   ((search_count > -1) OR (search_count is null))
+  AND search_source IN ('searchbar', 'urlbar', 'abouthome', 'newtab',
+                        'contextmenu', 'system', 'NO_SEARCHES')
 GROUP BY
   submission_date, country, search_provider, default_provider, locale, distribution_id
 """
@@ -129,6 +136,7 @@ def roll_up_searches(spark, frame):
         "distribution_id",
         "default_provider",
         "search_counts.engine as search_provider",
+        "search_counts.source as search_source",
         "search_counts.count as search_count")
     unwrapped_nulls = nulls_frame.selectExpr(
         "submission_date",
@@ -138,6 +146,7 @@ def roll_up_searches(spark, frame):
         "distribution_id",
         "default_search_engine as default_provider",
         "'NO_SEARCHES' as search_provider",
+        "'NO_SEARCHES' as search_source",
         "0 as search_count"
     )
     unwrapped_all = unwrapped.unionAll(unwrapped_nulls)
