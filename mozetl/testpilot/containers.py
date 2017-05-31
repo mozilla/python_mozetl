@@ -60,6 +60,6 @@ shield_etl_job = testpilot_etl_boilerplate(
 )
 
 
-def etl_job():
-    testpilot_etl_job()
-    shield_etl_job()
+def etl_job(sc, sqlContext, **kwargs):
+    testpilot_etl_job(sc, sqlContext, **kwargs)
+    shield_etl_job(sc, sqlContext, **kwargs)
