@@ -72,6 +72,7 @@ FROM
   {}
 WHERE
   ((search_count > -1) OR (search_count is null))
+  AND search_source NOT LIKE "followon%"
 GROUP BY
   submission_date, country, search_provider, default_provider, locale, distribution_id
 """
@@ -129,6 +130,7 @@ def roll_up_searches(spark, frame):
         "distribution_id",
         "default_provider",
         "search_counts.engine as search_provider",
+        "search_counts.source as search_source",
         "search_counts.count as search_count")
     unwrapped_nulls = nulls_frame.selectExpr(
         "submission_date",
@@ -138,6 +140,7 @@ def roll_up_searches(spark, frame):
         "distribution_id",
         "default_search_engine as default_provider",
         "'NO_SEARCHES' as search_provider",
+        "'NO_SEARCHES' as search_source",
         "0 as search_count"
     )
     unwrapped_all = unwrapped.unionAll(unwrapped_nulls)
