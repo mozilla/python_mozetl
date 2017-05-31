@@ -9,6 +9,7 @@ import os.path
 import boto3
 import botocore
 import requests
+import click
 import moztelemetry.standards as moz_std
 
 
