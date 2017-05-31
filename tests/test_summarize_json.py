@@ -5,6 +5,7 @@ import boto3
 import botocore
 import requests
 import moztelemetry.standards as moz_std
+from pyspark.sql import SparkSession
 from mozetl.hardware_report.summarize_json import *
 
 def test_prepare_data():
@@ -98,9 +99,14 @@ def test_aggregate_data():
             'has_flash': True
         },
     ]
-    
+
+    spark = (SparkSession
+         .builder
+         .appName("hardware_report_dashboard")
+         .getOrCreate())
+
     # Create an rdd with the pepared data, then aggregate.
-    data_rdd = sc.parallelize([prepare_data(d) for d in raw_data])
+    data_rdd = spark.sparkContext.parallelize([prepare_data(d) for d in raw_data])
     agg_data = aggregate_data(data_rdd)
     
     assert agg_data[('os_arch', 'x86')] == 2,\
