@@ -1,5 +1,5 @@
 from pyspark.sql import SQLContext
-from mozetl.testpilot.containers import transform_pings
+from mozetl.testpilot.containers import transform_testpilot_pings
 
 
 def create_ping_rdd(sc, payload):
@@ -35,7 +35,7 @@ def test_open_container_ping(row_to_dict, spark_context):
     result_payload = input_payload
     result_payload['userContextId'] = '10'
 
-    actual = transform_pings(
+    actual = transform_testpilot_pings(
         SQLContext(spark_context),
         create_ping_rdd(spark_context, input_payload)
     ).take(1)[0]
@@ -49,7 +49,7 @@ def test_edit_container_ping(row_to_dict, spark_context):
         'event': 'edit-containers'
     }
 
-    actual = transform_pings(
+    actual = transform_testpilot_pings(
         SQLContext(spark_context),
         create_ping_rdd(spark_context, input_payload)
     ).take(1)[0]
@@ -68,7 +68,7 @@ def test_hide_container_ping(row_to_dict, spark_context):
         'totalContainersCount': 5,
     }
 
-    actual = transform_pings(
+    actual = transform_testpilot_pings(
         SQLContext(spark_context),
         create_ping_rdd(spark_context, input_payload)
     ).take(1)[0]
@@ -84,7 +84,7 @@ def test_close_container_tab_ping(row_to_dict, spark_context):
         "pageRequestCount": 2,
     }
 
-    actual = transform_pings(
+    actual = transform_testpilot_pings(
         SQLContext(spark_context),
         create_ping_rdd(spark_context, input_payload)
     ).take(1)[0]
