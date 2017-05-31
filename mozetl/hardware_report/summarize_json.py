@@ -686,11 +686,6 @@ def generate_report(start_date=None, end_date=None):
 
 @click.command()
 def main():
-    spark = (SparkSession
-             .builder
-             .appName("hardware_report_dashboard")
-             .getOrCreate())
-
     # Generate the hardware report
     start_date = None  # Only use this when backfilling, e.g. dt.date(2016,2,1)
     end_date = None  # Only use this when backfilling, e.g. dt.date(2016,3,26)
