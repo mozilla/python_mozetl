@@ -8,6 +8,34 @@ import moztelemetry.standards as moz_std
 from pyspark.sql import SparkSession
 from mozetl.hardware_report.summarize_json import *
 
+def test_run_tests():
+    # Does |get_OS_arch| work as expected?
+    assert get_OS_arch("x86", "Windows_NT", False) == "x86", "get_OS_arch should report an 'x86' for an x86 browser with no is_wow64."
+    assert get_OS_arch("x86", "Windows_NT", True) == "x86-64", "get_OS_arch should report an 'x86-64' for an x86 browser, on Windows, using Wow64."
+    assert get_OS_arch("x86", "Darwin", True) == "x86", "get_OS_arch should report an 'x86' for an x86 browser on non Windows platforms."
+    assert get_OS_arch("x86-64", "Darwin", True) == "x86-64", "get_OS_arch should report an 'x86-64' for an x86-64 browser on non Windows platforms."
+    assert get_OS_arch("x86-64", "Windows_NT", False) == "x86-64", "get_OS_arch should report an 'x86-64' for an x86-64 browser on Windows platforms."
+        
+    # Does |vendor_name_from_id| behave correctly?
+    assert vendor_name_from_id("0x1013") == "Cirrus Logic", "vendor_name_from_id must report the correct vendor name for a known vendor id."
+    assert vendor_name_from_id("0xfeee") == "Other", "vendor_name_from_id must report 'Other' for an unknown vendor id."
+   
+    # Make sure |invert_device_map| works as expected.
+    device_data = {"feee": {"family":{"chipset":["d1d1", "d2d2"]}}}
+    inverted_device_data = invert_device_map(device_data)
+    assert "0xfeee" in inverted_device_data, "The vendor id must be prefixed with '0x' and be at the root of the map."
+    assert len(inverted_device_data["0xfeee"].keys()) == 2, "There must be two devices for the '0xfeee' vendor."
+    assert all(device_id in inverted_device_data["0xfeee"] for device_id in ("0xd1d1", "0xd2d2")), "The '0xfeee' vendor must contain the expected devices."
+    assert all(d in inverted_device_data["0xfeee"]["0xd1d1"] for d in ("family", "chipset")), "The family and chipset data must be reported in the device section."
+    
+    # Let's test |get_device_family_chipset|.
+    global device_map
+    device_map = inverted_device_data
+    assert get_device_family_chipset("0xfeee", "0xd1d1", device_map) == "family-chipset", "The family and chipset info must be returned as '<family>-<chipset>' for known devices."
+    assert get_device_family_chipset("0xfeee", "0xdeee", device_map) == "Unknown", "Unknown devices must be reported as 'Unknown'."
+    assert get_device_family_chipset("0xfeeb", "0xdeee", device_map) == "Unknown", "Unknown families must be reported as 'Unknown'."
+
+
 def test_prepare_data():
     data = {
         'browser_arch': 'x86',
@@ -25,7 +53,7 @@ def test_prepare_data():
         'has_flash': True
     }
     
-    prepared_data = prepare_data(data)
+    prepared_data = prepare_data(data, device_map)
     assert prepared_data["browser_arch"] == "x86",\
            "The browser architecture must be correct."
     assert prepared_data["cpu_cores"] == 2,\
@@ -106,7 +134,7 @@ def test_aggregate_data():
          .getOrCreate())
 
     # Create an rdd with the pepared data, then aggregate.
-    data_rdd = spark.sparkContext.parallelize([prepare_data(d) for d in raw_data])
+    data_rdd = spark.sparkContext.parallelize([prepare_data(d, device_map) for d in raw_data])
     agg_data = aggregate_data(data_rdd)
     
     assert agg_data[('os_arch', 'x86')] == 2,\
@@ -241,31 +269,4 @@ def test_validate_finalized_data():
 
     assert validate_finalized_data(WORKING_DATA),\
            "The validator must not fail when the reported data is correct"
-
-def test_run_tests():
-    # Does |get_OS_arch| work as expected?
-    assert get_OS_arch("x86", "Windows_NT", False) == "x86", "get_OS_arch should report an 'x86' for an x86 browser with no is_wow64."
-    assert get_OS_arch("x86", "Windows_NT", True) == "x86-64", "get_OS_arch should report an 'x86-64' for an x86 browser, on Windows, using Wow64."
-    assert get_OS_arch("x86", "Darwin", True) == "x86", "get_OS_arch should report an 'x86' for an x86 browser on non Windows platforms."
-    assert get_OS_arch("x86-64", "Darwin", True) == "x86-64", "get_OS_arch should report an 'x86-64' for an x86-64 browser on non Windows platforms."
-    assert get_OS_arch("x86-64", "Windows_NT", False) == "x86-64", "get_OS_arch should report an 'x86-64' for an x86-64 browser on Windows platforms."
-        
-    # Does |vendor_name_from_id| behave correctly?
-    assert vendor_name_from_id("0x1013") == "Cirrus Logic", "vendor_name_from_id must report the correct vendor name for a known vendor id."
-    assert vendor_name_from_id("0xfeee") == "Other", "vendor_name_from_id must report 'Other' for an unknown vendor id."
-   
-    # Make sure |invert_device_map| works as expected.
-    device_data = {"feee": {"family":{"chipset":["d1d1", "d2d2"]}}}
-    inverted_device_data = invert_device_map(device_data)
-    assert "0xfeee" in inverted_device_data, "The vendor id must be prefixed with '0x' and be at the root of the map."
-    assert len(inverted_device_data["0xfeee"].keys()) == 2, "There must be two devices for the '0xfeee' vendor."
-    assert all(device_id in inverted_device_data["0xfeee"] for device_id in ("0xd1d1", "0xd2d2")), "The '0xfeee' vendor must contain the expected devices."
-    assert all(d in inverted_device_data["0xfeee"]["0xd1d1"] for d in ("family", "chipset")), "The family and chipset data must be reported in the device section."
-    
-    # Let's test |get_device_family_chipset|.
-    global device_map
-    device_map = inverted_device_data
-    assert get_device_family_chipset("0xfeee", "0xd1d1") == "family-chipset", "The family and chipset info must be returned as '<family>-<chipset>' for known devices."
-    assert get_device_family_chipset("0xfeee", "0xdeee") == "Unknown", "Unknown devices must be reported as 'Unknown'."
-    assert get_device_family_chipset("0xfeeb", "0xdeee") == "Unknown", "Unknown families must be reported as 'Unknown'."
 

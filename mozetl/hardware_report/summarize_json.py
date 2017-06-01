@@ -9,8 +9,19 @@ import os.path
 import boto3
 import botocore
 import requests
-import click
 import moztelemetry.standards as moz_std
+from pyspark.sql import SQLContext
+from pyspark.sql import SparkSession
+
+# Reasons why the data for a client can be discarded.
+REASON_INACTIVE = "inactive"
+REASON_BROKEN_DATA = "broken"
+# These fields have a fixed set of values and we need to report all of
+# them.
+EXCLUSION_LIST = ["has_flash", "browser_arch", "os_arch"]
+
+S3_PUBLIC_BUCKET = "telemetry-public-analysis-2"
+S3_DATA_PATH = "game-hardware-survey/data/"
 
 
 def fetch_json(uri):
@@ -86,7 +97,7 @@ def vendor_name_from_id(id):
     return vendor_map.get(id, "Other")
 
 
-def get_device_family_chipset(vendor_id, device_id):
+def get_device_family_chipset(vendor_id, device_id, device_map):
     """ Get the family and chipset strings given the vendor and device ids.
 
     Args:
@@ -141,12 +152,8 @@ def build_device_map():
 
     return device_map
 
-
+global device_map
 device_map = build_device_map()
-
-# Reasons why the data for a client can be discarded.
-REASON_INACTIVE = "inactive"
-REASON_BROKEN_DATA = "broken"
 
 
 def get_valid_client_record(r, data_index):
@@ -272,9 +279,10 @@ def get_latest_valid_per_client(entry, time_start, time_end):
     return get_valid_client_record(entry, latest_entry)
 
 
-def prepare_data(p):
+def prepare_data(p, device_map):
     """ This function prepares the data for further analyses (e.g. unit conversion,
     vendor id to string, ...). """
+
     cpu_speed = round(p['cpu_speed'] / 1000.0, 1)
     return {
         'browser_arch': p['browser_arch'],
@@ -283,7 +291,7 @@ def prepare_data(p):
         'cpu_vendor': p['cpu_vendor'],
         'cpu_speed': cpu_speed,
         'gfx0_vendor_name': vendor_name_from_id(p['gfx0_vendor_id']),
-        'gfx0_model': get_device_family_chipset(p['gfx0_vendor_id'], p['gfx0_device_id']),
+        'gfx0_model': get_device_family_chipset(p['gfx0_vendor_id'], p['gfx0_device_id'], device_map),
         'resolution': str(p['screen_width']) + 'x' + str(p['screen_height']),
         'memory_gb': int(round(p['memory_mb'] / 1024.0)),
         'os': p['os_name'] + '-' + p['os_version'],
@@ -337,10 +345,6 @@ def collapse_buckets(aggregated_data, count_threshold):
         count_threhold: Groups (or "configurations") containing less than this value
         are collapsed in a generic bucket.
     """
-
-    # These fields have a fixed set of values and we need to report all of
-    # them.
-    EXCLUSION_LIST = ["has_flash", "browser_arch", "os_arch"]
 
     collapsed_groups = {}
     for k, v in aggregated_data.iteritems():
@@ -507,11 +511,6 @@ def validate_finalized_data(data):
 
     return True
 
-
-S3_PUBLIC_BUCKET = "telemetry-public-analysis-2"
-S3_DATA_PATH = "game-hardware-survey/data/"
-
-
 def get_file_name(suffix=""):
     return "hwsurvey-weekly" + suffix + ".json"
 
@@ -573,7 +572,7 @@ def store_new_state(source_file_name, s3_dest_file_name):
     transfer.upload_file(source_file_name, S3_PUBLIC_BUCKET, key_path)
 
 
-def generate_report(start_date=None, end_date=None):
+def generate_report(start_date, end_date):
     """ Generates the hardware survey dataset for the reference timeframe.
 
     If the timeframe is longer than a week, split it in in weekly chunks
@@ -603,7 +602,14 @@ def generate_report(start_date=None, end_date=None):
     sqlQuery = "SELECT " + "build," + "client_id," + "active_plugins," + "system_os," + "submission_date," + \
         "system," + "system_gfx," + "system_cpu," + \
         "normalized_channel " + "FROM longitudinal"
-    frame = sqlContext.sql(sqlQuery)                      .where("normalized_channel = 'release'")                      .where(
+
+    spark = (SparkSession
+         .builder
+         .appName("hardware_report_dashboard")
+         .getOrCreate())
+    sqlContext = SQLContext(spark.sparkContext)
+
+    frame = sqlContext.sql(sqlQuery).where("normalized_channel = 'release'").where(
         "build is not null and build[0].application_name = 'Firefox'")
 
     # The number of all the fetched records (including inactive and broken).
@@ -683,34 +689,3 @@ def generate_report(start_date=None, end_date=None):
         # chunk.
         chunk_start = chunk_end + dt.timedelta(days=1)
 
-
-@click.command()
-def main():
-    # Generate the hardware report
-    start_date = None  # Only use this when backfilling, e.g. dt.date(2016,2,1)
-    end_date = None  # Only use this when backfilling, e.g. dt.date(2016,3,26)
-
-    # Generate the report for the desired period.
-    generate_report(start_date, end_date)
-    # Fetch the previous data from S3 and save it locally.
-    fetch_previous_state("hwsurvey-weekly.json", "hwsurvey-weekly-prev.json")
-    # Concat the json files into the output.
-    print "Joining JSON files..."
-    get_ipython().system(u'jq -s "[.[]|.[]]" *.json > "hwsurvey-weekly.json"')
-
-    with open("hwsurvey-weekly.json", "rt") as report_json:
-        # If we attempt to load invalid JSON from the assembled file,
-        # the next function throws.
-        json.load(report_json)
-
-    # Store the new state to S3. Since S3 doesn't support symlinks, make two copy
-    # of the file: one will always contain the latest data, the other for
-    # archiving.
-    archived_file_copy = "hwsurvey-weekly-" + \
-        datetime.date.today().strftime("%Y%d%m") + ".json"
-    store_new_state("hwsurvey-weekly.json", archived_file_copy)
-    store_new_state("hwsurvey-weekly.json", "hwsurvey-weekly.json")
-
-
-if __name__ == '__main__':
-    main()
