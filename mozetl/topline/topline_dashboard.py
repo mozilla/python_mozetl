@@ -79,17 +79,17 @@ def reformat_data(df):
     # The set of rows in the topline_summary can be categorized into
     # two general groups, attributes and aggregates. Attributes are
     # categorical in nature, while aggregates are numerical.
-    attributes = set(['geo', 'channel', 'os', 'date'])
-    aggregates = set(topline_columns.keys()) - attributes
+    attributes = ['date', 'geo', 'channel', 'os']
+    aggregates = set(topline_columns.keys()) - set(attributes)
 
-    # Cube the results. It's difficult to concisely express
+    # Rollup the results. It's difficult to concisely express
     # partitioning over a single attribute, and cube each subset of
     # attributes. Instead, ignore rows where the date field is empty,
     # which equates to ignoring aggregates over multiple dates.
-    cubed_df = (
+    rollup_df = (
         df
         .select(*topline_columns.values())
-        .cube(*attributes)
+        .rollup(*attributes)
         .agg(*[F.sum(F.col(x)).alias(x) for x in aggregates])
         .where(F.col('date').isNotNull())
         .na.fill('all')  # the only fills in string fields
@@ -98,7 +98,7 @@ def reformat_data(df):
     # Remove rows where the aggregates fields are all zeroes, since
     # these take up extra space in the csv file.
     filtered_df = (
-        cubed_df
+        rollup_df
         .withColumn('total', sum([F.col(x) for x in aggregates]))
         .where(F.col('total') > 0.0)
     )
