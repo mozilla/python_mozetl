@@ -16,11 +16,10 @@ from pyspark.sql import SparkSession
 # Reasons why the data for a client can be discarded.
 REASON_INACTIVE = "inactive"
 REASON_BROKEN_DATA = "broken"
-# These fields have a fixed set of values and we need to report all of
-# them.
+# These fields have a fixed set of values and we need to report all of them.
 EXCLUSION_LIST = ["has_flash", "browser_arch", "os_arch"]
 
-S3_PUBLIC_BUCKET = "telemetry-public-analysis-2"
+# S3_PUBLIC_BUCKET = "telemetry-public-analysis-2"
 S3_DATA_PATH = "game-hardware-survey/data/"
 
 
@@ -531,7 +530,7 @@ def serialize_results(aggregated_data, week_start, week_end):
         json_file.write("[" + json_entry.encode('utf8') + "]\n")
 
 
-def fetch_previous_state(s3_source_file_name, local_file_name):
+def fetch_previous_state(s3_source_file_name, local_file_name, bucket):
     """
     This function fetches the previous state from S3's bucket and stores it locally.
 
@@ -546,7 +545,7 @@ def fetch_previous_state(s3_source_file_name, local_file_name):
     key_path = S3_DATA_PATH + s3_source_file_name
 
     try:
-        transfer.download_file(S3_PUBLIC_BUCKET, key_path, local_file_name)
+        transfer.download_file(bucket, key_path, local_file_name)
     except botocore.exceptions.ClientError as e:
         # If the file wasn't there, that's ok. Otherwise, abort!
         if e.response['Error']['Code'] != "404":
@@ -555,7 +554,7 @@ def fetch_previous_state(s3_source_file_name, local_file_name):
             print "Did not find an existing file at '{}'".format(key_path)
 
 
-def store_new_state(source_file_name, s3_dest_file_name):
+def store_new_state(source_file_name, s3_dest_file_name, bucket):
     """
     Store the new state file to S3.
 
@@ -569,7 +568,7 @@ def store_new_state(source_file_name, s3_dest_file_name):
 
     # Update the state in the analysis bucket.
     key_path = S3_DATA_PATH + s3_dest_file_name
-    transfer.upload_file(source_file_name, S3_PUBLIC_BUCKET, key_path)
+    transfer.upload_file(source_file_name, bucket, key_path)
 
 
 def generate_report(start_date, end_date):
@@ -590,6 +589,7 @@ def generate_report(start_date, end_date):
 
     # If no start_date was provided, generate a report for the past complete
     # week.
+
     last_week = moz_std.get_last_week_range()
     date_range = (
         moz_std.snap_to_beginning_of_week(
@@ -599,9 +599,20 @@ def generate_report(start_date, end_date):
     )
 
     # Connect to the longitudinal dataset.
-    sqlQuery = "SELECT " + "build," + "client_id," + "active_plugins," + "system_os," + "submission_date," + \
-        "system," + "system_gfx," + "system_cpu," + \
-        "normalized_channel " + "FROM longitudinal"
+    sqlQuery = """
+               SELECT
+                   build,
+                   client_id,
+                   active_plugins,
+                   system_os,
+                   submission_date,
+                   system,
+                   system_gfx,
+                   system_cpu,
+                   normalized_channel,
+               FROM 
+                   longitudinal
+               """
 
     spark = (SparkSession
          .builder
