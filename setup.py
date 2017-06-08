@@ -14,6 +14,7 @@ setup(
     install_requires=[
         'python_moztelemetry',  # TODO: pin version
         'click',
-        'requests'
+        'requests',
+        'arrow',
     ],
 )
