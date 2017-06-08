@@ -62,6 +62,28 @@ class DataFrameFactory:
         # if no schema is provided, the schema will be inferred
         return self.spark.createDataFrame(samples, schema)
 
+    def create_dataframe_with_key(self, snippets, base, key, key_func=None, schema=None):
+        """Generate dataframe with autoincrementing key function"""
+        def generate_keys():
+            num = 0
+            while True:
+                yield str(num)
+                num += 1
+
+        # default key function
+        if not key_func:
+            key_func = generate_keys
+
+        if not snippets:
+            snippets = [dict()]
+
+        # update each snippet with new key
+        gen = key_func()
+        for i in range(len(snippets)):
+            snippets[i].update({key: next(gen)})
+
+        return self.create_dataframe(snippets, base, schema)
+
 
 @pytest.fixture()
 def dataframe_factory(spark):
