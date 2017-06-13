@@ -4,8 +4,12 @@ import os.path
 import boto3
 import botocore
 import requests
+import json
+import ast
 import moztelemetry.standards as moz_std
 from pyspark.sql import SparkSession
+from pyspark.sql import SQLContext
+from datetime import datetime, timedelta
 from mozetl.hardware_report.summarize_json import *
 
 def test_run_tests():
@@ -270,3 +274,39 @@ def test_validate_finalized_data():
     assert validate_finalized_data(WORKING_DATA),\
            "The validator must not fail when the reported data is correct"
 
+def create_row():
+    with open('tests/longitudinal_schema.json') as infile:
+        return json.load(infile)
+
+
+# def simple_rdd(spark_context):
+#     return spark_context.parallelize([create_row()])
+
+def test_generate_report():
+    spark = (SparkSession
+         .builder
+         .appName("hardware_report_dashboard")
+         .getOrCreate())
+
+    df = spark.read.json('tests/longitudinal_schema.json')
+    df.createOrReplaceTempView('longitudinal')
+
+    expected = {
+        "cpuCores_4":1.0,
+        "osArch_x86":1.0,
+        "gpuModel_SI-PITCAIRN":1.0,
+        "gpuVendor_AMD":1.0,
+        "ram_8":1.0,
+        "browserArch_x86":1.0,
+        "cpuVendor_GenuineIntel":1.0,
+        "osName_Windows-10.0":1.0,
+        "broken":0.0,
+        "inactive":0.0,
+        "cpuSpeed_4.0":1.0,
+        "date":"2016-07-03",
+        "cpuCoresSpeed_4_4.0":1.0,
+        "hasFlash_False":1.0,
+        "resolution_1920x1200":1.0
+    }
+
+    assert collect_data(dt.date(2016, 7, 3), dt.date(2016, 7, 10), spark)["processed_aggregates"] == expected

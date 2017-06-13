@@ -151,9 +151,6 @@ def build_device_map():
 
     return device_map
 
-global device_map
-device_map = build_device_map()
-
 
 def get_valid_client_record(r, data_index):
     """ Check if the referenced record is sane or contains partial/broken data.
@@ -166,6 +163,7 @@ def get_valid_client_record(r, data_index):
         An object containing the client hardware data or REASON_BROKEN_DATA if the
         data is invalid.
     """
+
     gfx_adapters = r["system_gfx"][data_index]["adapters"]
     monitors = r["system_gfx"][data_index]["monitors"]
 
@@ -239,6 +237,7 @@ def get_latest_valid_per_client(entry, time_start, time_end):
     for index, pkt_date in enumerate(entry["submission_date"]):
         sub_date = dt.datetime.strptime(
             pkt_date, "%Y-%m-%dT%H:%M:%S.%fZ").date()
+
         # The data is in descending order, the most recent ping comes first.
         # The first item less or equal than the time_end date is our thing.
         if sub_date >= time_start and sub_date <= time_end:
@@ -571,7 +570,7 @@ def store_new_state(source_file_name, s3_dest_file_name, bucket):
     transfer.upload_file(source_file_name, bucket, key_path)
 
 
-def generate_report(start_date, end_date):
+def collect_data(start_date, end_date, spark):
     """ Generates the hardware survey dataset for the reference timeframe.
 
     If the timeframe is longer than a week, split it in in weekly chunks
@@ -600,28 +599,21 @@ def generate_report(start_date, end_date):
 
     # Connect to the longitudinal dataset.
     sqlQuery = """
-               SELECT
-                   build,
-                   client_id,
-                   active_plugins,
-                   system_os,
-                   submission_date,
-                   system,
-                   system_gfx,
-                   system_cpu,
-                   normalized_channel,
+               SELECT 
+                  build, 
+                  client_id, 
+                  active_plugins, 
+                  system_os, 
+                  submission_date, 
+                  system, 
+                  system_gfx, 
+                  system_cpu, 
+                  normalized_channel  
                FROM 
-                   longitudinal
+                  longitudinal
                """
 
-    spark = (SparkSession
-         .builder
-         .appName("hardware_report_dashboard")
-         .getOrCreate())
-    sqlContext = SQLContext(spark.sparkContext)
-
-    frame = sqlContext.sql(sqlQuery).where("normalized_channel = 'release'").where(
-        "build is not null and build[0].application_name = 'Firefox'")
+    frame = spark.sql(sqlQuery).where("normalized_channel = 'release'").where("build is not null and build[0].application_name = 'Firefox'")
 
     # The number of all the fetched records (including inactive and broken).
     records_count = frame.count()
@@ -651,6 +643,7 @@ def generate_report(start_date, end_date):
             lambda r: r in [
                 REASON_BROKEN_DATA,
                 REASON_INACTIVE]).countByValue()
+
         broken_count = discarded[REASON_BROKEN_DATA]
         inactive_count = discarded[REASON_INACTIVE]
         broken_ratio = broken_count / float(records_count)
@@ -661,11 +654,13 @@ def generate_report(start_date, end_date):
         # bail out early on. There's no point in aggregating.
         if broken_ratio >= 0.9 or inactive_ratio >= 0.9:
             raise Exception(
-                "Unexpected ratio of broken pings or inactive clients.")
+                "Unexpected ratio of broken pings or inactive clients. Broken ratio: " + str(broken_ratio) + 
+                ", inactive ratio: " + str(inactive_ratio))
 
         # Process the data, transforming it in the form we desire.
-        processed_data = filtered_data.map(prepare_data)
-
+        device_map = build_device_map()
+        processed_data = filtered_data.map(lambda d: prepare_data(d, device_map))
+        
         print "Aggregating entries..."
         aggregated_pings = aggregate_data(processed_data)
 
@@ -692,11 +687,18 @@ def generate_report(start_date, end_date):
         if not validate_finalized_data(processed_aggregates):
             raise Exception("The aggregates failed to validate.")
 
-        print "Serializing results locally..."
-        # This either appends to an existing file, or creates a new one.
-        serialize_results(processed_aggregates, chunk_start, chunk_end)
+        return {
+            "processed_aggregates": processed_aggregates,
+            "chunk_start": chunk_start,
+            "chunk_end": chunk_end
+        }
 
-        # Move on to the next chunk, just add one day the end of the last
-        # chunk.
-        chunk_start = chunk_end + dt.timedelta(days=1)
+def generate_report(start_date, end_date, spark):
+    report = collect_data(start_date, end_date, spark)
+    print "Serializing results locally..."
+    # This either appends to an existing file, or creates a new one.
+    serialize_results(report["processed_aggregates"], report["chunk_start"], report["chunk_end"])
 
+    # Move on to the next chunk, just add one day the end of the last
+    # chunk.
+    chunk_start = report["chunk_end"] + dt.timedelta(days=1)
