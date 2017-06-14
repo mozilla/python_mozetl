@@ -701,5 +701,4 @@ def generate_report(start_date, end_date, spark):
         # chunk.
         chunk_start = chunk_end + dt.timedelta(days=1)
 
-    serialize_results(date_to_json)
     return date_to_json
