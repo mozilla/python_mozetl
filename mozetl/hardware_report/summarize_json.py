@@ -570,7 +570,7 @@ def store_new_state(source_file_name, s3_dest_file_name, bucket):
     transfer.upload_file(source_file_name, bucket, key_path)
 
 
-def collect_data(start_date, end_date, spark):
+def generate_report(start_date, end_date, spark):
     """ Generates the hardware survey dataset for the reference timeframe.
 
     If the timeframe is longer than a week, split it in in weekly chunks
@@ -687,18 +687,10 @@ def collect_data(start_date, end_date, spark):
         if not validate_finalized_data(processed_aggregates):
             raise Exception("The aggregates failed to validate.")
 
-        return {
-            "processed_aggregates": processed_aggregates,
-            "chunk_start": chunk_start,
-            "chunk_end": chunk_end
-        }
-
-def generate_report(start_date, end_date, spark):
-    report = collect_data(start_date, end_date, spark)
-    print "Serializing results locally..."
-    # This either appends to an existing file, or creates a new one.
-    serialize_results(report["processed_aggregates"], report["chunk_start"], report["chunk_end"])
-
-    # Move on to the next chunk, just add one day the end of the last
-    # chunk.
-    chunk_start = report["chunk_end"] + dt.timedelta(days=1)
+        print "Serializing results locally..."
+        # This either appends to an existing file, or creates a new one.
+        serialize_results(processed_aggregates, chunk_start, chunk_end)
+        print chunk_start, chunk_end
+        # Move on to the next chunk, just add one day the end of the last
+        # chunk.
+        chunk_start = chunk_end + dt.timedelta(days=1)
