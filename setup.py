@@ -28,6 +28,7 @@ setup(
         'click',
         'requests',
         'arrow',
+        'click_datetime',
     ],
     tests_require=test_deps,
     extras_require=extras,
