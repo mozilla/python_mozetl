@@ -9,6 +9,7 @@ import os.path
 import boto3
 import botocore
 import requests
+import logging
 import moztelemetry.standards as moz_std
 from pyspark.sql import SQLContext
 from pyspark.sql import SparkSession
@@ -19,9 +20,13 @@ REASON_BROKEN_DATA = "broken"
 # These fields have a fixed set of values and we need to report all of them.
 EXCLUSION_LIST = ["has_flash", "browser_arch", "os_arch"]
 
-# S3_PUBLIC_BUCKET = "telemetry-public-analysis-2"
 S3_DATA_PATH = "game-hardware-survey/data/"
 
+# Stores all hardware reports in json by date
+_date_to_json = {}
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def fetch_json(uri):
     """ Perform an HTTP GET on the given uri, return the results as json.
@@ -494,7 +499,7 @@ def validate_finalized_data(data):
         # Get the name of the property to look it up in the accumulator.
         property_name = key.split('_')[0]
         if property_name not in keys_accumulator:
-            print("Cannot find {} in |keys_accumulator|".format(property_name))
+            logger.info("Cannot find {} in |keys_accumulator|".format(property_name))
             return False
 
         keys_accumulator[property_name] += value
@@ -502,31 +507,32 @@ def validate_finalized_data(data):
     # Make sure all the properties add up to 1.0 (or close enough).
     for key, value in keys_accumulator.iteritems():
         if abs(1.0 - value) > 0.05:
-            print(
+            logger.info(
                 "{} values do not add up to 1.0. Their sum is {}.".format(
                     key, value))
             return False
 
     return True
 
+
 def get_file_name(suffix=""):
     return "hwsurvey-weekly" + suffix + ".json"
 
 
-def serialize_results(aggregated_data, week_start, week_end):
-    # Write the week start/end in the filename.
-    suffix = "-" + week_start.strftime("%Y%d%m") + \
-        "-" + week_end.strftime("%Y%d%m")
-    file_name = get_file_name(suffix)
+def get_date_to_json():
+    return _date_to_json
 
-    if os.path.exists(file_name):
-        print "{} exists, we will overwrite it.".format(file_name)
 
-    # Our aggregated data is a JSON object.
-    json_entry = json.dumps(aggregated_data)
+def serialize_results(date_to_json):
+    for file_name, aggregated_data in date_to_json.items():
+        if os.path.exists(file_name):
+            logger.info("{} exists, we will overwrite it.".format(file_name))
 
-    with open(file_name, "w") as json_file:
-        json_file.write("[" + json_entry.encode('utf8') + "]\n")
+        # Our aggregated data is a JSON object.
+        json_entry = json.dumps(aggregated_data)
+
+        with open(file_name, "w") as json_file:
+            json_file.write("[" + json_entry.encode('utf8') + "]\n")
 
 
 def fetch_previous_state(s3_source_file_name, local_file_name, bucket):
@@ -550,7 +556,7 @@ def fetch_previous_state(s3_source_file_name, local_file_name, bucket):
         if e.response['Error']['Code'] != "404":
             raise e
         else:
-            print "Did not find an existing file at '{}'".format(key_path)
+            logger.exception("Did not find an existing file at '{}'".format(key_path))
 
 
 def store_new_state(source_file_name, s3_dest_file_name, bucket):
@@ -617,7 +623,7 @@ def generate_report(start_date, end_date, spark):
 
     # The number of all the fetched records (including inactive and broken).
     records_count = frame.count()
-    print "Total record count: {}".format(records_count)
+    logger.info("Total record count: {}".format(records_count))
 
     # Split the submission period in chunks, so we don't run out of resources while aggregating if
     # we want to backfill.
@@ -648,7 +654,7 @@ def generate_report(start_date, end_date, spark):
         inactive_count = discarded[REASON_INACTIVE]
         broken_ratio = broken_count / float(records_count)
         inactive_ratio = inactive_count / float(records_count)
-        print "Broken pings ratio: {}\nInactive clients ratio: {}".format(broken_ratio, inactive_ratio)
+        logger.info("Broken pings ratio: {}; Inactive clients ratio: {}".format(broken_ratio, inactive_ratio))
 
         # If we're not seeing sane values for the broken or inactive ratios,
         # bail out early on. There's no point in aggregating.
@@ -661,7 +667,7 @@ def generate_report(start_date, end_date, spark):
         device_map = build_device_map()
         processed_data = filtered_data.map(lambda d: prepare_data(d, device_map))
         
-        print "Aggregating entries..."
+        logger.info("Aggregating entries...")
         aggregated_pings = aggregate_data(processed_data)
 
         # Get the sample count, we need it to compute the percentages instead of raw numbers.
@@ -672,11 +678,11 @@ def generate_report(start_date, end_date, spark):
         # Collapse together groups that count less than 1% of our samples.
         threshold_to_collapse = int(valid_records_count * 0.01)
 
-        print "Collapsing smaller groups into the other bucket (threshold {th})".format(th=threshold_to_collapse)
+        logger.info("Collapsing smaller groups into the other bucket (threshold {th})".format(th=threshold_to_collapse))
         collapsed_aggregates = collapse_buckets(
             aggregated_pings, threshold_to_collapse)
 
-        print "Post-processing raw values..."
+        logger.info("Post-processing raw values...")
 
         processed_aggregates = finalize_data(collapsed_aggregates,
                                              valid_records_count,
@@ -687,10 +693,17 @@ def generate_report(start_date, end_date, spark):
         if not validate_finalized_data(processed_aggregates):
             raise Exception("The aggregates failed to validate.")
 
-        print "Serializing results locally..."
-        # This either appends to an existing file, or creates a new one.
-        serialize_results(processed_aggregates, chunk_start, chunk_end)
-        print chunk_start, chunk_end
+        # Write the week start/end in the filename.
+        suffix = "-" + chunk_start.strftime("%Y%d%m") + \
+                 "-" + chunk_end.strftime("%Y%d%m")
+        file_name = get_file_name(suffix)
+
+        _date_to_json[file_name] = processed_aggregates
+
         # Move on to the next chunk, just add one day the end of the last
         # chunk.
         chunk_start = chunk_end + dt.timedelta(days=1)
+
+    logger.info("Serializing results locally...")
+    # This either appends to an existing file, or creates a new one.
+    serialize_results(_date_to_json)
