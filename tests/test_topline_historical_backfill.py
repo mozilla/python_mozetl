@@ -1,25 +1,11 @@
-import json
+import functools
 import os
 
+import pytest
 from click.testing import CliRunner
 
-import pytest
 from mozetl.topline import historical_backfill as backfill
 from mozetl.topline.schema import historical_schema
-from pyspark.sql import SparkSession
-
-
-@pytest.fixture(scope="session")
-def spark(request):
-    spark = (SparkSession
-             .builder
-             .appName("test_topline_historical_backfill")
-             .getOrCreate())
-
-    # teardown
-    request.addfinalizer(lambda: spark.stop())
-
-    return spark
 
 
 @pytest.fixture(autouse=True)
@@ -50,49 +36,25 @@ default_sample = {
 }
 
 
-def generate_samples(snippets, base_sample):
-    """ Generate samples from the default sample. Snippets overwrite specific
-    fields in the default sample.
-
-    :snippets list<dict>: A list of dictionary attributes to update
-    """
-    if snippets is None:
-        return [json.dumps(base_sample)]
-
-    samples = []
-    for snippet in snippets:
-        sample = base_sample.copy()
-        sample.update(snippet)
-        samples.append(json.dumps(sample))
-    return samples
-
-
-def snippets_to_df(spark, snippets, base_sample, schema):
-    """ Turn a list of snippets into a fully instantiated dataframe.
-
-    Snippets are attributes that overwrite the base dictionary. This allows
-    for the generation of new rows without excess repetition.
-
-    :spark SparkSession:  spark session to generate dataframes
-    :snippets list<dict>: dictionary attributes to overwrite
-    :base_sample dict:    base dictionary for snippets
-    :schema SparkStruct:  schema for output dataframe
-    """
-    samples = generate_samples(snippets, base_sample)
-    jsonRDD = spark.sparkContext.parallelize(samples)
-    return spark.read.json(jsonRDD, schema=schema)
+@pytest.fixture()
+def generate_data(dataframe_factory):
+    return functools.partial(
+        dataframe_factory.create_dataframe,
+        base=default_sample,
+        schema=historical_schema
+    )
 
 
 # does not include rows containing `all` from original data
-def test_excludes_rows_containing_all(spark, tmpdir):
+def test_excludes_rows_containing_all(spark, generate_data, tmpdir):
     snippets = [
         {'geo': 'all'},
         {'os': 'all'},
         {'channel': 'all'},
         {}  # There must be a single data point
     ]
-    input_df = snippets_to_df(spark, snippets, default_sample,
-                              historical_schema)
+    input_df = generate_data(snippets)
+
     path = str(tmpdir.join('test/mode=weekly/'))
     backfill.backfill_topline_summary(input_df, path, overwrite=True)
 
@@ -102,13 +64,12 @@ def test_excludes_rows_containing_all(spark, tmpdir):
     assert df.where("channel = 'all'").count() == 0
 
 
-def test_multiple_dates_fails(spark, tmpdir):
+def test_multiple_dates_fails(generate_data, tmpdir):
     snippets = [
         {'date': '2016-01-01'},
         {'date': '2016-01-08'}
     ]
-    input_df = snippets_to_df(spark, snippets, default_sample,
-                              historical_schema)
+    input_df = generate_data(snippets)
 
     path = str(tmpdir)
     with pytest.raises(RuntimeError):
@@ -116,13 +77,12 @@ def test_multiple_dates_fails(spark, tmpdir):
 
 
 # writes out partitions by report_date
-def test_multiple_dates_batch(spark, tmpdir):
+def test_multiple_dates_batch(generate_data, tmpdir):
     snippets = [
         {'date': '2016-01-01'},
         {'date': '2016-01-08'}
     ]
-    input_df = snippets_to_df(spark, snippets, default_sample,
-                              historical_schema)
+    input_df = generate_data(snippets)
 
     path = str(tmpdir)
     backfill.backfill_topline_summary(input_df, path,
@@ -134,13 +94,12 @@ def test_multiple_dates_batch(spark, tmpdir):
 
 
 # data is correctly written to the correct location given default prefix
-def test_cli_monthly(spark, tmpdir, monkeypatch):
+def test_cli_monthly(generate_data, tmpdir, monkeypatch):
     # generate test data
     snippets = [
         {'date': '2016-01-01'},
     ]
-    input_df = snippets_to_df(spark, snippets, default_sample,
-                              historical_schema)
+    input_df = generate_data(snippets)
 
     # add a csv file to the test folder
     toplevel = tmpdir
