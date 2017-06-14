@@ -307,3 +307,4 @@ def test_generate_report():
     }
 
     generate_report(dt.date(2016, 7, 3), dt.date(2016, 7, 10), spark)
+    assert get_date_to_json()['hwsurvey-weekly-20160307-20160907.json'] == expected
