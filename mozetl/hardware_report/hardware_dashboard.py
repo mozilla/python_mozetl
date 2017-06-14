@@ -29,7 +29,8 @@ def main(start_date, end_date, bucket):
          .getOrCreate())
 
     # Generate the report for the desired period.
-    generate_report(start_date, end_date, spark)
+    report = generate_report(start_date, end_date, spark)
+    serialize_results(report)
     # Fetch the previous data from S3 and save it locally.
     fetch_previous_state("hwsurvey-weekly.json", "hwsurvey-weekly-prev.json", bucket)
     # Concat the json files into the output.
