@@ -306,5 +306,4 @@ def test_generate_report():
         "resolution_1920x1200":1.0
     }
 
-    generate_report(dt.date(2016, 7, 3), dt.date(2016, 7, 10), spark)
-    assert get_date_to_json()['hwsurvey-weekly-20160307-20160907.json'] == expected
+    assert generate_report(dt.date(2016, 7, 3), dt.date(2016, 7, 10), spark)['hwsurvey-weekly-20160307-20160907.json'] == expected

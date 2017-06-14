@@ -22,9 +22,6 @@ EXCLUSION_LIST = ["has_flash", "browser_arch", "os_arch"]
 
 S3_DATA_PATH = "game-hardware-survey/data/"
 
-# Stores all hardware reports in json by date
-_date_to_json = {}
-
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -499,7 +496,7 @@ def validate_finalized_data(data):
         # Get the name of the property to look it up in the accumulator.
         property_name = key.split('_')[0]
         if property_name not in keys_accumulator:
-            logger.info("Cannot find {} in |keys_accumulator|".format(property_name))
+            logger.warning("Cannot find {} in |keys_accumulator|".format(property_name))
             return False
 
         keys_accumulator[property_name] += value
@@ -507,7 +504,7 @@ def validate_finalized_data(data):
     # Make sure all the properties add up to 1.0 (or close enough).
     for key, value in keys_accumulator.iteritems():
         if abs(1.0 - value) > 0.05:
-            logger.info(
+            logger.warning(
                 "{} values do not add up to 1.0. Their sum is {}.".format(
                     key, value))
             return False
@@ -519,12 +516,10 @@ def get_file_name(suffix=""):
     return "hwsurvey-weekly" + suffix + ".json"
 
 
-def get_date_to_json():
-    return _date_to_json
-
-
 def serialize_results(date_to_json):
+    logger.info("Serializing results locally...")
     for file_name, aggregated_data in date_to_json.items():
+        # This either appends to an existing file, or creates a new one.
         if os.path.exists(file_name):
             logger.info("{} exists, we will overwrite it.".format(file_name))
 
@@ -629,6 +624,8 @@ def generate_report(start_date, end_date, spark):
     # we want to backfill.
     chunk_start = date_range[0]
     chunk_end = None
+    # Stores all hardware reports in json by date
+    date_to_json = {}
 
     while chunk_start < date_range[1]:
         chunk_end = chunk_start + dt.timedelta(days=6)
@@ -698,12 +695,11 @@ def generate_report(start_date, end_date, spark):
                  "-" + chunk_end.strftime("%Y%d%m")
         file_name = get_file_name(suffix)
 
-        _date_to_json[file_name] = processed_aggregates
+        date_to_json[file_name] = processed_aggregates
 
         # Move on to the next chunk, just add one day the end of the last
         # chunk.
         chunk_start = chunk_end + dt.timedelta(days=1)
 
-    logger.info("Serializing results locally...")
-    # This either appends to an existing file, or creates a new one.
-    serialize_results(_date_to_json)
+    serialize_results(date_to_json)
+    return date_to_json
