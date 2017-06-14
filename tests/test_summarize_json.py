@@ -279,9 +279,6 @@ def create_row():
         return json.load(infile)
 
 
-# def simple_rdd(spark_context):
-#     return spark_context.parallelize([create_row()])
-
 def test_generate_report():
     spark = (SparkSession
          .builder
@@ -309,4 +306,4 @@ def test_generate_report():
         "resolution_1920x1200":1.0
     }
 
-    assert collect_data(dt.date(2016, 7, 3), dt.date(2016, 7, 10), spark)["processed_aggregates"] == expected
+    generate_report(dt.date(2016, 7, 3), dt.date(2016, 7, 10), spark)
