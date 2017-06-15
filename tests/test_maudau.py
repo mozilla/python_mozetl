@@ -4,13 +4,14 @@ import pytest
 import tempfile
 from pyspark.sql.types import StructField, StructType, StringType
 from mozetl.maudau import maudau as M
+from mozetl.utils import format_as_submission_date
 
 NARROW_SCHEMA = StructType([
     StructField("client_id",             StringType(),  True),
     StructField("submission_date_s3",    StringType(),  False),
     StructField("subsession_start_date", StringType(), True)])
 
-generated = M.format_as_submission_date(DT.date.today())
+generated = format_as_submission_date(DT.date.today())
 
 
 @pytest.fixture
@@ -28,29 +29,6 @@ def make_frame(spark):
     return spark.createDataFrame(
         [dict(zip(cols, tup)) for tup in values],
         schema=NARROW_SCHEMA)
-
-
-def test_generate_filter_parameters():
-    """
-    Check the two meaningful cases: DAU (0 days) and MAU(28 days).
-    """
-    expected0 = {
-        'min_activity_iso': '2017-01-31',
-        'max_activity_iso': '2017-02-01',
-        'min_submission_string': '20170131',
-        'max_submission_string': '20170210'
-    }
-    actual0 = M.generate_filter_parameters(DT.date(2017, 1, 31), 0)
-    assert expected0 == actual0, str(actual0)
-
-    expected28 = {
-        'min_activity_iso': '2017-01-03',
-        'max_activity_iso': '2017-02-01',
-        'min_submission_string': '20170103',
-        'max_submission_string': '20170210'
-    }
-    actual28 = M.generate_filter_parameters(DT.date(2017, 1, 31), 28)
-    assert expected28 == actual28
 
 
 def test_generate_counts(spark):
