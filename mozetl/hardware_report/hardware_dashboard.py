@@ -1,6 +1,5 @@
 import click
 import glob
-import logger
 from mozetl.hardware_report.summarize_json import *
 from click_datetime import Datetime
 from datetime import datetime, timedelta
@@ -27,46 +26,34 @@ def main(start_date, end_date, bucket):
     spark = (SparkSession
          .builder
          .appName("hardware_report_dashboard")
+         .enableHiveSupport()
          .getOrCreate())
 
-    try:
-        longitudinal_path = 's3://telemetry-parquet/longitudinal/v' + start_date.strftime('%Y%d%m')
-        main_df = (
-            spark.read
-            .parquet(longitudinal_path)
-        )
+    # Generate the report for the desired period.
+    report = generate_report(start_date, end_date, spark)
+    serialize_results(report)
+    # Fetch the previous data from S3 and save it locally.
+    fetch_previous_state("hwsurvey-weekly.json", "hwsurvey-weekly-prev.json", bucket)
+    # Concat the json files into the output.
+    print "Joining JSON files..."
 
-        main_df.createOrReplaceTempView('longitudinal')
+    read_files = glob.glob("*.json")
+    with open("hwsurvey-weekly.json", "wb") as report_json:
+        # If we attempt to load invalid JSON from the assembled file,
+        # the next function throws.
+        report_json.write('[{}'.format(
+            ','.join([open(f, "rb").read() for f in read_files])))
 
-        # Generate the report for the desired period.
-        report = generate_report(start_date, end_date, spark)
-        serialize_results(report)
-        # Fetch the previous data from S3 and save it locally.
-        fetch_previous_state("hwsurvey-weekly.json", "hwsurvey-weekly-prev.json", bucket)
-        # Concat the json files into the output.
-        print "Joining JSON files..."
+        json.load(report_json)
 
-        read_files = glob.glob("*.json")
-        with open("hwsurvey-weekly.json", "wb") as report_json:
-            # If we attempt to load invalid JSON from the assembled file,
-            # the next function throws.
-            report_json.write('[{}'.format(
-                ','.join([open(f, "rb").read() for f in read_files])))
+    # Store the new state to S3. Since S3 doesn't support symlinks, make two copy
+    # of the file: one will always contain the latest data, the other for
+    # archiving.
+    archived_file_copy = "hwsurvey-weekly-" + \
+        datetime.date.today().strftime("%Y%d%m") + ".json"
+    store_new_state("hwsurvey-weekly.json", archived_file_copy, bucket)
+    store_new_state("hwsurvey-weekly.json", "hwsurvey-weekly.json", bucket)
 
-            json.load(report_json)
-
-        # Store the new state to S3. Since S3 doesn't support symlinks, make two copy
-        # of the file: one will always contain the latest data, the other for
-        # archiving.
-        archived_file_copy = "hwsurvey-weekly-" + \
-            datetime.date.today().strftime("%Y%d%m") + ".json"
-        store_new_state("hwsurvey-weekly.json", archived_file_copy, bucket)
-        store_new_state("hwsurvey-weekly.json", "hwsurvey-weekly.json", bucket)
-
-    except Exception:
-        logger.exception("Exception for {}".format(start_date))
-    finally:
-        spark.stop()
 
 if __name__ == '__main__':
     main()
