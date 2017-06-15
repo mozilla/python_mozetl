@@ -1,6 +1,6 @@
 import click
 import glob
-from mozetl.hardware_report.summarize_json import *
+from .summarize_json import *
 from click_datetime import Datetime
 from datetime import datetime, timedelta
 from pyspark.sql import SQLContext
