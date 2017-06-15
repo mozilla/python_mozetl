@@ -1,0 +1,1522 @@
+{
+  "fields": [
+    {
+      "metadata": {}, 
+      "name": "document_id", 
+      "nullable": true, 
+      "type": "string"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "client_id", 
+      "nullable": true, 
+      "type": "string"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "channel", 
+      "nullable": true, 
+      "type": "string"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "normalized_channel", 
+      "nullable": true, 
+      "type": "string"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "country", 
+      "nullable": true, 
+      "type": "string"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "city", 
+      "nullable": true, 
+      "type": "string"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "os", 
+      "nullable": true, 
+      "type": "string"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "os_version", 
+      "nullable": true, 
+      "type": "string"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "os_service_pack_major", 
+      "nullable": true, 
+      "type": "long"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "os_service_pack_minor", 
+      "nullable": true, 
+      "type": "long"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "windows_build_number", 
+      "nullable": true, 
+      "type": "long"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "windows_ubr", 
+      "nullable": true, 
+      "type": "long"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "install_year", 
+      "nullable": true, 
+      "type": "long"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "profile_creation_date", 
+      "nullable": true, 
+      "type": "long"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "subsession_start_date", 
+      "nullable": true, 
+      "type": "string"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "subsession_length", 
+      "nullable": true, 
+      "type": "long"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "distribution_id", 
+      "nullable": true, 
+      "type": "string"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "submission_date", 
+      "nullable": true, 
+      "type": "string"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "sync_configured", 
+      "nullable": true, 
+      "type": "boolean"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "sync_count_desktop", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "sync_count_mobile", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "app_build_id", 
+      "nullable": true, 
+      "type": "string"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "app_display_version", 
+      "nullable": true, 
+      "type": "string"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "app_name", 
+      "nullable": true, 
+      "type": "string"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "app_version", 
+      "nullable": true, 
+      "type": "string"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "timestamp", 
+      "nullable": true, 
+      "type": "long"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "env_build_id", 
+      "nullable": true, 
+      "type": "string"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "env_build_version", 
+      "nullable": true, 
+      "type": "string"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "env_build_arch", 
+      "nullable": true, 
+      "type": "string"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "e10s_enabled", 
+      "nullable": true, 
+      "type": "boolean"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "e10s_cohort", 
+      "nullable": true, 
+      "type": "string"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "locale", 
+      "nullable": true, 
+      "type": "string"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "active_experiment_id", 
+      "nullable": true, 
+      "type": "string"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "active_experiment_branch", 
+      "nullable": true, 
+      "type": "string"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "reason", 
+      "nullable": true, 
+      "type": "string"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "timezone_offset", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "plugin_hangs", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "aborts_plugin", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "aborts_content", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "aborts_gmplugin", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "crashes_detected_plugin", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "crashes_detected_content", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "crashes_detected_gmplugin", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "crash_submit_attempt_main", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "crash_submit_attempt_content", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "crash_submit_attempt_plugin", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "crash_submit_success_main", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "crash_submit_success_content", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "crash_submit_success_plugin", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "active_addons_count", 
+      "nullable": true, 
+      "type": "long"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "flash_version", 
+      "nullable": true, 
+      "type": "string"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "vendor", 
+      "nullable": true, 
+      "type": "string"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "is_default_browser", 
+      "nullable": true, 
+      "type": "boolean"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "default_search_engine_data_name", 
+      "nullable": true, 
+      "type": "string"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "default_search_engine", 
+      "nullable": true, 
+      "type": "string"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "loop_activity_counter", 
+      "nullable": true, 
+      "type": {
+        "fields": [
+          {
+            "metadata": {}, 
+            "name": "open_panel", 
+            "nullable": true, 
+            "type": "integer"
+          }, 
+          {
+            "metadata": {}, 
+            "name": "open_conversation", 
+            "nullable": true, 
+            "type": "integer"
+          }, 
+          {
+            "metadata": {}, 
+            "name": "room_open", 
+            "nullable": true, 
+            "type": "integer"
+          }, 
+          {
+            "metadata": {}, 
+            "name": "room_share", 
+            "nullable": true, 
+            "type": "integer"
+          }, 
+          {
+            "metadata": {}, 
+            "name": "room_delete", 
+            "nullable": true, 
+            "type": "integer"
+          }
+        ], 
+        "type": "struct"
+      }
+    }, 
+    {
+      "metadata": {}, 
+      "name": "devtools_toolbox_opened_count", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "client_submission_date", 
+      "nullable": true, 
+      "type": "string"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "places_bookmarks_count", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "places_pages_count", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "push_api_notification_received", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "web_notification_shown", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "popup_notification_stats", 
+      "nullable": true, 
+      "type": {
+        "keyType": "string", 
+        "type": "map", 
+        "valueContainsNull": true, 
+        "valueType": {
+          "fields": [
+            {
+              "metadata": {}, 
+              "name": "offered", 
+              "nullable": true, 
+              "type": "integer"
+            }, 
+            {
+              "metadata": {}, 
+              "name": "action_1", 
+              "nullable": true, 
+              "type": "integer"
+            }, 
+            {
+              "metadata": {}, 
+              "name": "action_2", 
+              "nullable": true, 
+              "type": "integer"
+            }, 
+            {
+              "metadata": {}, 
+              "name": "action_3", 
+              "nullable": true, 
+              "type": "integer"
+            }, 
+            {
+              "metadata": {}, 
+              "name": "action_last", 
+              "nullable": true, 
+              "type": "integer"
+            }, 
+            {
+              "metadata": {}, 
+              "name": "dismissal_click_elsewhere", 
+              "nullable": true, 
+              "type": "integer"
+            }, 
+            {
+              "metadata": {}, 
+              "name": "dismissal_leave_page", 
+              "nullable": true, 
+              "type": "integer"
+            }, 
+            {
+              "metadata": {}, 
+              "name": "dismissal_close_button", 
+              "nullable": true, 
+              "type": "integer"
+            }, 
+            {
+              "metadata": {}, 
+              "name": "dismissal_not_now", 
+              "nullable": true, 
+              "type": "integer"
+            }, 
+            {
+              "metadata": {}, 
+              "name": "open_submenu", 
+              "nullable": true, 
+              "type": "integer"
+            }, 
+            {
+              "metadata": {}, 
+              "name": "learn_more", 
+              "nullable": true, 
+              "type": "integer"
+            }, 
+            {
+              "metadata": {}, 
+              "name": "reopen_offered", 
+              "nullable": true, 
+              "type": "integer"
+            }, 
+            {
+              "metadata": {}, 
+              "name": "reopen_action_1", 
+              "nullable": true, 
+              "type": "integer"
+            }, 
+            {
+              "metadata": {}, 
+              "name": "reopen_action_2", 
+              "nullable": true, 
+              "type": "integer"
+            }, 
+            {
+              "metadata": {}, 
+              "name": "reopen_action_3", 
+              "nullable": true, 
+              "type": "integer"
+            }, 
+            {
+              "metadata": {}, 
+              "name": "reopen_action_last", 
+              "nullable": true, 
+              "type": "integer"
+            }, 
+            {
+              "metadata": {}, 
+              "name": "reopen_dismissal_click_elsewhere", 
+              "nullable": true, 
+              "type": "integer"
+            }, 
+            {
+              "metadata": {}, 
+              "name": "reopen_dismissal_leave_page", 
+              "nullable": true, 
+              "type": "integer"
+            }, 
+            {
+              "metadata": {}, 
+              "name": "reopen_dismissal_close_button", 
+              "nullable": true, 
+              "type": "integer"
+            }, 
+            {
+              "metadata": {}, 
+              "name": "reopen_dismissal_not_now", 
+              "nullable": true, 
+              "type": "integer"
+            }, 
+            {
+              "metadata": {}, 
+              "name": "reopen_open_submenu", 
+              "nullable": true, 
+              "type": "integer"
+            }, 
+            {
+              "metadata": {}, 
+              "name": "reopen_learn_more", 
+              "nullable": true, 
+              "type": "integer"
+            }
+          ], 
+          "type": "struct"
+        }
+      }
+    }, 
+    {
+      "metadata": {}, 
+      "name": "search_counts", 
+      "nullable": true, 
+      "type": {
+        "containsNull": true, 
+        "elementType": {
+          "fields": [
+            {
+              "metadata": {}, 
+              "name": "engine", 
+              "nullable": true, 
+              "type": "string"
+            }, 
+            {
+              "metadata": {}, 
+              "name": "source", 
+              "nullable": true, 
+              "type": "string"
+            }, 
+            {
+              "metadata": {}, 
+              "name": "count", 
+              "nullable": true, 
+              "type": "long"
+            }
+          ], 
+          "type": "struct"
+        }, 
+        "type": "array"
+      }
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "push_api_notify", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "active_addons", 
+      "nullable": true, 
+      "type": {
+        "containsNull": true, 
+        "elementType": {
+          "fields": [
+            {
+              "metadata": {}, 
+              "name": "addon_id", 
+              "nullable": true, 
+              "type": "string"
+            }, 
+            {
+              "metadata": {}, 
+              "name": "blocklisted", 
+              "nullable": true, 
+              "type": "boolean"
+            }, 
+            {
+              "metadata": {}, 
+              "name": "name", 
+              "nullable": true, 
+              "type": "string"
+            }, 
+            {
+              "metadata": {}, 
+              "name": "user_disabled", 
+              "nullable": true, 
+              "type": "boolean"
+            }, 
+            {
+              "metadata": {}, 
+              "name": "app_disabled", 
+              "nullable": true, 
+              "type": "boolean"
+            }, 
+            {
+              "metadata": {}, 
+              "name": "version", 
+              "nullable": true, 
+              "type": "string"
+            }, 
+            {
+              "metadata": {}, 
+              "name": "scope", 
+              "nullable": true, 
+              "type": "integer"
+            }, 
+            {
+              "metadata": {}, 
+              "name": "type", 
+              "nullable": true, 
+              "type": "string"
+            }, 
+            {
+              "metadata": {}, 
+              "name": "foreign_install", 
+              "nullable": true, 
+              "type": "boolean"
+            }, 
+            {
+              "metadata": {}, 
+              "name": "has_binary_components", 
+              "nullable": true, 
+              "type": "boolean"
+            }, 
+            {
+              "metadata": {}, 
+              "name": "install_day", 
+              "nullable": true, 
+              "type": "integer"
+            }, 
+            {
+              "metadata": {}, 
+              "name": "update_day", 
+              "nullable": true, 
+              "type": "integer"
+            }, 
+            {
+              "metadata": {}, 
+              "name": "signed_state", 
+              "nullable": true, 
+              "type": "integer"
+            }, 
+            {
+              "metadata": {}, 
+              "name": "is_system", 
+              "nullable": true, 
+              "type": "boolean"
+            }, 
+            {
+              "metadata": {
+                "_OPTIONAL_": true
+              }, 
+              "name": "is_web_extension", 
+              "nullable": true, 
+              "type": "boolean"
+            }, 
+            {
+              "metadata": {
+                "_OPTIONAL_": true
+              }, 
+              "name": "multiprocess_compatible", 
+              "nullable": true, 
+              "type": "boolean"
+            }
+          ], 
+          "type": "struct"
+        }, 
+        "type": "array"
+      }
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "active_theme", 
+      "nullable": true, 
+      "type": {
+        "fields": [
+          {
+            "metadata": {}, 
+            "name": "addon_id", 
+            "nullable": true, 
+            "type": "string"
+          }, 
+          {
+            "metadata": {}, 
+            "name": "blocklisted", 
+            "nullable": true, 
+            "type": "boolean"
+          }, 
+          {
+            "metadata": {}, 
+            "name": "name", 
+            "nullable": true, 
+            "type": "string"
+          }, 
+          {
+            "metadata": {}, 
+            "name": "user_disabled", 
+            "nullable": true, 
+            "type": "boolean"
+          }, 
+          {
+            "metadata": {}, 
+            "name": "app_disabled", 
+            "nullable": true, 
+            "type": "boolean"
+          }, 
+          {
+            "metadata": {}, 
+            "name": "version", 
+            "nullable": true, 
+            "type": "string"
+          }, 
+          {
+            "metadata": {}, 
+            "name": "scope", 
+            "nullable": true, 
+            "type": "integer"
+          }, 
+          {
+            "metadata": {}, 
+            "name": "type", 
+            "nullable": true, 
+            "type": "string"
+          }, 
+          {
+            "metadata": {}, 
+            "name": "foreign_install", 
+            "nullable": true, 
+            "type": "boolean"
+          }, 
+          {
+            "metadata": {}, 
+            "name": "has_binary_components", 
+            "nullable": true, 
+            "type": "boolean"
+          }, 
+          {
+            "metadata": {}, 
+            "name": "install_day", 
+            "nullable": true, 
+            "type": "integer"
+          }, 
+          {
+            "metadata": {}, 
+            "name": "update_day", 
+            "nullable": true, 
+            "type": "integer"
+          }, 
+          {
+            "metadata": {}, 
+            "name": "signed_state", 
+            "nullable": true, 
+            "type": "integer"
+          }, 
+          {
+            "metadata": {}, 
+            "name": "is_system", 
+            "nullable": true, 
+            "type": "boolean"
+          }, 
+          {
+            "metadata": {
+              "_OPTIONAL_": true
+            }, 
+            "name": "is_web_extension", 
+            "nullable": true, 
+            "type": "boolean"
+          }, 
+          {
+            "metadata": {
+              "_OPTIONAL_": true
+            }, 
+            "name": "multiprocess_compatible", 
+            "nullable": true, 
+            "type": "boolean"
+          }
+        ], 
+        "type": "struct"
+      }
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "blocklist_enabled", 
+      "nullable": true, 
+      "type": "boolean"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "addon_compatibility_check_enabled", 
+      "nullable": true, 
+      "type": "boolean"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "telemetry_enabled", 
+      "nullable": true, 
+      "type": "boolean"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "user_prefs", 
+      "nullable": true, 
+      "type": {
+        "fields": [
+          {
+            "metadata": {}, 
+            "name": "dom_ipc_process_count", 
+            "nullable": true, 
+            "type": "integer"
+          }, 
+          {
+            "metadata": {
+              "_OPTIONAL_": true
+            }, 
+            "name": "extensions_allow_non_mpc_extensions", 
+            "nullable": true, 
+            "type": "boolean"
+          }
+        ], 
+        "type": "struct"
+      }
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "max_concurrent_tab_count", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "tab_open_event_count", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "max_concurrent_window_count", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "window_open_event_count", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "total_uri_count", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "unfiltered_uri_count", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "unique_domains_count", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "events", 
+      "nullable": true, 
+      "type": {
+        "containsNull": true, 
+        "elementType": {
+          "fields": [
+            {
+              "metadata": {}, 
+              "name": "timestamp", 
+              "nullable": true, 
+              "type": "long"
+            }, 
+            {
+              "metadata": {}, 
+              "name": "category", 
+              "nullable": true, 
+              "type": "string"
+            }, 
+            {
+              "metadata": {}, 
+              "name": "method", 
+              "nullable": true, 
+              "type": "string"
+            }, 
+            {
+              "metadata": {}, 
+              "name": "object", 
+              "nullable": true, 
+              "type": "string"
+            }, 
+            {
+              "metadata": {}, 
+              "name": "string_value", 
+              "nullable": true, 
+              "type": "string"
+            }, 
+            {
+              "metadata": {}, 
+              "name": "map_values", 
+              "nullable": true, 
+              "type": {
+                "keyType": "string", 
+                "type": "map", 
+                "valueContainsNull": true, 
+                "valueType": "string"
+              }
+            }
+          ], 
+          "type": "struct"
+        }, 
+        "type": "array"
+      }
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "attribution", 
+      "nullable": true, 
+      "type": {
+        "fields": [
+          {
+            "metadata": {}, 
+            "name": "source", 
+            "nullable": true, 
+            "type": "string"
+          }, 
+          {
+            "metadata": {}, 
+            "name": "medium", 
+            "nullable": true, 
+            "type": "string"
+          }, 
+          {
+            "metadata": {}, 
+            "name": "campaign", 
+            "nullable": true, 
+            "type": "string"
+          }, 
+          {
+            "metadata": {}, 
+            "name": "content", 
+            "nullable": true, 
+            "type": "string"
+          }
+        ], 
+        "type": "struct"
+      }
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "is_wow64", 
+      "nullable": true, 
+      "type": "boolean"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "shutdown_kill", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "ssl_handshake_result_success", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "ssl_handshake_result_failure", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "ssl_handshake_result", 
+      "nullable": true, 
+      "type": {
+        "keyType": "string", 
+        "type": "map", 
+        "valueContainsNull": true, 
+        "valueType": "integer"
+      }
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "active_ticks", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "main", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "first_paint", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "session_restored", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "total_time", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "scalar_parent_aushelper_websense_reg_version", 
+      "nullable": true, 
+      "type": "string"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "scalar_parent_browser_engagement_max_concurrent_tab_count", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "scalar_parent_browser_engagement_max_concurrent_window_count", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "scalar_parent_browser_engagement_navigation_about_home", 
+      "nullable": true, 
+      "type": {
+        "keyType": "string", 
+        "type": "map", 
+        "valueContainsNull": true, 
+        "valueType": "integer"
+      }
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "scalar_parent_browser_engagement_navigation_about_newtab", 
+      "nullable": true, 
+      "type": {
+        "keyType": "string", 
+        "type": "map", 
+        "valueContainsNull": true, 
+        "valueType": "integer"
+      }
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "scalar_parent_browser_engagement_navigation_contextmenu", 
+      "nullable": true, 
+      "type": {
+        "keyType": "string", 
+        "type": "map", 
+        "valueContainsNull": true, 
+        "valueType": "integer"
+      }
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "scalar_parent_browser_engagement_navigation_searchbar", 
+      "nullable": true, 
+      "type": {
+        "keyType": "string", 
+        "type": "map", 
+        "valueContainsNull": true, 
+        "valueType": "integer"
+      }
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "scalar_parent_browser_engagement_navigation_urlbar", 
+      "nullable": true, 
+      "type": {
+        "keyType": "string", 
+        "type": "map", 
+        "valueContainsNull": true, 
+        "valueType": "integer"
+      }
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "scalar_parent_browser_engagement_tab_open_event_count", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "scalar_parent_browser_engagement_total_uri_count", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "scalar_parent_browser_engagement_unfiltered_uri_count", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "scalar_parent_browser_engagement_unique_domains_count", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "scalar_parent_browser_engagement_window_open_event_count", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "scalar_parent_browser_usage_graphite", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "scalar_parent_devtools_copy_full_css_selector_opened", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "scalar_parent_devtools_copy_unique_css_selector_opened", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "scalar_parent_devtools_toolbar_eyedropper_opened", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "scalar_parent_dom_contentprocess_troubled_due_to_memory", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "scalar_parent_navigator_storage_estimate_count", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "scalar_parent_navigator_storage_persist_count", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "scalar_parent_storage_sync_api_usage_extensions_using", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "scalar_parent_storage_sync_api_usage_items_stored", 
+      "nullable": true, 
+      "type": {
+        "keyType": "string", 
+        "type": "map", 
+        "valueContainsNull": true, 
+        "valueType": "integer"
+      }
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "scalar_parent_storage_sync_api_usage_storage_consumed", 
+      "nullable": true, 
+      "type": {
+        "keyType": "string", 
+        "type": "map", 
+        "valueContainsNull": true, 
+        "valueType": "integer"
+      }
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "scalar_parent_webrtc_nicer_stun_retransmits", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "scalar_parent_webrtc_nicer_turn_401s", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "scalar_parent_webrtc_nicer_turn_403s", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "scalar_parent_webrtc_nicer_turn_438s", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "memory_mb", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "subsession_counter", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "profile_subsession_counter", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "default_search_engine_data_load_path", 
+      "nullable": true, 
+      "type": "string"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "default_search_engine_data_origin", 
+      "nullable": true, 
+      "type": "string"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "default_search_engine_data_submission_url", 
+      "nullable": true, 
+      "type": "string"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "plugins_notification_shown", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "plugins_notification_user_action", 
+      "nullable": true, 
+      "type": {
+        "fields": [
+          {
+            "metadata": {}, 
+            "name": "allow_now", 
+            "nullable": true, 
+            "type": "integer"
+          }, 
+          {
+            "metadata": {}, 
+            "name": "allow_always", 
+            "nullable": true, 
+            "type": "integer"
+          }, 
+          {
+            "metadata": {}, 
+            "name": "block", 
+            "nullable": true, 
+            "type": "integer"
+          }
+        ], 
+        "type": "struct"
+      }
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "plugins_infobar_shown", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "plugins_infobar_block", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "plugins_infobar_allow", 
+      "nullable": true, 
+      "type": "integer"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "scalar_parent_telemetry_os_shutting_down", 
+      "nullable": true, 
+      "type": "boolean"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "experiments", 
+      "nullable": true, 
+      "type": {
+        "keyType": "string", 
+        "type": "map", 
+        "valueContainsNull": true, 
+        "valueType": "string"
+      }
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "search_cohort", 
+      "nullable": true, 
+      "type": "string"
+    }, 
+    {
+      "metadata": {
+        "_OPTIONAL_": true
+      }, 
+      "name": "scalar_parent_services_sync_fxa_verification_method", 
+      "nullable": true, 
+      "type": "string"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "submission_date_s3", 
+      "nullable": true, 
+      "type": "string"
+    }, 
+    {
+      "metadata": {}, 
+      "name": "sample_id", 
+      "nullable": true, 
+      "type": "string"
+    }
+  ], 
+  "type": "struct"
+}

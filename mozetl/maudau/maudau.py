@@ -21,7 +21,7 @@ from moztelemetry.standards import (
     count_distinct_clientids
 )
 
-from mozetl.utils import upload_file_to_s3
+from mozetl import utils as U
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -35,37 +35,12 @@ MAUDAU_SNAPSHOT_TEMPLATE = "engagement_ratio.{}.csv"
 DASHBOARD_BUCKET = "net-mozaws-prod-metrics-data"
 DASHBOARD_KEY = "firefox-dashboard/{}".format(MAUDAU_ROLLUP_BASENAME)
 
-ACTIVITY_SUBMISSION_LAG = DT.timedelta(10)
 # MONTH as in "monthly active"
 MONTH = 28
 
 
-def format_as_submission_date(date):
-    return DT.date.strftime(date, "%Y%m%d")
-
-
-def parse_as_submission_date(date_string):
-    return DT.datetime.strptime(date_string, "%Y%m%d").date()
-
-
-def format_spark_path(bucket, prefix):
-    return "s3://{}/{}".format(bucket, prefix)
-
-
 def get_rollup_s3_paths(basename):
     return (STORAGE_BUCKET, os.path.join(STORAGE_SUB_DIR, basename))
-
-
-def generate_filter_parameters(end_date, days_back):
-    d = {}
-    min_activity_date = end_date - DT.timedelta(days_back)
-    d['min_activity_iso'] = min_activity_date.isoformat()
-    d['max_activity_iso'] = (end_date + DT.timedelta(1)).isoformat()
-
-    d['min_submission_string'] = format_as_submission_date(min_activity_date)
-    max_submission_date = end_date + ACTIVITY_SUBMISSION_LAG
-    d['max_submission_string'] = format_as_submission_date(max_submission_date)
-    return d
 
 
 def count_active_users(frame, end_date, days_back):
@@ -82,7 +57,7 @@ def count_active_users(frame, end_date, days_back):
 
     See https://bugzilla.mozilla.org/show_bug.cgi?id=1240849
     """
-    params = generate_filter_parameters(end_date, days_back)
+    params = U.generate_filter_parameters(end_date, days_back)
 
     filtered = filter_date_range(
         frame,
@@ -101,13 +76,13 @@ def parse_last_rollup(basename, start_date=None):
     first date that needs to be re-counted.
     """
     start_date = start_date or DT.date.today()
-    since = start_date - ACTIVITY_SUBMISSION_LAG
+    since = start_date - U.ACTIVITY_SUBMISSION_LAG
     carryover = []
     with open(basename) as f:
         reader = csv.DictReader(f)
         last_day = None
         for row in reader:
-            day = parse_as_submission_date(row['day'])
+            day = U.parse_as_submission_date(row['day'])
             if day >= since:
                 break
             if last_day is not None:
@@ -154,13 +129,13 @@ def generate_counts(frame, since, until=None):
     narrow = frame.select(cols)
     updates = []
     today = DT.date.today()
-    generated = format_as_submission_date(today)
+    generated = U.format_as_submission_date(today)
     start = since
     until = until or today
     while start < until:
         dau = count_active_users(narrow, start, 0)
         mau = count_active_users(narrow, start, MONTH)
-        day = format_as_submission_date(start)
+        day = U.format_as_submission_date(start)
         d = {'day': day, 'dau': dau, 'mau': mau, 'generated_on': generated}
         updates.append(d)
         start += DT.timedelta(1)
@@ -172,7 +147,7 @@ def write_locally(results):
     :results [{'day': '%Y%m%d', 'dau': <int>,
               'mau': <int>, 'generated_on': '%Y%m%d'}, ...]
     '''
-    publication_date = format_as_submission_date(DT.date.today())
+    publication_date = U.format_as_submission_date(DT.date.today())
     basename = MAUDAU_SNAPSHOT_TEMPLATE.format(publication_date)
     cols = ["day", "dau", "mau", "generated_on"]
     with open(basename, 'w') as f:
@@ -188,12 +163,12 @@ def publish_to_s3(s3client, bucket, prefix, basename):
     and once to the production dashboard.
     '''
     dated_key = os.path.join(prefix, basename)
-    upload_file_to_s3(s3client, basename, bucket, dated_key)
+    U.upload_file_to_s3(s3client, basename, bucket, dated_key)
     latest_key = os.path.join(prefix, MAUDAU_ROLLUP_BASENAME)
-    upload_file_to_s3(s3client, basename, bucket, latest_key)
+    U.upload_file_to_s3(s3client, basename, bucket, latest_key)
     if DEVELOPMENT:
         return
-    upload_file_to_s3(s3client, basename, DASHBOARD_BUCKET, DASHBOARD_KEY)
+    U.upload_file_to_s3(s3client, basename, DASHBOARD_BUCKET, DASHBOARD_KEY)
 
 
 @click.command()
@@ -225,7 +200,7 @@ def main(input_bucket, input_prefix, output_bucket, output_prefix):
         .appName("maudau")
         .getOrCreate()
     )
-    path = format_spark_path(input_bucket, input_prefix)
+    path = U.format_spark_path(input_bucket, input_prefix)
     logging.info("Loading main_summary from {}".format(path))
     main_summary = spark.read.option("mergeSchema", "true").parquet(path)
     updates = generate_counts(main_summary, since)

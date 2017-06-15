@@ -19,9 +19,9 @@ def schema_from_json(path):
 
     :path str: Path the the json data
     """
-    json_data = pkg_resources.resource_stream(mozetl.topline.__name__, path)
-    data = json.load(json_data)
-    return StructType.fromJson(data)
+    with pkg_resources.resource_stream(mozetl.topline.__name__, path) as f:
+        data = json.load(f)
+        return StructType.fromJson(data)
 
 
 # Generate module level schemas

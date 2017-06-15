@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import datetime as DT
 import boto3
 import pytest
 from moto import mock_s3
@@ -33,6 +33,29 @@ def test_write_csv_ascii(generate_data, tmpdir):
         data = f.read()
 
     assert data.rstrip().split('\r\n')[1:] == test_data
+
+
+def test_generate_filter_parameters():
+    """
+    Check the two meaningful cases: DAU (0 days) and MAU(28 days).
+    """
+    expected0 = {
+        'min_activity_iso': '2017-01-31',
+        'max_activity_iso': '2017-02-01',
+        'min_submission_string': '20170131',
+        'max_submission_string': '20170210'
+    }
+    actual0 = utils.generate_filter_parameters(DT.date(2017, 1, 31), 0)
+    assert expected0 == actual0, str(actual0)
+
+    expected28 = {
+        'min_activity_iso': '2017-01-03',
+        'max_activity_iso': '2017-02-01',
+        'min_submission_string': '20170103',
+        'max_submission_string': '20170210'
+    }
+    actual28 = utils.generate_filter_parameters(DT.date(2017, 1, 31), 28)
+    assert expected28 == actual28
 
 
 def test_write_csv_valid_unicode(generate_data, tmpdir):

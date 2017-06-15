@@ -1,9 +1,11 @@
 *.pyc
+derby.log
 
 dist/
 build/
 .tox/
 .coverage
 .cache/
+metastore_db/
 
 *.egg-info/
