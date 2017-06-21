@@ -58,7 +58,7 @@ def column_like(name, patterns, default):
 def clean_input(dataframe, start, end):
     input_columns = [
         "client_id",
-        "submission_date",
+        "timestamp",
         "is_default_browser",
         "search_counts",
         "country",
@@ -72,8 +72,8 @@ def clean_input(dataframe, start, end):
     # normalize countries against a whitelist
     columns["country"] = (
         F.when(F.col("country").isin(countries), F.col("country"))
-        .otherwise("Other")
-        .alias("country")
+            .otherwise("Other")
+            .alias("country")
     )
 
     # clean operating system based on CEP naming scheme
@@ -91,8 +91,8 @@ def clean_input(dataframe, start, end):
     columns["profile_creation_date"] = (
         F.when(F.col("profile_creation_date") >= 0,
                F.col("profile_creation_date") * seconds_per_day)
-        .otherwise(0.0)
-        .cast(types.DoubleType())
+            .otherwise(0.0)
+            .cast(types.DoubleType())
     )
 
     # generate hours of usage from subsession length (seconds -> hours)
@@ -100,16 +100,16 @@ def clean_input(dataframe, start, end):
         F.when((F.col("subsession_length") >= 0) &
                (F.col("subsession_length") < 180 * seconds_per_day),
                F.col("subsession_length") / seconds_per_hour)
-        .otherwise(0.0)
-        .cast(types.DoubleType())
+            .otherwise(0.0)
+            .cast(types.DoubleType())
     )
 
     # clean the dataset
     clean = (
         dataframe
-        .where(F.col("submission_date_s3") >= start)
-        .where(F.col("submission_date_s3") < end)
-        .select([expr.alias(name) for name, expr in columns.iteritems()])
+            .where(F.col("submission_date_s3") >= start)
+            .where(F.col("submission_date_s3") < end)
+            .select([expr.alias(name) for name, expr in columns.iteritems()])
     )
 
     return clean
@@ -128,23 +128,23 @@ def search_aggregates(dataframe, attributes):
 
     s_engine = (
         column_like("search_count.engine", patterns, "other")
-        .alias("engine")
+            .alias("engine")
     )
     s_count = (
         F.when(F.col("search_count.count") > 0, F.col("search_count.count"))
-        .otherwise(0)
-        .alias("count")
+            .otherwise(0)
+            .alias("count")
     )
 
     # generate the search aggregates by exploding and pivoting
     search = (
         dataframe
-        .withColumn("search_count", F.explode("search_counts"))
-        .select("country", "channel", "os", s_engine, s_count)
-        .groupBy(attributes)
-        .pivot("engine", search_labels)
-        .agg(F.sum("count"))
-        .na.fill(0, search_labels)
+            .withColumn("search_count", F.explode("search_counts"))
+            .select("country", "channel", "os", s_engine, s_count)
+            .groupBy(attributes)
+            .pivot("engine", search_labels)
+            .agg(F.sum("count"))
+            .na.fill(0, search_labels)
     )
 
     return search
@@ -157,7 +157,6 @@ def hours_aggregates(dataframe, attributes):
 
 
 def client_aggregates(dataframe, timestamp, attributes):
-
     # Generate statement for aggregates
     select_expr = {col: F.col(col) for col in attributes}
 
@@ -169,16 +168,16 @@ def client_aggregates(dataframe, timestamp, attributes):
 
     select_expr["clientid_rank"] = F.row_number().over(
         Window
-        .partitionBy("client_id")
-        .orderBy(F.desc("submission_date"))
+            .partitionBy("client_id")
+            .orderBy(F.desc("timestamp"))
     )
 
     clients = (
         dataframe
-        .select([expr.alias(name) for name, expr in select_expr.iteritems()])
-        .where("clientid_rank = 1")
-        .groupBy(attributes)
-        .agg(
+            .select([expr.alias(name) for name, expr in select_expr.iteritems()])
+            .where("clientid_rank = 1")
+            .groupBy(attributes)
+            .agg(
             F.count("*").alias("actives"),
             F.sum("new_client").alias("new_records"),
             F.sum("default_client").alias("default")
@@ -198,7 +197,7 @@ def transform(dataframe, start, mode):
 
     # find the timestamp in days to find new profiles
     report_delta = datetime.strptime(start, "%Y%m%d") - datetime(1970, 1, 1)
-    report_timestamp = report_delta.total_seconds() / seconds_per_day
+    report_timestamp = report_delta.total_seconds()
 
     # generate aggregates
     clients = client_aggregates(df, report_timestamp, attributes)
@@ -240,24 +239,24 @@ def extract(spark, path):
     """
     return (
         spark.read
-        .option("mergeSchema", "true")
-        .parquet(path)
+            .option("mergeSchema", "true")
+            .parquet(path)
     )
 
 
 def save(dataframe, bucket, prefix, version, mode, start_date):
     prefix = (
         "{}/v{}/mode={}/report_start={}"
-        .format(prefix, version, mode, start_date)
+            .format(prefix, version, mode, start_date)
     )
     location = format_spark_path(bucket, prefix)
 
     (
         dataframe
-        .select(topline_schema.names)
-        .repartition(1)
-        .write
-        .parquet(location)
+            .select(topline_schema.names)
+            .repartition(1)
+            .write
+            .parquet(location)
     )
 
 
