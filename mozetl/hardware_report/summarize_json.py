@@ -242,14 +242,14 @@ def get_latest_valid_per_client(entry, time_start, time_end):
 
         # The data is in descending order, the most recent ping comes first.
         # The first item less or equal than the time_end date is our thing.
-        if sub_date >= time_start and sub_date <= time_end:
+        if sub_date >= time_start.date() and sub_date <= time_end.date():
             latest_entry = index
             break
 
         # Ok, we went too far, we're not really interested in the data
         # outside of [time_start, time_end]. Since records are ordered,
         # we can actually skip this.
-        if sub_date < time_start:
+        if sub_date < time_start.date():
             break
 
     # This client wasn't active in the reference timeframe, just map it to no
@@ -612,6 +612,7 @@ def generate_report(start_date, end_date, spark):
                   normalized_channel  
                FROM 
                   longitudinal
+               LIMIT 1000
                """
 
     frame = spark.sql(sqlQuery).where("normalized_channel = 'release'").where("build is not null and build[0].application_name = 'Firefox'")

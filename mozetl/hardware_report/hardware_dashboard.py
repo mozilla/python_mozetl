@@ -1,4 +1,5 @@
 import click
+import json
 import glob
 from .summarize_json import *
 from click_datetime import Datetime
@@ -38,19 +39,20 @@ def main(start_date, end_date, bucket):
     print "Joining JSON files..."
 
     read_files = glob.glob("*.json")
-    with open("hwsurvey-weekly.json", "wb") as report_json:
+    with open("hwsurvey-weekly.json", "w+") as report_json:
         # If we attempt to load invalid JSON from the assembled file,
         # the next function throws.
-        report_json.write('[{}'.format(
-            ','.join([open(f, "rb").read() for f in read_files])))
-
-        json.load(report_json)
+        try:
+            report_json.write('[{}]'.format(
+                ','.join([open(f, "r+").read() for f in read_files])))
+        except ValueError:
+            print f + ' is empty.'
 
     # Store the new state to S3. Since S3 doesn't support symlinks, make two copy
     # of the file: one will always contain the latest data, the other for
     # archiving.
     archived_file_copy = "hwsurvey-weekly-" + \
-        datetime.date.today().strftime("%Y%d%m") + ".json"
+        datetime.today().strftime("%Y%d%m") + ".json"
     store_new_state("hwsurvey-weekly.json", archived_file_copy, bucket)
     store_new_state("hwsurvey-weekly.json", "hwsurvey-weekly.json", bucket)
 
