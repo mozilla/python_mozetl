@@ -75,10 +75,10 @@ def test_simple_transform(row_to_dict, simple_rdd, spark_context):
         'version': u'1.0.2',
         'requests': requests,
         'disconnectRequests': 1,
-        'consoleErrors': 0,
+        'consoleErrors': None,
         'e10sStatus': 1,
         'e10sProcessCount': 4,
-        'trackingProtection': False
+        'trackingProtection': None
     }
 
     assert row_to_dict(actual) == expected
