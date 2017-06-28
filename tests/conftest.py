@@ -60,7 +60,7 @@ class DataFrameFactory:
             samples.append(sample)
 
         # if no schema is provided, the schema will be inferred
-        return self.spark.createDataFrame(samples, schema)
+        return self.spark.createDataFrame(samples, schema, verifySchema=False)
 
 
 @pytest.fixture()
