@@ -81,4 +81,10 @@ def test_simple_transform(row_to_dict, simple_rdd, spark_context):
         'trackingProtection': False
     }
 
+    print "Actual:"
+    print actual
+    print "Dict Actual:"
+    print row_to_dict(actual)
+    print "Expected:"
+    print expected
     assert row_to_dict(actual) == expected
