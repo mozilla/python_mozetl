@@ -1,16 +1,32 @@
-import functools
+import json
 import os
 from datetime import timedelta, datetime
 
-import pytest
 from click.testing import CliRunner
+import pytest
+
+from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 from pyspark.sql.types import (
     StructField, StructType, StringType,
     LongType, IntegerType, BooleanType
 )
-
 from mozetl.churn import churn
+
+
+# Initialize a spark context
+@pytest.fixture(scope="session")
+def spark(request):
+    spark = (SparkSession
+             .builder
+             .appName("churn_test")
+             .getOrCreate())
+
+    # teardown
+    request.addfinalizer(lambda: spark.stop())
+
+    return spark
+
 
 """
 Calendar for reference
@@ -87,15 +103,6 @@ default_sample = {
 }
 
 
-@pytest.fixture()
-def generate_data(dataframe_factory):
-    return functools.partial(
-        dataframe_factory.create_dataframe,
-        base=default_sample,
-        schema=main_schema
-    )
-
-
 def seconds_since_epoch(date):
     """ Calculate the total number of seconds since unix epoch.
 
@@ -139,6 +146,39 @@ def generate_dates(subsession_date, submission_offset=0, creation_offset=0):
     return date_snippet
 
 
+def generate_samples(snippets=None, base_sample=default_sample):
+    """ Generate samples from the default sample. Snippets overwrite specific
+    fields in the default sample.
+
+    :snippets list(dict): A list of dictionary attributes to update
+    """
+    if snippets is None:
+        return [json.dumps(base_sample)]
+
+    samples = []
+    for snippet in snippets:
+        sample = base_sample.copy()
+        sample.update(snippet)
+        samples.append(json.dumps(sample))
+    return samples
+
+
+def samples_to_df(spark, samples):
+    """ Turn a list of dictionaries into a dataframe. """
+    jsonRDD = spark.sparkContext.parallelize(samples)
+    return spark.read.json(jsonRDD, schema=main_schema)
+
+
+def snippets_to_df(spark, snippets, base_sample=default_sample):
+    """ Turn a list of snippets into a fully instantiated dataframe.
+
+    A snippet are attributes that overwrite the base dictionary. This allows
+    for the generation of new rows without excess repetition.
+    """
+    samples = generate_samples(snippets, base_sample)
+    return samples_to_df(spark, samples)
+
+
 # Generate the datasets
 # Sunday, also the first day in this collection period.
 subsession_start = datetime(2017, 1, 15)
@@ -146,7 +186,7 @@ week_start_ds = datetime.strftime(subsession_start, "%Y%m%d")
 
 
 @pytest.fixture
-def late_submissions_df(generate_data):
+def late_submissions_df(spark):
     # All pings within 17 days of the submission start date are valid.
     # However, only pings with ssd within the 7 day retention period
     # are used for computation. Generate pings for this case.
@@ -155,11 +195,11 @@ def late_submissions_df(generate_data):
     early_subsession = generate_dates(subsession_start - timedelta(7))
 
     snippets = [late_submission, early_subsession]
-    return generate_data(snippets)
+    return snippets_to_df(spark, snippets)
 
 
 @pytest.fixture
-def single_profile_df(generate_data):
+def single_profile_df(spark):
     recent_ping = generate_dates(
         subsession_start + timedelta(3), creation_offset=3)
 
@@ -167,11 +207,11 @@ def single_profile_df(generate_data):
     old_ping = generate_dates(subsession_start)
 
     snippets = [recent_ping, old_ping]
-    return generate_data(snippets)
+    return snippets_to_df(spark, snippets)
 
 
 @pytest.fixture
-def multi_profile_df(generate_data):
+def multi_profile_df(spark):
 
     # generate different cohort of users based on creation date
     cohort_0 = generate_dates(subsession_start, creation_offset=14)
@@ -210,7 +250,7 @@ def multi_profile_df(generate_data):
     })
 
     snippets = [user_0, user_1, user_2]
-    return generate_data(snippets)
+    return snippets_to_df(spark, snippets)
 
 
 @pytest.fixture
@@ -319,7 +359,7 @@ def test_cohort_by_channel_aggregates(multi_profile_df):
 
 
 @pytest.fixture
-def nulled_attribution_df(generate_data):
+def nulled_attribution_df(spark):
     partial_attribution = {
         'client_id': 'partial',
         'attribution': {
@@ -333,7 +373,7 @@ def nulled_attribution_df(generate_data):
     }
 
     snippets = [partial_attribution, nulled_attribution]
-    return generate_data(snippets)
+    return snippets_to_df(spark, snippets)
 
 
 def test_nulled_stub_attribution_content(nulled_attribution_df):
@@ -364,15 +404,14 @@ def test_nulled_stub_attribution_medium(nulled_attribution_df):
     assert actual == expect
 
 
-def test_simple_string_dimensions(generate_data):
-    snippets = [
+def test_simple_string_dimensions(spark):
+    input_df = snippets_to_df(spark, [
         {
             'distribution_id': None,
             'default_search_engine': None,
             'locale': None
         }
-    ]
-    input_df = generate_data(snippets)
+    ])
     df = churn.compute_churn_week(input_df, week_start_ds)
     rows = df.collect()
 
@@ -381,25 +420,24 @@ def test_simple_string_dimensions(generate_data):
     assert rows[0].locale == 'unknown'
 
 
-def test_empty_total_uri_count(generate_data):
-    snippets = [{'total_uri_count': None}]
-    input_df = generate_data(snippets)
+def test_empty_total_uri_count(spark):
+    input_df = snippets_to_df(spark, [{'total_uri_count': None}])
     df = churn.compute_churn_week(input_df, week_start_ds)
     rows = df.collect()
 
     assert rows[0].total_uri_count == 0
 
 
-def test_total_uri_count_per_client(generate_data):
+def test_total_uri_count_per_client(spark):
     snippets = [{'total_uri_count': 1}, {'total_uri_count': 2}]
-    input_df = generate_data(snippets)
+    input_df = snippets_to_df(spark, snippets)
     df = churn.compute_churn_week(input_df, week_start_ds)
     rows = df.collect()
 
     assert rows[0].total_uri_count == 3
 
 
-def test_average_unique_domains_count(generate_data):
+def test_average_unique_domains_count(spark):
     snippets = [
         # averages to 4
         {'client_id': '1', 'unique_domains_count': 6},
@@ -408,7 +446,7 @@ def test_average_unique_domains_count(generate_data):
         {'client_id': '2', 'unique_domains_count': 12},
         {'client_id': '2', 'unique_domains_count': 4}
     ]
-    input_df = generate_data(snippets)
+    input_df = snippets_to_df(spark, snippets)
     df = churn.compute_churn_week(input_df, week_start_ds)
     rows = df.collect()
 

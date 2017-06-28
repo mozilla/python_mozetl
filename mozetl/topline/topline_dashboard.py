@@ -18,13 +18,17 @@ original data backed-up in `telemetry-parquet/topline_summary/v1`. This is all
 roll-ups up to the swap-over.
 """
 
+import tempfile
+import os
+import shutil
 import logging
 
+import boto3
 import click
-from pyspark.sql import SparkSession, functions as F
 
-from mozetl import utils
+from pyspark.sql import SparkSession, functions as F
 from mozetl.topline.schema import topline_schema, historical_schema
+from mozetl import utils
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -115,9 +119,30 @@ def reformat_data(df):
 
 def write_dashboard_data(df, bucket, prefix, mode):
     """ Write the dashboard data to a s3 location. """
+
+    # create a temporary directory to dump files into
+    path = tempfile.mkdtemp()
+    filepath = os.path.join(path, 'temp.csv')
+
+    utils.write_csv(df, filepath)
+
     # name of the output key
     key = "{}/topline-{}.csv".format(prefix, mode)
-    utils.write_csv_to_s3(df, bucket, key)
+
+    # create the s3 resource for this transaction
+    s3 = boto3.client('s3', region_name='us-west-2')
+
+    # write the contents of the file to right location
+    with open(filepath, 'rb') as data:
+        s3.put_object(Bucket=bucket,
+                      Key=key,
+                      Body=data,
+                      ACL='bucket-owner-full-control')
+
+    logger.info('Sucessfully wrote {} to {}'.format(key, bucket))
+
+    # clean up the temporary directory
+    shutil.rmtree(path)
 
 
 @click.command()

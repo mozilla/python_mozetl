@@ -1,12 +1,27 @@
-import functools
+import json
+
+from click.testing import CliRunner
 
 import boto3
 import pytest
-from click.testing import CliRunner
 from moto import mock_s3
-
 from mozetl.topline import topline_dashboard as topline
 from mozetl.topline.schema import historical_schema, topline_schema
+from pyspark.sql import SparkSession
+
+
+@pytest.fixture(scope="session")
+def spark(request):
+    spark = (SparkSession
+             .builder
+             .appName("test_topline_dashboard")
+             .getOrCreate())
+
+    # teardown
+    request.addfinalizer(lambda: spark.stop())
+
+    return spark
+
 
 default_sample = {
     "geo": "US",
@@ -25,34 +40,49 @@ default_sample = {
 }
 
 
-@pytest.fixture()
-def generate_data(dataframe_factory):
-    return functools.partial(
-        dataframe_factory.create_dataframe,
-        base=default_sample,
-        schema=topline_schema
-    )
+def generate_samples(snippets, base_sample):
+    if snippets is None:
+        return [json.dumps(base_sample)]
+
+    samples = []
+    for snippet in snippets:
+        sample = base_sample.copy()
+        sample.update(snippet)
+        samples.append(json.dumps(sample))
+    return samples
+
+
+def snippets_to_df(spark, snippets, base_sample, schema):
+    samples = generate_samples(snippets, base_sample)
+    jsonRDD = spark.sparkContext.parallelize(samples)
+    return spark.read.json(jsonRDD, schema=schema)
 
 
 @pytest.fixture()
-def simple_df(generate_data):
-    return generate_data(None)
+def simple_df(spark):
+    snippets = None
+    input_df = snippets_to_df(spark, snippets,
+                              default_sample, topline_schema)
+    return input_df
 
 
 @pytest.fixture()
-def multi_df(generate_data):
+def multi_df(spark):
     snippets = [
         {'geo': 'CA'},
         {'channel': 'release'},
         {'os': 'Linux'}
     ]
-    return generate_data(snippets)
+    input_df = snippets_to_df(spark, snippets,
+                              default_sample, topline_schema)
+    return input_df
 
 
 # reformatted data filters out ROW into Other
-def test_reformat_filters_ROW(generate_data):
+def test_reformat_filters_ROW(spark):
     # Maldives is not a target region
-    input_df = generate_data([{'geo': 'MV'}])
+    input_df = snippets_to_df(spark, [{'geo': 'MV'}],
+                              default_sample, topline_schema)
     df = topline.reformat_data(input_df)
 
     assert df.where("geo='MV'").count() == 0
@@ -102,6 +132,51 @@ def test_reformat_conforms_to_historical_schema(simple_df):
     df = topline.reformat_data(simple_df)
 
     assert df.columns == historical_schema.names
+
+
+@mock_s3
+def test_write_dashboard_contains_csv(simple_df):
+    bucket = 'test-bucket'
+    prefix = 'test-prefix'
+
+    conn = boto3.resource('s3', region_name='us-west-2')
+    conn.create_bucket(Bucket=bucket)
+
+    # dataframe is not reformatted, but not necessary
+    topline.write_dashboard_data(simple_df, bucket, prefix, 'weekly')
+
+    body = (
+        conn
+        .Object(bucket, prefix + '/topline-weekly.csv')
+        .get()['Body']
+        .read().decode('utf-8')
+    )
+
+    # header + 1x row = 2
+    assert len(body.rstrip().split('\n')) == 2
+
+
+@mock_s3
+def test_write_dashboard_handles_existing_key(simple_df, multi_df):
+    bucket = 'test-bucket'
+    prefix = 'test-prefix'
+
+    conn = boto3.resource('s3', region_name='us-west-2')
+    conn.create_bucket(Bucket=bucket)
+
+    # dataframe is not reformatted, but not necessary
+    topline.write_dashboard_data(simple_df, bucket, prefix, 'weekly')
+    topline.write_dashboard_data(multi_df, bucket, prefix, 'weekly')
+
+    body = (
+        conn
+        .Object(bucket, prefix + '/topline-weekly.csv')
+        .get()['Body']
+        .read().decode('utf-8')
+    )
+
+    # header + 3x row = 4
+    assert len(body.rstrip().split('\n')) == 4
 
 
 @mock_s3
