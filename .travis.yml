@@ -1,22 +1,21 @@
-language: python
-python:
-    - "2.7"
+env:
+  global:
+    - CACHE_DIR=$HOME/.cache/docker
+    - MOZETL_CACHE=${CACHE_DIR}/mozetl.tar.gz
+
 cache:
-    directories:
-        - $HOME/spark
-addons:
-    apt:
-        packages:
-            - libsnappy-dev
+  directories:
+    - $CACHE_DIR
+
+services:
+  - docker
 before_install:
-    - export PATH=$HOME/.local/bin:$PATH
+  - if [ -f ${MOZETL_CACHE} ]; then gunzip -c ${MOZETL_CACHE}  | docker load; fi
 install:
-    - pip install tox-travis codecov
-    - "[ -f spark ] || mkdir spark && cd spark && wget https://d3kbcqa49mib13.cloudfront.net/spark-2.0.2-bin-hadoop2.7.tgz && cd .."
-    - tar -xf ./spark/spark-2.0.2-bin-hadoop2.7.tgz
-    - export SPARK_HOME=`pwd`/spark-2.0.2-bin-hadoop2.7
-    - export PYTHONPATH=${SPARK_HOME}/python/:$(echo ${SPARK_HOME}/python/lib/py4j-*-src.zip):${PYTHONPATH}
+  - docker build -t mozetl .
+  - mkdir -p $CACHE_DIR
+  - if [ ! -f ${MOZETL_CACHE}  ]; then docker save mozetl | gzip > ${MOZETL_CACHE}; fi
 script:
-    - tox
+  - docker run mozetl ./runtests.sh
 after_success:
-    - codecov
+  - codecov

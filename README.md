@@ -22,8 +22,17 @@ For more on this see the writeup at
 
 # Tests
 
-We use `tox` for testing.
-To run the tests, clone this repo, enter the project directory and run `tox`.
+To test this package locally, it is recommended to set up the environment and execute tests within a docker container.
+```
+docker build -t mozetl .
+./runtests.sh   # runs tests within docker container
+```
+
+A subset of tests can be specified by adding arguments to runtests.sh:
+```
+./runtests.sh -k tests/test_main.py # runs tests only in the test_main module
+```
+
 Tests are configured in [tox.ini](tox.ini)
 
 # Scheduling
