@@ -1,6 +1,18 @@
 #!/usr/bin/env python
 from setuptools import setup, find_packages
 
+test_deps = [
+    'coverage',
+    'pytest-cov',
+    'pytest-timeout',
+    'moto',
+    'mock',
+    'pytest',
+]
+
+extras = {
+    'testing': test_deps,
+}
 
 setup(
     name='mozetl',
@@ -17,4 +29,6 @@ setup(
         'requests',
         'arrow',
     ],
+    tests_require=test_deps,
+    extras_require=extras,
 )
