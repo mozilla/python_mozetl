@@ -6,9 +6,9 @@ from pyspark.sql import SparkSession
 def spark():
     spark = (
         SparkSession
-            .builder
-            .appName("python_mozetl_test")
-            .getOrCreate()
+        .builder
+        .appName("python_mozetl_test")
+        .getOrCreate()
     )
     yield spark
     spark.stop()

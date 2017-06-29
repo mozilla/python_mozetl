@@ -60,9 +60,9 @@ def test_write_csv_to_s3(generate_data):
 
     body = (
         conn
-            .Object(bucket, key)
-            .get()['Body']
-            .read().decode('utf-8')
+        .Object(bucket, key)
+        .get()['Body']
+        .read().decode('utf-8')
     )
 
     # header + 1x row = 2
@@ -81,9 +81,9 @@ def test_write_csv_to_s3_no_header(generate_data):
 
     body = (
         conn
-            .Object(bucket, key)
-            .get()['Body']
-            .read().decode('utf-8')
+        .Object(bucket, key)
+        .get()['Body']
+        .read().decode('utf-8')
     )
 
     assert len(body.rstrip().split('\n')) == 1
@@ -102,9 +102,9 @@ def test_write_csv_to_s3_existing(generate_data):
 
     body = (
         conn
-            .Object(bucket, key)
-            .get()['Body']
-            .read().decode('utf-8')
+        .Object(bucket, key)
+        .get()['Body']
+        .read().decode('utf-8')
     )
 
     # header + 2x row = 3
