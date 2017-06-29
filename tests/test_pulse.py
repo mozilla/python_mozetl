@@ -87,4 +87,4 @@ def test_simple_transform(row_to_dict, simple_rdd, spark_context):
     print row_to_dict(actual)
     print "Expected:"
     print expected
-    assert row_to_dict(actual) == expected
+    assert False #row_to_dict(actual) == expected
