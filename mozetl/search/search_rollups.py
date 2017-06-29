@@ -243,8 +243,9 @@ def get_csv_locations(bucket, prefix):
 def write_manifest(bucket, prefix, mode, version, start_ds, csv_paths, retry_max=10):
     """ Write a manifest file with the location of the daily rollup files.
 
-    Manifests are part of the current Vertica integration process. A manifest enumerates the locations of csv files
-    that contain the rollup. This might be useful if the file is partitioned across multiple files.
+    Manifests are part of the current Vertica integration process. A manifest
+    enumerates the locations of csv files that contain the rollup. This might be
+    useful if the file is partitioned across multiple files.
 
     :bucket str: s3 bucket
     :prefix str: s3 prefix
@@ -319,7 +320,7 @@ def save(dataframe, bucket, prefix, mode, version, start_ds):
 
     key = (
         "{}/{}/processed-{}.csv"
-            .format(prefix, mode, start_date.format("YYYY-MM-DD"))
+        .format(prefix, mode, start_date.format("YYYY-MM-DD"))
     )
 
     # persist the dataframe to disk

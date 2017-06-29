@@ -111,9 +111,9 @@ def test_multiple_clients_multiple_search_engines(generate_data):
     assert result.select(F.sum("search_count")).first()[0] == 42
     assert (
                result
-                   .where("search_provider='hooli'")
-                   .select(F.sum("search_count"))
-                   .first()[0]
+               .where("search_provider='hooli'")
+               .select(F.sum("search_count"))
+               .first()[0]
            ) == 21
 
 
@@ -142,14 +142,15 @@ def test_searches_by_country(generate_data):
     def search_by_country(df, geo):
         return (
             df
-                .where(F.col("country") == geo)
-                .select(F.sum("search_count"))
-                .first()[0]
+            .where(F.col("country") == geo)
+            .select(F.sum("search_count"))
+            .first()[0]
         )
 
     assert result.count() == 3
     assert search_by_country(result, "US") == 4
     assert search_by_country(result, "CA") == 2
+
 
 def test_null_row(generate_data):
     # everything except client_id is null
@@ -195,6 +196,7 @@ def test_get_last_manifest_version_pre_existing():
     ver = search_rollups.get_last_manifest_version(bucket, prefix, "test")
     assert ver == 2
 
+
 @mock_s3
 def test_get_last_manifest_version_non_existing():
     bucket = 'test-bucket'
@@ -204,6 +206,7 @@ def test_get_last_manifest_version_non_existing():
 
     ver = search_rollups.get_last_manifest_version(bucket, prefix, "test")
     assert ver is None
+
 
 @mock_s3
 def test_get_csv_locations():
@@ -284,6 +287,7 @@ def test_cli_daily(generate_data, monkeypatch):
     row = body.rstrip().split(',')
     assert row[0] == '2017-05-01'
 
+
 @mock_s3
 def test_cli_monthly(generate_data, monkeypatch):
     bucket = 'test-bucket'
@@ -308,18 +312,18 @@ def test_cli_monthly(generate_data, monkeypatch):
 
     body = (
         conn
-            .Object(bucket, prefix + '/manifests/monthly-search-rollup-manifest-2017-05-01-v2.txt')
-            .get()['Body']
-            .read().decode('utf-8')
+        .Object(bucket, prefix + '/manifests/monthly-search-rollup-manifest-2017-05-01-v2.txt')
+        .get()['Body']
+        .read().decode('utf-8')
     )
     csv_key = body.rstrip().split(bucket + '/')[-1]
     assert ".csv" in csv_key
 
     body = (
         conn
-            .Object(bucket, csv_key)
-            .get()['Body']
-            .read().decode('utf-8')
+        .Object(bucket, csv_key)
+        .get()['Body']
+        .read().decode('utf-8')
     )
 
     row = body.rstrip().split(',')
