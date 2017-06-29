@@ -1,7 +1,9 @@
 language: python
 python:
     - "2.7"
-    - "flake8"
+env:
+    -TOX_ENV=py27
+    -TOX_ENV=flake8
 cache:
     directories:
         - $HOME/spark
@@ -17,6 +19,6 @@ install:
     - tar -xf ./spark/spark-2.0.2-bin-hadoop2.7.tgz
     - export SPARK_HOME=`pwd`/spark-2.0.2-bin-hadoop2.7
     - export PYTHONPATH=${SPARK_HOME}/python/:$(echo ${SPARK_HOME}/python/lib/py4j-*-src.zip):${PYTHONPATH}
-script: tox -c tox.ini
+script: tox -e $TOX_ENV
 after_success:
     - codecov
