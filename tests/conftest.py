@@ -5,10 +5,9 @@ from pyspark.sql import SparkSession
 @pytest.fixture(scope="session")
 def spark():
     spark = (
-        SparkSession
-            .builder
-            .appName("python_mozetl_test")
-            .getOrCreate()
+        SparkSession.builder
+                    .appName("python_mozetl_test")
+                    .getOrCreate()
     )
     yield spark
     spark.stop()
@@ -60,7 +59,7 @@ class DataFrameFactory:
             samples.append(sample)
 
         # if no schema is provided, the schema will be inferred
-        return self.spark.createDataFrame(samples, schema)
+        return self.spark.createDataFrame(samples, schema, verifySchema=False)
 
 
 @pytest.fixture()

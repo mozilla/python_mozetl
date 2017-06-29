@@ -16,7 +16,8 @@ install:
     - tar -xf ./spark/spark-2.0.2-bin-hadoop2.7.tgz
     - export SPARK_HOME=`pwd`/spark-2.0.2-bin-hadoop2.7
     - export PYTHONPATH=${SPARK_HOME}/python/:$(echo ${SPARK_HOME}/python/lib/py4j-*-src.zip):${PYTHONPATH}
-script:
-    - tox
+script: 
+  - tox -e py27
+  - tox -e flake8
 after_success:
     - codecov
