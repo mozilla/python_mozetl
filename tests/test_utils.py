@@ -59,8 +59,7 @@ def test_write_csv_to_s3(generate_data):
     utils.write_csv_to_s3(generate_data(["foo"]), bucket, key)
 
     body = (
-        conn
-            .Object(bucket, key)
+        conn.Object(bucket, key)
             .get()['Body']
             .read().decode('utf-8')
     )
@@ -80,8 +79,7 @@ def test_write_csv_to_s3_no_header(generate_data):
     utils.write_csv_to_s3(generate_data(), bucket, key, header=False)
 
     body = (
-        conn
-            .Object(bucket, key)
+        conn.Object(bucket, key)
             .get()['Body']
             .read().decode('utf-8')
     )
@@ -101,8 +99,7 @@ def test_write_csv_to_s3_existing(generate_data):
     utils.write_csv_to_s3(generate_data(["foo", "bar"]), bucket, key)
 
     body = (
-        conn
-            .Object(bucket, key)
+        conn.Object(bucket, key)
             .get()['Body']
             .read().decode('utf-8')
     )

@@ -5,10 +5,9 @@ from pyspark.sql import SparkSession
 @pytest.fixture(scope="session")
 def spark():
     spark = (
-        SparkSession
-            .builder
-            .appName("python_mozetl_test")
-            .getOrCreate()
+        SparkSession.builder
+                    .appName("python_mozetl_test")
+                    .getOrCreate()
     )
     yield spark
     spark.stop()
