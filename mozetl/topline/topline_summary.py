@@ -262,7 +262,7 @@ def save(dataframe, bucket, prefix, version, mode, start_date):
         .select(fields)
         .repartition(1)
         .write
-        .parquet(location)
+        .parquet(location, mode="overwrite")
     )
 
 
