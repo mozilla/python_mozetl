@@ -61,8 +61,8 @@ source_columns = [
     "sync_count_desktop",
     "sync_count_mobile",
     "timestamp",
-    "total_uri_count",
-    "unique_domains_count"
+    "scalar_parent_browser_engagement_total_uri_count",
+    "scalar_parent_browser_engagement_unique_domains_count"
 ]
 
 # Bug 1289573: Support values like "mozilla86" and "mozilla86-utility-existing"
@@ -422,6 +422,12 @@ def compute_churn_week(df, week_start):
     # take a subset and rename the app_version field
     current_week = (current_week
                     .select(source_columns)
+                    .withColumnRenamed(
+                        "scalar_parent_browser_engagement_total_uri_count",
+                        "total_uri_count")
+                    .withColumnRenamed(
+                        "scalar_parent_browser_engagement_unique_domains_count",
+                        "unique_domains_count")
                     .withColumnRenamed("app_version", "version"))
 
     # clean some of the aggregate fields
