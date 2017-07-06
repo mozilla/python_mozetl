@@ -12,6 +12,8 @@ from pyspark.sql.types import (
 
 from mozetl.churn import churn
 
+SPBE = "scalar_parent_browser_engagement_"
+
 """
 Calendar for reference
 
@@ -56,8 +58,8 @@ main_schema = StructType([
     StructField("sync_count_desktop",    IntegerType(), True),
     StructField("sync_count_mobile",     IntegerType(), True),
     StructField("timestamp",             LongType(),    True),
-    StructField("total_uri_count",       IntegerType(), True),
-    StructField("unique_domains_count",  IntegerType(), True)])
+    StructField(SPBE + "total_uri_count", IntegerType(), True),
+    StructField(SPBE + "unique_domains_count", IntegerType(), True)])
 
 default_sample = {
     "app_version":           "57.0.0",
@@ -82,8 +84,8 @@ default_sample = {
     "sync_count_desktop":    1,
     "sync_count_mobile":     1,
     "timestamp":             1484438400000000000,  # nanoseconds
-    "total_uri_count":       20,
-    "unique_domains_count":  3
+    SPBE + "total_uri_count":      20,
+    SPBE + "unique_domains_count": 3
 }
 
 
@@ -382,7 +384,7 @@ def test_simple_string_dimensions(generate_data):
 
 
 def test_empty_total_uri_count(generate_data):
-    snippets = [{'total_uri_count': None}]
+    snippets = [{SPBE + 'total_uri_count': None}]
     input_df = generate_data(snippets)
     df = churn.compute_churn_week(input_df, week_start_ds)
     rows = df.collect()
@@ -391,7 +393,10 @@ def test_empty_total_uri_count(generate_data):
 
 
 def test_total_uri_count_per_client(generate_data):
-    snippets = [{'total_uri_count': 1}, {'total_uri_count': 2}]
+    snippets = [
+        {SPBE + 'total_uri_count': 1},
+        {SPBE + 'total_uri_count': 2}
+    ]
     input_df = generate_data(snippets)
     df = churn.compute_churn_week(input_df, week_start_ds)
     rows = df.collect()
@@ -402,11 +407,11 @@ def test_total_uri_count_per_client(generate_data):
 def test_average_unique_domains_count(generate_data):
     snippets = [
         # averages to 4
-        {'client_id': '1', 'unique_domains_count': 6},
-        {'client_id': '1', 'unique_domains_count': 2},
+        {'client_id': '1', SPBE + 'unique_domains_count': 6},
+        {'client_id': '1', SPBE + 'unique_domains_count': 2},
         # averages to 8
-        {'client_id': '2', 'unique_domains_count': 12},
-        {'client_id': '2', 'unique_domains_count': 4}
+        {'client_id': '2', SPBE + 'unique_domains_count': 12},
+        {'client_id': '2', SPBE + 'unique_domains_count': 4}
     ]
     input_df = generate_data(snippets)
     df = churn.compute_churn_week(input_df, week_start_ds)
