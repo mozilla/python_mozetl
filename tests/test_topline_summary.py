@@ -126,6 +126,7 @@ def test_column_like(cool_df):
     assert res.where("items='not cool'").count() == 3
 
 
+@pytest.mark.skip(reason="Bug 1377730 - Weekly Topline Summary aborts on save")
 def test_deduplicate_documents(dataframe_factory):
     snippets = [
         {"document_id": "1"},

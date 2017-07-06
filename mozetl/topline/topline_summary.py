@@ -107,7 +107,6 @@ def clean_input(dataframe, start, end):
     # clean the dataset
     clean = (
         dataframe
-        .drop_duplicates(["document_id"])
         .where(F.col("submission_date_s3") >= start)
         .where(F.col("submission_date_s3") < end)
         .select([expr.alias(name) for name, expr in columns.iteritems()])
