@@ -690,8 +690,6 @@ def main(start_date, bucket, prefix,
                 lambda d: process_week(main_df, d, bucket, prefix))
         else:
             process_week(main_df, week_start_date, bucket, prefix)
-    except Exception:
-        logger.exception("Exception for {}".format(week_start_date))
     finally:
         spark.stop()
 

@@ -505,3 +505,37 @@ def test_top_countries():
     assert churn.top_country("??") == "ROW"
     assert churn.top_country("Random") == "ROW"
     assert churn.top_country(None) == "ROW"
+
+
+def test_cli_fails_on_missing_input(spark, multi_profile_df, tmpdir, monkeypatch):
+
+    # use the file:// prefix
+    def mock_format_spark_path(bucket, prefix):
+        return 'file://{}/{}'.format(bucket, prefix)
+    monkeypatch.setattr(churn, 'format_spark_path', mock_format_spark_path)
+
+    # write `main_summary` to disk
+    bucket = str(tmpdir)
+    input_prefix = 'main_summary/v3'
+
+    path = churn.format_spark_path(bucket, input_prefix)
+
+    # drop a field that is necessary for completion
+    (
+        multi_profile_df
+        .drop("country")
+        .write
+        .partitionBy('submission_date_s3')
+        .parquet(path)
+    )
+
+    runner = CliRunner()
+    args = [
+        week_start_ds,
+        bucket,
+        '--input-bucket', bucket,
+        '--input-prefix', input_prefix,
+        '--no-lag',  # week_start_ds already accounts for the lag time
+    ]
+    result = runner.invoke(churn.main, args)
+    assert result.exit_code == -1
