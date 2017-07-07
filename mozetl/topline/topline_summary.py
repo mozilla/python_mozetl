@@ -135,10 +135,16 @@ def search_aggregates(dataframe, attributes):
         .alias("count")
     )
 
+    source_whitelist = [
+        'searchbar', 'urlbar', 'abouthome', 'newtab', 'contextmenu', 'system'
+    ]
+
     # generate the search aggregates by exploding and pivoting
     search = (
         dataframe
         .withColumn("search_count", F.explode("search_counts"))
+        .where(F.col("search_count.source").isNull() |
+               F.col("search_count.source").isin(source_whitelist))
         .select("country", "channel", "os", s_engine, s_count)
         .groupBy(attributes)
         .pivot("engine", search_labels)
