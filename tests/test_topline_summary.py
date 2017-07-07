@@ -231,6 +231,19 @@ def test_transform_searches(generate_data):
         .first()["sum(other)"]) == 1
 
 
+def test_transform_searches_filters_incontent(generate_data):
+    snippets = [
+        {'search_counts': [search_row("google", source="in-content")]},   # no
+        {'search_counts': [search_row("google", source="contextmenu")]},  # yes
+        {'search_counts': [search_row("google", source="abouthome")]},    # yes
+    ]
+
+    df = generate_data(snippets)
+    res = topline.transform(df, start_ds, "weekly")
+
+    assert res.groupBy().sum().first()["sum(google)"] == 2
+
+
 def test_transform_hours(generate_data):
     snippets = [
         {"country": "US", "subsession_length": topline.seconds_per_hour},

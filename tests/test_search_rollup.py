@@ -86,6 +86,19 @@ def test_single_client_multiple_search_engines(generate_data):
     assert result.select(F.sum("search_count")).first()[0] == 7
 
 
+def test_filter_incontent_searches(generate_data):
+    snippets = [
+        {'search_counts': [search_row(source="in-content")]},   # no
+        {'search_counts': [search_row(source="contextmenu")]},  # yes
+        {'search_counts': [search_row(source="abouthome")]},    # yes
+    ]
+    df = generate_data(snippets)
+    result = search_rollups.transform(df, "daily")
+
+    # in-content search should be filtered
+    assert result.select(F.sum("search_count")).first()[0] == 2
+
+
 # 2 profiles have different search counts
 def test_multiple_clients_multiple_search_engines(generate_data):
     snippets = [
