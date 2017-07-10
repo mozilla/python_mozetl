@@ -16,6 +16,7 @@ import click
 from pyspark.sql import SparkSession, functions as F
 
 from mozetl import utils
+from mozetl.constants import SEARCH_SOURCE_WHITELIST
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -31,14 +32,6 @@ def explode_searches(dataframe):
         "default_provider",
     ]
 
-    # Restrict to a whitelist of search_source's to avoid double counting while
-    # we test our new search_count telemetry developed in:
-    # https://bugzilla.mozilla.org/show_bug.cgi?id=1367554
-    # https://bugzilla.mozilla.org/show_bug.cgi?id=1368089
-    source_whitelist = [
-        'searchbar', 'urlbar', 'abouthome', 'newtab', 'contextmenu', 'system'
-    ]
-
     exploded_search_columns = [
         F.col("search_counts.engine").alias("search_provider"),
         F.col("search_counts.source").alias("search_source"),
@@ -50,13 +43,14 @@ def explode_searches(dataframe):
         F.lit(0).alias("search_count"),
     ]
 
-    # explode search counts
+    # explode search counts and filter records outside of source whitelist
     exploded_searches = (
         dataframe
         .withColumn("search_counts", F.explode("search_counts"))
         .select(columns + exploded_search_columns)
         .where("search_count > -1 or search_count is null")
-        .where(F.col("search_source").isNull() | F.col("search_source").isin(source_whitelist))
+        .where(F.col("search_source").isNull() |
+               F.col("search_source").isin(SEARCH_SOURCE_WHITELIST))
         .drop("search_source")
     )
 
