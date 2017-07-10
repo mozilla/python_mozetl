@@ -8,6 +8,7 @@ from pyspark.sql import types, SparkSession, functions as F
 from pyspark.sql.window import Window
 
 from mozetl.topline.schema import topline_schema
+from mozetl.constants import SEARCH_SOURCE_WHITELIST
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -135,16 +136,12 @@ def search_aggregates(dataframe, attributes):
         .alias("count")
     )
 
-    source_whitelist = [
-        'searchbar', 'urlbar', 'abouthome', 'newtab', 'contextmenu', 'system'
-    ]
-
     # generate the search aggregates by exploding and pivoting
     search = (
         dataframe
         .withColumn("search_count", F.explode("search_counts"))
         .where(F.col("search_count.source").isNull() |
-               F.col("search_count.source").isin(source_whitelist))
+               F.col("search_count.source").isin(SEARCH_SOURCE_WHITELIST))
         .select("country", "channel", "os", s_engine, s_count)
         .groupBy(attributes)
         .pivot("engine", search_labels)
