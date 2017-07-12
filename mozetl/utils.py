@@ -45,13 +45,15 @@ def write_csv_to_s3(dataframe, bucket, key, header=True):
     s3 = boto3.client('s3', region_name='us-west-2')
 
     # write the contents of the file to right location
-    with open(filepath, 'rb') as data:
-        s3.put_object(Bucket=bucket,
-                      Key=key,
-                      Body=data,
-                      ACL='bucket-owner-full-control')
+    upload_file_to_s3(s3, filepath, bucket, key)
 
     logger.info('Sucessfully wrote {} to {}'.format(key, bucket))
 
     # clean up the temporary directory
     shutil.rmtree(path)
+
+
+def upload_file_to_s3(client, filepath, bucket, key,
+                      ACL='bucket-owner-full-control'):
+    with open(filepath, 'rb') as data:
+        client.put_object(Bucket=bucket, Key=key, Body=data, ACL=ACL)

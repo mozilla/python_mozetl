@@ -21,6 +21,8 @@ from moztelemetry.standards import (
     count_distinct_clientids
 )
 
+from mozetl.utils import upload_file_to_s3
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -180,18 +182,18 @@ def write_locally(results):
     return basename
 
 
-def publish_to_s3(transferer, bucket, prefix, basename):
+def publish_to_s3(s3client, bucket, prefix, basename):
     '''
     Write the file twice to storage (once dated, once as "latest")
     and once to the production dashboard.
     '''
     dated_key = os.path.join(prefix, basename)
-    transferer.upload_file(basename, bucket, dated_key)
+    upload_file_to_s3(s3client, basename, bucket, dated_key)
     latest_key = os.path.join(prefix, MAUDAU_ROLLUP_BASENAME)
-    transferer.upload_file(basename, bucket, latest_key)
+    upload_file_to_s3(s3client, basename, bucket, latest_key)
     if DEVELOPMENT:
         return
-    transferer.upload_file(basename, DASHBOARD_BUCKET, DASHBOARD_KEY)
+    upload_file_to_s3(s3client, basename, DASHBOARD_BUCKET, DASHBOARD_KEY)
 
 
 @click.command()
@@ -230,6 +232,6 @@ def main(input_bucket, input_prefix, output_bucket, output_prefix):
     logging.info("Generated counts for {} days".format(len(updates)))
     results = carryover + updates
     output_basename = write_locally(results)
-    publish_to_s3(transferer, output_bucket, output_prefix, output_basename)
+    publish_to_s3(s3client, output_bucket, output_prefix, output_basename)
     if not DEVELOPMENT:
         logging.info("Published to S3; done.")
