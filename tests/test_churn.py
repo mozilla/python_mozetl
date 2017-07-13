@@ -1,16 +1,14 @@
 import functools
-import os
 from datetime import timedelta, datetime
 
 import pytest
-from click.testing import CliRunner
 from pyspark.sql import functions as F
 from pyspark.sql.types import (
     StructField, StructType, StringType,
     LongType, IntegerType, BooleanType
 )
 
-from mozetl.churn import churn
+from mozetl.churn import churn, release
 
 SPBE = "scalar_parent_browser_engagement_"
 
@@ -148,19 +146,6 @@ week_start_ds = datetime.strftime(subsession_start, "%Y%m%d")
 
 
 @pytest.fixture
-def late_submissions_df(generate_data):
-    # All pings within 17 days of the submission start date are valid.
-    # However, only pings with ssd within the 7 day retention period
-    # are used for computation. Generate pings for this case.
-
-    late_submission = generate_dates(subsession_start, submission_offset=18)
-    early_subsession = generate_dates(subsession_start - timedelta(7))
-
-    snippets = [late_submission, early_subsession]
-    return generate_data(snippets)
-
-
-@pytest.fixture
 def single_profile_df(generate_data):
     recent_ping = generate_dates(
         subsession_start + timedelta(3), creation_offset=3)
@@ -237,14 +222,19 @@ def no_get_release_info(release_info, monkeypatch):
 
     def mock_get_release_info():
         return release_info
-    monkeypatch.setattr(churn, 'get_release_info', mock_get_release_info)
+    monkeypatch.setattr(release, 'get_release_info', mock_get_release_info)
 
     # disable fetch_json to cover all the bases
-    monkeypatch.delattr(churn, 'fetch_json')
+    monkeypatch.delattr(release, 'fetch_json')
+
+
+@pytest.fixture()
+def effective_version(spark):
+    return release.create_effective_version_table(spark)
 
 
 def test_date_to_version_range(release_info):
-    result = churn.make_d2v(release_info)
+    result = release.make_d2v(release_info)
 
     start = datetime.strptime(
         release_info['minor']['51.0.1'], '%Y-%m-%d')
@@ -261,26 +251,33 @@ def test_date_to_version_range(release_info):
 # testing effective release-channel version
 
 
-def test_ignored_submissions_outside_of_period(late_submissions_df):
-    df = churn.compute_churn_week(late_submissions_df, week_start_ds)
+def test_ignored_submissions_outside_of_period(generate_data):
+    # All pings within 17 days of the submission start date are valid.
+    # However, only pings with ssd within the 7 day retention period
+    # are used for computation. Generate pings for this case.
+    late_submission = generate_dates(subsession_start, submission_offset=18)
+    early_subsession = generate_dates(subsession_start - timedelta(7))
+    late_submissions_df = generate_data([late_submission, early_subsession])
+
+    df = churn.extract_subset(late_submissions_df, week_start_ds, 7, 10, False)
     assert df.count() == 0
 
 
-def test_latest_submission_from_client_exists(single_profile_df):
-    df = churn.compute_churn_week(single_profile_df, week_start_ds)
+def test_latest_submission_from_client_exists(single_profile_df, effective_version):
+    df = churn.transform(single_profile_df, effective_version, week_start_ds)
     assert df.count() == 1
 
 
-def test_profile_usage_length(single_profile_df):
+def test_profile_usage_length(single_profile_df, effective_version):
     # there are two pings each with 1 hour of usage
-    df = churn.compute_churn_week(single_profile_df, week_start_ds)
+    df = churn.transform(single_profile_df, effective_version, week_start_ds)
     rows = df.collect()
 
     assert rows[0].usage_hours == 2
 
 
-def test_current_cohort_week_is_zero(single_profile_df):
-    df = churn.compute_churn_week(single_profile_df, week_start_ds)
+def test_current_cohort_week_is_zero(single_profile_df, effective_version):
+    df = churn.transform(single_profile_df, effective_version, week_start_ds)
     rows = df.collect()
 
     actual = rows[0].current_week
@@ -289,8 +286,8 @@ def test_current_cohort_week_is_zero(single_profile_df):
     assert actual == expect
 
 
-def test_multiple_cohort_weeks_exist(multi_profile_df):
-    df = churn.compute_churn_week(multi_profile_df, week_start_ds)
+def test_multiple_cohort_weeks_exist(multi_profile_df, effective_version):
+    df = churn.transform(multi_profile_df, effective_version, week_start_ds)
     rows = df.select('current_week').collect()
 
     actual = set([row.current_week for row in rows])
@@ -299,15 +296,15 @@ def test_multiple_cohort_weeks_exist(multi_profile_df):
     assert actual == expect
 
 
-def test_cohort_by_channel_count(multi_profile_df):
-    df = churn.compute_churn_week(multi_profile_df, week_start_ds)
+def test_cohort_by_channel_count(multi_profile_df, effective_version):
+    df = churn.transform(multi_profile_df, effective_version, week_start_ds)
     rows = df.where(df.channel == 'release-cck-mozilla42').collect()
 
     assert len(rows) == 2
 
 
-def test_cohort_by_channel_aggregates(multi_profile_df):
-    df = churn.compute_churn_week(multi_profile_df, week_start_ds)
+def test_cohort_by_channel_aggregates(multi_profile_df, effective_version):
+    df = churn.transform(multi_profile_df, effective_version, week_start_ds)
     rows = (
         df
         .groupBy(df.channel)
@@ -338,8 +335,8 @@ def nulled_attribution_df(generate_data):
     return generate_data(snippets)
 
 
-def test_nulled_stub_attribution_content(nulled_attribution_df):
-    df = churn.compute_churn_week(nulled_attribution_df, week_start_ds)
+def test_nulled_stub_attribution_content(nulled_attribution_df, effective_version):
+    df = churn.transform(nulled_attribution_df, effective_version,  week_start_ds)
     rows = (
         df
         .select('content')
@@ -352,8 +349,8 @@ def test_nulled_stub_attribution_content(nulled_attribution_df):
     assert actual == expect
 
 
-def test_nulled_stub_attribution_medium(nulled_attribution_df):
-    df = churn.compute_churn_week(nulled_attribution_df, week_start_ds)
+def test_nulled_stub_attribution_medium(nulled_attribution_df, effective_version):
+    df = churn.transform(nulled_attribution_df, effective_version, week_start_ds)
     rows = (
         df
         .select('medium')
@@ -366,7 +363,7 @@ def test_nulled_stub_attribution_medium(nulled_attribution_df):
     assert actual == expect
 
 
-def test_simple_string_dimensions(generate_data):
+def test_simple_string_dimensions(generate_data, effective_version):
     snippets = [
         {
             'distribution_id': None,
@@ -375,7 +372,7 @@ def test_simple_string_dimensions(generate_data):
         }
     ]
     input_df = generate_data(snippets)
-    df = churn.compute_churn_week(input_df, week_start_ds)
+    df = churn.transform(input_df, effective_version, week_start_ds)
     rows = df.collect()
 
     assert rows[0].distribution_id == 'unknown'
@@ -383,28 +380,28 @@ def test_simple_string_dimensions(generate_data):
     assert rows[0].locale == 'unknown'
 
 
-def test_empty_total_uri_count(generate_data):
+def test_empty_total_uri_count(generate_data, effective_version):
     snippets = [{SPBE + 'total_uri_count': None}]
     input_df = generate_data(snippets)
-    df = churn.compute_churn_week(input_df, week_start_ds)
+    df = churn.transform(input_df, effective_version, week_start_ds)
     rows = df.collect()
 
     assert rows[0].total_uri_count == 0
 
 
-def test_total_uri_count_per_client(generate_data):
+def test_total_uri_count_per_client(generate_data, effective_version):
     snippets = [
         {SPBE + 'total_uri_count': 1},
         {SPBE + 'total_uri_count': 2}
     ]
     input_df = generate_data(snippets)
-    df = churn.compute_churn_week(input_df, week_start_ds)
+    df = churn.transform(input_df, effective_version, week_start_ds)
     rows = df.collect()
 
     assert rows[0].total_uri_count == 3
 
 
-def test_average_unique_domains_count(generate_data):
+def test_average_unique_domains_count(generate_data, effective_version):
     snippets = [
         # averages to 4
         {'client_id': '1', SPBE + 'unique_domains_count': 6},
@@ -414,133 +411,18 @@ def test_average_unique_domains_count(generate_data):
         {'client_id': '2', SPBE + 'unique_domains_count': 4}
     ]
     input_df = generate_data(snippets)
-    df = churn.compute_churn_week(input_df, week_start_ds)
+    df = churn.transform(input_df, effective_version, week_start_ds)
     rows = df.collect()
 
     # (4 + 8) / 2 == 6
     assert rows[0].unique_domains_count_per_profile == 6
 
 
-def test_adjust_start_date_pins_to_sunday_no_lag():
-    # A wednesday
-    args = ['20170118', False]
-    actual = churn.adjust_start_date(*args)
-    expected = '20170115'
-
-    assert actual == expected
-
-
-def test_adjust_start_date_accounts_for_lag():
-    # Going back 10 days happens to be Sunday
-    args = ['20170118', True]
-    actual = churn.adjust_start_date(*args)
-    expected = '20170108'
-
-    assert actual == expected
-
-
-def test_process_backfill():
-    actual = []
-    expected = ['20170101', '20170108', '20170115', '20170122']
-
-    def callback(date):
-        actual.append(date)
-
-    args = ['20170101', '20170125', callback]
-    churn.process_backfill(*args)
-
-    assert actual == expected
-
-
-def test_cli(spark, multi_profile_df, tmpdir, monkeypatch):
-
-    # use the file:// prefix
-    def mock_format_spark_path(bucket, prefix):
-        return 'file://{}/{}'.format(bucket, prefix)
-    monkeypatch.setattr(churn, 'format_spark_path', mock_format_spark_path)
-
-    # write `main_summary` to disk
-    bucket = str(tmpdir)
-    input_prefix = 'main_summary/v3'
-    output_prefix = 'churn/v2'
-
-    path = churn.format_spark_path(bucket, input_prefix)
-
-    multi_profile_df.write.partitionBy('submission_date_s3').parquet(path)
-
-    runner = CliRunner()
-    args = [
-        '--start_date', week_start_ds,
-        '--bucket', bucket,
-        '--input-bucket', bucket,
-        '--input-prefix', input_prefix,
-        '--no-lag',  # week_start_ds already accounts for the lag time
-    ]
-    result = runner.invoke(churn.main, args)
-    assert result.exit_code == 0
-
-    # check that the files are correctly partitioned
-    folder = os.path.join(bucket, output_prefix)
-    assert any(item.startswith('week_start') for item in os.listdir(folder))
-
-    # check that there is only a single partition
-    folder = os.path.join(folder, 'week_start={}'.format(week_start_ds))
-    assert len([item for item in os.listdir(folder)
-                if item.endswith('.parquet')]) == 1
-
-    # check that the dataset conforms to expected output
-    path = churn.format_spark_path(bucket, output_prefix)
-    df = spark.read.parquet(path)
-    rows = (
-        df
-        .groupBy(df.channel)
-        .agg(F.sum('n_profiles').alias('n_profiles'),
-             F.sum('usage_hours').alias('usage_hours'))
-        .where(df.channel == 'release-cck-mozilla42')
-        .collect()
-    )
-    assert rows[0].n_profiles == 2
-    assert rows[0].usage_hours == 4
-
-
+@pytest.mark.skip()
 def test_top_countries():
-    assert churn.top_country("US") == "US"
-    assert churn.top_country("HK") == "HK"
-    assert churn.top_country("MR") == "ROW"
-    assert churn.top_country("??") == "ROW"
-    assert churn.top_country("Random") == "ROW"
-    assert churn.top_country(None) == "ROW"
-
-
-def test_cli_fails_on_missing_input(spark, multi_profile_df, tmpdir, monkeypatch):
-
-    # use the file:// prefix
-    def mock_format_spark_path(bucket, prefix):
-        return 'file://{}/{}'.format(bucket, prefix)
-    monkeypatch.setattr(churn, 'format_spark_path', mock_format_spark_path)
-
-    # write `main_summary` to disk
-    bucket = str(tmpdir)
-    input_prefix = 'main_summary/v3'
-
-    path = churn.format_spark_path(bucket, input_prefix)
-
-    # drop a field that is necessary for completion
-    (
-        multi_profile_df
-        .drop("country")
-        .write
-        .partitionBy('submission_date_s3')
-        .parquet(path)
-    )
-
-    runner = CliRunner()
-    args = [
-        '--start_date', week_start_ds,
-        '--bucket', bucket,
-        '--input-bucket', bucket,
-        '--input-prefix', input_prefix,
-        '--no-lag',  # week_start_ds already accounts for the lag time
-    ]
-    result = runner.invoke(churn.main, args)
-    assert result.exit_code == -1
+    assert churn.TOP_COUNTRIES("US") == "US"
+    assert churn.TOP_COUNTRIES("HK") == "HK"
+    assert churn.TOP_COUNTRIES("MR") == "ROW"
+    assert churn.TOP_COUNTRIES("??") == "ROW"
+    assert churn.TOP_COUNTRIES("Random") == "ROW"
+    assert churn.TOP_COUNTRIES(None) == "ROW"
