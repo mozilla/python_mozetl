@@ -240,6 +240,7 @@ def get_latest_valid_per_client(entry, time_start, time_end):
         sub_date = dt.datetime.strptime(
             pkt_date, "%Y-%m-%dT%H:%M:%S.%fZ").date()
 
+        print sub_date
         # The data is in descending order, the most recent ping comes first.
         # The first item less or equal than the time_end date is our thing.
         if sub_date >= time_start.date() and sub_date <= time_end.date():
@@ -427,7 +428,7 @@ def finalize_data(data, sample_count, broken_ratio,
     denom = float(sample_count)
 
     aggregated_percentages = {
-        'date': report_date.isoformat(),
+        'date': report_date.date().isoformat(),
         'broken': broken_ratio,
         'inactive': inactive_ratio,
     }
@@ -611,8 +612,9 @@ def generate_report(start_date, end_date, spark):
                   system_cpu, 
                   normalized_channel  
                FROM 
-                  longitudinal
-               LIMIT 1000
+                  longitudinal 
+               ORDER BY submission_date DESC  
+               LIMIT 100
                """
 
     frame = spark.sql(sqlQuery).where("normalized_channel = 'release'").where("build is not null and build[0].application_name = 'Firefox'")
@@ -628,6 +630,7 @@ def generate_report(start_date, end_date, spark):
     # Stores all hardware reports in json by date
     date_to_json = {}
 
+    print date_range[0], date_range[1] 
     while chunk_start < date_range[1]:
         chunk_end = chunk_start + dt.timedelta(days=6)
 
@@ -667,7 +670,6 @@ def generate_report(start_date, end_date, spark):
         
         logger.info("Aggregating entries...")
         aggregated_pings = aggregate_data(processed_data)
-
         # Get the sample count, we need it to compute the percentages instead of raw numbers.
         # Since we're getting only the newest ping for each client, we can simply count the
         # number of pings. THIS MAY NOT BE CONSTANT ACROSS WEEKS!
@@ -694,6 +696,7 @@ def generate_report(start_date, end_date, spark):
         # Write the week start/end in the filename.
         suffix = "-" + chunk_start.strftime("%Y%d%m") + \
                  "-" + chunk_end.strftime("%Y%d%m")
+        print(suffix)
         file_name = get_file_name(suffix)
 
         date_to_json[file_name] = processed_aggregates
