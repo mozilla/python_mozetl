@@ -9,11 +9,11 @@ from pyspark.sql import SparkSession
 
 @click.command()
 @click.option('--start_date',
-              type=Datetime(format='%Y%m%d'),
+              type=Datetime(format='%Y%d%m'),
               required=True,
               help='Start date (e.g. yyyy/mm/dd)')
 @click.option('--end_date',
-              type=Datetime(format='%Y%m%d'),
+              type=Datetime(format='%Y%d%m'),
               default=None,
               help='End date (e.g. yyyy/mm/dd)')
 @click.option('--bucket',
@@ -22,7 +22,7 @@ from pyspark.sql import SparkSession
 def main(start_date, end_date, bucket):
     # Set default end date to a week after start date if end date not provided
     if not end_date:
-        end_date = start_date + timedelta(days=7)
+        end_date = start_date + timedelta(days=6)
 
     spark = (SparkSession
          .builder
@@ -39,15 +39,16 @@ def main(start_date, end_date, bucket):
     print "Joining JSON files..."
 
     read_files = glob.glob("*.json")
-    with open("hwsurvey-weekly.json", "w+") as report_json:
-        # If we attempt to load invalid JSON from the assembled file,
-        # the next function throws.
-        try:
-            report_json.write('[{}]'.format(
-                ','.join([open(f, "r+").read() for f in read_files])))
-        except ValueError:
-            print f + ' is empty.'
+    consolidated_json = []
 
+    with open("hwsurvey-weekly.json", "w+") as report_json:
+    # If we attempt to load invalid JSON from the assembled file,
+    # the next function throws
+        for f in read_files:
+            with open(f, 'r+') as in_file:
+                consolidated_json += json.load(in_file)
+                data = json.dumps(consolidated_json, indent=2)
+                report_json.write(data)
     # Store the new state to S3. Since S3 doesn't support symlinks, make two copy
     # of the file: one will always contain the latest data, the other for
     # archiving.
