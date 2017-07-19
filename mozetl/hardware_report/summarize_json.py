@@ -11,8 +11,6 @@ import botocore
 import requests
 import logging
 import moztelemetry.standards as moz_std
-from pyspark.sql import SQLContext
-from pyspark.sql import SparkSession
 
 # Reasons why the data for a client can be discarded.
 REASON_INACTIVE = "inactive"
@@ -24,6 +22,7 @@ S3_DATA_PATH = "game-hardware-survey/data/"
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
 
 def fetch_json(uri):
     """ Perform an HTTP GET on the given uri, return the results as json.
@@ -108,10 +107,10 @@ def get_device_family_chipset(vendor_id, device_id, device_map):
     Returns:
         A string in the format "Device Family Name-Chipset Name".
     """
-    if not vendor_id in device_map:
+    if vendor_id not in device_map:
         return "Unknown"
 
-    if not device_id in device_map[vendor_id]:
+    if device_id not in device_map[vendor_id]:
         return "Unknown"
 
     return "-".join(device_map[vendor_id][device_id])
@@ -184,7 +183,7 @@ def get_valid_client_record(r, data_index):
         screen_height = monitors[0]["screen_height"]
 
     # Non Windows OS do not have that property.
-    is_wow64 = r["system"][data_index]["is_wow64"] == True
+    is_wow64 = r["system"][data_index]["is_wow64"] is True
 
     # At this point, we should have filtered out all the weirdness. Fetch
     # the data we need.
@@ -240,7 +239,6 @@ def get_latest_valid_per_client(entry, time_start, time_end):
         sub_date = dt.datetime.strptime(
             pkt_date, "%Y-%m-%dT%H:%M:%S.%fZ").date()
 
-        print sub_date
         # The data is in descending order, the most recent ping comes first.
         # The first item less or equal than the time_end date is our thing.
         if sub_date >= time_start.date() and sub_date <= time_end.date():
@@ -613,8 +611,6 @@ def generate_report(start_date, end_date, spark):
                   normalized_channel  
                FROM 
                   longitudinal 
-               ORDER BY submission_date DESC  
-               LIMIT 100
                """
 
     frame = spark.sql(sqlQuery).where("normalized_channel = 'release'").where("build is not null and build[0].application_name = 'Firefox'")
@@ -630,7 +626,6 @@ def generate_report(start_date, end_date, spark):
     # Stores all hardware reports in json by date
     date_to_json = {}
 
-    print date_range[0], date_range[1] 
     while chunk_start < date_range[1]:
         chunk_end = chunk_start + dt.timedelta(days=6)
 
@@ -661,13 +656,13 @@ def generate_report(start_date, end_date, spark):
         # bail out early on. There's no point in aggregating.
         if broken_ratio >= 0.9 or inactive_ratio >= 0.9:
             raise Exception(
-                "Unexpected ratio of broken pings or inactive clients. Broken ratio: " + str(broken_ratio) + 
+                "Unexpected ratio of broken pings or inactive clients. Broken ratio: " + str(broken_ratio) +
                 ", inactive ratio: " + str(inactive_ratio))
 
         # Process the data, transforming it in the form we desire.
         device_map = build_device_map()
         processed_data = filtered_data.map(lambda d: prepare_data(d, device_map))
-        
+
         logger.info("Aggregating entries...")
         aggregated_pings = aggregate_data(processed_data)
         # Get the sample count, we need it to compute the percentages instead of raw numbers.
@@ -696,7 +691,6 @@ def generate_report(start_date, end_date, spark):
         # Write the week start/end in the filename.
         suffix = "-" + chunk_start.strftime("%Y%d%m") + \
                  "-" + chunk_end.strftime("%Y%d%m")
-        print(suffix)
         file_name = get_file_name(suffix)
 
         date_to_json[file_name] = processed_aggregates
