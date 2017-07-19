@@ -40,15 +40,13 @@ def main(start_date, end_date, bucket):
 
     read_files = glob.glob("*.json")
     consolidated_json = []
-
     with open("hwsurvey-weekly.json", "w+") as report_json:
     # If we attempt to load invalid JSON from the assembled file,
     # the next function throws
         for f in read_files:
             with open(f, 'r+') as in_file:
                 consolidated_json += json.load(in_file)
-                data = json.dumps(consolidated_json, indent=2)
-                report_json.write(data)
+        report_json.write(json.dumps(consolidated_json, indent=2))
     # Store the new state to S3. Since S3 doesn't support symlinks, make two copy
     # of the file: one will always contain the latest data, the other for
     # archiving.
