@@ -3,7 +3,7 @@ import pytest
 from pyspark.sql.types import (
     StructField, ArrayType, StringType, LongType, StructType
 )
-from mozetl.search.dashboard import search_dashboard_etl
+from mozetl.search.dashboard import search_dashboard_etl, explode_search_counts
 
 
 # Boilerplate for main_summary data
@@ -66,6 +66,15 @@ def main_summary(generate_main_summary_data):
     )
 
 
+@pytest.fixture
+def simple_main_summary(generate_main_summary_data):
+    return generate_main_summary_data(
+        [
+            {'search_counts': [bing, yahoo]},
+        ]
+    )
+
+
 # Boilerplate for search_dashboard data
 search_dashboard_schema = StructType([
     StructField('submission_date',    StringType(), False),
@@ -110,11 +119,56 @@ def expected_search_dashboard_data(generate_search_dashboard_data):
     ])
 
 
+@pytest.fixture()
+def exploded_simple_main_summary(dataframe_factory):
+    return dataframe_factory.create_dataframe(
+        [
+            {'engine': 'yahoo'},
+            {'engine': 'bing'},
+        ],
+        {
+            'submission_date_s3': '20170101',
+            'submission_date':    '20170101',
+            'country':            'DE',
+            'app_version':        '54.0.1',
+            'distribution_id':    None,
+            'engine': 'google',
+            'source': 'urlbar',
+            'count':  4,
+        },
+
+        StructType([
+            StructField('submission_date_s3', StringType(), False),
+            StructField('submission_date',    StringType(), False),
+            StructField('country',            StringType(), True),
+            StructField('app_version',        StringType(), True),
+            StructField('distribution_id',    StringType(), True),
+            StructField('engine',             StringType(), False),
+            StructField('source',             StringType(), False),
+            StructField('count',              LongType(),   False),
+        ])
+    )
+
+
 # Testing functions
 
-def test_basic_aggregation(main_summary, expected_search_dashboard_data):
-    actual = search_dashboard_etl(main_summary)
+def df_equals(this, that):
+    return sorted(this.collect()) == sorted(that.collect())
 
 
-    assert sorted(actual.collect()) == \
-        sorted(expected_search_dashboard_data.collect())
+# def test_explode(simple_main_summary):
+#     print explode_search_counts(simple_main_summary).collect()
+#     assert False
+# 
+# 
+def test_explode_search_counts(simple_main_summary,
+                               exploded_simple_main_summary):
+    actual = explode_search_counts(simple_main_summary)
+
+    assert df_equals(actual, exploded_simple_main_summary)
+
+
+# def test_basic_aggregation(main_summary, expected_search_dashboard_data):
+#     actual = search_dashboard_etl(main_summary)
+# 
+#     assert df_equals(actual, expected_search_dashboard_data)
