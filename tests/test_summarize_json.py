@@ -204,7 +204,7 @@ def test_finalize_data():
         ('resolution', 'Other') : 8
     }
 
-    finalized_data = finalize_data(collapsed_data, 74, 0.1, 0.2, dt.date(2016, 7, 3))
+    finalized_data = finalize_data(collapsed_data, 74, 0.1, 0.2, datetime.strptime('20160703', '%Y%m%d'))
     
     # Check that the basic fields are in the finalized data.
     assert finalized_data['broken'] == 0.1,\
@@ -306,4 +306,4 @@ def test_generate_report():
         "resolution_1920x1200":1.0
     }
 
-    assert generate_report(dt.date(2016, 7, 3), dt.date(2016, 7, 10), spark)['hwsurvey-weekly-20160307-20160907.json'] == expected
+    assert generate_report(datetime.strptime('20160703', '%Y%m%d'), datetime.strptime('20160710', '%Y%m%d'), spark)['hwsurvey-weekly-20160307-20160907.json'] == expected
