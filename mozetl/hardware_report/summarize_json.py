@@ -611,9 +611,13 @@ def generate_report(start_date, end_date, spark):
                   normalized_channel  
                FROM 
                   longitudinal 
+               WHERE 
+                  normalized_channel = 'release' 
+               AND 
+                  build is not null and build[0].application_name = 'Firefox' 
                """
 
-    frame = spark.sql(sqlQuery).where("normalized_channel = 'release'").where("build is not null and build[0].application_name = 'Firefox'")
+    frame = spark.sql(sqlQuery)
 
     # The number of all the fetched records (including inactive and broken).
     records_count = frame.count()
