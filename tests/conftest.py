@@ -27,6 +27,18 @@ def no_spark_stop(monkeypatch):
     monkeypatch.setattr("pyspark.sql.SparkSession.stop", nop)
 
 
+@pytest.fixture
+def df_equals(row_to_dict):
+    def to_comparable(df):
+        return sorted(map(row_to_dict, df.collect()))
+
+
+    def func(this, that):
+        return to_comparable(this) == to_comparable(that)
+
+    return func
+
+
 @pytest.fixture(scope="session")
 def row_to_dict():
     """Convert pyspark.Row to dict for easier unordered comparison"""

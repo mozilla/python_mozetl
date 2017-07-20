@@ -6,19 +6,10 @@ from pyspark.sql.types import (
 from mozetl.search.dashboard import search_dashboard_etl, explode_search_counts
 
 
-# Boilerplate for main_summary data
-main_schema = StructType([
-    StructField('submission_date_s3', StringType(), False),
-    StructField('submission_date',    StringType(), False),
-    StructField('country',            StringType(), True),
-    StructField('app_version',        StringType(), True),
-    StructField('distribution_id',    StringType(), True),
-    StructField('search_counts',      ArrayType(StructType([
-        StructField('engine', StringType(), False),
-        StructField('source', StringType(), False),
-        StructField('count',  LongType(),   False),
-    ]))),
-])
+def define_dataframe_factory(field_dict):
+    return (StructType(
+        [StructField(name, *value[0]) for name, value in field_dict.items()]
+    ), {name: value[1] for name, value in field_dict.items()})
 
 
 def generate_search_count(engine='google', source='urlbar', count=4):
@@ -29,19 +20,21 @@ def generate_search_count(engine='google', source='urlbar', count=4):
     }
 
 
-google = generate_search_count()
-yahoo = generate_search_count(engine='yahoo')
-bing = generate_search_count(engine='bing')
-
-
-main_default_sample = {
-    'submission_date_s3': '20170101',
-    'submission_date':    '20170101',
-    'country':            'DE',
-    'app_version':        '54.0.1',
-    'distribution_id':    None,
-    'search_counts':      [google],
-}
+main_schema, main_default_sample = define_dataframe_factory({
+    'submission_date_s3': ((StringType(), False), '20170101'),
+    'submission_date':    ((StringType(), False), '20170101'),
+    'country':            ((StringType(), True),  'DE'),
+    'app_version':        ((StringType(), True),  '54.0.1'),
+    'distribution_id':    ((StringType(), True),  None),
+    'search_counts':      (
+        (ArrayType(StructType([
+            StructField('engine', StringType(), False),
+            StructField('source', StringType(), False),
+            StructField('count',  LongType(),   False),
+        ])), True),
+        generate_search_count()
+    )
+})
 
 
 @pytest.fixture()
@@ -60,7 +53,10 @@ def main_summary(generate_main_summary_data):
             {'country': 'US'},
             {'app_version': '52.0.3'},
             {'distribution_id': 'totally not null'},
-            {'search_counts': [bing, yahoo]},
+            {'search_counts': [
+                generate_search_count(engine='bing'),
+                generate_search_count(engine='yahoo'),
+            ]}
         ] + 
         [{}] * 5 # Some duplicate default rows to test aggregation
     )
@@ -70,7 +66,10 @@ def main_summary(generate_main_summary_data):
 def simple_main_summary(generate_main_summary_data):
     return generate_main_summary_data(
         [
-            {'search_counts': [bing, yahoo]},
+            {'search_counts': [
+                generate_search_count(engine='bing'),
+                generate_search_count(engine='yahoo'),
+            ]}
         ]
     )
 
@@ -152,19 +151,19 @@ def exploded_simple_main_summary(dataframe_factory):
 
 # Testing functions
 
-def df_equals(this, that):
-    return sorted(this.collect()) == sorted(that.collect())
-
-
 # def test_explode(simple_main_summary):
 #     print explode_search_counts(simple_main_summary).collect()
 #     assert False
-# 
-# 
+ 
+ 
 def test_explode_search_counts(simple_main_summary,
-                               exploded_simple_main_summary):
+                               exploded_simple_main_summary,
+                               df_equals):
     actual = explode_search_counts(simple_main_summary)
 
+    for x in zip(actual.collect(), exploded_simple_main_summary.collect()):
+        print x[0]
+        print x[1]
     assert df_equals(actual, exploded_simple_main_summary)
 
 

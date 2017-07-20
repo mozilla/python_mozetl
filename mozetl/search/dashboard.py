@@ -20,5 +20,4 @@ def explode_search_counts(main_summary):
             .withColumn(*define_sc_column('count'))
             .drop(exploded_col_name)
             .drop('search_counts')
-            .withColumn()
     )
