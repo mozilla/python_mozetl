@@ -25,7 +25,8 @@ logger = logging.getLogger(__name__)
 
 
 def fetch_json(uri):
-    """ Perform an HTTP GET on the given uri, return the results as json.
+    """Perform an HTTP GET on the given uri, return the results as json.
+
     If there is an error fetching the data, raise an exception.
 
     Args:
@@ -33,6 +34,7 @@ def fetch_json(uri):
 
     Returns:
         A JSON object with the response.
+
     """
     data = requests.get(uri)
     # Raise an exception if the fetch failed.
@@ -41,7 +43,7 @@ def fetch_json(uri):
 
 
 def get_OS_arch(browser_arch, os_name, is_wow64):
-    """ Infers the OS arch from environment data.
+    """Infer the OS arch from environment data.
 
     Args:
         browser_arch: the browser architecture string (either "x86" or "x86-64").
@@ -50,8 +52,8 @@ def get_OS_arch(browser_arch, os_name, is_wow64):
 
     Returns:
         'x86' if the underlying OS is 32bit, 'x86-64' if it's a 64bit OS.
-    """
 
+    """
     is_64bit_browser = browser_arch == 'x86-64'
     # If it's a 64bit browser build, then we're on a 64bit system.
     if is_64bit_browser:
@@ -68,7 +70,7 @@ def get_OS_arch(browser_arch, os_name, is_wow64):
 
 
 def vendor_name_from_id(id):
-    """ Get the string name matching the provided vendor id.
+    """Get the string name matching the provided vendor id.
 
     Args:
         id: A string containing the vendor id.
@@ -76,8 +78,8 @@ def vendor_name_from_id(id):
     Returns:
         A string containing the vendor name or "(Other <ID>)" if
         unknown.
-    """
 
+    """
     # TODO: We need to make this an external resource for easier
     # future updates.
     vendor_map = {
@@ -98,7 +100,7 @@ def vendor_name_from_id(id):
 
 
 def get_device_family_chipset(vendor_id, device_id, device_map):
-    """ Get the family and chipset strings given the vendor and device ids.
+    """Get the family and chipset strings given the vendor and device ids.
 
     Args:
         vendor_id: a string representing the vendor id (e.g. '0xabcd').
@@ -106,6 +108,7 @@ def get_device_family_chipset(vendor_id, device_id, device_map):
 
     Returns:
         A string in the format "Device Family Name-Chipset Name".
+
     """
     if vendor_id not in device_map:
         return "Unknown"
@@ -117,11 +120,13 @@ def get_device_family_chipset(vendor_id, device_id, device_map):
 
 
 def invert_device_map(m):
-    """ Inverts a GPU device map fetched from the jrmuizel's Github repo.
+    """Inverts a GPU device map fetched from the jrmuizel's Github repo.
+
     The layout of the fetched GPU map layout is:
         Vendor ID -> Device Family -> Chipset -> [Device IDs]
     We should convert it to:
         Vendor ID -> Device ID -> [Device Family, Chipset]
+
     """
     device_id_map = {}
     for vendor, u in m.iteritems():
@@ -135,9 +140,7 @@ def invert_device_map(m):
 
 
 def build_device_map():
-    """ This function builds a dictionary that will help us mapping vendor/device ids to a
-    human readable device family and chipset name."""
-
+    """Build a dictionary that will help us map vendor/device ids to device families."""
     intel_raw = fetch_json(
         "https://github.com/jrmuizel/gpu-db/raw/master/intel.json")
     nvidia_raw = fetch_json(
@@ -154,7 +157,7 @@ def build_device_map():
 
 
 def get_valid_client_record(r, data_index):
-    """ Check if the referenced record is sane or contains partial/broken data.
+    """Check if the referenced record is sane or contains partial/broken data.
 
     Args:
         r: The client entry in the longitudinal dataset.
@@ -163,8 +166,8 @@ def get_valid_client_record(r, data_index):
     Returns:
         An object containing the client hardware data or REASON_BROKEN_DATA if the
         data is invalid.
-    """
 
+    """
     gfx_adapters = r["system_gfx"][data_index]["adapters"]
     monitors = r["system_gfx"][data_index]["monitors"]
 
@@ -213,7 +216,7 @@ def get_valid_client_record(r, data_index):
 
 
 def get_latest_valid_per_client(entry, time_start, time_end):
-    """ Get the most recently submitted ping for a client within the given timeframe.
+    """Get the most recently submitted ping for a client within the given timeframe.
 
     Then use this index to look up the data from the other columns (we can assume that the sizes
     of these arrays match, otherwise the longitudinal dataset is broken).
@@ -233,6 +236,7 @@ def get_latest_valid_per_client(entry, time_start, time_end):
     Raises:
         ValueError: if the columns within the record have mismatching lengths. This
         means the longitudinal dataset is corrupted.
+
     """
     latest_entry = None
     for index, pkt_date in enumerate(entry["submission_date"]):
@@ -279,9 +283,11 @@ def get_latest_valid_per_client(entry, time_start, time_end):
 
 
 def prepare_data(p, device_map):
-    """ This function prepares the data for further analyses (e.g. unit conversion,
-    vendor id to string, ...). """
+    """Prepare data for further analyses.
 
+    e.g. unit conversion, vendor id to string, etc.
+
+    """
     cpu_speed = round(p['cpu_speed'] / 1000.0, 1)
     return {
         'browser_arch': p['browser_arch'],
@@ -290,7 +296,8 @@ def prepare_data(p, device_map):
         'cpu_vendor': p['cpu_vendor'],
         'cpu_speed': cpu_speed,
         'gfx0_vendor_name': vendor_name_from_id(p['gfx0_vendor_id']),
-        'gfx0_model': get_device_family_chipset(p['gfx0_vendor_id'], p['gfx0_device_id'], device_map),
+        'gfx0_model': get_device_family_chipset(p['gfx0_vendor_id'], p['gfx0_device_id'],
+                                                device_map),
         'resolution': str(p['screen_width']) + 'x' + str(p['screen_height']),
         'memory_gb': int(round(p['memory_mb'] / 1024.0)),
         'os': p['os_name'] + '-' + p['os_version'],
@@ -300,6 +307,7 @@ def prepare_data(p, device_map):
 
 
 def aggregate_data(processed_data):
+    """Return aggregated data."""
     def seq(acc, v):
         # The dimensions over which we want to aggregate the different values.
         keys_to_aggregate = [
@@ -318,9 +326,9 @@ def aggregate_data(processed_data):
         ]
 
         for key_name in keys_to_aggregate:
-            # We want to know how many users have a particular configuration (e.g. using a particular
-            # cpu vendor). For each dimension of interest, build a key as (hw, value) and count its
-            # occurrences among the user base.
+            # We want to know how many users have a particular configuration (e.g. using a
+            # particular cpu vendor). For each dimension of interest, build a key as
+            # (hw, value) and count its occurrences among the user base.
             acc_key = (key_name, v[key_name])
             acc[acc_key] = acc.get(acc_key, 0) + 1
 
@@ -334,7 +342,7 @@ def aggregate_data(processed_data):
 
 
 def collapse_buckets(aggregated_data, count_threshold):
-    """ Collapse uncommon configurations in generic groups to preserve privacy.
+    """Collapse uncommon configurations in generic groups to preserve privacy.
 
     This takes the dictionary of aggregated results from |aggregate_data| and collapses
     entries with a value less than |count_threshold| in a generic bucket.
@@ -343,8 +351,8 @@ def collapse_buckets(aggregated_data, count_threshold):
         aggregated_data: The object containing aggregated data.
         count_threhold: Groups (or "configurations") containing less than this value
         are collapsed in a generic bucket.
-    """
 
+    """
     collapsed_groups = {}
     for k, v in aggregated_data.iteritems():
         key_type = k[0]
@@ -405,7 +413,7 @@ def collapse_buckets(aggregated_data, count_threshold):
 
 def finalize_data(data, sample_count, broken_ratio,
                   inactive_ratio, report_date):
-    """ Finalize the aggregated data.
+    """Finalize the aggregated data.
 
     Translate raw sample numbers to percentages and add the date for the reported
     week along with the percentage of discarded samples due to broken data.
@@ -421,8 +429,8 @@ def finalize_data(data, sample_count, broken_ratio,
 
     Returns:
         An object containing the reported hardware statistics.
-    """
 
+    """
     denom = float(sample_count)
 
     aggregated_percentages = {
@@ -457,9 +465,9 @@ def finalize_data(data, sample_count, broken_ratio,
 
 
 def validate_finalized_data(data):
-    """ Validate the aggregated and finalized data.
+    """Validate the aggregated and finalized data.
 
-    This checks that the aggregated hardware data object contains all the expectd keys
+    This checks that the aggregated hardware data object contains all the expected keys
     and that they sum up roughly 1.0.
 
     When a problem is found a message is printed to make debugging easier.
@@ -469,6 +477,7 @@ def validate_finalized_data(data):
 
     Returns:
         True if the data validates correctly, false otherwise.
+
     """
     keys_accumulator = {
         'browserArch': 0.0,
@@ -512,10 +521,12 @@ def validate_finalized_data(data):
 
 
 def get_file_name(suffix=""):
+    """Return report file name with date appended."""
     return "hwsurvey-weekly" + suffix + ".json"
 
 
 def serialize_results(date_to_json):
+    """Save each aggregated data item as an entry in the JSON."""
     logger.info("Serializing results locally...")
     for file_name, aggregated_data in date_to_json.items():
         # This either appends to an existing file, or creates a new one.
@@ -530,14 +541,12 @@ def serialize_results(date_to_json):
 
 
 def fetch_previous_state(s3_source_file_name, local_file_name, bucket):
-    """
-    This function fetches the previous state from S3's bucket and stores it locally.
+    """Fetch the previous state from S3's bucket and store it locally.
 
     Args:
         s3_source_file_name: The name of the file on S3.
         local_file_name: The name of the file to save to, locally.
     """
-
     # Fetch the previous state.
     client = boto3.client('s3', 'us-west-2')
     transfer = boto3.s3.transfer.S3Transfer(client)
@@ -554,14 +563,12 @@ def fetch_previous_state(s3_source_file_name, local_file_name, bucket):
 
 
 def store_new_state(source_file_name, s3_dest_file_name, bucket):
-    """
-    Store the new state file to S3.
+    """Store the new state file to S3.
 
     Args:
         source_file_name: The name of the local source file.
         s3_dest_file_name: The name of the destination file on S3.
     """
-
     client = boto3.client('s3', 'us-west-2')
     transfer = boto3.s3.transfer.S3Transfer(client)
 
@@ -571,7 +578,7 @@ def store_new_state(source_file_name, s3_dest_file_name, bucket):
 
 
 def generate_report(start_date, end_date, spark):
-    """ Generates the hardware survey dataset for the reference timeframe.
+    """Generate the hardware survey dataset for the reference timeframe.
 
     If the timeframe is longer than a week, split it in in weekly chunks
     and process each chunk individually (eases backfilling).
@@ -585,7 +592,6 @@ def generate_report(start_date, end_date, spark):
            makes sense if a |start_date| was provided. If None, this defaults
            to the end of the past week (Saturday).
     """
-
     # If no start_date was provided, generate a report for the past complete
     # week.
 
@@ -599,22 +605,22 @@ def generate_report(start_date, end_date, spark):
 
     # Connect to the longitudinal dataset.
     sqlQuery = """
-               SELECT 
-                  build, 
-                  client_id, 
-                  active_plugins, 
-                  system_os, 
-                  submission_date, 
-                  system, 
-                  system_gfx, 
-                  system_cpu, 
-                  normalized_channel  
-               FROM 
-                  longitudinal 
-               WHERE 
-                  normalized_channel = 'release' 
-               AND 
-                  build is not null and build[0].application_name = 'Firefox' 
+               SELECT
+                  build,
+                  client_id,
+                  active_plugins,
+                  system_os,
+                  submission_date,
+                  system,
+                  system_gfx,
+                  system_cpu,
+                  normalized_channel
+               FROM
+                  longitudinal
+               WHERE
+                  normalized_channel = 'release'
+               AND
+                  build is not null and build[0].application_name = 'Firefox'
                """
 
     frame = spark.sql(sqlQuery)
@@ -654,14 +660,16 @@ def generate_report(start_date, end_date, spark):
         inactive_count = discarded[REASON_INACTIVE]
         broken_ratio = broken_count / float(records_count)
         inactive_ratio = inactive_count / float(records_count)
-        logger.info("Broken pings ratio: {}; Inactive clients ratio: {}".format(broken_ratio, inactive_ratio))
+        logger.info("Broken pings ratio: {}; Inactive clients ratio: {}"
+                    .format(broken_ratio, inactive_ratio))
 
         # If we're not seeing sane values for the broken or inactive ratios,
         # bail out early on. There's no point in aggregating.
         if broken_ratio >= 0.9 or inactive_ratio >= 0.9:
             raise Exception(
-                "Unexpected ratio of broken pings or inactive clients. Broken ratio: " + str(broken_ratio) +
-                ", inactive ratio: " + str(inactive_ratio))
+                "Unexpected ratio of broken pings or inactive clients. Broken ratio: {0},\
+                inactive ratio: {1}"
+                .format(broken_ratio, inactive_ratio))
 
         # Process the data, transforming it in the form we desire.
         device_map = build_device_map()
@@ -677,7 +685,8 @@ def generate_report(start_date, end_date, spark):
         # Collapse together groups that count less than 1% of our samples.
         threshold_to_collapse = int(valid_records_count * 0.01)
 
-        logger.info("Collapsing smaller groups into the other bucket (threshold {th})".format(th=threshold_to_collapse))
+        logger.info("Collapsing smaller groups into the other bucket (threshold {th})"
+                    .format(th=threshold_to_collapse))
         collapsed_aggregates = collapse_buckets(
             aggregated_pings, threshold_to_collapse)
 
