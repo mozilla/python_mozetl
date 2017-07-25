@@ -7,6 +7,9 @@ from pyspark.sql.types import (
 from mozetl.search.dashboard import search_dashboard_etl, explode_search_counts
 
 
+# Some boilerplate to help define example dataframes for testing
+
+# A helper class for declaratively dataframe factories
 dataframe_field = namedtuple('dataframe_field', [
     'name',
     'default_value',
@@ -16,10 +19,12 @@ dataframe_field = namedtuple('dataframe_field', [
 
 
 def to_field(field_tuple):
+    """Create a dataframe_field from a tuple"""
     return dataframe_field(*field_tuple)
 
 
 def get_dataframe_factory_config(fields):
+    """Parse a list of dataframe_fields to a schema and set of default values"""
     schema = StructType([
         StructField(field.name, field.type, field.nullable)
         for field in fields
@@ -32,6 +37,7 @@ def get_dataframe_factory_config(fields):
 @pytest.fixture
 def define_dataframe_factory(dataframe_factory):
     def partial(fields):
+        """Create a dataframe_factory from a set of field configs"""
         schema, default_sample = get_dataframe_factory_config(fields)
         return functools.partial(
             dataframe_factory.create_dataframe,
@@ -42,6 +48,7 @@ def define_dataframe_factory(dataframe_factory):
     return partial
 
 
+# Boilerplate for generating example main_summary tables
 def generate_search_count(engine='google', source='urlbar', count=4):
     return {
         'engine': engine,
@@ -97,21 +104,22 @@ def simple_main_summary(generate_main_summary_data):
 
 @pytest.fixture()
 def expected_search_dashboard_data(define_dataframe_factory):
-    define_dataframe_factory(map(to_field, [
-        ('submission_date', '20170101', StringType(), False),
-        ('country',         'DE',       StringType(), True),
-        ('app_version',     '54.0.1',   StringType(), True),
-        ('distribution_id', None,       StringType(), True),
-        ('engine',          'google',   StringType(), False),
-        ('source',          'urlbar',   StringType(), False),
-        ('count',           4,          LongType(),   False),
+    return define_dataframe_factory(map(to_field, [
+        ('submission_date_s3', '20170101', StringType(), False),
+        ('submission_date',    '20170101', StringType(), False),
+        ('country',            'DE',       StringType(), True),
+        ('app_version',        '54.0.1',   StringType(), True),
+        ('distribution_id',    None,       StringType(), True),
+        ('engine',             'google',   StringType(), False),
+        ('source',             'urlbar',   StringType(), False),
+        ('search_count',       4,          LongType(),   False),
     ]))([
         {'country': 'US'},
         {'app_version': '52.0.3'},
         {'distribution_id': 'totally not null'},
         {'engine': 'yahoo'},
         {'engine': 'bing'},
-        {'count': 20},
+        {'search_count': 20},
     ])
 
 
