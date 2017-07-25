@@ -32,7 +32,6 @@ def df_equals(row_to_dict):
     def to_comparable(df):
         return sorted(map(row_to_dict, df.collect()))
 
-
     def func(this, that):
         return to_comparable(this) == to_comparable(that)
 

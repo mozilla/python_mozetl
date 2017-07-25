@@ -9,7 +9,7 @@ from mozetl.search.dashboard import search_dashboard_etl, explode_search_counts
 
 # Some boilerplate to help define example dataframes for testing
 
-# A helper class for declaratively dataframe factories
+# A helper class for declaratively creating dataframe factories
 dataframe_field = namedtuple('dataframe_field', [
     'name',
     'default_value',
@@ -65,12 +65,16 @@ def generate_main_summary_data(define_dataframe_factory):
         ('app_version',     '54.0.1',   StringType(), True),
         ('distribution_id', None,       StringType(), True),
         ('ignored_col',     1.0,        DoubleType(), True),
-        ('search_counts',   [generate_search_count()],
-         ArrayType(StructType([
+        (
+            'search_counts',
+            [generate_search_count()],
+            ArrayType(StructType([
                 StructField('engine', StringType(), False),
                 StructField('source', StringType(), False),
                 StructField('count',  LongType(),   False),
-            ])), True),
+            ])),
+            True
+        ),
     ]))
 
 
@@ -88,8 +92,8 @@ def main_summary(generate_main_summary_data):
                 generate_search_count(engine='bing'),
                 generate_search_count(engine='yahoo'),
             ]}
-        ] + 
-        [{}] * 5 # Some duplicate default rows to test aggregation
+        ] +
+        [{}] * 5  # Some duplicate default rows to test aggregation
     )
 
 
