@@ -15,6 +15,13 @@ def search_dashboard_etl(main_summary):
 
 
 def explode_search_counts(main_summary):
+    input_columns = [
+        'search_counts',
+        'submission_date',
+        'country',
+        'app_version',
+        'distribution_id',
+    ]
     exploded_col_name = 'single_search_count'
 
     def define_sc_column(field):
@@ -23,6 +30,7 @@ def explode_search_counts(main_summary):
 
     return (
         main_summary
+            .select(input_columns)
             .withColumn(exploded_col_name, explode(col('search_counts')))
             .withColumn(*define_sc_column('engine'))
             .withColumn(*define_sc_column('source'))
@@ -63,7 +71,7 @@ def main(start_date, mode, bucket, prefix, input_bucket, input_prefix):
         submission_date
     )
 
-    logger.info("Loading main_summary into memory...")
+    logger.info("Loading main_summary...")
     main_summary = spark.read.parquet(source_path)
 
     logger.info("Running the search dashboard ETL job...")
