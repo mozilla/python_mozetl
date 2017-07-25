@@ -1,15 +1,45 @@
 import functools
 import pytest
+from collections import namedtuple
 from pyspark.sql.types import (
     StructField, ArrayType, StringType, LongType, StructType
 )
 from mozetl.search.dashboard import search_dashboard_etl, explode_search_counts
 
 
-def define_dataframe_factory(field_dict):
-    return (StructType(
-        [StructField(name, *value[0]) for name, value in field_dict.items()]
-    ), {name: value[1] for name, value in field_dict.items()})
+dataframe_field = namedtuple('dataframe_field', [
+    'name',
+    'default_value',
+    'type',
+    'nullable',
+])
+
+
+def to_field(field_tuple):
+    return dataframe_field(*field_tuple)
+
+
+def get_dataframe_factory_config(fields):
+    schema = StructType([
+        StructField(field.name, field.type, field.nullable)
+        for field in fields
+    ])
+    default_sample = {field.name: field.default_value for field in fields}
+
+    return schema, default_sample
+
+
+@pytest.fixture
+def define_dataframe_factory(dataframe_factory):
+    def partial(fields):
+        schema, default_sample = get_dataframe_factory_config(fields)
+        return functools.partial(
+            dataframe_factory.create_dataframe,
+            base=default_sample,
+            schema=schema
+        )
+
+    return partial
 
 
 def generate_search_count(engine='google', source='urlbar', count=4):
@@ -20,30 +50,21 @@ def generate_search_count(engine='google', source='urlbar', count=4):
     }
 
 
-main_schema, main_default_sample = define_dataframe_factory({
-    'submission_date_s3': ((StringType(), False), '20170101'),
-    'submission_date':    ((StringType(), False), '20170101'),
-    'country':            ((StringType(), True),  'DE'),
-    'app_version':        ((StringType(), True),  '54.0.1'),
-    'distribution_id':    ((StringType(), True),  None),
-    'search_counts':      (
-        (ArrayType(StructType([
-            StructField('engine', StringType(), False),
-            StructField('source', StringType(), False),
-            StructField('count',  LongType(),   False),
-        ])), True),
-        generate_search_count()
-    )
-})
-
-
 @pytest.fixture()
-def generate_main_summary_data(dataframe_factory):
-    return functools.partial(
-        dataframe_factory.create_dataframe,
-        base=main_default_sample,
-        schema=main_schema
-    )
+def generate_main_summary_data(define_dataframe_factory):
+    return define_dataframe_factory(map(to_field, [
+        ('submission_date_s3', '20170101', StringType(), False),
+        ('submission_date',    '20170101', StringType(), False),
+        ('country',            'DE',       StringType(), True),
+        ('app_version',        '54.0.1',   StringType(), True),
+        ('distribution_id',    None,       StringType(), True),
+        ('search_counts',      [generate_search_count()],
+         ArrayType(StructType([
+                StructField('engine', StringType(), False),
+                StructField('source', StringType(), False),
+                StructField('count',  LongType(),   False),
+            ])), True),
+    ]))
 
 
 @pytest.fixture
@@ -74,41 +95,17 @@ def simple_main_summary(generate_main_summary_data):
     )
 
 
-# Boilerplate for search_dashboard data
-search_dashboard_schema = StructType([
-    StructField('submission_date',    StringType(), False),
-    StructField('country',            StringType(), True),
-    StructField('app_version',        StringType(), True),
-    StructField('distribution_id',    StringType(), True),
-    StructField('engine',             StringType(), False),
-    StructField('source',             StringType(), False),
-    StructField('count',              LongType(),   False),
-])
-
-
-search_dashboard_default_sample = {
-    'submission_date':    '20170101',
-    'country':            'DE',
-    'app_version':        '54.0.1',
-    'distribution_id':    None,
-    'engine':             'google',
-    'source':             'urlbar',
-    'count' :             4,
-}
-
-
 @pytest.fixture()
-def generate_search_dashboard_data(dataframe_factory):
-    return functools.partial(
-        dataframe_factory.create_dataframe,
-        base=search_dashboard_default_sample,
-        schema=search_dashboard_schema
-    )
-
-
-@pytest.fixture()
-def expected_search_dashboard_data(generate_search_dashboard_data):
-    return generate_search_dashboard_data([
+def expected_search_dashboard_data(define_dataframe_factory):
+    define_dataframe_factory(map(to_field, [
+        ('submission_date', '20170101', StringType(), False),
+        ('country',         'DE',       StringType(), True),
+        ('app_version',     '54.0.1',   StringType(), True),
+        ('distribution_id', None,       StringType(), True),
+        ('engine',          'google',   StringType(), False),
+        ('source',          'urlbar',   StringType(), False),
+        ('count',           4,          LongType(),   False),
+    ]))([
         {'country': 'US'},
         {'app_version': '52.0.3'},
         {'distribution_id': 'totally not null'},
@@ -119,55 +116,35 @@ def expected_search_dashboard_data(generate_search_dashboard_data):
 
 
 @pytest.fixture()
-def exploded_simple_main_summary(dataframe_factory):
-    return dataframe_factory.create_dataframe(
-        [
+def exploded_simple_main_summary(define_dataframe_factory):
+    return define_dataframe_factory(map(to_field, [
+        ('submission_date_s3', '20170101', StringType(), False),
+        ('submission_date',    '20170101', StringType(), False),
+        ('country',            'DE',       StringType(), True),
+        ('app_version',        '54.0.1',   StringType(), True),
+        ('distribution_id',    None,       StringType(), True),
+        ('engine',             'google',   StringType(), False),
+        ('source',             'urlbar',   StringType(), False),
+        ('count',              4,          LongType(),   False),
+    ]))([
             {'engine': 'yahoo'},
             {'engine': 'bing'},
-        ],
-        {
-            'submission_date_s3': '20170101',
-            'submission_date':    '20170101',
-            'country':            'DE',
-            'app_version':        '54.0.1',
-            'distribution_id':    None,
-            'engine': 'google',
-            'source': 'urlbar',
-            'count':  4,
-        },
-
-        StructType([
-            StructField('submission_date_s3', StringType(), False),
-            StructField('submission_date',    StringType(), False),
-            StructField('country',            StringType(), True),
-            StructField('app_version',        StringType(), True),
-            StructField('distribution_id',    StringType(), True),
-            StructField('engine',             StringType(), False),
-            StructField('source',             StringType(), False),
-            StructField('count',              LongType(),   False),
-        ])
-    )
+    ])
 
 
 # Testing functions
 
-# def test_explode(simple_main_summary):
-#     print explode_search_counts(simple_main_summary).collect()
-#     assert False
- 
- 
 def test_explode_search_counts(simple_main_summary,
                                exploded_simple_main_summary,
                                df_equals):
     actual = explode_search_counts(simple_main_summary)
 
-    for x in zip(actual.collect(), exploded_simple_main_summary.collect()):
-        print x[0]
-        print x[1]
     assert df_equals(actual, exploded_simple_main_summary)
 
 
-# def test_basic_aggregation(main_summary, expected_search_dashboard_data):
-#     actual = search_dashboard_etl(main_summary)
-# 
-#     assert df_equals(actual, expected_search_dashboard_data)
+def test_basic_aggregation(main_summary,
+                           expected_search_dashboard_data,
+                           df_equals):
+    actual = search_dashboard_etl(main_summary)
+
+    assert df_equals(actual, expected_search_dashboard_data)
