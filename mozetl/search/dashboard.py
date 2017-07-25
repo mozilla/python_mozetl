@@ -1,5 +1,11 @@
 import click
+import logging
 from pyspark.sql.functions import explode, col
+from pyspark.sql import SparkSession
+
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def search_dashboard_etl(main_summary):
@@ -8,9 +14,9 @@ def search_dashboard_etl(main_summary):
 
     return (
         exploded
-            .groupBy(group_cols)
-            .sum('count')
-            .withColumnRenamed('sum(count)', 'search_count')
+        .groupBy(group_cols)
+        .sum('count')
+        .withColumnRenamed('sum(count)', 'search_count')
     )
 
 
@@ -27,16 +33,15 @@ def explode_search_counts(main_summary):
     def define_sc_column(field):
         return field, col(exploded_col_name + '.' + field)
 
-
     return (
         main_summary
-            .select(input_columns)
-            .withColumn(exploded_col_name, explode(col('search_counts')))
-            .withColumn(*define_sc_column('engine'))
-            .withColumn(*define_sc_column('source'))
-            .withColumn(*define_sc_column('count'))
-            .drop(exploded_col_name)
-            .drop('search_counts')
+        .select(input_columns)
+        .withColumn(exploded_col_name, explode(col('search_counts')))
+        .withColumn(*define_sc_column('engine'))
+        .withColumn(*define_sc_column('source'))
+        .withColumn(*define_sc_column('count'))
+        .drop(exploded_col_name)
+        .drop('search_counts')
     )
 
 
@@ -50,7 +55,7 @@ def explode_search_counts(main_summary):
 @click.option('--input_prefix',
               default='main_summary/v4',
               help='Prefix of the input dataset')
-def main(start_date, mode, bucket, prefix, input_bucket, input_prefix):
+def main(submission_date, bucket, prefix, input_bucket, input_prefix):
     spark = (
         SparkSession
         .builder
@@ -65,8 +70,8 @@ def main(start_date, mode, bucket, prefix, input_bucket, input_prefix):
         submission_date
     )
     output_path = "s3://{}/{}/v{}/submission_date_s3={}".format(
-        output_bucket,
-        output_prefix,
+        bucket,
+        prefix,
         version,
         submission_date
     )
@@ -78,4 +83,4 @@ def main(start_date, mode, bucket, prefix, input_bucket, input_prefix):
     search_dashboard_data = search_dashboard_etl(main_summary)
 
     logger.info("Saving rollups to: {}".format(output_path))
-    search_dashboard.repartition(10).write.save(output_path)
+    search_dashboard_data.repartition(10).write.save(output_path)
