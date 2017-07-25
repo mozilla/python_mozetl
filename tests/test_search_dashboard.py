@@ -2,7 +2,7 @@ import functools
 import pytest
 from collections import namedtuple
 from pyspark.sql.types import (
-    StructField, ArrayType, StringType, LongType, StructType
+    StructField, ArrayType, StringType, LongType, StructType, DoubleType
 )
 from mozetl.search.dashboard import search_dashboard_etl, explode_search_counts
 
@@ -60,12 +60,12 @@ def generate_search_count(engine='google', source='urlbar', count=4):
 @pytest.fixture()
 def generate_main_summary_data(define_dataframe_factory):
     return define_dataframe_factory(map(to_field, [
-        ('submission_date_s3', '20170101', StringType(), False),
-        ('submission_date',    '20170101', StringType(), False),
-        ('country',            'DE',       StringType(), True),
-        ('app_version',        '54.0.1',   StringType(), True),
-        ('distribution_id',    None,       StringType(), True),
-        ('search_counts',      [generate_search_count()],
+        ('submission_date', '20170101', StringType(), False),
+        ('country',         'DE',       StringType(), True),
+        ('app_version',     '54.0.1',   StringType(), True),
+        ('distribution_id', None,       StringType(), True),
+        ('ignored_col',     1.0,        DoubleType(), True),
+        ('search_counts',   [generate_search_count()],
          ArrayType(StructType([
                 StructField('engine', StringType(), False),
                 StructField('source', StringType(), False),
@@ -78,7 +78,10 @@ def generate_main_summary_data(define_dataframe_factory):
 def main_summary(generate_main_summary_data):
     return generate_main_summary_data(
         [
-            {'country': 'US'},
+            {
+                'country': 'US',
+                'ignored_col': 3.14,
+            },
             {'app_version': '52.0.3'},
             {'distribution_id': 'totally not null'},
             {'search_counts': [
@@ -105,14 +108,13 @@ def simple_main_summary(generate_main_summary_data):
 @pytest.fixture()
 def expected_search_dashboard_data(define_dataframe_factory):
     return define_dataframe_factory(map(to_field, [
-        ('submission_date_s3', '20170101', StringType(), False),
-        ('submission_date',    '20170101', StringType(), False),
-        ('country',            'DE',       StringType(), True),
-        ('app_version',        '54.0.1',   StringType(), True),
-        ('distribution_id',    None,       StringType(), True),
-        ('engine',             'google',   StringType(), False),
-        ('source',             'urlbar',   StringType(), False),
-        ('search_count',       4,          LongType(),   False),
+        ('submission_date', '20170101', StringType(), False),
+        ('country',         'DE',       StringType(), True),
+        ('app_version',     '54.0.1',   StringType(), True),
+        ('distribution_id', None,       StringType(), True),
+        ('engine',          'google',   StringType(), False),
+        ('source',          'urlbar',   StringType(), False),
+        ('search_count',    4,          LongType(),   False),
     ]))([
         {'country': 'US'},
         {'app_version': '52.0.3'},
@@ -126,14 +128,13 @@ def expected_search_dashboard_data(define_dataframe_factory):
 @pytest.fixture()
 def exploded_simple_main_summary(define_dataframe_factory):
     return define_dataframe_factory(map(to_field, [
-        ('submission_date_s3', '20170101', StringType(), False),
-        ('submission_date',    '20170101', StringType(), False),
-        ('country',            'DE',       StringType(), True),
-        ('app_version',        '54.0.1',   StringType(), True),
-        ('distribution_id',    None,       StringType(), True),
-        ('engine',             'google',   StringType(), False),
-        ('source',             'urlbar',   StringType(), False),
-        ('count',              4,          LongType(),   False),
+        ('submission_date', '20170101', StringType(), False),
+        ('country',         'DE',       StringType(), True),
+        ('app_version',     '54.0.1',   StringType(), True),
+        ('distribution_id', None,       StringType(), True),
+        ('engine',          'google',   StringType(), False),
+        ('source',          'urlbar',   StringType(), False),
+        ('count',           4,          LongType(),   False),
     ]))([
             {'engine': 'yahoo'},
             {'engine': 'bing'},
