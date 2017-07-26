@@ -9,11 +9,13 @@ logger = logging.getLogger(__name__)
 
 
 def search_dashboard_etl(main_summary):
+    # todo: this function should consume already exploded and augmented data
     exploded = explode_search_counts(main_summary)
-    group_cols = filter(lambda x: x != 'count', exploded.columns)
+    augmented = add_derived_columns(exploded)
+    group_cols = filter(lambda x: x != 'count', augmented.columns)
 
     return (
-        exploded
+        augmented
         .groupBy(group_cols)
         .sum('count')
         .withColumnRenamed('sum(count)', 'search_count')
