@@ -4,7 +4,9 @@ from collections import namedtuple
 from pyspark.sql.types import (
     StructField, ArrayType, StringType, LongType, StructType, DoubleType
 )
-from mozetl.search.dashboard import search_dashboard_etl, explode_search_counts
+from mozetl.search.dashboard import (
+    search_dashboard_etl, explode_search_counts, add_derived_columns
+)
 
 
 # Some boilerplate to help define example dataframes for testing
@@ -110,6 +112,57 @@ def simple_main_summary(generate_main_summary_data):
 
 
 @pytest.fixture()
+def generate_exploded_data(define_dataframe_factory):
+    return define_dataframe_factory(map(to_field, [
+        ('submission_date', '20170101', StringType(), False),
+        ('country',         'DE',       StringType(), True),
+        ('app_version',     '54.0.1',   StringType(), True),
+        ('distribution_id', None,       StringType(), True),
+        ('engine',          'google',   StringType(), False),
+        ('source',          'urlbar',   StringType(), False),
+        ('count',           4,          LongType(),   False),
+    ]))
+
+
+@pytest.fixture()
+def exploded_simple_main_summary(generate_exploded_data):
+    return generate_exploded_data([
+        {'engine': 'yahoo'},
+        {'engine': 'bing'},
+    ])
+
+
+@pytest.fixture()
+def exploded_data_for_derived_cols(generate_exploded_data):
+    return generate_exploded_data([
+        {'source': 'sap:urlbar:SomeCodeHere'},
+        {'source': 'follow-on:urlbar:SomeCodeHere'},
+        {'source': 'urlbar'},
+    ])
+
+
+@pytest.fixture()
+def derived_columns(define_dataframe_factory):
+    return define_dataframe_factory(map(to_field, [
+        ('submission_date', '20170101',   StringType(), False),
+        ('country',         'DE',         StringType(), True),
+        ('app_version',     '54.0.1',     StringType(), True),
+        ('distribution_id', None,         StringType(), True),
+        ('engine',          'google',     StringType(), False),
+        ('source',          'urlbar',     StringType(), False),
+        ('count',           4,            LongType(),   False),
+        ('type',            'chrome-sap', StringType(), False),
+    ]))([
+        {'source': 'sap:urlbar:SomeCodeHere',
+         'type': 'in-content-sap'},
+        {'source': 'follow-on:urlbar:SomeCodeHere',
+         'type': 'follow-on'},
+        {'source': 'urlbar',
+         'type': 'chrome-sap'},
+    ])
+
+
+@pytest.fixture()
 def expected_search_dashboard_data(define_dataframe_factory):
     return define_dataframe_factory(map(to_field, [
         ('submission_date', '20170101', StringType(), False),
@@ -129,22 +182,6 @@ def expected_search_dashboard_data(define_dataframe_factory):
     ])
 
 
-@pytest.fixture()
-def exploded_simple_main_summary(define_dataframe_factory):
-    return define_dataframe_factory(map(to_field, [
-        ('submission_date', '20170101', StringType(), False),
-        ('country',         'DE',       StringType(), True),
-        ('app_version',     '54.0.1',   StringType(), True),
-        ('distribution_id', None,       StringType(), True),
-        ('engine',          'google',   StringType(), False),
-        ('source',          'urlbar',   StringType(), False),
-        ('count',           4,          LongType(),   False),
-    ]))([
-            {'engine': 'yahoo'},
-            {'engine': 'bing'},
-    ])
-
-
 # Testing functions
 
 def test_explode_search_counts(simple_main_summary,
@@ -153,6 +190,14 @@ def test_explode_search_counts(simple_main_summary,
     actual = explode_search_counts(simple_main_summary)
 
     assert df_equals(actual, exploded_simple_main_summary)
+
+
+def test_add_derived_columns(exploded_data_for_derived_cols,
+                             derived_columns,
+                             df_equals):
+    actual = add_derived_columns(exploded_data_for_derived_cols)
+
+    assert df_equals(actual, derived_columns)
 
 
 def test_basic_aggregation(main_summary,

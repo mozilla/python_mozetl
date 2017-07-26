@@ -1,6 +1,6 @@
 import click
 import logging
-from pyspark.sql.functions import explode, col
+from pyspark.sql.functions import explode, col, when
 from pyspark.sql import SparkSession
 
 
@@ -43,6 +43,21 @@ def explode_search_counts(main_summary):
         .drop(exploded_col_name)
         .drop('search_counts')
     )
+
+
+def add_derived_columns(exploded_search_counts):
+    return (
+        exploded_search_counts
+        .withColumn(
+            'type',
+            when(col('source').startswith('sap:'), 'in-content-sap')
+            .otherwise(
+                when(col('source').startswith('follow-on:'), 'follow-on')
+                .otherwise('chrome-sap')
+            )
+        )
+    )
+
 
 
 @click.command()
