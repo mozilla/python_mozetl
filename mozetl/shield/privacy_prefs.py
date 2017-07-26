@@ -8,7 +8,7 @@
 from pyspark.sql.types import StringType
 
 from ..basic import convert_pings, DataFrameConfig
-from .utils import testpilot_etl_boilerplate
+from ..testpilot.utils import testpilot_etl_boilerplate
 
 
 SHIELD_ADDON_ID = '@shield-study-privacy'
@@ -30,7 +30,7 @@ def transform_shield_pings(sqlContext, pings):
 
 
 def include_shield_pings(ping):
-    return ping['payload/test'] == SHIELD_ADDON_ID
+    return ping['payload/payload/study'] == SHIELD_ADDON_ID
 
 
 def etl_job(sc, sqlContext, **kwargs):
