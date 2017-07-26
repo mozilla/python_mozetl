@@ -70,7 +70,11 @@ def add_derived_columns(exploded_search_counts):
 @click.option('--input_prefix',
               default='main_summary/v4',
               help='Prefix of the input dataset')
-def main(submission_date, bucket, prefix, input_bucket, input_prefix):
+@click.option('--save_mode',
+              default='error',
+              help='Save mode for writing data')
+def main(submission_date, bucket, prefix, input_bucket, input_prefix,
+         save_mode):
     spark = (
         SparkSession
         .builder
@@ -98,4 +102,10 @@ def main(submission_date, bucket, prefix, input_bucket, input_prefix):
     search_dashboard_data = search_dashboard_etl(main_summary)
 
     logger.info("Saving rollups to: {}".format(output_path))
-    search_dashboard_data.repartition(10).write.save(output_path)
+    (
+        search_dashboard_data
+        .repartition(10)
+        .write
+        .mode(save_mode)
+        .save(output_path)
+    )
