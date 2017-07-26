@@ -165,13 +165,14 @@ def derived_columns(define_dataframe_factory):
 @pytest.fixture()
 def expected_search_dashboard_data(define_dataframe_factory):
     return define_dataframe_factory(map(to_field, [
-        ('submission_date', '20170101', StringType(), False),
-        ('country',         'DE',       StringType(), True),
-        ('app_version',     '54.0.1',   StringType(), True),
-        ('distribution_id', None,       StringType(), True),
-        ('engine',          'google',   StringType(), False),
-        ('source',          'urlbar',   StringType(), False),
-        ('search_count',    4,          LongType(),   False),
+        ('submission_date', '20170101',   StringType(), False),
+        ('country',         'DE',         StringType(), True),
+        ('app_version',     '54.0.1',     StringType(), True),
+        ('distribution_id', None,         StringType(), True),
+        ('engine',          'google',     StringType(), False),
+        ('source',          'urlbar',     StringType(), False),
+        ('search_count',    4,            LongType(),   False),
+        ('type',            'chrome-sap', StringType(), False),
     ]))([
         {'country': 'US'},
         {'app_version': '52.0.3'},
