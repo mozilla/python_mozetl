@@ -25,12 +25,12 @@ For more on this see the writeup at
 To test this package locally, it is recommended to set up the environment and execute tests within a docker container.
 ```
 docker build -t mozetl .
-./runtests.sh   # runs tests within docker container
+./bin/run-tests.sh   # runs tests within docker container
 ```
 
 A subset of tests can be specified by adding arguments to runtests.sh:
 ```
-./runtests.sh -k tests/test_main.py # runs tests only in the test_main module
+./bin/run-tests.sh -k tests/test_main.py # runs tests only in the test_main module
 ```
 
 Tests are configured in [tox.ini](tox.ini)

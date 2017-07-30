@@ -652,8 +652,8 @@ def adjust_start_date(start_date, use_lag):
 
 
 @click.command()
-@click.argument('start_date')
-@click.argument('bucket')
+@click.option('--start_date', required=True)
+@click.option('--bucket', required=True)
 @click.option('-p', '--prefix', default='churn/v2',
               help="output prefix associated with the s3 bucket")
 @click.option('--input-bucket', default='telemetry-parquet',
