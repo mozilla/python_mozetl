@@ -17,7 +17,8 @@ DATAFRAME_COLUMN_CONFIGS = [
     ("event", "payload/payload/event", None, StringType()),
     ("originDomain", "payload/payload/originDomain", None, StringType()),
     ("breakage", "payload/payload/breakage", None, StringType()),
-    ("notes", "payload/payload/notes", None, StringType())
+    ("notes", "payload/payload/notes", None, StringType()),
+    ("study", "payload/payload/study", None, StringType()),
 ]
 
 

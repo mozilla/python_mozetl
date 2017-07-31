@@ -13,7 +13,7 @@ def create_ping_rdd(sc, payload):
 
 
 def create_row(overrides):
-    keys = ["branch", "event", "originDomain", "breakage", "notes"]
+    keys = ["branch", "event", "originDomain", "breakage", "notes", "study"]
 
     overrides['study'] = '@shield-study-privacy'
 
