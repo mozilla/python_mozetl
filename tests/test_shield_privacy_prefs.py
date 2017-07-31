@@ -26,8 +26,8 @@ def test_report_problem(row_to_dict, spark_context):
         'branch': 'thirdPartyCookiesOnlyFromVisited',
         'originDomain': 'www.paypal.com',
         'event': 'page-problem',
-        'breakage': '',
-        'notes': '',
+        'breakage': None,
+        'notes': None,
         'study_version': '0.0.1',
         'about': {
             '_src': 'addon',
@@ -51,8 +51,8 @@ def test_page_works(row_to_dict, spark_context):
         'branch': 'thirdPartyCookiesOnlyFromVisited',
         'originDomain': 'www.mozilla.org',
         'event': 'page-works',
-        'breakage': '',
-        'notes': '',
+        'breakage': None,
+        'notes': None,
         'study_version': '0.0.1',
         'about': {
             '_src': 'addon',
@@ -77,7 +77,7 @@ def test_page_breakage(row_to_dict, spark_context):
         'originDomain': 'www.paypal.com',
         'event': 'breakage',
         'breakage': 'other',
-        'notes': '',
+        'notes': None,
         'study_version': '0.0.1',
         'about': {
             '_src': 'addon',
@@ -126,8 +126,8 @@ def test_disable(row_to_dict, spark_context):
         'branch': 'thirdPartyCookiesOnlyFromVisited',
         'originDomain': 'www.paypal.com',
         'event': 'disable',
-        'breakage': '',
-        'notes': '',
+        'breakage': None,
+        'notes': None,
         'study_version': '0.0.1',
         'about': {
             '_src': 'addon',
