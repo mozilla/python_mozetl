@@ -16,6 +16,6 @@ install:
   - mkdir -p $CACHE_DIR
   - if [ ! -f ${MOZETL_CACHE}  ]; then docker save mozetl | gzip > ${MOZETL_CACHE}; fi
 script:
-  - docker run mozetl ./runtests.sh
+  - docker run mozetl ./bin/run-tests.sh
 after_success:
   - codecov
