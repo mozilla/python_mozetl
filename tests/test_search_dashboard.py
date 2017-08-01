@@ -61,22 +61,19 @@ def generate_search_count(engine='google', source='urlbar', count=4):
 
 @pytest.fixture()
 def generate_main_summary_data(define_dataframe_factory):
+    search_type = ArrayType(StructType([
+        StructField('engine', StringType(), False),
+        StructField('source', StringType(), False),
+        StructField('count',  LongType(),   False),
+    ]))
+
     return define_dataframe_factory(map(to_field, [
-        ('submission_date', '20170101', StringType(), False),
-        ('country',         'DE',       StringType(), True),
-        ('app_version',     '54.0.1',   StringType(), True),
-        ('distribution_id', None,       StringType(), True),
-        ('ignored_col',     1.0,        DoubleType(), True),
-        (
-            'search_counts',
-            [generate_search_count()],
-            ArrayType(StructType([
-                StructField('engine', StringType(), False),
-                StructField('source', StringType(), False),
-                StructField('count',  LongType(),   False),
-            ])),
-            True
-        ),
+        ('submission_date', '20170101',                StringType(), False),
+        ('country',         'DE',                      StringType(), True),
+        ('app_version',     '54.0.1',                  StringType(), True),
+        ('distribution_id', None,                      StringType(), True),
+        ('ignored_col',     1.0,                       DoubleType(), True),
+        ('search_counts',   [generate_search_count()], search_type,  True),
     ]))
 
 
@@ -143,7 +140,7 @@ def exploded_data_for_derived_cols(generate_exploded_data):
 
 @pytest.fixture()
 def derived_columns(define_dataframe_factory):
-    return define_dataframe_factory(map(to_field, [
+    factory = define_dataframe_factory(map(to_field, [
         ('submission_date', '20170101',   StringType(), False),
         ('country',         'DE',         StringType(), True),
         ('app_version',     '54.0.1',     StringType(), True),
@@ -152,7 +149,9 @@ def derived_columns(define_dataframe_factory):
         ('source',          'urlbar',     StringType(), False),
         ('count',           4,            LongType(),   False),
         ('type',            'chrome-sap', StringType(), False),
-    ]))([
+    ]))
+
+    return factory([
         {'source': 'sap:urlbar:SomeCodeHere',
          'type': 'in-content-sap'},
         {'source': 'follow-on:urlbar:SomeCodeHere',
@@ -164,7 +163,7 @@ def derived_columns(define_dataframe_factory):
 
 @pytest.fixture()
 def expected_search_dashboard_data(define_dataframe_factory):
-    return define_dataframe_factory(map(to_field, [
+    factory = define_dataframe_factory(map(to_field, [
         ('submission_date', '20170101',   StringType(), False),
         ('country',         'DE',         StringType(), True),
         ('app_version',     '54.0.1',     StringType(), True),
@@ -173,7 +172,9 @@ def expected_search_dashboard_data(define_dataframe_factory):
         ('source',          'urlbar',     StringType(), False),
         ('search_count',    4,            LongType(),   False),
         ('type',            'chrome-sap', StringType(), False),
-    ]))([
+    ]))
+
+    return factory([
         {'country': 'US'},
         {'app_version': '52.0.3'},
         {'distribution_id': 'totally not null'},
