@@ -27,6 +27,7 @@ setup(
         'python_moztelemetry',  # TODO: pin version
         'click',
         'requests',
+        'click_datetime',
         'arrow',
     ],
     tests_require=test_deps,
