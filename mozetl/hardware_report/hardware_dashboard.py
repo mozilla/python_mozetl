@@ -13,15 +13,18 @@ from datetime import datetime, timedelta
 from pyspark.sql import SparkSession
 
 
+datetime_type = Datetime(format='%Y%m%d')
+
+
 @click.command()
 @click.option('--start_date',
-              type=Datetime(format='%Y%d%m'),
+              type=datetime_type,
               required=True,
-              help='Start date (e.g. yyyy/mm/dd)')
+              help='Start date (e.g. yyyymmdd)')
 @click.option('--end_date',
-              type=Datetime(format='%Y%d%m'),
+              type=datetime_type,
               default=None,
-              help='End date (e.g. yyyy/mm/dd)')
+              help='End date (e.g. yyyymmdd)')
 @click.option('--bucket',
               required=True,
               help='Output bucket for JSON data')
