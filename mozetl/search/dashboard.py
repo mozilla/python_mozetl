@@ -72,7 +72,6 @@ def add_derived_columns(exploded_search_counts):
     )
 
 
-
 @click.command()
 @click.argument('submission_date')
 @click.argument('bucket')
