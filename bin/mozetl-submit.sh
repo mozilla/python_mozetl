@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Bug 1385232 - Submit script for running mozetl on EMR
+# Bug 1385232 - Submission script for mozetl on EMR
 #
 # This is a common entry point to reduce the amount of boilerplate needed
 # to run a pyspark job on airflow. ETL jobs should expose themselves through the
@@ -15,7 +15,7 @@
 # Flags for running this script in development, always has precedence
 # -d (dev mode)     use local repository, script must be run from within the git project
 # -p (git path)     alternate to MOZETL_GIT_PATH
-# -b (git branch)   alternate to MOZETL_GIT_BRANCH
+# -b (git branch)   alternate to MOZETL_GIT_BRANCH; ignored when using -d
 # -m (spark master) alternate to MOZETL_SPARK_MASTER; useful for local setups
 # -q (quiet)        turn off tracing
 #
