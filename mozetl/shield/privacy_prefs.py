@@ -8,7 +8,7 @@
 from pyspark.sql.types import StringType
 
 from ..basic import convert_pings, DataFrameConfig
-from ..testpilot.utils import testpilot_etl_boilerplate
+from .utils import shield_etl_boilerplate
 
 
 SHIELD_ADDON_ID = '@shield-study-privacy'
@@ -35,7 +35,7 @@ def include_shield_pings(ping):
 
 
 def etl_job(sc, sqlContext, **kwargs):
-    return testpilot_etl_boilerplate(
+    return shield_etl_boilerplate(
         transform_shield_pings,
         's3n://telemetry-parquet/harter/privacy_prefs_shield/v1'
     )
