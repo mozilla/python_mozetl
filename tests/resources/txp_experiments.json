@@ -1,0 +1,1428 @@
+{
+  "results": [
+    {
+      "id": 2,
+      "title": "Activity Stream",
+      "slug": "activity-stream",
+      "platforms": [
+        "addon"
+      ],
+      "thumbnail": "/static/images/experiments/activity-stream/experiments_experiment/e/1/e19739ea25188c866b654d3aa2616b27_thumbnail_1461817294_0590.581a25a7.png",
+      "description": "A rich visual history feed and a reimagined home page make it easier than ever to find exactly what you're looking for in Firefox.\n",
+      "introduction": "<p>Get back to browsing without losing your stream of thought. Activity Stream  keeps your top sites, bookmarks and recent history close at hand in each new\n  tab. And the new timeline view gives you a birds-eye view of your browsing.</p>\n",
+      "image_twitter": "/static/images/experiments/activity-stream/experiments_experiment/e/1/e19739ea25188c866b654d3aa2616b27_image_1473186642_0579.0c8043fc.png",
+      "image_facebook": "/static/images/experiments/activity-stream/experiments_experiment/e/1/e19739ea25188c866b654d3aa2616b27_image_1473186642_0826.3a6b9f7b.png",
+      "changelog_url": "https://github.com/mozilla/activity-stream/blob/master/CHANGELOG.md",
+      "contribute_url": "https://github.com/mozilla/activity-stream",
+      "bug_report_url": "https://github.com/mozilla/activity-stream/issues",
+      "discourse_url": "https://discourse.mozilla-community.org/c/test-pilot/activity-stream",
+      "privacy_notice_url": "https://github.com/mozilla/activity-stream/blob/master/docs/v1-test-pilot/data_dictionary.md",
+      "measurements": [
+        "We collect basic usage data regarding how you interact with experimental new tab and timeline pages, such as the types of elements that you click and their position on the page.\n",
+        "We also collect basic information about your browser profile that affect Activity Stream, such as the number of bookmarks and history items.\n",
+        "To provide Activity Stream, we fetch metadata about websites you have visited, such as images and icons, using a service called <a href=\"http://embed.ly/\" target=\"_blank\">Embedly</a>. We send these requests to Embedly through Mozilla's servers, so they will not be associated with you.\n"
+      ],
+      "xpi_url": "https://testpilot.firefox.com/files/activitystream/latest",
+      "addon_id": "@activity-streams",
+      "gradient_start": "#0996F8",
+      "gradient_stop": "#0675D3",
+      "min_release": null,
+      "pre_feedback_image": null,
+      "pre_feedback_copy": null,
+      "details": [
+        {
+          "image": "/static/images/experiments/activity-stream/experiments_experimentdetail/1/6/16f2bfb82c63c38573005923f4e08457_image_1462827231_0751.57940472.png",
+          "copy": "Click on a new tab, and your favorite sites are only one more click away.\n"
+        },
+        {
+          "image": "/static/images/experiments/activity-stream/experiments_experimentdetail/6/7/67858740793232e7a71f86b4ef272b67_image_1462827231_0657.c66ef649.png",
+          "copy": "See where you've been, so you can get on to where you're going.\n"
+        }
+      ],
+      "tour_steps": [
+        {
+          "image": "/static/images/experiments/activity-stream/experiments_experimenttourstep/b/d/bd3d603ab46949ccb2f98c77f16d9be3_image_1462827230_0789.8aa826e7.jpg",
+          "copy": "Find your top sites, recent history, and bookmarks when you open a new tab.\n"
+        },
+        {
+          "image": "/static/images/experiments/activity-stream/experiments_experimenttourstep/5/7/57b8ba146994300a54ba1528efc30bf5_image_1462827230_0948.ca92c58f.jpg",
+          "copy": "Visit the new timeline view to visually browse all your history and bookmarks.\n"
+        },
+        {
+          "image": "/static/images/experiments/shared/tour-final.ba0cade5.jpg",
+          "copy": "You can always give us feedback or disable Activity Stream from Test Pilot.\n"
+        }
+      ],
+      "contributors": [
+        {
+          "display_name": "Kate Hudson",
+          "title": "Software Engineer",
+          "avatar": "/static/images/experiments/activity-stream/avatars/kate-hudson.64dbd27a.jpg"
+        },
+        {
+          "display_name": "Ricky Rosario",
+          "title": "Web Engineer",
+          "avatar": "/static/images/experiments/activity-stream/avatars/ricky-rosario.b5c1ce09.jpg"
+        },
+        {
+          "display_name": "Nan Jiang",
+          "title": "Software Developer",
+          "avatar": "/static/images/experiments/activity-stream/avatars/nan-jiang.c6d3725c.jpg"
+        },
+        {
+          "display_name": "Ursula Sarracini",
+          "title": "Desktop Firefox Engineer",
+          "avatar": "/static/images/experiments/activity-stream/avatars/ursula-sarracini.01573809.jpg"
+        },
+        {
+          "display_name": "Marina Samuel",
+          "title": "Software Engineer",
+          "avatar": "/static/images/experiments/activity-stream/avatars/marina-samuel.7d0310fe.jpg"
+        },
+        {
+          "display_name": "Edwin Wong",
+          "title": "Technical Program Manager",
+          "avatar": "/static/images/experiments/activity-stream/avatars/edwin-wong.5cf8352b.jpg"
+        },
+        {
+          "display_name": "Jared Kerim",
+          "title": "Cloud Services Engineer",
+          "avatar": "/static/images/experiments/activity-stream/avatars/jared-kerim.47a1b9b3.jpg"
+        },
+        {
+          "display_name": "Andrei Oprea",
+          "title": "Engineering Intern",
+          "avatar": "/static/images/experiments/activity-stream/avatars/andrei-oprea.fb2080a4.jpg"
+        },
+        {
+          "display_name": "Bernardo Rittmeyer",
+          "title": "Engineering Intern",
+          "avatar": "/static/images/experiments/activity-stream/avatars/bernardo-rittmeyer.6901b634.jpg"
+        },
+        {
+          "display_name": "Nick Chapman",
+          "title": "Product Manager",
+          "avatar": "/static/images/experiments/activity-stream/avatars/nick-chapman.98212b3e.jpg"
+        },
+        {
+          "display_name": "Tim Spurway",
+          "title": "Engineering Manager",
+          "avatar": "/static/images/experiments/activity-stream/avatars/tim-spurway.81f1a387.jpg"
+        },
+        {
+          "display_name": "Olivier Yiptong",
+          "title": "Software Engineer",
+          "avatar": "/static/images/experiments/activity-stream/avatars/olivier-yiptong.84e39b1c.jpg"
+        },
+        {
+          "display_name": "Bryan Bell",
+          "title": "Senior UX Designer",
+          "avatar": "/static/images/experiments/activity-stream/avatars/bryan-bell.c77d21f2.jpg"
+        }
+      ],
+      "created": "2016-03-11T21:05:59.363520Z",
+      "completed": "2017-07-12T20:00:00.000000Z",
+      "eol_warning": "This experiment is ending, but Activity Stream will ship in Firefox by default this fall. If you have the Activity Stream experiment installed, we will automatically upgrade you.",
+      "locale_blocklist": [
+        "de"
+      ],
+      "order": 5,
+      "url": "/api/experiments/2.json",
+      "html_url": "/experiments/activity-stream",
+      "survey_url": "https://qsurvey.mozilla.com/s3/activity-stream"
+    },
+    {
+      "id": 9,
+      "title": "Cliqz",
+      "slug": "cliqz",
+      "platforms": [
+        "addon"
+      ],
+      "locales": [
+        "de"
+      ],
+      "launch_date": "2017-01-11T00:00:00.00Z",
+      "incompatible": {
+        "@activity-streams": "Activity Stream",
+        "cliqz@cliqz.com": "CLIQZ- search directly in your browser"
+      },
+      "locale_grantlist": [
+        "de"
+      ],
+      "thumbnail": "/static/images/experiments/cliqz/icon/thumbnail.db812112.png",
+      "description": "Get search results faster. Cliqz shows suggestions right below the URL bar as you type. All while maintaining your privacy.\n",
+      "introduction": "Get search results faster, directly in the browser. Start typing and see suggestions from around the Web in real time, right below the URL bar. And because Cliqz avoids collecting personally identifiable data, or building user profiles, your results are more private.\n",
+      "image_twitter": "/static/images/experiments/cliqz/social/cliqz-twitter.jpg",
+      "image_facebook": "/static/images/experiments/cliqz/social/cliqz-facebook.jpg",
+      "changelog_url": "https://github.com/cliqz-oss/browser-core/releases",
+      "contribute_url": "https://github.com/cliqz-oss/browser-core",
+      "bug_report_url": "https://github.com/cliqz-oss/browser-core/issues",
+      "discourse_url": "https://discourse.mozilla-community.org/c/test-pilot/cliqz",
+      "privacy_notice_url": "https://github.com/cliqz-oss/browser-core/blob/test-pilot/metrics.md",
+      "privacy_preamble": "The Cliqz Test Pilot experiment is brought to you through collaboration between Cliqz GmbH, and Mozilla. Cliqz is designed to protect your privacy and avoid collecting sensitive information that can be used to create user profiles. However, anonymizing data like this is difficult, and it may still be possible to identify specific individuals.\n",
+      "measurements": [
+        "Cliqz GmbH collects data about your search and browsing activity, including text as you type in the URL bar, queries you send to certain search engines, and data about your web page interactions, such as mouse movements, scrolls, and time spent.\n",
+        "Cliqz GmbH collects telemetry analytics, including your interactions with specific fields and buttons in Cliqz. This data is tied to a unique identifier allowing Cliqz GmbH to understand performance over time.\n",
+        "Mozilla collects telemetry analytics, including counts of visits to search engine pages and which search engines you use, and Cliqz’s unique identifier, which allows Mozilla to look for correlations across Firefox and Cliqz telemetry systems.\n"
+      ],
+      "xpi_url": "https://testpilot.firefox.com/files/testpilot@cliqz.com/latest",
+      "addon_id": "testpilot@cliqz.com",
+      "gradient_start": "#52E6E0",
+      "gradient_stop": "#45C2CC",
+      "details": [
+        {
+          "image": "/static/images/experiments/cliqz/details/detail1.2705fcbd.jpg",
+          "copy": "Watch results appear (like magic!) as you type your search into the URL bar.\n"
+        },
+        {
+          "image": "/static/images/experiments/cliqz/details/detail2.e840ed9b.jpg",
+          "copy": "See real time summary information - like weather - right below the URL bar.\n"
+        },
+        {
+          "image": "/static/images/experiments/cliqz/details/detail3.72fbef7d.jpg",
+          "copy": "Return to your favorite sites in one click when you open a new tab. You can even customize your favorites.\n"
+        }
+      ],
+      "tour_steps": [
+        {
+          "image": "/static/images/experiments/cliqz/tour/tour1.e211b329.jpg",
+          "copy": "Start typing in the URL bar to see real-time results."
+        },
+        {
+          "image": "/static/images/experiments/cliqz/tour/tour2.8122baf4.jpg",
+          "copy": "Open a new tab and add your favorite websites for one-click access."
+        },
+        {
+          "image": "/static/images/experiments/shared/tour-final.ba0cade5.jpg",
+          "copy": "You can always give us feedback or disable Cliqz from Test Pilot."
+        }
+      ],
+      "contributors": [
+        {
+          "display_name": "Cliqz GmbH",
+          "avatar": "/static/images/experiments/cliqz/avatars/cliqz-avatar.983b46ee.jpg"
+        }
+      ],
+      "created": "2016-12-01T00:06:00.00Z",
+      "order": 4,
+      "url": "/api/experiments/9.json",
+      "html_url": "/experiments/cliqz",
+      "survey_url": "https://qsurvey.mozilla.com/s3/cliqz"
+    },
+    {
+      "id": 12,
+      "title": "Containers",
+      "slug": "containers",
+      "platforms": [
+        "addon"
+      ],
+      "locales": [
+        "en"
+      ],
+      "launch_date": "2017-03-01T21:00:00.00Z",
+      "min_release": 53,
+      "incompatible": {
+        "blok@mozilla.org": "Tracking Protection"
+      },
+      "thumbnail": "/static/images/experiments/containers/icon/thumbnail.6eba228e.png",
+      "description": "Contain yourselves! Create different containers for each of your online lives - your work self, your social self, your personal self - to stay organized and maintain privacy.\n",
+      "warning": "Note: Because of the security properties of Containers, Test Pilot experiments such as Snooze Tabs may not work from within Container tabs. Remember, this is experimental technology!\n",
+      "warning_l10nsuffix": "fewer_experiments",
+      "introduction": "Containers let you create profiles in Firefox for all of your online lives. Custom labels and color-coded tabs help keep different activities — like online shopping, travel planning, or checking work email — separate.  Because Containers store cookies separately, you can log into the same site with a different account in each Container, and online trackers can’t connect your browsing in one container to another.  So you can keep your shopping self separate from your social self from your work self, without worrying about being followed around the Web.\n",
+      "image_twitter": "/static/images/experiments/containers/social/containers-twitter.jpg",
+      "image_facebook": "/static/images/experiments/containers/social/containers-facebook.jpg",
+      "changelog_url": "https://github.com/mozilla/testpilot-containers/commits/master",
+      "contribute_url": "https://github.com/mozilla/testpilot-containers/",
+      "bug_report_url": "https://github.com/mozilla/testpilot-containers/issues/new",
+      "discourse_url": "https://discourse.mozilla-community.org/c/test-pilot/containers",
+      "privacy_notice_url": "https://github.com/mozilla/testpilot-containers/blob/master/docs/metrics.md",
+      "measurements": [
+        "Containers will only send information to us when you interact with it, such as opening, editing, or deleting a container.\n",
+        "Containers will send information about the type of interaction with Containers, which Container you are interacting with, and the number of tabs in the Container.\n",
+        "Containers will not send information about open pages; this includes page content, meta information, or URLs.\n"
+      ],
+      "xpi_url": "https://testpilot.firefox.com/files/@testpilot-containers/latest",
+      "addon_id": "@testpilot-containers",
+      "gradient_start": "#069CD6",
+      "gradient_stop": "#6C419F",
+      "details": [
+        {
+          "image": "/static/images/experiments/containers/details/detail1.e10ab74e.jpg",
+          "copy": "Containers let you separate the different parts of your online life.\n"
+        },
+        {
+          "image": "/static/images/experiments/containers/details/detail2.e3d86503.jpg",
+          "copy": "Select from categories like Shopping, Finance, and Work or create custom labels that work for you.\n"
+        },
+        {
+          "image": "/static/images/experiments/containers/details/detail3.e830adc2.jpg",
+          "copy": "Use color-coded labels to see different Containers at a glance.\n"
+        }
+      ],
+      "tour_steps": [
+        {
+          "image": "/static/images/experiments/containers/tour/tour1.62d1d459.jpg",
+          "copy": "Start a Container to label and organize a set of tabs."
+        },
+        {
+          "image": "/static/images/experiments/containers/tour/tour2.52f0efb6.jpg",
+          "copy": "Long press on the New Tab button to select a container.",
+          "copy_l10nsuffix": "longPress"
+        },
+        {
+          "image": "/static/images/experiments/containers/tour/tour3.946974ac.jpg",
+          "copy": "Use the toolbar menu to open Container tabs, create new Containers and organize, edit or delete Containers."
+        },
+        {
+          "image": "/static/images/experiments/containers/tour/tour4.d4b46d8a.jpg",
+          "copy": "You can hide all open tabs in a Container to keep your browser tidy.",
+          "copy_l10nsuffix": "rewordWithoutToolbar"
+        },
+        {
+          "image": "/static/images/experiments/containers/tour/tour5.eb95e366.jpg",
+          "copy": "You can always give us feedback or disable Containers from Test Pilot."
+        }
+      ],
+      "contributors": [
+        {
+          "display_name": "Tanvi Vyas",
+          "title": "User Security and Privacy",
+          "avatar": "/static/images/experiments/avatars/tvyas.11dbf220.png"
+        },
+        {
+          "display_name": "Andrea Marchesini",
+          "title": "Platform Engineer",
+          "avatar": "/static/images/experiments/avatars/amarchesini.5068f312.png"
+        },
+        {
+          "display_name": "Luke Crouch",
+          "title": "Privacy Engineer",
+          "avatar": "/static/images/experiments/avatars/lcrouch.bb705fbc.png"
+        },
+        {
+          "display_name": "Kamil Jozwiak",
+          "title": "QA Test Engineer",
+          "avatar": "/static/images/experiments/avatars/kjozwiak.676a3dec.png"
+        },
+        {
+          "display_name": "Peter deHaan",
+          "title": "Firefox QA",
+          "avatar": "/static/images/experiments/avatars/peter.1cb27f25.jpg"
+        },
+        {
+          "display_name": "Michelle Heubusch",
+          "title": "Firefox Content Strategy",
+          "avatar": "/static/images/experiments/avatars/michelle.0326ebb5.jpg"
+        },
+        {
+          "display_name": "Jonathan Kingston",
+          "title": "Front End Security",
+          "avatar": "/static/images/experiments/avatars/jkingston.eeda9168.png"
+        },
+        {
+          "display_name": "Fang Shih",
+          "title": "Firefox UX",
+          "avatar": "/static/images/experiments/avatars/fshih.85b64a51.png"
+        },
+        {
+          "display_name": "Mark Liang",
+          "title": "Firefox UX",
+          "avatar": "/static/images/experiments/avatars/mliang.a3518ca3.png"
+        },
+        {
+          "display_name": "Morpheus Chen",
+          "title": "Firefox UX",
+          "avatar": "/static/images/experiments/avatars/mchen.62070d66.png"
+        }
+      ],
+      "created": "2017-02-17T00:06:00.00Z",
+      "order": 4,
+      "url": "/api/experiments/12.json",
+      "html_url": "/experiments/containers",
+      "survey_url": "https://qsurvey.mozilla.com/s3/containers"
+    },
+    {
+      "id": 8,
+      "title": "Min Vid",
+      "slug": "min-vid",
+      "platforms": [
+        "addon"
+      ],
+      "thumbnail": "/static/images/experiments/min-vid/experiments_experiment/thumbnail.122159e6.png",
+      "description": "Keep videos front and center. Min Vid lets you display YouTube and Vimeo videos in a small frame that stays in the foreground as you browse the web.\n",
+      "introduction": "<p>Love multitasking? Try Min Vid. It’s like picture-in-picture where one picture is a media player and the other is the entire Web.</p> <ul>  <li><strong>Click and go:</strong> Pop up the Min Vid frame to keep videos\n    playing in the foreground while you browse.</li>\n  <li><strong>Put it where you want it:</strong> Min Vid lets you drag the\n    video frame anywhere on your desktop.</li>\n  <li><strong>Controls where you need them:</strong> Min Vid includes controls\n    to let you pause/play, scrub, drag, minimize, and adjust volume right in the frame.</li>\n  <li><strong>Now supporting audio playback:</strong> Min Vid now supports playback from\n    SoundCloud and direct mp3 links.</li>\n  <li><strong>Create a queue:</strong> Min Vid now supports queues, just start up\n    a video and add tracks from any supported domains (YouTube, Vimeo, SoundCloud, and\n    direct links).</li>\n  <li><strong>View your history:</strong> Min Vid keeps track of your history, just pop\n  open the queue panel from the top right of the player and you can access all the media\n  you've been playing.</li>\n</ul>\n",
+      "image_twitter": "/static/images/experiments/min-vid/social/mv-twitter.jpg",
+      "image_facebook": "/static/images/experiments/min-vid/social/mv-facebook.jpg",
+      "changelog_url": "https://github.com/meandavejustice/min-vid/blob/master/CHANGELOG.md",
+      "contribute_url": "https://github.com/meandavejustice/min-vid",
+      "bug_report_url": "https://github.com/meandavejustice/min-vid/issues",
+      "discourse_url": "https://discourse.mozilla-community.org/c/test-pilot/min-vid",
+      "privacy_notice_url": "https://github.com/meandavejustice/min-vid/blob/master/docs/metrics.md",
+      "measurements": [
+        "We collect usage data when you engage with the context menu, experiment icon and player controls.\n",
+        "We also collect data on the number of times you encounter a playable video, the number of times you played the video and the video service that provided the video. This helps us understand how useful our users are finding the experiment.\n",
+        "We do not collect information about the specific videos you encounter."
+      ],
+      "xpi_url": "https://testpilot.firefox.com/files/@min-vid/latest",
+      "addon_id": "@min-vid",
+      "gradient_start": "#FED66F",
+      "gradient_stop": "#FD667B",
+      "details": [
+        {
+          "image": "/static/images/experiments/min-vid/experiments_experimentdetail/detail1.fe44371f.jpg",
+          "copy": "Access Min Vid from YouTube, Vimeo, and SoundCloud players.\n"
+        },
+        {
+          "image": "/static/images/experiments/min-vid/experiments_experimentdetail/detail2.39789c70.jpg",
+          "copy": "Watch video in the foreground while you do other things on the Web.\n"
+        },
+        {
+          "image": "/static/images/experiments/min-vid/experiments_experimentdetail/detail3.3436b9c3.jpg",
+          "copy": "Right click on links to media to find Min Vid in the in-context controls.\n",
+          "copy_l10nsuffix": "changeVideoToMedia"
+        },
+        {
+          "image": "/static/images/experiments/min-vid/experiments_experimentdetail/detail4.694f912c.jpg",
+          "copy": "Launch an entire YouTube playlist into your queue. Create your own by clicking the '+' icon or choosing the 'add to queue' option from the context menu.\n"
+        }
+      ],
+      "tour_steps": [
+        {
+          "image": "/static/images/experiments/min-vid/experiments_experimenttourstep/tour1.94183cfa.jpg",
+          "copy": "Select the icon to start using Min Vid."
+        },
+        {
+          "image": "/static/images/experiments/min-vid/experiments_experimenttourstep/tour2.84f1a895.jpg",
+          "copy": "Play video in the foreground while you continue to browse."
+        },
+        {
+          "image": "/static/images/experiments/min-vid/experiments_experimenttourstep/tour3.c2ac440b.jpg",
+          "copy": "Access controls in the frame to adjust volume, play, pause and move the video.\n"
+        },
+        {
+          "image": "/static/images/experiments/shared/tour-final.ba0cade5.jpg",
+          "copy": "You can always give us feedback or disable Min Vid from Test Pilot."
+        }
+      ],
+      "contributors": [
+        {
+          "display_name": "Dave Justice",
+          "title": "Engineer",
+          "avatar": "/static/images/experiments/min-vid/avatars/dave-justice.55929040.jpg"
+        },
+        {
+          "display_name": "Jared Hirsch",
+          "title": "Staff Engineer",
+          "avatar": "/static/images/experiments/min-vid/avatars/jared-hirsch.aff5c46d.jpg"
+        },
+        {
+          "display_name": "Jen Kagan",
+          "title": "Engineering Intern",
+          "avatar": "/static/images/experiments/min-vid/avatars/jen-kagan.6c2ccc99.jpg"
+        },
+        {
+          "display_name": "Noitidart",
+          "title": "Engineering Contributor",
+          "avatar": "/static/images/experiments/min-vid/avatars/noitidart.1e95e52c.jpg"
+        }
+      ],
+      "created": "2016-09-22T00:07:28.847430Z",
+      "order": 4,
+      "url": "/api/experiments/8.json",
+      "html_url": "/experiments/min-vid",
+      "survey_url": "https://qsurvey.mozilla.com/s3/min-vid"
+    },
+    {
+      "id": 5,
+      "title": "No More 404s",
+      "subtitle": "Powered by the Wayback Machine",
+      "slug": "no-more-404s",
+      "platforms": [
+        "addon"
+      ],
+      "thumbnail": "/static/images/experiments/no-more-404s/experiments_experiment/a/9/a9e6dc66c6a22851721715ae4d0641fb_thumbnail_1470245154_0349.2ec2453f.png",
+      "description": "Tired of dead ends on the web? We'll let you know when there's a saved version of what you're looking for on the Internet Archive's Wayback Machine.\n",
+      "introduction": "<p>This one is simple. If you hit a 404 page while browsing the web, we will  let you know if the content you're looking for is archived on the Internet\n  Archive's Wayback Machine.</p>\n",
+      "image_twitter": "/static/images/experiments/no-more-404s/experiments_experiment/a/9/a9e6dc66c6a22851721715ae4d0641fb_image_1472573814_0582.2ec2453f.png",
+      "image_facebook": "/static/images/experiments/no-more-404s/experiments_experiment/a/9/a9e6dc66c6a22851721715ae4d0641fb_image_1472573814_0278.2ec2453f.png",
+      "changelog_url": "https://github.com/internetarchive/FirefoxNoMore404s/blob/master/Changelog.md",
+      "contribute_url": "https://github.com/internetarchive/FirefoxNoMore404s",
+      "bug_report_url": "https://github.com/internetarchive/FirefoxNoMore404s/issues/new",
+      "discourse_url": "https://discourse.mozilla-community.org/c/test-pilot/nomore404s",
+      "privacy_notice_url": "https://github.com/internetarchive/FirefoxNoMore404s/blob/master/docs/metrics.md",
+      "measurements": [
+        "We collect basic usage on how many times you encounter a Page Not Found error (code 404), how many times a cached version of that page exists from Archive.org, and how many times you choose to view the cached version.\n",
+        "To provide cached versions of pages, we send 404 error page URLs to Archive.org. <a href=\"https://archive.org/\" target=\"_blank\">Archive.org</a> discloses its privacy policy <a href=\"https://archive.org/about/terms.php\" target=\"_blank\">here</a>.\n",
+        "We do not  collect  URLs of the pages you request or the URLs we send to Archive.org.\n",
+        "We may share survey results you submit to us and aggregated telemetry data related to this experiment with the Internet Archive.\n"
+      ],
+      "xpi_url": "https://testpilot.firefox.com/files/nomore404s/latest",
+      "addon_id": "wayback_machine@mozilla.org",
+      "gradient_start": "#111111",
+      "gradient_stop": "#222222",
+      "min_release": 48,
+      "pre_feedback_image": null,
+      "pre_feedback_copy": null,
+      "details": [
+        {
+          "image": "/static/images/experiments/no-more-404s/experiments_experimentdetail/2/4/24ddd4335aca6b96cca9106a6f3411d2_image_1470245154_0440.77da0f12.jpg",
+          "copy": "Reduce 404 dead ends with the Wayback Machine.\n"
+        },
+        {
+          "image": "/static/images/experiments/no-more-404s/experiments_experimentdetail/c/d/cdb624363e0e87af81125c39bc69c933_image_1470245154_0280.2898e3c7.jpg",
+          "copy": "Brought to you by our friends at the Internet Archive.\n"
+        }
+      ],
+      "tour_steps": [
+        {
+          "image": "/static/images/experiments/no-more-404s/experiments_experimenttourstep/d/a/dafca30f93dadf7f13cc48d389e08f84_image_1470245154_0851.a50baeec.jpg",
+          "copy": "Just browse the web as you normally do. If you encounter a 404 page, we will let you know if an archived version is a available on the Wayback Machine.\n"
+        },
+        {
+          "image": "/static/images/experiments/shared/tour-final.ba0cade5.jpg",
+          "copy": "You can always give us feedback or disable No More 404s from Test Pilot.\n"
+        }
+      ],
+      "contributors": [
+        {
+          "display_name": "The Internet Archive",
+          "avatar": "/static/images/experiments/no-more-404s/avatars/the-internet-archive.677618aa.png"
+        },
+        {
+          "display_name": "Richard Caceres",
+          "title": "Developer, Wayback Machine, The Internet Archive",
+          "avatar": "/static/images/experiments/no-more-404s/avatars/richard-caceres.0802ac45.jpg"
+        },
+        {
+          "display_name": "Mark Graham",
+          "title": "Director, Wayback Machine, The Internet Archive",
+          "avatar": "/static/images/experiments/no-more-404s/avatars/mark-graham.93edfd0d.jpg"
+        },
+        {
+          "display_name": "Adam Miller",
+          "title": "Senior Crawl Engineer, The Internet Archive",
+          "avatar": "/static/images/experiments/no-more-404s/avatars/adam-miller.dc23fa48.jpg"
+        }
+      ],
+      "created": "2016-08-03T17:25:54.612365Z",
+      "completed": "2017-02-15T20:00:00.000000Z",
+      "eol_warning": "The No More 404s experiment will not be removed from your browser and the results will be reported here when it ends. Future updates will be available on addons.mozilla.org.",
+      "locale_blocklist": [
+        "de"
+      ],
+      "order": 6,
+      "graduation_report": "<h3>Test Pilot No More 404s Graduation Report</h3> <p>Last winter, some folks from the Test Pilot team got together with some folks from the <a href=\"https://archive.org/\" target=\"_blank\">Internet Archive</a> and hatched a plan. On the Test Pilot side of things, we were busy building our platform and getting experiments out into the wild. Meanwhile, the team at the Internet Archive was prototyping an add-on to help users avoid dead ends on the Web by checking if they had archived versions of sites available in the <a href=\"https://archive.org/web/\" target=\"_blank\">Wayback Machine</a> for users who encountered 404 errors.</p> <p>We launched the No More 404s experiment with a few goals in mind. We know from user research that 404 pages are a persistent nuisance on the Web, and a No More 404s add-on seemed like a really sweet utility to help steer users toward their intended content. Additionally, the Test Pilot team wanted to find out how a partner organization like the Internet Archive could help bring testable features into Firefox.</p> <p><strong>Here’s how it went down</strong></p> <p>When we launched No More 404s, the user interface was simple and unobtrusive. If a participant visited a 404 on the Web – specifically if a site that returned a HTTP header code 404 – the No More 404s experiment would send a request to the Wayback Machine to see if the service had an archived version of the page. If one existed, No More 404s would drop a notification bar on the page with a link to it. Users could then visit the content archived in the Wayback Machine, dismiss the notification bar, or just continue browsing as usual.</p> <figure>  <img src=\"/static/images/experiments/no-more-404s/experiments_experimentdetail/2/4/24ddd4335aca6b96cca9106a6f3411d2_image_1470245154_0440.77da0f12.jpg\">\n  <figcaption>We launched No More 404s with a restrained design.</figcaption>\n</figure> <p>Later on in the experiment we made a few changes to the add-on. First, we added in more common error codes associated with missing Web assets. Then we made a much larger change when we asked our design team to increase the visibility of the add-on. We wanted to see how these changes would affect user perception of the experiment.</p> <figure>  <img src=\"/static/images/experiments/no-more-404s/graduation/design-update.fc8a83ee.png\" />\n  <figcaption>In December we changed to something a bit crazier.</figcaption>\n</figure> <p><strong>Here’s what we learned</strong></p> <p>Both teams wanted to get a sense of how many of the URLs that display 404 errors today had pages archived in the Wayback Machine. <a href=\"https://docs.google.com/spreadsheets/d/1p2cZFy5DiM0JAFhp4lIisLtTeu4Y3fIusQLE9obOx5s/edit#gid=287298530\" target=\"_blank\">We tracked total 404s</a> encountered by Test Pilot participants (1,275,165) as well as results returned by the Archive (185,081). Over the course of the experiment, we averaged a result 14.5 percent of the time, but also observed that over the course of the experiment the daily average rose.</p> <figure>  <img src=\"/static/images/experiments/no-more-404s/graduation/gr-001.261c045e.png\" />\n  <figcaption>Both the total 404s encountered and the percentage of returned codes grew over the course of the experiment.</figcaption>\n</figure> <p>In addition to 404s, which are common on the Web, there are other error codes users encounter. For example, users may reach a page with a 408 error code when a server takes too long to respond. In early November, the Internet Archive team decided to <a href=\"https://github.com/internetarchive/FirefoxNoMore404s/blob/master/src/scripts/background.js#L28\" target=\"_blank\">add more error codes to the experiment</a>. We hypothesized that adding additional error codes would cause the overall percentage of sites returned by the Wayback Machine to drop relative to total queries made by the experiment. However, the opposite was true: in the graph above there is a modest uptick in the percentage of valid returns in early November after we made the change.</p> <figure>  <img src=\"/static/images/experiments/no-more-404s/graduation/car.70e92bc6.gif\" />\n  <figcaption>Just look at this guy!</figcaption>\n</figure> <p>In early December we updated the user interface for the experiment and featured an adorable animated GIF. Changing the user interface affected how participants interacted with the No More 404s experiment. Prior to the changes, the experiment was tucked out of the way, so we wanted to see what happened if we made it more flashy. We assumed users might dismiss the UI more frequently than before, and they did, but we were surprised to see that the rate at which users dismissed the pop-up increased sixfold.</p> <p>We also observed an uptick in the percentage of returned results that correlates to these UI changes. Of course, correlation is not causation, and this uptick remains a mystery: changing UI should not have affected the relative rate of successful returns from the Wayback Machine.</p> <figure>  <img src=\"/static/images/experiments/no-more-404s/graduation/gr-002.eeb1ed83.png\" />\n  <figcaption>The rate at which users ignored the interface shot up after we changed the user interface.</figcaption>\n</figure> <p>We also wanted to know how often experimenters encountered 404 errors as they browse. While this experiment did not track total sites visited by our users (because of privacy concerns), we did keep tabs on how many times each browser hit a 404 each week. Throughout the life of the experiment, roughly 50 percent of participants encountered at least one 404 per week. Of those who encountered 404s, well over 25 percent did so at a rate of four or more a week!</p> <figure>  <img src=\"/static/images/experiments/no-more-404s/graduation/gr-003.046ae9f5.png\" />\n  <figcaption> Breakdown of the number of 404s encountered by users each week.</figcaption>\n</figure> <p><strong>Here’s what happens next</strong></p> <p>While we’re graduating No More 404s from Test Pilot, and will be moving the add-on to the <a href=\"https://addons.mozilla.org/firefox/addon/wayback-machine_new/\" target=\"_blank\">Mozilla Add-ons</a> store so it’s accessible to all Firefox users. We won’t remove it from users who have it installed. If you currently have the add-on installed, you don’t need to do anything. The add-on will continue to update as usual. The Internet Archive team will also be adding some new features so users can add content to the Wayback Machine directly through the add-on! On the Firefox side, we will promote No More 404s on the homepage of the browser.</p> <p>Once the add-on is in its permanent home, our teams will continue to work together on studies that answer key questions, including:</p> <ul>  <li>Do average Firefox users see value in the add-on? </li>\n  <li>Are there ways we could use the Wayback Machine to retrieve content when a user enters a URL for which there is no current DNS record?</li>\n  <li>Could we integrate the Wayback Machine with other tools for archiving Web content, like the Page Shot experiment that is currently part of Test Pilot?</li>\n</ul> <p>In addition to the next steps we’ll be taking in Firefox, the Internet Archive Team recently shipped a version of the add-on for <a href=\"https://chrome.google.com/webstore/detail/wayback-machine/fpnmgdkabkmnadcjpehmlllkndpkmiak\" target=\"_blank\">Chrome</a> and Safari support is on the way! The new add-on adds some features that let users save pages directly to the Archive so that the community can contribute directly to the health and growth of the archive.</p> <p>Thank you to all the Test Pilots who installed No More 404s, used it, and told us what they thought! We are grateful for your participation.</p> <p>Want to try a new experiment? Visit <a href=\"https://testpilot.firefox.com\">https://testpilot.firefox.com</a>.</p> <p><strong> - John Gruen, Test Pilot Product Manager, Mozilla &amp; Mark Graham, Director, Wayback Machine, Internet Archive</strong></p>\n",
+      "url": "/api/experiments/5.json",
+      "html_url": "/experiments/no-more-404s",
+      "survey_url": "https://qsurvey.mozilla.com/s3/no-more-404s"
+    },
+    {
+      "id": 15,
+      "title": "Notes",
+      "slug": "notes",
+      "platforms": [
+        "addon"
+      ],
+      "thumbnail": "/static/images/experiments/notes/experiments_experiment/thumbnail.4e468f9a.png",
+      "description": "A simple notepad built into Firefox. Ever need to jot something down while you browse the web? This is the experiment for you.\n",
+      "introduction": "Notes adds a simple, one-page notepad to your browser’s sidebar. We’ve added a few basic formatting options to start, but we want your feedback to tell us what features you’d like to see us add.\n",
+      "image_twitter": "/static/images/experiments/notes/social/notes-twitter.jpg",
+      "image_facebook": "/static/images/experiments/notes/social/notes-fb.jpg",
+      "video_url": "https://www.youtube.com/embed/vaFvr_70yxw",
+      "changelog_url": "https://github.com/mozilla/notes/releases",
+      "contribute_url": "https://github.com/mozilla/notes",
+      "bug_report_url": "https://github.com/mozilla/notes/issues",
+      "discourse_url": "https://discourse.mozilla-community.org/c/test-pilot/notes",
+      "privacy_notice_url": "https://github.com/mozilla/notes/blob/master/docs/metrics.md",
+      "measurements": [
+        "Notes will collect information about your use of the feature, such as how often you create notes and how long you spend editing them, the number of characters you save in your notes, and whether you use any editing features (e.g., bold or stylized text).\n",
+        "Notes will also collect information about your interaction with the add-on, such as how you access the feature, and what buttons you may click.\n"
+      ],
+      "xpi_url": "https://testpilot.firefox.com/files/notes@mozilla.com/latest",
+      "addon_id": "notes@mozilla.com",
+      "gradient_start": "#A665B4",
+      "gradient_stop": "#CF5858",
+      "details": [
+        {
+          "image": "/static/images/experiments/notes/experiments_experimentdetail/detail1.eb22742b.jpg",
+          "copy": "It’s a notepad. Why didn’t we think of this earlier?\n"
+        }
+      ],
+      "tour_steps": [
+        {
+          "image": "/static/images/experiments/notes/experiments_experimenttourstep/notes-tour-1.6a3c1038.jpg",
+          "copy": "Notes adds a simple notepad to your browser’s sidebar."
+        },
+        {
+          "image": "/static/images/experiments/notes/experiments_experimenttourstep/notes-tour-2.8149340b.jpg",
+          "copy": "We’ve built some basic formatting options into Notes. With your feedback we will add more features."
+        },
+        {
+          "image": "/static/images/experiments/notes/experiments_experimenttourstep/notes-tour-3.0a49d165.jpg",
+          "copy": "You can get back to the Notes experiment by clicking on the sidebar icon."
+        },
+        {
+          "image": "/static/images/experiments/notes/experiments_experimenttourstep/notes-tour-4.3dbec235.jpg",
+          "copy": "You can always give us feedback or disable Notes from Test Pilot."
+        }
+      ],
+      "contributors": [
+        {
+          "display_name": "Udara Weerasinghege",
+          "title": "Engineering Intern",
+          "avatar": "/static/images/experiments/avatars/udara-w.befe23bf.jpg"
+        },
+        {
+          "display_name": "Cedric Amaya",
+          "title": "Community Contributor",
+          "avatar": "/static/images/experiments/avatars/cedric-a.2e8c7c7b.png"
+        },
+        {
+          "display_name": "Ryan Feeley",
+          "title": "Senior Product/UX Designer",
+          "avatar": "/static/images/experiments/avatars/ryan-f.df964f6b.jpg"
+        },
+        {
+          "display_name": "Remy Hubscher",
+          "title": "Software Engineer",
+          "avatar": "/static/images/experiments/avatars/remy-h.d132f31e.jpg"
+        },
+        {
+          "display_name": "Vlad Filippov",
+          "title": "Senior Engineer",
+          "avatar": "/static/images/experiments/avatars/vlad-f.e69c3a12.jpg"
+        },
+        {
+          "display_name": "Peter Dehaan",
+          "title": "Firefox QA",
+          "avatar": "/static/images/experiments/avatars/peter.1cb27f25.jpg"
+        },
+        {
+          "display_name": "Emil Pasca",
+          "title": "Softvision QA",
+          "avatar": "/static/images/experiments/avatars/emil.142ea647.jpg"
+        }
+      ],
+      "created": "2017-08-01T14:00:00Z",
+      "launch_date": "2017-08-01T14:00:00Z",
+      "order": 1,
+      "url": "/api/experiments/15.json",
+      "html_url": "/experiments/notes",
+      "survey_url": "https://qsurvey.mozilla.com/s3/notes"
+    },
+    {
+      "id": 6,
+      "title": "Page Shot",
+      "slug": "page-shot",
+      "platforms": [
+        "addon"
+      ],
+      "thumbnail": "/static/images/experiments/page-shot/experiments_experiment/thumbnail.0056d235.png",
+      "description": "Intuitive screenshots baked right into the browser. Capture, save and share screenshots as you browse the Web using Firefox.\n",
+      "introduction": "<p>Page Shot lets you take, share, and retrieve screenshots - without leaving  Firefox.</p>\n<ul>  <li><strong>Grid view:</strong> Browse thumbnails of saved screenshots</li>\n  <li><strong>Smart search:</strong> Find the screenshot you're looking for\n    with just a keyword. Page Shot indexes page titles and text in screenshots</li>\n  <li><strong>One-step sharing:</strong> Post your screenshot to social media\n    or copy the shareable link right from the top of your browser window.</li>\n</ul>\n",
+      "image_twitter": "/static/images/experiments/page-shot/social/ps-twitter.jpg",
+      "image_facebook": "/static/images/experiments/page-shot/social/ps-facebook.jpg",
+      "changelog_url": "https://github.com/mozilla-services/pageshot/blob/master/CHANGELOG.md",
+      "contribute_url": "https://github.com/mozilla-services/pageshot/",
+      "bug_report_url": "https://github.com/mozilla-services/pageshot/issues",
+      "discourse_url": "https://discourse.mozilla-community.org/c/test-pilot/page-shot",
+      "privacy_notice_url": "https://www.mozilla.org/privacy/websites/",
+      "measurements": [
+        "We store your shots on Mozilla's servers and will have access to those shots. However, we will only access your shots when reasonably necessary for the operation of the service, such as when someone sends us the link to a shot using our \"flag\" feature, or to diagnose any problems. We will also analyze all shots in the aggregate to help improve Page Shot, for example, by identifying the average size and number of shots taken by users.\n",
+        "We collect usage data to help us understand your interactions with the product, such as the number of times you click the shots button, save an image, or encounter an error saving an image.\n",
+        "To prevent abuse of this service, we do basic security monitoring. For example, we collect and retain IP addresses to detect and block individuals who are scanning the service to find private pages.\n",
+        "For all visits to the Page Shot website, the data we collect is described in our <a href=\"https://www.mozilla.org/privacy/websites/\" target=\"_blank\">Websites, Communications & Cookies Privacy Notice</a>.\n"
+      ],
+      "xpi_url": "https://testpilot.firefox.com/files/pageshot/latest",
+      "addon_id": "jid1-NeEaf3sAHdKHPA@jetpack",
+      "gradient_start": "#02BDAD",
+      "gradient_stop": "#035295",
+      "details": [
+        {
+          "image": "/static/images/experiments/page-shot/experiments_experimentdetail/detail1.e0820354.jpg",
+          "copy": "Select the image area and save if you like what you see, cancel without saving if you don’t.\n"
+        },
+        {
+          "image": "/static/images/experiments/page-shot/experiments_experimentdetail/detail2.5be1dfc3.jpg",
+          "copy": "Share links to images via social or email, without having to download and attach a file.\n"
+        },
+        {
+          "image": "/static/images/experiments/page-shot/experiments_experimentdetail/detail3.6452a027.jpg",
+          "copy": "Find saved screenshots easily. Browse thumbnails in grid view or search by keyword.\n"
+        }
+      ],
+      "tour_steps": [
+        {
+          "image": "/static/images/experiments/page-shot/experiments_experimenttourstep/tour1.0466c051.jpg",
+          "copy": "Select the icon to start using Page Shot."
+        },
+        {
+          "image": "/static/images/experiments/page-shot/experiments_experimenttourstep/tour2.4b8ef557.jpg",
+          "copy": "Highlight the area you want to capture."
+        },
+        {
+          "image": "/static/images/experiments/page-shot/experiments_experimenttourstep/tour3.06d4f708.jpg",
+          "copy": "Share, save or delete from the browser."
+        },
+        {
+          "image": "/static/images/experiments/page-shot/experiments_experimenttourstep/tour4.bd9049a4.jpg",
+          "copy": "Search or browse to find saved screenshots."
+        },
+        {
+          "image": "/static/images/experiments/shared/tour-final.ba0cade5.jpg",
+          "copy": "You can always give us feedback or disable Page Shot from Test Pilot."
+        }
+      ],
+      "contributors": [
+        {
+          "display_name": "Ian Bicking",
+          "title": "Software Engineer",
+          "title_l10nsuffix": "engineer",
+          "avatar": "/static/images/experiments/page-shot/avatars/ian-bicking.b5cf698f.jpg"
+        },
+        {
+          "display_name": "Donovan Preston",
+          "title": "Software Engineer",
+          "avatar": "/static/images/experiments/page-shot/avatars/donovan-preston.9928107a.jpg"
+        },
+        {
+          "display_name": "Bram Pitoyo",
+          "title": "UX Designer",
+          "avatar": "/static/images/experiments/page-shot/avatars/bram-pitoyo.4d3b128b.jpg"
+        }
+      ],
+      "created": "2016-09-22T00:07:28.847430Z",
+      "completed": "2017-07-12T20:00:00.000000Z",
+      "eol_warning": "This experiment is ending, but Page Shot will ship in Firefox by default this fall. If you have the Page Shot experiment installed, we will automatically upgrade you.",
+      "locales": [
+        "en"
+      ],
+      "order": 3,
+      "incompatible": {
+        "@no-resource-uri-leak": "No Resource URI Leak",
+        "jid0-9XfBwUWnvPx4wWsfBWMCm4Jj69E@jetpack": "Self-Destructing Cookies"
+      },
+      "url": "/api/experiments/6.json",
+      "html_url": "/experiments/page-shot",
+      "survey_url": "https://qsurvey.mozilla.com/s3/page-shot"
+    },
+    {
+      "id": 11,
+      "title": "Pulse",
+      "slug": "pulse",
+      "platforms": [
+        "addon"
+      ],
+      "locales": [
+        "en"
+      ],
+      "min_release": 51,
+      "incompatible": {
+        "blok@mozilla.org": "Tracking Protection"
+      },
+      "thumbnail": "/static/images/experiments/pulse/icon/thumbnail.943e9b62.png",
+      "description": "Give us a performance review. Add Pulse, and help us understand which websites work well in Firefox and which sites don’t.\n",
+      "introduction": "We’re building the next generation of Firefox, and we’re focusing on real-world speed and performance. Pulse lets you give our engineers feedback about your experience on websites that work well in Firefox and on websites that don’t.\n",
+      "image_twitter": "/static/images/experiments/pulse/social/pulse-twitter.jpg",
+      "image_facebook": "/static/images/experiments/pulse/social/pulse-facebook.jpg",
+      "changelog_url": "https://github.com/mozilla/pulse/commits/master",
+      "contribute_url": "https://github.com/mozilla/pulse/",
+      "bug_report_url": "https://github.com/mozilla/pulse/issues/new",
+      "discourse_url": "https://discourse.mozilla-community.org/c/test-pilot/pulse",
+      "privacy_notice_url": "https://github.com/mozilla/pulse/blob/master/docs/metrics.md",
+      "measurements": [
+        "Pulse will only send information to us when you interact with it, such as submitting a survey, or when you are prompted to do so.\n",
+        "Pulse will send information about your browser and your device, such as what operating system and version of Firefox you are running, what addons and settings you have enabled, and how many tabs you have open.\n",
+        "Pulse will send information about the page you are viewing when you submit a survey, such as the hostname and domain of the page, and the network requests associated with the page.\n"
+      ],
+      "xpi_url": "https://testpilot.firefox.com/files/pulse@mozilla.com/latest",
+      "addon_id": "pulse@mozilla.com",
+      "gradient_start": "#58CA5B",
+      "gradient_stop": "#3EADB9",
+      "pre_feedback_copy": "<p>To report a site that doesn't work with Pulse, select the  Pulse icon in the bar that displays the URL of the site.</p>\n",
+      "pre_feedback_image": "/static/images/experiments/pulse/tour/tour2.f6965d84.jpg",
+      "details": [
+        {
+          "image": "/static/images/experiments/pulse/details/detail1.89acd0a6.jpg",
+          "copy": "Provide feedback about website performance as you browse.\n"
+        },
+        {
+          "image": "/static/images/experiments/pulse/details/detail2.a0072be5.jpg",
+          "copy": "Pulse may prompt you to answer a short survey about your experience on a website.\n"
+        }
+      ],
+      "tour_steps": [
+        {
+          "image": "/static/images/experiments/pulse/tour/tour1.505c7fcf.jpg",
+          "copy": "Click the Pulse icon in your URL bar to provide feedback for that website."
+        },
+        {
+          "image": "/static/images/experiments/pulse/tour/tour2.f6965d84.jpg",
+          "copy": "Rate your experience and answer a few questions."
+        },
+        {
+          "image": "/static/images/experiments/pulse/tour/tour3.1ea9548e.jpg",
+          "copy": "Pulse may also prompt you at random to rate a website."
+        },
+        {
+          "image": "/static/images/experiments/pulse/tour/tour4.2f9a26a6.jpg",
+          "copy": "You can always give us feedback or disable Pulse from Test Pilot."
+        }
+      ],
+      "contributors": [
+        {
+          "display_name": "Chuck Harmston",
+          "title": "Senior Engineer",
+          "avatar": "/static/images/experiments/universal-search/avatars/chuck-harmston.9c567a3d.jpg"
+        },
+        {
+          "display_name": "Sevaan Franks",
+          "title": "Firefox UX",
+          "avatar": "/static/images/experiments/avatars/sevaan.fff8c466.jpg"
+        },
+        {
+          "display_name": "Harald Kirschner",
+          "title": "Firefox Platform Product Intelligence",
+          "avatar": "/static/images/experiments/avatars/harald.d7ef8dde.jpg"
+        },
+        {
+          "display_name": "Peter Dehaan",
+          "title": "Firefox QA",
+          "avatar": "/static/images/experiments/avatars/peter.1cb27f25.jpg"
+        }
+      ],
+      "created": "2017-02-22T17:00:00.00Z",
+      "completed": "2017-07-12T20:00:00.000000Z",
+      "eol_warning": "The Pulse experiment is ending soon, but the data you provided helped us so much that we want to build the feature in Firefox. We will uninstall this experiment soon.",
+      "order": 2,
+      "url": "/api/experiments/11.json",
+      "html_url": "/experiments/pulse",
+      "survey_url": "https://qsurvey.mozilla.com/s3/pulse"
+    },
+    {
+      "id": 13,
+      "title": "Send",
+      "slug": "send",
+      "platforms": [
+        "web"
+      ],
+      "web_url": "https://send.firefox.com",
+      "thumbnail": "/static/images/experiments/send/experiments_experiment/thumbnail.122d6033.png",
+      "description": "Encrypt and send files with a link that automatically expires to ensure your important documents don’t stay online forever.\n",
+      "introduction": "<p>Send lets you upload and encrypt large files (up to 1GB) to share online. When you upload a file, Send creates a link to pass along to whoever you want. Each link created by Send will expire after 1 download or 24 hours, and all sent files will be automatically deleted from the Send server.</p> <p>Unlike other Test Pilot experiments, Send does not require an add-on, and can be used in any modern browser.</p>\n",
+      "image_twitter": "/static/images/experiments/send/social/send-twitter.jpg",
+      "image_facebook": "/static/images/experiments/send/social/send-fb.jpg",
+      "video_url": "https://www.youtube.com/embed/ZGWZGYtAS3U",
+      "changelog_url": "https://github.com/mozilla/send/releases",
+      "contribute_url": "https://github.com/mozilla/send",
+      "bug_report_url": "https://github.com/mozilla/send/issues",
+      "discourse_url": "https://discourse.mozilla-community.org/c/test-pilot/send",
+      "privacy_notice_url": "https://github.com/mozilla/send/blob/master/docs/metrics.md",
+      "measurements": [
+        "When you use Send, Mozilla receives an encrypted copy of the file you upload, and basic information about the file, such as filename and file size. Mozilla does not have the ability to access the content of your encrypted file, and only keeps it for the time or number of downloads indicated.\n",
+        "To allow you to see the status of your previously uploaded files, or delete them, basic information about your uploaded files are stored on your local device, such as Send’s identifier for the file, the filename, and the file’s unique download link. This is cleared if you delete your uploaded file or upon visiting Send after the file expires.\n",
+        "Anyone you provide with the unique link (including the encryption key) to your encrypted file will be able to download and access that file. You should not provide the link to anyone you do not want to have access to your encrypted file.\n",
+        "Send is also subject to our <a>websites privacy notice</a>. When you visit the Send website, information such as your IP address is temporarily retained as part of a standard server log.\n",
+        "Send will also collect information about the performance and your use of the service, such as how often you upload files, how long your files remain with Mozilla before they expire, any errors related to file transfers, and what cryptographic protocols your browser supports.\n"
+      ],
+      "gradient_start": "#32CADD",
+      "gradient_stop": "#3199FF",
+      "details": [
+        {
+          "image": "/static/images/experiments/send/experiments_experimentdetail/send-1.e6857d26.jpg",
+          "copy": "Send lets you upload and share encrypted files.\n"
+        },
+        {
+          "image": "/static/images/experiments/send/experiments_experimentdetail/send-2.4bba83b7.jpg",
+          "copy": "Send will only store your files for one download or 24 hours.\n"
+        },
+        {
+          "image": "/static/images/experiments/send/experiments_experimentdetail/send-3.5a5fed92.jpg",
+          "copy": "You can use Send in any modern browser.\n"
+        }
+      ],
+      "contributors": [
+        {
+          "display_name": "Abhinav Adduri",
+          "title": "Engineering Intern",
+          "avatar": "/static/images/experiments/avatars/abhi-a.3c23521c.jpg"
+        },
+        {
+          "display_name": "Daniela Arcese",
+          "title": "Engineering Intern",
+          "avatar": "/static/images/experiments/avatars/daniela-a.42437720.jpg"
+        },
+        {
+          "display_name": "Danny Coates",
+          "title": "Sanitation Engineer",
+          "avatar": "/static/images/experiments/avatars/danny-c.c4f98638.jpg"
+        },
+        {
+          "display_name": "Peko Chen",
+          "title": "UX Visual Designer",
+          "avatar": "/static/images/experiments/avatars/peko-c.669c62d3.jpg"
+        },
+        {
+          "display_name": "Mark Liang",
+          "title": "Firefox UX",
+          "avatar": "/static/images/experiments/avatars/mliang.a3518ca3.png"
+        },
+        {
+          "display_name": "Morpheus Chen",
+          "title": "Firefox UX",
+          "avatar": "/static/images/experiments/avatars/mchen.62070d66.png"
+        },
+        {
+          "display_name": "Erica Wright",
+          "title": "UX Developer",
+          "avatar": "/static/images/experiments/avatars/erica-w.b7ad386e.png"
+        },
+        {
+          "display_name": "Sevaan Franks",
+          "title": "Staff Product/UX Designer",
+          "avatar": "/static/images/experiments/avatars/sevaan.fff8c466.jpg"
+        }
+      ],
+      "created": "2017-08-01T14:00:00Z",
+      "launch_date": "2017-08-01T14:00:00Z",
+      "order": 2,
+      "url": "/api/experiments/13.json",
+      "html_url": "/experiments/send",
+      "survey_url": "https://qsurvey.mozilla.com/s3/send"
+    },
+    {
+      "id": 10,
+      "title": "Snooze Tabs",
+      "slug": "snooze-tabs",
+      "platforms": [
+        "addon"
+      ],
+      "locales": [
+        "en",
+        "cs",
+        "de",
+        "dsb",
+        "es",
+        "fr",
+        "fy",
+        "hsb",
+        "hu",
+        "id",
+        "it",
+        "ja",
+        "kab",
+        "nl",
+        "pt",
+        "ru",
+        "sk",
+        "sl",
+        "sq",
+        "sv",
+        "tr",
+        "zh"
+      ],
+      "incompatible": {
+        "blok@mozilla.org": "Tracking Protection"
+      },
+      "thumbnail": "/static/images/experiments/snooze-tabs/icon/thumbnail.69cd11a1.png",
+      "description": "Right website, wrong time?  Snooze it until you need it. Snooze Tabs let you dismiss tabs now and set an alarm to open them later.\n",
+      "introduction": "Snooze Tabs help you focus your attention online, whether you want to remove distractions for now or save something for later.  Hit the snooze icon to dismiss tabs you don’t want now, and set an alarm to bring them back when you need them. Snooze an interesting article until tonight. Snooze that recipe until next month. When the snooze is ended, the tab will open back up.\n",
+      "image_twitter": "/static/images/experiments/snooze-tabs/social/snooze-tabs-twitter.jpg",
+      "image_facebook": "/static/images/experiments/snooze-tabs/social/snooze-tabs-facebook.jpg",
+      "changelog_url": "https://github.com/bwinton/SnoozeTabs/commits/master",
+      "contribute_url": "https://github.com/bwinton/SnoozeTabs/",
+      "bug_report_url": "https://github.com/bwinton/SnoozeTabs/issues/new",
+      "discourse_url": "https://discourse.mozilla-community.org/c/test-pilot/snooze-tabs",
+      "privacy_notice_url": "https://github.com/bwinton/SnoozeTabs/blob/master/docs/metrics.md",
+      "measurements": [
+        "Snooze Tabs will collect information about your interactions with the add-on, such as when you open the Snooze panel from the toolbar button, and access, edit or delete Snoozed tabs within the panel.\n",
+        "Snooze Tabs will also collect information about your use of the feature, such as when you create a new Snoozed tab, wake or close a Snoozed tab, or focus a Snoozed tab.\n",
+        "Snooze Tabs does NOT collect any information or details about your tabs such as URLs, meta attributes, or page content.\n"
+      ],
+      "xpi_url": "https://testpilot.firefox.com/files/snoozetabs@mozilla.com/latest",
+      "addon_id": "snoozetabs@mozilla.com",
+      "gradient_start": "#F89612",
+      "gradient_stop": "#B64F66",
+      "details": [
+        {
+          "image": "/static/images/experiments/snooze-tabs/details/detail1.75cbcca7.jpg",
+          "copy": "Snooze your tab and choose when Firefox should open it.\n"
+        },
+        {
+          "image": "/static/images/experiments/snooze-tabs/details/detail2.e7642590.jpg",
+          "copy": "Snooze Tabs will notify you when your tab returns.\n"
+        }
+      ],
+      "tour_steps": [
+        {
+          "image": "/static/images/experiments/snooze-tabs/tour/tour1.1a6bcc8d.jpg",
+          "copy": "Click on the icon to snooze your current tab."
+        },
+        {
+          "image": "/static/images/experiments/snooze-tabs/tour/tour2.40380c34.jpg",
+          "copy": "Select when you want it to appear again."
+        },
+        {
+          "image": "/static/images/experiments/snooze-tabs/tour/tour3.da3414d3.jpg",
+          "copy": "Say bye-bye to your tab until..."
+        },
+        {
+          "image": "/static/images/experiments/snooze-tabs/tour/tour4.63c0a39b.jpg",
+          "copy": "...Snooze Tabs brings it back!"
+        },
+        {
+          "image": "/static/images/experiments/snooze-tabs/tour/tour5.e2ed85d7.jpg",
+          "copy": "You can always give us feedback or disable Snooze Tabs from Test Pilot."
+        }
+      ],
+      "contributors": [
+        {
+          "display_name": "Les Orchard",
+          "title": "Senior Engineer",
+          "avatar": "/static/images/experiments/avatars/les.7d585241.jpg"
+        },
+        {
+          "display_name": "Sevaan Franks",
+          "title": "Firefox UX",
+          "avatar": "/static/images/experiments/avatars/sevaan.fff8c466.jpg"
+        },
+        {
+          "display_name": "Blake W",
+          "title": "Firefox UX",
+          "avatar": "/static/images/experiments/tab-center/avatars/blake-w.178ba599.jpg"
+        },
+        {
+          "display_name": "Erica W",
+          "title": "Firefox UX",
+          "avatar": "/static/images/experiments/tab-center/avatars/erica-wright.a70f3c15.png"
+        },
+        {
+          "display_name": "Parag Nandi",
+          "title": "Design Contributor",
+          "avatar": "/static/images/experiments/avatars/parag.6d6a1c96.jpg"
+        },
+        {
+          "display_name": "Peter Dehaan",
+          "title": "Firefox QA",
+          "avatar": "/static/images/experiments/avatars/peter.1cb27f25.jpg"
+        },
+        {
+          "display_name": "Emil Pasca",
+          "title": "Softvision QA",
+          "avatar": "/static/images/experiments/avatars/emil.142ea647.jpg"
+        },
+        {
+          "display_name": "Ciprian Muresan",
+          "title": "Softvision QA",
+          "avatar": "/static/images/experiments/avatars/ciprian.3a4562a4.jpg"
+        }
+      ],
+      "created": "2017-02-22T17:00:00.00Z",
+      "order": 3,
+      "url": "/api/experiments/10.json",
+      "html_url": "/experiments/snooze-tabs",
+      "survey_url": "https://qsurvey.mozilla.com/s3/snooze-tabs"
+    },
+    {
+      "id": 3,
+      "title": "Tab Center",
+      "slug": "tab-center",
+      "platforms": [
+        "addon"
+      ],
+      "thumbnail": "/static/images/experiments/tab-center/experiments_experiment/6/9/69333a5f98edf04bbb52085d20e6303e_thumbnail_1461802048_0012.dfe09293.png",
+      "description": "What would it be like to move tabs from the top of the browser to the side? We wanted to find out!\n",
+      "warning": "Firefox is changing fast. Tab Center may have bugs in Firefox 55 and will be disabled completely in Firefox 56+.\n",
+      "introduction": "<p>Take your tabs from in the way to tucked away. Tab Center moves your tabs to the side of your browser window so they're out of sight when you don't need them, and easy to expand and grab when you do.</p>\n",
+      "image_twitter": "/static/images/experiments/tab-center/social/tc-twitter.jpg",
+      "image_facebook": "/static/images/experiments/tab-center/social/tc-facebook.jpg",
+      "changelog_url": "https://github.com/bwinton/TabCenter/releases/latest",
+      "contribute_url": "https://github.com/bwinton/TabCenter#readme",
+      "bug_report_url": "https://github.com/bwinton/TabCenter/issues",
+      "discourse_url": "https://discourse.mozilla-community.org/c/test-pilot/tab-center",
+      "privacy_notice_url": "https://github.com/bwinton/TabCenter/blob/master/docs/metrics.md",
+      "measurements": [
+        "We collect usage data regarding how you interact with the Tab Center, such as how often you maximize or pin Tab Center.\n",
+        "We also collect information about the way you use tabs, such as the number of tabs you keep open at a time, and length of time you keep tabs open.\n",
+        "Tab Center does not collect any information about sites you visit or the content of tabs.\n"
+      ],
+      "xpi_url": "https://testpilot.firefox.com/files/tabcentertest1@mozilla.com/latest",
+      "addon_id": "tabcentertest1@mozilla.com",
+      "gradient_start": "#F25820",
+      "gradient_stop": "#D74012",
+      "min_release": null,
+      "max_release": 56,
+      "pre_feedback_image": null,
+      "pre_feedback_copy": null,
+      "details": [
+        {
+          "image": "/static/images/experiments/tab-center/details/tab-center-1.ceef2f45.jpg",
+          "copy": "Take your tabs on the side.\n"
+        },
+        {
+          "image": "/static/images/experiments/tab-center/details/tab-center-2.818a24ac.jpg",
+          "copy": "Tuck away those tabs until you need them.\n"
+        },
+        {
+          "image": "/static/images/experiments/tab-center/details/tab-center-3.9d5e5c50.jpg",
+          "copy": "Redecorate and move the furniture! Tab Center works with your favorite Firefox themes.\n"
+        }
+      ],
+      "tour_steps": [
+        {
+          "image": "/static/images/experiments/tab-center/tour/tc-tour-1.b0bfd473.jpg",
+          "copy": "First things first, all your tabs are on the side now."
+        },
+        {
+          "image": "/static/images/experiments/tab-center/tour/tc-tour-2.ce304930.jpg",
+          "copy": "Lots and lots of tabs? Tab Center lets you search them."
+        },
+        {
+          "image": "/static/images/experiments/tab-center/tour/tc-tour-3.541d1cbd.jpg",
+          "copy": "You can drag the edge of Tab Center to make it as narrow or wide as you like.\n"
+        },
+        {
+          "image": "/static/images/experiments/tab-center/tour/tc-tour-4.012e1bd6.jpg",
+          "copy": "Hit the switch to tuck Tab Center out of the way."
+        },
+        {
+          "image": "/static/images/experiments/shared/tour-final.ba0cade5.jpg",
+          "copy": "You can always give us feedback or disable Tab Center from Test Pilot."
+        }
+      ],
+      "contributors": [
+        {
+          "display_name": "Blake W",
+          "title": "Firefox UX",
+          "avatar": "/static/images/experiments/tab-center/avatars/blake-w.178ba599.jpg"
+        },
+        {
+          "display_name": "Erica W",
+          "title": "Firefox UX",
+          "avatar": "/static/images/experiments/tab-center/avatars/erica-wright.a70f3c15.png"
+        },
+        {
+          "display_name": "Philipp S",
+          "title": "Firefox UX",
+          "avatar": "/static/images/experiments/tab-center/avatars/philipp-s.65d4fcc8.jpg"
+        },
+        {
+          "display_name": "John G",
+          "title": "Firefox UX",
+          "avatar": "/static/images/experiments/tab-center/avatars/john-g.0a8db095.jpg"
+        }
+      ],
+      "created": "2016-04-28T00:07:28.847430Z",
+      "completed": "2017-07-12T20:00:00.000000Z",
+      "eol_warning": "The Tab Center experiment is ending.  It will automatically be uninstalled this fall.",
+      "order": 6,
+      "incompatible": {
+        "TooManyTabs@visibotech.com": "Too Many Tabs",
+        "firebug@software.joehewitt.com": "Firebug",
+        "hidecaptionplus-dp@dummy.addons.mozilla.org": "Hide Caption Titlebar Plus",
+        "tabgroups@quicksaver": "Tab Groups",
+        "tabgroupshelper@kevinallasso.org": "Tab Groups Helper",
+        "treestyletab@piro.sakura.ne.jp": "Tree-Style Tab",
+        "{097d3191-e6fa-4728-9826-b533d755359d}": "All-In-One Sidebar",
+        "{c6448328-31f7-4b12-a2e0-5c39d0290307}": "HTitle",
+        "{dc572301-7619-498c-a57d-39143191b318}": "Tab Mix Plus",
+        "multipletab@piro.sakura.ne.jp": "Multiple Tab Handler",
+        "tabscope@xuldev.org": "Tab Scope",
+        "bug566510@vovcacik.addons.mozilla.org": "Allow multiselect operations on tabs",
+        "jid1-rOGUyxs2TvBBuA@jetpack": "Previous tab highlighting",
+        "{fc2b8f80-d9a5-4f51-8076-7c7ce3c67ee3}": "Diigo Toolbar"
+      },
+      "url": "/api/experiments/3.json",
+      "html_url": "/experiments/tab-center",
+      "survey_url": "https://qsurvey.mozilla.com/s3/tab-center"
+    },
+    {
+      "id": 7,
+      "title": "Tracking Protection",
+      "slug": "tracking-protection",
+      "platforms": [
+        "addon"
+      ],
+      "thumbnail": "/static/images/experiments/tracking-protection/experiments_experiment/thumbnail.31edbbee.png",
+      "description": "Will you help us make Tracking Protection better? This experiment turns on Tracking Protection for all browsing and offers a quick way to report any issues you see as you browse.\n",
+      "introduction": "<p>Until now, Tracking Protection in Firefox was only available in Private  Browsing mode. This experiment enables Tracking Protection all the time!\n  (Of course, you can disable it on a site-by-site basis whenever you want.)</p>\n<p>This experiment lets you help us understand where Tracking Protection breaks  the Web so that we can improve it for all Firefox users. As you browse, click\n  the purple shield icon in the URL bar at the top of the page to tell us which\n  sites work well with Tracking Protection and which don't.</p>\n",
+      "image_twitter": "/static/images/experiments/tracking-protection/social/tp-twitter.jpg",
+      "image_facebook": "/static/images/experiments/tracking-protection/social/tp-facebook.jpg",
+      "changelog_url": "https://github.com/mozilla/blok/",
+      "contribute_url": "https://github.com/mozilla/blok/",
+      "bug_report_url": "https://github.com/mozilla/blok/issues",
+      "discourse_url": "https://discourse.mozilla-community.org/c/test-pilot/tracking-protection",
+      "privacy_notice_url": "https://github.com/mozilla/blok/blob/master/docs/metrics.md",
+      "measurements": [
+        "Tracking Protection will prompt you for feedback when it blocks a tracker. We collect basic usage data when you engage with this prompt, such as when you enable or disable the trackers on the page or report a problem.\n",
+        "When you engage with a prompt, we also collect information about the page you are on and the tracking domain that is being blocked. This helps us understand when and why you are experiencing a problem.\n",
+        "Other than the domain, we don't collect any further information from the tracker, such as data about unique IDs that are used or cookies that are set.\n",
+        "To identify trackers, we use a list provided by our partner Disconnect. You can read more about the standards Disconnect applies <a href=\"https://disconnect.me/trackerprotection\" target=\"_blank\">here</a>.\n"
+      ],
+      "xpi_url": "https://testpilot.firefox.com/files/blok/latest",
+      "addon_id": "blok@mozilla.org",
+      "gradient_start": "#8725A7",
+      "gradient_stop": "#591C56",
+      "min_release": 48,
+      "pre_feedback_copy": "<p>To report a site that doesn't work with Tracking Protection, select the  shield icon in the bar that displays the URL of the site.</p>\n",
+      "pre_feedback_image": "/static/images/experiments/tracking-protection/experiments_experimenttourstep/tour2.b0243974.jpg",
+      "details": [
+        {
+          "image": "/static/images/experiments/tracking-protection/experiments_experimentdetail/detail1.9be143a5.jpg",
+          "copy": "Access all Tracking Protection features in the address bar.\n"
+        },
+        {
+          "image": "/static/images/experiments/tracking-protection/experiments_experimentdetail/detail2.a92222a1.jpg",
+          "copy": "Report a problem and help us troubleshoot.\n"
+        }
+      ],
+      "tour_steps": [
+        {
+          "image": "/static/images/experiments/tracking-protection/experiments_experimenttourstep/tour1.fc721767.jpg",
+          "copy": "The shield indicates Tracking Protection is on. With a slash, it's off.\n"
+        },
+        {
+          "image": "/static/images/experiments/tracking-protection/experiments_experimenttourstep/tour2.b0243974.jpg",
+          "copy": "Tell us when things work and when they don't."
+        },
+        {
+          "image": "/static/images/experiments/shared/tour-final.ba0cade5.jpg",
+          "copy": "You can always disable Tracking Protection from Test Pilot."
+        }
+      ],
+      "contributors": [
+        {
+          "display_name": "Luke Crouch",
+          "title": "Web Developer",
+          "avatar": "/static/images/experiments/tracking-protection/avatars/luke-crouch.76bf7663.jpg"
+        },
+        {
+          "display_name": "Aislinn Grigas",
+          "title": "Senior UX Designer",
+          "avatar": "/static/images/experiments/tracking-protection/avatars/aislinn-grigas.210694b8.jpg"
+        },
+        {
+          "display_name": "Rebecca Billings",
+          "title": "Senior QA Engineer",
+          "avatar": "/static/images/experiments/tracking-protection/avatars/rebecca-billings.84d84735.jpg"
+        }
+      ],
+      "contributors_extra": "This experiment is based on Firefox Tracking Protection technology built by Mozilla employees and contributors over the past several years.\n",
+      "contributors_extra_url": "https://mzl.la/2fYneDq",
+      "created": "2016-09-22T00:07:28.847430Z",
+      "completed": "2017-02-15T20:00:00.000000Z",
+      "uninstalled": "2017-02-15T20:00:00.000000Z",
+      "eol_warning": "We will automatically disable the Tracking Protection experiment and report the results when it ends.",
+      "graduation_report": "<h3>Test Pilot Tracking Protection Graduation Report</h3> <p>The Tracking Protection feature in Private Browsing Mode is popular with Firefox users, but it comes with a few downsides: it can break page layout and multimedia content on websites, and it sometimes blocks content that isn’t tracking you. We’ve collected qualitative evidence of this through user feedback, but since we introduced Tracking Protection, we haven’t been able to quantify the impact of breakage and false positives on the overall user experience.</p> <p>We launched the Tracking Protection experiment in Test Pilot with a goal of understanding how the block list we use for Tracking Protection in <a target=\"_blank\" href=\"https://support.mozilla.org/kb/private-browsing-use-firefox-without-history\">Private Browsing Mode</a> and in\n <a target=\"_blank\" href=\"https://itunes.apple.com/us/app/firefox-focus-privacy-browser/id1055677337?mt=8\">Firefox Focus for iOS</a>\n contributes to website breakage. The experiment was fairly\n simple by design: we enabled Tracking Protection and let users disable it on specific sites\n or provide reports about websites that seemed to break as a result of the experiment.</p>\n<p><strong>Here’s how it went down</strong></p> <p>The user interface for the Tracking Protection experiment was simple. When Tracking Protection was enabled, users saw an icon in their browser’s URL bar. Clicking the icon opened a panel where participants could report a problem and turn Tracking Protection off for that domain.</p> <figure> <img src=\"/static/images/experiments/tracking-protection/experiments_experimentdetail/detail1.9be143a5.jpg\" alt=\"Tracking Protection doorhanger\" /> </figure> <p>Participants had the option to give more details about the problems they saw.</p> <figure> <img src=\"/static/images/experiments/tracking-protection/experiments_experimentdetail/detail2.a92222a1.jpg\" alt=\"Tracking Protection doorhanger\" /> </figure> <p>For this experiment, we only collected data when participants turned Tracking Protection on or off, or when they reported problems with a particular domain. We did not collect data on other browsing activity and we did not record full URLs.</p> <p><strong>Here’s what we learned</strong></p> <p>We hypothesized that users would frequently disable Tracking Protection on broken sites. This, it turns out, was not the case. The chart below shows that despite a high number of participants using Firefox Tracking Protection every day, Tracking Protection was disabled on very few sites.</p> <figure> <img src=\"/static/images/experiments/tracking-protection/graduation/gr-001.f5052a6b.png\" width=\"100%\" height=\"auto\" /> <figcaption>The number of times users disabled Tracking Protection was low to begin with,  and decreased over the life of the experiment.</figcaption> </figure> <p>Further, the rate at which users disabled Tracking Protection decreased as the experiment progressed. We think that once users disabled Tracking Protection for the most problematic sites, they didn’t encounter or weren’t bothered by breakage to the point that they would disable it for additional sites they visited later in the experiment.  Since we didn’t measure total page views, there are limits to what we can conclude about the number of sites broken by Tracking protection. Nevertheless, this data suggests that breakage may be less widespread than we initially believed, and it’s worth digging deeper into more specific breakage data.</p> <figure> <img src=\"/static/images/experiments/tracking-protection/graduation/gr-002.136e0495.png\" width=\"100%\" height=\"auto\" /> <figcaption>Disables, enables, reports of breakage, and reports of no breakage over the life of the experiment.</figcaption> </figure> <p>We were also interested in the impact Google Analytics had on site breakage. Google Analytics is a nearly ubiquitous service across the Web (full disclosure:  we use it to gather traffic data for testpilot.firefox.com) that is blocked by\nTracking Protection. When we began this experiment, some developers suggested that how a site set up Google Analytics could have a large impact on breakage. Blocking Google Analytics shouldn’t cause sites to break, but sometimes site developers write code that ignores the possibility of Google Analytics being blocked. If developers don’t accommodate for this possibility, broader failures in the way that code running on sites can occur because scripts on the site make reference to code that is never loaded.</p> <p>It turns out that for the most part Google Analytics does not correlate to breakage. In fact, while Google Analytics shows up frequently in our data, it only correlated to breakage reports 25 percent of the time, which is low compared to breakage rates reported for other trackers.</p> <p>Early on, we noticed that one service – Twimg, Twitter’s remote image hosting service – consistently showed up as a source of reported breakage. By diving into our user feedback, we figured out that this breakage caused images not to render and often lead to broken layout. We communicated our findings to <a target=\"_blank\" href=\"https://disconnect.me/\">Disconnect</a> (the tracking  protection company that provides our block list), and they were able to re-categorize the\nTwimg domain as a content provider, mitigating the breakage.</p> <p>In other cases when a known tracker caused site breakages, were less successful in modifying the Tracking Protection experiment to improve user experience. For example, we saw many reports of breakage linking video playback issues to Tealium, a tracker that’s used for marketing analytics. <a target=\"_blank\" href=\"https://github.com/mozilla/blok/issues/216#issuecomment-266802796\">We attempted to create a work around for this breakage</a> by using something called a shim – a fake initial reference to the tracker code that would theoretically let sites continue to run as though it really existed without breaking. Unfortunately, we found that while we could resolve the initial error by faking references with a code shim, secondary errors would crop as sites tried to execute code. Since these errors tended to be unique across different sites, we determined our approach couldn’t account for every error and wouldn’t scale effectively.</p> <figure> <img src=\"/static/images/experiments/tracking-protection/graduation/gr-003.22ca224c.png\" width=\"100%\" height=\"auto\" /> <figcaption>Google Analytics is ubiquitous, but shows relative low reported correlated breakage. Meanwhile Twitter’s image service (pbs.twimg.com) is much smaller but shows much higher reported breakage. Tealium (tags.tiqcdn.com) was also a commonly reported source of breakage.</figcaption> </figure> <p><strong>Here’s what happens next</strong></p> <p>What’s next for the Tracking Protection experiment? Now that we’ve announced retirement plans for this add-on, we will no longer maintain it. If you have it enabled, you don’t need to do anything. We’ll automatically uninstall it in the coming days. Tracking Protection will continue as a feature of Private Browsing, however.</p> <p>The Tracking Protection reporting feature, unlike many Test Pilot experiments, was never designed to graduate into Firefox. We created this experiment to learn how Tracking Protection works in the wild. We also learned a lot about (and are  grateful for!) the willingness of our Test Pilot community to provide feedback.</p>\n<p>We intend to run more studies based on our initial results. We are launching a similarly structured study in Test Pilot to learn about site performance in Firefox. We’ll use similar feedback mechanisms as the Tracking Protection study to learn about sites that cause Firefox users particular problems so we can address these issues as we work on our next generation Web rendering engine. Look for this study in late February 2017.</p> <p>We will also conduct some messaging studies to help us understand how Firefox users who aren’t in Test Pilot think about online tracking and how we can best explain the costs and benefits of Tracking Protection and similar blocking services.</p> <p>Finally, we’re planning a follow-up Tracking Protection Study in Test Pilot based on what we learned this go round. In the next round, we will be adding more fine tuned user control, differential privacy, and an improved user interface. We believe these additions will help us take the next step toward shipping Tracking Protection in Firefox beyond Private Browsing Mode. Look for that study in late 2017.</p> <p>Thank you to all the Test Pilots who installed Tracking Protection and reported problems through the add-on!</p> <p>Want to try a new experiment? Visit <a href=\"https://testpilot.firefox.com\">https://testpilot.firefox.com</a>.</p> <p><strong>- Luke Crouch, Privacy Engineer & John Gruen, Test Pilot Product Manager</strong></p>\n",
+      "locale_blocklist": [
+        "de"
+      ],
+      "order": 3,
+      "url": "/api/experiments/7.json",
+      "html_url": "/experiments/tracking-protection",
+      "survey_url": "https://qsurvey.mozilla.com/s3/tracking-protection"
+    },
+    {
+      "id": 4,
+      "title": "Universal Search",
+      "slug": "universal-search",
+      "platforms": [
+        "addon"
+      ],
+      "thumbnail": "/static/images/experiments/universal-search/experiments_experiment/a/8/a8182b008f6434ba702ab177232625e2_thumbnail_1461818424_0011.3441e8a8.png",
+      "description": "Get recommendations for the best sites on the web as you type in the Awesome Bar.\n",
+      "introduction": "<p>Get to the best of the Web faster with Universal Search. Just type a few  characters into your Awesome Bar, and the most popular sites, people and\n  Wikipedia articles will appear for your browsing pleasure.</p>\n",
+      "image_twitter": null,
+      "image_facebook": null,
+      "changelog_url": "https://github.com/mozilla/universal-search/blob/master/docs/changelog.md",
+      "contribute_url": "https://github.com/mozilla/universal-search",
+      "bug_report_url": "https://github.com/mozilla/universal-search/issues",
+      "discourse_url": "https://discourse.mozilla-community.org/c/test-pilot/universal-search",
+      "privacy_notice_url": "https://github.com/mozilla/universal-search/blob/master/docs/metrics.md",
+      "measurements": [
+        "We collect basic usage data regarding how you interact with the Awesome Bar (address bar), such as the number of characters typed, the types of results that you click, and their position in the results list.\n",
+        "If you previously configured Firefox to display search suggestions in the Search Bar, installing Universal Search will enable <a href=\"https://www.mozilla.org/privacy/firefox/#searchsuggestions\" target=\"_blank\">search suggestions</a> in the Awesome Bar.\n",
+        "When you use the Awesome Bar, we send the terms you type to our recommendation engine. We keep anonymous logs of popular searches to improve the quality of our recommendations.\n",
+        "To provide Universal Search, we use a few third-party services. We use <a href=\"http://www.bing.com/developers/s/APIBasics.html\" target=\"_blank\">Bing</a> and <a href=\"https://developer.yahoo.com/boss/search/\" target=\"_blank\">Yahoo</a> to provide recommendations, and <a href=\"http://docs.embed.ly/docs/\" target=\"_blank\">Embedly</a> and <a href=\"https://clearbit.com/logo\" target=\"_blank\">Clearbit</a> to provide additional data (such as images or icons) about those recommendations. To display the recommendations in the Awesome Bar, Universal Search may download those images directly from Embedly and Clearbit, which may allow those services to see your IP address and the image requested.\n"
+      ],
+      "xpi_url": "https://s3-us-west-2.amazonaws.com/universal-search/universal-search.xpi",
+      "addon_id": "universal-search@mozilla.com",
+      "gradient_start": "#01BDAD",
+      "gradient_stop": "#01A39D",
+      "min_release": null,
+      "pre_feedback_image": null,
+      "pre_feedback_copy": null,
+      "details": [
+        {
+          "image": "/static/images/experiments/universal-search/experiments_experimentdetail/6/d/6d0ff50eff9223f0d0cc58c5aa5d0c81_image_1462827811_0995.2389d5e5.jpg",
+          "copy": "Popular sites, people and Wikipedia articles appear as you type.\n"
+        },
+        {
+          "image": "/static/images/experiments/universal-search/experiments_experimentdetail/8/6/8675c7bf31054abdaf58b47850a1365d_image_1462827811_0451.9d3e091f.jpg"
+        }
+      ],
+      "tour_steps": [
+        {
+          "image": "/static/images/experiments/universal-search/experiments_experimenttourstep/e/b/eb1a0c8bbb18c79f63d0df45d165eb7a_image_1462826805_0035.ae7ecced.jpg",
+          "copy": "You can now search and navigate in one place."
+        },
+        {
+          "image": "/static/images/experiments/universal-search/experiments_experimenttourstep/5/2/5218821d5851bef5ad979da5830f68b2_image_1462826805_0031.d42fedc7.jpg",
+          "copy": "Recommendations for popular sites and Wikipedia articles will appear as you type.\n"
+        },
+        {
+          "image": "/static/images/experiments/universal-search/experiments_experimenttourstep/1/d/1d414ba2fc88a188b6f74ea79de908e9_image_1462826805_0789.1f3d9bfb.jpg",
+          "copy": "You can always give us feedback or disable Universal Search from Test Pilot.\n"
+        }
+      ],
+      "contributors": [
+        {
+          "display_name": "Nick Chapman",
+          "title": "Product Manager",
+          "avatar": "/static/images/experiments/universal-search/avatars/nick-chapman.98212b3e.jpg"
+        },
+        {
+          "display_name": "Bryan Bell",
+          "title": "Senior UX Designer",
+          "avatar": "/static/images/experiments/universal-search/avatars/bryan-bell.c77d21f2.jpg"
+        },
+        {
+          "display_name": "Jared Hirsch",
+          "title": "Staff Engineer",
+          "avatar": "/static/images/experiments/universal-search/avatars/jared-hirsch.b914c76a.jpg"
+        },
+        {
+          "display_name": "Chuck Harmston",
+          "title": "Senior Engineer",
+          "avatar": "/static/images/experiments/universal-search/avatars/chuck-harmston.9c567a3d.jpg"
+        }
+      ],
+      "created": "2016-04-28T03:57:32.270681Z",
+      "completed": "2016-11-30T16:00:00.000000Z",
+      "eol_warning": "We will automatically disable the Universal Search experiment and report the results when it ends.",
+      "graduation_report": "<h3>Test Pilot Universal Search Retirement Report</h3> <p>Universal Search launched with Test Pilot in May 2016 and is the first experiment we’ve formally retired. We designed it to get you to the best things on the Web faster, by adding search suggestions and site recommendations into Awesome Bar results. We think it did that. We also learned a lot in the process. That’s why we’re calling Universal Search a success.</p> <p>Our basic question was “Would Firefox users find enough value in the recommended sites to click on them in the Awesome Bar?” and we tested this and gathered feedback in a few ways during the course of the experiment.</p> <p><strong>Here’s how it went down</strong></p> <p>At launch, we showed participants two types of recommendations based on their queries: top-level domains (such as Facebook.com, Amazon.com, Youtube.com, etc), and Wikipedia article pages.</p> <figure> <img src=\"/static/images/experiments/universal-search/experiments_experimentdetail/6/d/6d0ff50eff9223f0d0cc58c5aa5d0c81_image_1462827811_0995.2389d5e5.jpg\" alt=\"universal search preview\" /> <figcaption>Result displaying top-level domain.</figcaption> </figure> <figure> <img src=\"/static/images/experiments/universal-search/experiments_experimentdetail/8/6/8675c7bf31054abdaf58b47850a1365d_image_1462827811_0451.9d3e091f.jpg\" alt=\"universal search preview\" /> <figcaption>Result displaying Wikipedia article.</figcaption> </figure> <p>For the first two months, we showed recommendations when we thought they would be relevant, about 20 percent of the time. During this period, we saw that participants clicked on a displayed result about 10 percent of the time (we call this a click-thru rate, or CTR).</p> <p>In July, we changed the experiment so that we didn’t display a recommendation if the site was already in a participant’s browsing history.  We expected this to dramatically reduce the frequency of results shown, and it did. Results displayed fell from 20 percent to 7 percent. We were surprised to see that our CTR fell, too.  From this, we hypothesized that duplicates we removed included many sites that users visit habitually, so our initial CTR included many clicks “stolen” from history navigation.</p> <p>In October 2016, we added a third result type, rich movie cards. We predicted these would have a higher CTR than the other types, but discovered that while rich movie cards outperformed Wikipedia, they did not outperform top-level domains.</p> <p><strong>Here’s what we learned</strong></p> <p>When we evaluate an experiment we look at usage data as well as what participants tell us in post-experiment surveys. By both measures, Universal Search was a success. In fact, it outperformed our expectations. We had surprisingly high CTR for showing only three result types and overall user sentiment was quite positive.</p> <p><strong>Results from telemetry data</strong></p> <p>The data showed a final average CTR of 7 percent, and indicated a clear preference for top-level domain results. A breakdown of clicks by result type showed that Wikipedia pages were shown most and clicked least. Top-level domains were the most consistent performer: our better relevancy on top-level domains (even after de-duping) probably indicated we were short-cutting users to sites they already knew they wanted to visit. Movie Cards had the least amount of test data, but outperformed Wikipedia pages.</p> <p>Search Results Displayed and Clicked</p> <figure> <img src=\"/static/images/experiments/universal-search/graduation/graph1.c9f9118a.png\" alt=\"Search Results Displayed and Clicked\" /> <figcaption> <img src=\"/static/images/experiments/universal-search/graduation/graph1_key1.575c4bff.png\" alt=\"Displayed\" /> Displayed<br /> <img src=\"/static/images/experiments/universal-search/graduation/graph1_key2.1b8cb70c.png\" alt=\"Clicked\" /> Clicked<br /><br /> User data showing percentage of time recommendations were displayed and percentage of time participants clicked on recommendations. </figcaption> </figure> <p>Key events to note in the graph</p> <ul><li>May to July -  Top-level domain and Wikipedia results displayed </li> <li>Mid-July to Mid-August - No data collected during telemetry system upgrade</li> <li>Mid-August to September - Top-level domain (de-duped) and Wikipedia results displayed</li> <li>October to November - Rich movie card, top-level domain (de-duped) and Wikipedia results displayed</li></ul> <p>Weekly Performance by Result Type</p> <figure> <img src=\"/static/images/experiments/universal-search/graduation/graph2.7dbc7632.png\" alt=\"Weekly Performance by Result Type\" /> <figcaption> <img src=\"/static/images/experiments/universal-search/graduation/graph2_key1.77d03538.png\" alt=\"Top-Level Domains: Displayed\" /> Top-Level Domains: Displayed<br /> <img src=\"/static/images/experiments/universal-search/graduation/graph2_key2.2106a2cf.png\" alt=\"Top-Level Domains: Clicked\" /> Top-Level Domains: Clicked<br /> <img src=\"/static/images/experiments/universal-search/graduation/graph2_key3.0119b83f.png\" alt=\"Wikipedia: Displayed\" /> Wikipedia: Displayed<br /> <img src=\"/static/images/experiments/universal-search/graduation/graph2_key4.ad3b10c1.png\" alt=\"Wikipedia: Clicked\" /> Wikipedia: Clicked<br /> <img src=\"/static/images/experiments/universal-search/graduation/graph2_key5.d5bec118.png\" alt=\"Movie Cards: Displayed\" /> Movie Cards: Displayed<br /> <img src=\"/static/images/experiments/universal-search/graduation/graph2_key6.56018cc1.png\" alt=\"Movie Cards: Clicked\" /> Movie Cards: Clicked<br /><br /> Percentage of results displayed and clicked by type. </figcaption> </figure> <p><strong>Results from participant feedback</strong></p> <p>The great thing about collecting feedback from participants is that we can learn as much from our failures as our successes, and even a successful experiment is not successful for everyone.</p> <p>Some participants who left the experiment in the first weeks mentioned performance issues. Others told us they preferred separate search and Awesome Bars: their learned habits were hard to overcome. Many who left also cited poor result quality: search isn’t easy to get right, especially with a limited data set.</p> <p>However, some of the most telling, representative survey feedback came from users who stayed. Universal Search had a high retention rate, and of the users who remained:</p> <ul><li>65% agreed that Universal Search results were meaningful, and</li> <li>60% agreed that Universal Search helped them complete tasks faster.</li></ul> <figure> <img src=\"/static/images/experiments/universal-search/graduation/graph3.225bd574.png\" alt=\"Results from participant feedback\" /> <figcaption>Participant feedback survey results.</figcaption> </figure> <p><strong>Here’s what happens next</strong></p> <p>What’s next for Universal Search? Now that we’ve announced retirement plans for this add-on, we will no longer maintain it.  If you have Universal Search enabled, you don’t need to do anything. We’ll automatically uninstall it in the coming weeks.</p> <p>The experiment we built was not a complete product experience, but it was enough to meet our learning goals. If we tried a similar experiment again, we’d pursue better result relevancy and more diverse result types. We would also likely test alternate UX treatments to see if we could affect interaction with results, or improve user acceptance of the combined Awesome Bar for those users who preferred separate URL and search bars. These are questions we may examine in future experiments.</p> <p>Thank you to all the Test Pilots who installed Universal Search, used it, and told us what they thought!  We are grateful for your participation.</p> <p><a href=\"https://medium.com/mozilla-tech/universal-search-retrospective-b39e1be5d128\" target=\"_blank\">Read additional Universal Search analysis from Chuck Harmston</a>.</p> <p>Want to try a new experiment? Visit <a href=\"https://testpilot.firefox.com\">https://testpilot.firefox.com</a>.</p> <div class=\"float-right\"><strong>-Javaun Moradi, Product Manager</strong></div>\n",
+      "order": 7,
+      "locales": [
+        "en"
+      ],
+      "url": "/api/experiments/4.json",
+      "html_url": "/experiments/universal-search",
+      "survey_url": "https://qsurvey.mozilla.com/s3/universal-search"
+    },
+    {
+      "id": 14,
+      "title": "Voice Fill",
+      "slug": "voice-fill",
+      "platforms": [
+        "addon"
+      ],
+      "thumbnail": "/static/images/experiments/voice-fill/experiments_experiment/thumbnail.68ffbef1.png",
+      "description": "Speech recognition comes to Firefox. Voice Fill lets you speak to your favorite search engines.\n",
+      "introduction": "<p>Voice Fill uses artificial intelligence to interpret speech input. As a participant in the Voice Fill experiment, your voice searches will teach our AI to provide smarter results.</p> <p>We’ve added Voice Fill to Google, Yahoo and DuckDuckGo search pages, and will expand to more sites as the experiment progresses.</p>\n",
+      "image_twitter": "/static/images/experiments/voice-fill/social/vf-twitter.jpg",
+      "image_facebook": "/static/images/experiments/voice-fill/social/vf-fb.jpg",
+      "video_url": "https://www.youtube.com/embed/wjvM18UWMmM",
+      "changelog_url": "https://github.com/mozilla/speaktome/releases",
+      "contribute_url": "https://github.com/mozilla/speaktome/",
+      "bug_report_url": "https://github.com/mozilla/speaktome/issues",
+      "discourse_url": "https://discourse.mozilla-community.org/c/test-pilot/voice-fill",
+      "privacy_notice_url": "https://github.com/mozilla/speaktome/blob/master/docs/metrics.md",
+      "measurements": [
+        "When you choose to use Voice Fill, your recordings will be sent to our servers for processing to provide you with suggested text.\n",
+        "Voice Fill will collect technical information related to the performance of the feature, such as how long it takes for our servers to process a submitted recording and whether you selected or modified any of the suggestions we gave.\n",
+        "Voice Fill will also collect information about your use of the feature, such as how frequently Voice Fill is used and whether you used Voice Fill with specific tabs or pages such as Google, DuckDuckGo, or Yahoo.\n",
+        "To help us improve the accuracy of our suggestions, we may retain a copy of submitted audio recordings, and related suggestion information. Audio recordings kept for this purpose will not be associated with any other personal identifiers.\n"
+      ],
+      "xpi_url": "https://testpilot.firefox.com/files/speaktome@mozilla.com/latest",
+      "addon_id": "speaktome@mozilla.com",
+      "gradient_start": "#00C8D7",
+      "gradient_stop": "#00a8b7",
+      "details": [
+        {
+          "image": "/static/images/experiments/voice-fill/experiments_experimentdetail/detail1.25d5431c.jpg",
+          "copy": "Look for the microphone icon on Yahoo, DuckDuckGo, and Google.\n"
+        },
+        {
+          "image": "/static/images/experiments/voice-fill/experiments_experimentdetail/detail2.029ff3ae.jpg",
+          "copy": "Before using Voice Fill, you will need to allow voice input.\n"
+        },
+        {
+          "image": "/static/images/experiments/voice-fill/experiments_experimentdetail/detail3.1be45560.jpg",
+          "copy": "Voice Fill may offer you multiple options. Select the one you want to help train the AI.\n"
+        }
+      ],
+      "tour_steps": [
+        {
+          "image": "/static/images/experiments/voice-fill/experiments_experimenttourstep/vf-1.0ec4b18a.jpg",
+          "copy": "Look for the Voice Fill icon when you use Google, Yahoo, or DuckDuckGo."
+        },
+        {
+          "image": "/static/images/experiments/voice-fill/experiments_experimenttourstep/vf-2.54c4a2d5.jpg",
+          "copy": "Voice Fill lets you speak your searches."
+        },
+        {
+          "image": "/static/images/experiments/voice-fill/experiments_experimenttourstep/vf-3.f8c344cb.jpg",
+          "copy": "Depending on what you wish to search for, Voice Fill may give you several options. By using Voice Fill, you help make it smarter."
+        },
+        {
+          "image": "/static/images/experiments/voice-fill/experiments_experimenttourstep/vf-4.d63ca73f.jpg",
+          "copy": "You can always give us feedback or disable Voice Fill from Test Pilot."
+        }
+      ],
+      "contributors": [
+        {
+          "display_name": "Andre Natal",
+          "title": "Speech Engineer",
+          "avatar": "/static/images/experiments/avatars/andre-n.491c6e00.jpg"
+        },
+        {
+          "display_name": "Frabrice Desre",
+          "title": "Speech Engineer",
+          "avatar": "/static/images/experiments/avatars/fabrice-d.25f3469d.jpg"
+        },
+        {
+          "display_name": "Fang Shih",
+          "title": "Visual Designer",
+          "avatar": "/static/images/experiments/avatars/fshih.85b64a51.png"
+        },
+        {
+          "display_name": "Mark Liang",
+          "title": "Firefox UX",
+          "avatar": "/static/images/experiments/avatars/mliang.a3518ca3.png"
+        },
+        {
+          "display_name": "Morpheus Chen",
+          "title": "Firefox UX",
+          "avatar": "/static/images/experiments/avatars/mchen.62070d66.png"
+        },
+        {
+          "display_name": "Carmen Fat",
+          "title": "Softvision QA",
+          "avatar": "/static/images/experiments/avatars/carmen-f.1b2f744e.jpg"
+        },
+        {
+          "display_name": "Ciprian Muresan",
+          "title": "Softvision QA",
+          "avatar": "/static/images/experiments/avatars/ciprian.3a4562a4.jpg"
+        },
+        {
+          "display_name": "Faramarz Rashed",
+          "title": "Advanced Development, Emerging Technologies",
+          "avatar": "/static/images/experiments/avatars/faramarz-r.311ebb21.jpg"
+        }
+      ],
+      "created": "2017-08-01T14:00:00Z",
+      "launch_date": "2017-08-01T14:00:00Z",
+      "order": 0,
+      "locale_grantlist": [
+        "en",
+        "en-us",
+        "en-gb",
+        "en-ca"
+      ],
+      "url": "/api/experiments/14.json",
+      "html_url": "/experiments/voice-fill",
+      "survey_url": "https://qsurvey.mozilla.com/s3/voice-fill"
+    }
+  ]
+}

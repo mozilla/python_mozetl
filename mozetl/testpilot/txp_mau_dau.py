@@ -28,7 +28,7 @@ def get_experiments():
     # If we end up having a lot of retired tests and the job gets slow we could filter by dates
     r = requests.get(TESTPILOT_EXPERIMENT_ENDPOINT)
     r.raise_for_status()
-    return [el['addon_id'] for el in r.json()['results']]
+    return [el['addon_id'] for el in r.json()['results'] if 'addon_id' in el]
 
 
 def get_active_users(dataset, addon_ids):
