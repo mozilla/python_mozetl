@@ -470,8 +470,8 @@ def test_cli(spark, multi_profile_df, tmpdir, monkeypatch):
 
     runner = CliRunner()
     args = [
-        week_start_ds,
-        bucket,
+        '--start_date', week_start_ds,
+        '--bucket', bucket,
         '--input-bucket', bucket,
         '--input-prefix', input_prefix,
         '--no-lag',  # week_start_ds already accounts for the lag time
@@ -536,8 +536,8 @@ def test_cli_fails_on_missing_input(spark, multi_profile_df, tmpdir, monkeypatch
 
     runner = CliRunner()
     args = [
-        week_start_ds,
-        bucket,
+        '--start_date', week_start_ds,
+        '--bucket', bucket,
         '--input-bucket', bucket,
         '--input-prefix', input_prefix,
         '--no-lag',  # week_start_ds already accounts for the lag time
