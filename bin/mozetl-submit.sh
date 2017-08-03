@@ -7,7 +7,8 @@
 # mozetl.cli entry point. All necessary context for the job should be available
 # though the environment in the following form: MOZETL_${COMMAND}_${OPTION}.
 #
-# MOZETL_COMMAND:       a command that runs a particular ETL job
+# MOZETL_COMMAND:       a command that runs a particular ETL job; this causes all
+#                       arguments to be read through the environment
 # MOZETL_GIT_PATH:      (optional) path to the repository
 # MOZETL_GIT_BRANCH:    (optional) git branch to use
 # MOZETL_SPARK_MASTER:  (optional) spark-submit --master (defaults to yarn)
@@ -48,7 +49,7 @@ if [[ "$is_verbose" = true ]]; then
 fi
 
 # set script environment variables
-MOZETL_COMMAND=${1:-${MOZETL_COMMAND:-}}
+MOZETL_ARGS=${MOZETL_COMMAND:-$@}
 MOZETL_GIT_PATH=${MOZETL_GIT_PATH:-https://github.com/mozilla/python_mozetl.git}
 MOZETL_GIT_BRANCH=${MOZETL_GIT_BRANCH:-master}
 MOZETL_SPARK_MASTER=${MOZETL_SPARK_MASTER:-yarn}
@@ -84,4 +85,4 @@ python setup.py bdist_egg
 spark-submit --master ${MOZETL_SPARK_MASTER} \
              --deploy-mode client \
              --py-files dist/*.egg \
-             ${workdir}/runner.py ${MOZETL_COMMAND}
+             ${workdir}/runner.py ${MOZETL_ARGS}
