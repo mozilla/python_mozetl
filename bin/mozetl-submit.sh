@@ -79,8 +79,7 @@ else
     cd python_mozetl
 fi
 
-pip install .
-python setup.py bdist_egg
+python setup.py install
 
 spark-submit --master ${MOZETL_SPARK_MASTER} \
              --deploy-mode client \
