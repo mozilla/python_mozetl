@@ -6,8 +6,7 @@ import click
 from moztelemetry.standards import filter_date_range
 from mozetl.utils import (
     format_spark_path,
-    generate_filter_parameters,
-    delete_from_s3
+    generate_filter_parameters
 )
 from fields import MAIN_SUMMARY_FIELD_AGGREGATORS
 
@@ -88,21 +87,31 @@ def to_profile_day_aggregates(frame_with_extracts):
     return grouped.agg(*MAIN_SUMMARY_FIELD_AGGREGATORS)
 
 
-def write_by_activity_day(results, day_pointer,
-                          output_bucket, output_prefix):
+def write_by_activity_day(
+        results, day_pointer, output_bucket,
+        output_prefix, partition_count):
     month = day_pointer.month
     prefix_template = os.path.join(output_prefix, 'activity_date_s3={}')
-    keys_to_delete = []
     while day_pointer.month == month:
         isoday = day_pointer.isoformat()
         prefix = prefix_template.format(isoday)
         output_path = format_spark_path(output_bucket, prefix)
         data_for_date = results.where(results.activity_date == isoday)
-        data_for_date.write.parquet(output_path)
-        # Remove file that prevents Parquet from rolling up.
-        keys_to_delete.append(os.path.join(prefix, '_SUCCESS'))
+        data_for_date.coalesce(partition_count).write.parquet(output_path)
         day_pointer += DT.timedelta(1)
-    delete_from_s3(output_bucket, keys_to_delete)
+
+
+def get_partition_count_for_writing(is_sampled):
+    '''
+    Return a reasonable partition count.
+
+    using_sample_id: boolean
+    One day is O(140MB) if filtering down to a single sample_id, but
+    O14GB) if not. Google reports 256MB < partition size < 1GB as ideal.
+    '''
+    if is_sampled:
+        return 1
+    return 25
 
 
 @click.command()
@@ -137,7 +146,15 @@ def main(date, input_bucket, input_prefix, output_bucket,
         month_frame = month_frame.where(clause)
     with_searches = extract_search_counts(month_frame)
     results = to_profile_day_aggregates(with_searches)
-    write_by_activity_day(results, date, output_bucket, output_prefix)
+    partition_count = get_partition_count_for_writing(bool(sample_id))
+    # Per https://issues.apache.org/jira/browse/PARQUET-142 ,
+    # don't write _SUCCESS files, which interfere w/ReDash discovery
+    spark.conf.set(
+        "mapreduce.fileoutputcommitter.marksuccessfuljobs", "false"
+    )
+    write_by_activity_day(
+        results, date, output_bucket, output_prefix, partition_count
+    )
 
 
 if __name__ == '__main__':

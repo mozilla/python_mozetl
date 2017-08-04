@@ -97,9 +97,15 @@ MAIN_SUMMARY_FIELD_AGGREGATORS = [
         'plugins_notification_shown_sum'),
     # plugins_notification_user_action
     # popup_notification_stats
-    F.first('profile_creation_date').alias('profile_creation_date'),
-    F.sum('push_api_notification_received').alias(
-        'push_api_notification_received_sum'),
+    F.first(
+        F.expr(
+            "datediff(subsession_start_date, " \
+            "from_unixtime(profile_creation_date*24*60*60))"
+        )
+    ).alias("profile_age_in_days"),
+    F.first(
+        F.expr("from_unixtime(profile_creation_date*24*60*60)")
+    ).alias('profile_creation_date'),
     F.sum('push_api_notify').alias('push_api_notify_sum'),
     F.first('sample_id').alias('sample_id'),
     F.first('scalar_parent_aushelper_websense_reg_version').alias(
@@ -157,6 +163,8 @@ MAIN_SUMMARY_FIELD_AGGREGATORS = [
     F.first('search_cohort').alias('search_cohort'),
     F.sum('search_count').alias('search_count_sum'),
     F.mean('session_restored').alias('session_restored_mean'),
+    F.sum(F.expr("IF(subsession_counter = 1, 1, 0)")).alias(
+        "sessions_started_on_this_day"),
     # shutdown_kill
     F.sum(F.expr('subsession_length/3600.0')).alias('subsession_hours_sum'),
     # ssl_handshake_result
