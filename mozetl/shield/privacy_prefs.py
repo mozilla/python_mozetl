@@ -19,7 +19,7 @@ DATAFRAME_COLUMN_CONFIGS = [
     ("originDomain", "payload/originDomain", None, StringType()),
     ("breakage", "payload/breakage", None, StringType()),
     ("notes", "payload/notes", None, StringType()),
-    ("study", "payload/study_name", None, StringType()),
+    ("study", "payload/study", None, StringType()),
 ]
 
 
@@ -32,7 +32,7 @@ def transform_shield_pings(sqlContext, pings):
 
 
 def include_shield_pings(ping):
-    return ping['payload/study_name'] == SHIELD_ADDON_ID
+    return ping['payload/study'] == SHIELD_ADDON_ID
 
 
 def etl_job(sc, sqlContext, **kwargs):
