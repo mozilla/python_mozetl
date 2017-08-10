@@ -73,9 +73,9 @@ def add_derived_columns(exploded_search_counts):
 
 
 @click.command()
-@click.argument('submission_date')
-@click.argument('bucket')
-@click.argument('prefix')
+@click.option('--submission_date', required=True)
+@click.option('--bucket', required=True)
+@click.option('--prefix', required=True)
 @click.option('--input_bucket',
               default='telemetry-parquet',
               help='Bucket of the input dataset')
