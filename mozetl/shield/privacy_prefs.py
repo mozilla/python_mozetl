@@ -12,6 +12,9 @@ from .utils import shield_etl_boilerplate
 
 
 SHIELD_ADDON_ID = '@shield-study-privacy'
+
+# Note that the JSON paths in this config are unusual for Shield pings.
+# See Bug 1387236 for more details and discussion
 DATAFRAME_COLUMN_CONFIGS = [
     ("client_id", "clientId", None, StringType()),
     ("branch", "payload/branch", None, StringType()),

@@ -18,7 +18,6 @@ def shield_etl_boilerplate(transform_func, s3_path):
         transformed_pings = transform_func(sqlContext, pings)
 
         if save:
-            # path = 's3://telemetry-parquet/testpilot/txp_pulse/v1/submission_date={}'
             path = s3_path + '/submission_date={}'.format(submission_date)
             transformed_pings.repartition(1).write.mode('overwrite').parquet(path)
 
