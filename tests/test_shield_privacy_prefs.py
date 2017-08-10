@@ -4,18 +4,21 @@ from mozetl.shield.privacy_prefs import transform_shield_pings
 
 def create_ping_rdd(sc, payload):
     return sc.parallelize([
-        {'payload': {
-            'study': '@shield-study-privacy',
+        {
+            'clientId': 'aa',
             'other-ignored-field': 'who cares',
             'payload': payload
-        }}
+        }
     ])
 
 
 def create_row(overrides):
-    keys = ["branch", "event", "originDomain", "breakage", "notes", "study"]
+    keys = ["client_id", "branch", "event", "originDomain", "breakage",
+            "notes", "study"]
 
     overrides['study'] = '@shield-study-privacy'
+    overrides['client_id'] = 'aa'
+
 
     return {key: overrides.get(key, None) for key in keys}
 
