@@ -19,7 +19,6 @@ def create_row(overrides):
     overrides['study'] = '@shield-study-privacy'
     overrides['client_id'] = 'aa'
 
-
     return {key: overrides.get(key, None) for key in keys}
 
 
