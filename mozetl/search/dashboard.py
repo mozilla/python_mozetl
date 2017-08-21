@@ -121,3 +121,5 @@ def main(submission_date, bucket, prefix, input_bucket, input_prefix,
         .mode(save_mode)
         .save(output_path)
     )
+
+    spark.stop()
