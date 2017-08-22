@@ -341,10 +341,10 @@ def save(dataframe, bucket, prefix, mode, version, start_ds):
 
 
 @click.command()
-@click.argument('start_date')
-@click.argument('mode', type=click.Choice(['daily', 'monthly']))
-@click.argument('bucket')
-@click.argument('prefix')
+@click.option('--start_date', required=True)
+@click.option('--mode', type=click.Choice(['daily', 'monthly']), required=True)
+@click.option('--bucket', required=True)
+@click.option('--prefix', required=True)
 @click.option('--input_bucket',
               default='telemetry-parquet',
               help='Bucket of the input dataset')
