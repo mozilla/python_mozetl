@@ -64,7 +64,7 @@ def include_state_pings(ping):
 
 
 def etl_job(sc, sqlContext, submission_date=None, save=True):
-    s3_path = 's3n://telemetry-parquet/harter/privacy_prefs_shield/v1'
+    s3_path = 's3n://telemetry-parquet/harter/privacy_prefs_shield/v2'
     if submission_date is None:
         submission_date = (date.today() - timedelta(1)).strftime("%Y%m%d")
 
