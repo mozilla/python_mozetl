@@ -270,10 +270,10 @@ def test_cli_daily(generate_data, monkeypatch):
 
     runner = CliRunner()
     args = [
-        '20170501',
-        'daily',
-        bucket,
-        prefix,
+        "--start_date", '20170501',
+        "--mode", 'daily',
+        "--bucket", bucket,
+        "--prefix", prefix,
     ]
     result = runner.invoke(search_rollups.main, args)
     import traceback
@@ -315,10 +315,10 @@ def test_cli_monthly(generate_data, monkeypatch):
 
     runner = CliRunner()
     args = [
-        '20170501',
-        'monthly',
-        bucket,
-        prefix,
+        "--start_date", '20170501',
+        "--mode", 'monthly',
+        "--bucket", bucket,
+        "--prefix", prefix,
     ]
     result = runner.invoke(search_rollups.main, args)
     assert result.exit_code == 0
