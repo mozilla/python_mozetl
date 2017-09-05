@@ -30,6 +30,8 @@ setup(
         'requests',
         'click_datetime',
         'arrow',
+        'scipy',
+        'numpy'
     ],
     tests_require=test_deps,
     extras_require=extras,
