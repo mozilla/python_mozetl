@@ -24,6 +24,7 @@ setup(
     packages=find_packages(exclude=['tests']),
     include_package_data=True,
     install_requires=[
+        'pyspark',
         'python_moztelemetry',  # TODO: pin version
         'click',
         'requests',
