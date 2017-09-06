@@ -7,7 +7,7 @@ This repository is a collection of ETL jobs for Firefox Telemetry.
 
 # Benefits
 
-Jobs committed to python_mozet can be **scheduled via
+Jobs committed to python_mozetl can be **scheduled via
 [airflow](https://github.com/mozilla/telemetry-airflow)
 or
 [ATMO](https://analysis.telemetry.mozilla.org/)**.
@@ -21,16 +21,19 @@ For more on this see the writeup at
 [cookiecutter-python-etl](https://github.com/harterrt/cookiecutter-python-etl/blob/master/README.md#benefits).
 
 # Tests
+## Dependencies
+First install the necessary runtime dependencies -- snappy and the java runtime
+environment. These are used for the `pyspark` package. In ubuntu:
+```bash
+$ sudo apt-get install libsnappy-dev default-jre
+```
 
-To test this package locally, it is recommended to set up the environment and execute tests within a docker container.
-```
-docker build -t mozetl .
-./bin/run-tests.sh   # runs tests within docker container
-```
+## Calling the test runner
+Run tests by calling `tox` in the root directory.
 
-A subset of tests can be specified by adding arguments to runtests.sh:
+Arguments to `pytest` can be passed through tox using `--`.
 ```
-./bin/run-tests.sh -k tests/test_main.py # runs tests only in the test_main module
+tox -- -k tests/test_main.py # runs tests only in the test_main module
 ```
 
 Tests are configured in [tox.ini](tox.ini)

@@ -1,21 +1,13 @@
-env:
-  global:
-    - CACHE_DIR=$HOME/.cache/docker
-    - MOZETL_CACHE=${CACHE_DIR}/mozetl.tar.gz
-
-cache:
-  directories:
-    - $CACHE_DIR
-
-services:
-  - docker
-before_install:
-  - if [ -f ${MOZETL_CACHE} ]; then gunzip -c ${MOZETL_CACHE}  | docker load; fi
+language: python
+cache: pip
+addons:
+  apt:
+    packages:
+      - libsnappy-dev
+      - oracle-java8-set-default
 install:
-  - docker build -t mozetl .
-  - mkdir -p $CACHE_DIR
-  - if [ ! -f ${MOZETL_CACHE}  ]; then docker save mozetl | gzip > ${MOZETL_CACHE}; fi
+  - pip install tox-travis codecov
 script:
-  - docker run mozetl ./bin/run-tests.sh
+  - tox
 after_success:
   - codecov
