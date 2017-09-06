@@ -7,6 +7,7 @@ def spark():
     spark = (
         SparkSession
         .builder
+        .master("local")
         .appName("python_mozetl_test")
         .getOrCreate()
     )
