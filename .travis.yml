@@ -1,12 +1,11 @@
-language: python
-python:
-  - "2.7"
+language: java
 cache: pip
 addons:
   apt:
     packages:
       - libsnappy-dev
-      - oracle-java8-set-default
+      - python
+      - python-pip
 install:
   - pip install tox-travis codecov
 script:
