@@ -173,6 +173,7 @@ def main(date, bucket, prefix, num_addons):
     spark = (SparkSession
              .builder
              .appName("taar_locale")
+             .enableHiveSupport()
              .getOrCreate())
 
     logger.info("Processing top N addons per locale")
