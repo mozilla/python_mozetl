@@ -65,6 +65,11 @@ def get_addons(spark):
           AND value['app_disabled'] = FALSE -- exclude compatibility disabled addons
           AND value['is_system'] = FALSE -- exclude system addons
           AND locality <> 'null'
+          AND key <> 'loop@mozilla.org'
+          AND key <> 'firefox@getpocket.com'
+          AND key <> 'e10srollout@mozilla.org'
+          AND key <> 'firefox-hotfix@mozilla.org'
+          AND key <> 'ubufox@ubuntu.com'
           AND key is not null
         ),
 
