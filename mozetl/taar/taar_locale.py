@@ -11,14 +11,17 @@ import boto3
 import click
 import json
 import logging
+import utils
 
 from pyspark.sql import SparkSession
+from pyspark.sql.functions import col
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
-LOCALE_FILE_NAME = "top10_dict"
+LOCALE_FILE_NAME = 'top10_dict'
+AMO_DUMP_BUCKET = 'telemetry-parquet'
+AMO_DUMP_KEY = 'telemetry-ml/addon_recommender/addons_database.json'
 
 
 def store_new_state(source_file_name, s3_dest_file_name, s3_prefix, bucket):
@@ -35,6 +38,12 @@ def store_new_state(source_file_name, s3_dest_file_name, s3_prefix, bucket):
     # Update the state in the analysis bucket.
     key_path = s3_prefix + s3_dest_file_name
     transfer.upload_file(source_file_name, bucket, key_path)
+
+
+def load_amo_external_whitelist():
+    amo_dump = utils.get_s3_json_content(AMO_DUMP_BUCKET, AMO_DUMP_KEY)
+    white_list_inner = {key: value['guid'] for key, value in amo_dump.items() if value['current_version']['files'][0]['is_webextension']}
+    return white_list_inner.values()
 
 
 def get_addons(spark):
@@ -65,8 +74,6 @@ def get_addons(spark):
           AND value['app_disabled'] = FALSE -- exclude compatibility disabled addons
           AND value['is_system'] = FALSE -- exclude system addons
           AND locality <> 'null'
-          AND key NOT IN ('loop@mozilla.org', 'firefox@getpocket.com', 'e10srollout@mozilla.org',
-           'firefox-hotfix@mozilla.org', 'ubufox@ubuntu.com')
           AND key is not null
         ),
 
@@ -161,9 +168,18 @@ def generate_dictionary(spark, num_addons):
     """ Wrap the dictionary generation functions in an
     easily testable way.
     """
+    # Execute spark.SQL query to get fresh addons from longitudinal telemetry data.
     addon_df = get_addons(spark)
-    locale_pop_threshold = compute_threshold(addon_df)
-    return transform(addon_df, locale_pop_threshold, num_addons)
+
+    # Load external whitelist based on AMO data.
+    amo_whitelist = load_amo_external_whitelist()
+
+    # Filter to include only addons present in AMO whitelist.
+    addon_df_filtered = addon_df.where(col("addon_key").isin(amo_whitelist))
+
+    # Make sure not to include addons from very small locales.
+    locale_pop_threshold = compute_threshold(addon_df_filtered)
+    return transform(addon_df_filtered, locale_pop_threshold, num_addons)
 
 
 @click.command()
