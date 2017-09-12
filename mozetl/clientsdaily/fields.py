@@ -161,7 +161,13 @@ MAIN_SUMMARY_FIELD_AGGREGATORS = [
     F.sum('scalar_parent_webrtc_nicer_turn_438s').alias(
         'scalar_parent_webrtc_nicer_turn_438s_sum'),
     F.first('search_cohort').alias('search_cohort'),
-    F.sum('search_count').alias('search_count_sum'),
+    F.sum('search_count_all').alias('search_count_all_sum'),
+    F.sum('search_count_abouthome').alias('search_count_abouthome_sum'),
+    F.sum('search_count_contextmenu').alias('search_count_contextmenu_sum'),
+    F.sum('search_count_newtab').alias('search_count_newtab_sum'),
+    F.sum('search_count_searchbar').alias('search_count_searchbar_sum'),
+    F.sum('search_count_system').alias('search_count_system_sum'),
+    F.sum('search_count_urlbar').alias('search_count_urlbar_sum'),
     F.mean('session_restored').alias('session_restored_mean'),
     F.sum(F.expr("IF(subsession_counter = 1, 1, 0)")).alias(
         "sessions_started_on_this_day"),
