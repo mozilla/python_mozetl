@@ -41,9 +41,15 @@ def store_new_state(source_file_name, s3_dest_file_name, s3_prefix, bucket):
 
 
 def load_amo_external_whitelist():
+    white_list_inner = []
+    # Load the most current AMO dump JSON resource.
     amo_dump = utils.get_s3_json_content(AMO_DUMP_BUCKET, AMO_DUMP_KEY)
-    white_list_inner = {key: value['guid'] for key, value in amo_dump.items() if value['current_version']['files'][0]['is_webextension']}
-    return white_list_inner.values()
+    for key, value in amo_dump.items():
+        addon_files = value.get('current_version', {}).get('files', {})
+        # If any of the addon files are web_extensions compatible, it can be recommended.
+        if any([f.get("is_webextension", False) for f in addon_files]):
+            white_list_inner.append(value['guid'])
+    return white_list_inner
 
 
 def get_addons(spark):
