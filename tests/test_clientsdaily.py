@@ -1,4 +1,3 @@
-import datetime as DT
 import pytest
 import os
 from mozetl.schemas import MAIN_SUMMARY_SCHEMA
@@ -9,7 +8,7 @@ EXPECTED_INTEGER_VALUES = {
     'crashes_detected_content_sum': 9,
     'first_paint_mean': 12802105,
     'pings_aggregated_by_this_row': 1122,
-    'search_count_sum': 1043
+    'search_count_all_sum': 1043
 }
 
 
@@ -34,21 +33,9 @@ def test_extract_search_counts(spark):
 
     frame = make_frame(spark)
     extracted = rollup.extract_search_counts(frame)
-    row = extracted.agg({'search_count': 'sum'}).collect()[0]
+    row = extracted.agg({'search_count_all': 'sum'}).collect()[0]
     total = row.asDict().values()[0]
-    assert total == EXPECTED_INTEGER_VALUES['search_count_sum']
-
-
-def test_extract_month(spark):
-    from mozetl.clientsdaily import rollup
-
-    frame = make_frame(spark)
-    month_frame0 = rollup.extract_month(DT.date(2000, 1, 1), frame)
-    count0 = month_frame0.count()
-    assert count0 == 0
-    month_frame1 = rollup.extract_month(DT.date(2017, 6, 1), frame)
-    count1 = month_frame1.count()
-    assert count1 == 68
+    assert total == EXPECTED_INTEGER_VALUES['search_count_all_sum']
 
 
 def test_to_profile_day_aggregates(spark):

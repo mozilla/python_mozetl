@@ -3,20 +3,28 @@ import os
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 import click
-from moztelemetry.standards import filter_date_range
-from mozetl.utils import (
-    format_spark_path,
-    generate_filter_parameters
-)
+from mozetl.utils import format_spark_path
 from fields import MAIN_SUMMARY_FIELD_AGGREGATORS
 
-ACTIVITY_SUBMISSION_LAG = DT.timedelta(10)
+LAG = 10
+ACTIVITY_SUBMISSION_LAG = DT.timedelta(LAG)
+ACTIVITY_DATE_COLUMN = F.expr(
+    "substr(subsession_start_date, 1, 10)"
+).alias("activity_date")
 MAIN_SUMMARY_VERSION = 4
 MAIN_SUMMARY_PATH = "s3://telemetry-parquet/main_summary/v{}".format(
     MAIN_SUMMARY_VERSION)
-WRITE_VERSION = '3'
+WRITE_VERSION = '5'
 STORAGE_BUCKET = 'net-mozaws-prod-us-west-2-pipeline-analysis'
 STORAGE_PREFIX = '/spenrose/clients-daily/v{}/'.format(WRITE_VERSION)
+SEARCH_ACCESS_POINTS = [
+    'abouthome', 'contextmenu', 'newtab', 'searchbar', 'system', 'urlbar'
+]
+SEARCH_ACCESS_COLUMN_TEMPLATE = 'search_count_{}'
+SEARCH_ACCESS_COLUMNS = [
+    SEARCH_ACCESS_COLUMN_TEMPLATE.format(sap)
+    for sap in SEARCH_ACCESS_POINTS
+]
 
 
 def load_main_summary(spark):
@@ -30,75 +38,121 @@ def load_main_summary(spark):
 
 def extract_search_counts(frame):
     """
-    The result should have exactly as many rows as the input.
+    :frame DataFrame conforming to main_summary's schema.
+
+    :return one row for each row in frame, replacing the nullable
+    array-of-structs column "search_counts" with seven columns
+        "search_count_{access_point}_sum":
+    one for each valid SEARCH_ACCESS_POINT, plus one named "all"
+    which is always a sum of the other six.
+
+    All seven columns default to 0 and will be 0 if search_counts was NULL.
+    Note that the Mozilla term of art "search access point", referring to
+    GUI elements, is named "source" in main_summary.
+
+    This routine is hairy because it generates a lot of SQL and Spark
+    pseudo-SQL; see inline comments.
+
+    TODO:
+      Replace (JOIN with WHERE NULL) with fillna() to an array literal.
+      Maybe use a PIVOT.
     """
-    two_columns = frame.select(F.col("document_id").alias("did"), "search_counts")
+    two_columns = frame.select(F.col("document_id").alias("did"),
+                               "search_counts")
+    # First, each row becomes N rows, N == len(search_counts)
     exploded = two_columns.select(
         "did", F.explode("search_counts").alias("search_struct"))
+    # Remove any rows where the values are corrupt
+    exploded = exploded.where("search_struct.count > -1").where(
+        "search_struct.source in %s" % str(tuple(SEARCH_ACCESS_POINTS))
+    )  # This in clause looks like:
+    # "search_struct.source in (
+    # 'abouthome', 'contextmenu', 'newtab', 'searchbar', 'system', 'urlbar'
+    # )"
+
+    # Now we have clean search_count structs. Next block:
+    # For each of the form Row(engine=u'engine', source=SAP, count=n):
+    #    SELECT
+    #     n as search_count_all,
+    #     n as search_count_SAP, (one of the 6 above, such as 'newtab')
+    #     0 as search_count_OTHER1
+    #     ...
+    #     0 as search_count_OTHER5
+    if_template = "IF(search_struct.source = '{}', search_struct.count, 0)"
+    if_expressions = [
+        F.expr(if_template.format(sap)).alias(
+            SEARCH_ACCESS_COLUMN_TEMPLATE.format(sap))
+        for sap in SEARCH_ACCESS_POINTS
+    ]
     unpacked = exploded.select(
         "did",
-        F.expr("search_struct.count").alias("search_count_atom")
+        F.expr("search_struct.count").alias("search_count_atom"),
+        *if_expressions
     )
-    grouped = unpacked.groupBy("did").agg({"search_count_atom": "sum"})
+
+    # Collapse the exploded search_counts rows into a single output row.
+    grouping_dict = dict([(c, "sum") for c in SEARCH_ACCESS_COLUMNS])
+    grouping_dict["search_count_atom"] = "sum"
+    grouped = unpacked.groupBy("did").agg(grouping_dict)
     extracted = grouped.select(
-        "did", F.col("sum(search_count_atom)").alias("search_count")
+        "did", F.col("sum(search_count_atom)").alias("search_count_all"),
+        *[
+            F.col("sum({})".format(c)).alias(c)
+            for c in SEARCH_ACCESS_COLUMNS
+         ]
     )
+    # Create a homologous output row for each input row
+    # where search_counts is NULL.
     nulls = two_columns.select(
         "did").where(
         "search_counts is NULL").select(
-        "did", F.lit(0).alias("search_count")
+        "did", F.lit(0).alias("search_count_all"),
+        *[F.lit(0).alias(c) for c in SEARCH_ACCESS_COLUMNS]
     )
     intermediate = extracted.unionAll(nulls)
     result = frame.join(intermediate, frame.document_id == intermediate.did)
     return result
 
 
-def extract_month(first_day, frame):
+def extract_submission_window_for_activity_day(day, frame):
     """
-    Pull a month's worth of activity out of frame according to the
-    heuristics implemented in moztelemetry.standards.
+    Extract rows with an activity_date of first_day and a submission_date
+    between first_day and first_day + ACTIVITY_SUBMISSION_LAG.
 
-    :first_day DT.date(Y, m, 1)
+    :day DT.date(Y, m, d)
     :frame DataFrame homologous with main_summary
     """
-    month = first_day.month
-    day_pointer = first_day
-    while day_pointer.month == month:
-        day_pointer += DT.timedelta(1)
-    last_day = day_pointer - DT.timedelta(1)
-    days_back = (last_day - first_day).days
-    params = generate_filter_parameters(last_day, days_back)
-    filtered = filter_date_range(
-        frame,
-        frame.subsession_start_date,
-        params['min_activity_iso'],
-        params['max_activity_iso'],
-        frame.submission_date_s3,
-        params['min_submission_string'],
-        params['max_submission_string'])
-    return filtered
+    frame = frame.select("*", ACTIVITY_DATE_COLUMN)
+    activity_iso = day.isoformat()
+    activity_submission_str = day.strftime('%Y%m%d')
+    submission_end = day + ACTIVITY_SUBMISSION_LAG
+    submission_end_str = submission_end.strftime('%Y%m%d')
+    result = frame.where(
+        "submission_date_s3 >= '{}'".format(activity_submission_str)) \
+        .where("submission_date_s3 <= '{}'".format(submission_end_str)) \
+        .where("activity_date='{}'".format(activity_iso))
+    return result
 
 
 def to_profile_day_aggregates(frame_with_extracts):
-    with_activity_date = frame_with_extracts.select(
-        "*", F.expr("substr(subsession_start_date, 1, 10)").alias("activity_date")
-    )
+    if "activity_date" not in frame_with_extracts.columns:
+        with_activity_date = frame_with_extracts.select(
+            "*", ACTIVITY_DATE_COLUMN
+        )
+    else:
+        with_activity_date = frame_with_extracts
     grouped = with_activity_date.groupby('client_id', 'activity_date')
     return grouped.agg(*MAIN_SUMMARY_FIELD_AGGREGATORS)
 
 
-def write_by_activity_day(
-        results, day_pointer, output_bucket,
-        output_prefix, partition_count):
-    month = day_pointer.month
-    prefix_template = os.path.join(output_prefix, 'activity_date_s3={}')
-    while day_pointer.month == month:
-        isoday = day_pointer.isoformat()
-        prefix = prefix_template.format(isoday)
-        output_path = format_spark_path(output_bucket, prefix)
-        data_for_date = results.where(results.activity_date == isoday)
-        data_for_date.coalesce(partition_count).write.parquet(output_path)
-        day_pointer += DT.timedelta(1)
+def write_one_activity_day(results, date, output_bucket,
+                           output_prefix, partition_count):
+    prefix = os.path.join(
+        output_prefix, 'activity_date_s3={}'.format(date.isoformat()))
+    output_path = format_spark_path(output_bucket, prefix)
+    to_write = results.coalesce(partition_count)
+    to_write.write.parquet(output_path, mode='overwrite')
+    to_write.unpersist()
 
 
 def get_partition_count_for_writing(is_sampled):
@@ -133,28 +187,30 @@ def get_partition_count_for_writing(is_sampled):
               help='Sample_id to restrict results to')
 def main(date, input_bucket, input_prefix, output_bucket,
          output_prefix, sample_id):
+    """
+    Daywise rollup.
+    """
     spark = (SparkSession
              .builder
              .appName("engagement_modeling")
              .getOrCreate())
-    date = DT.datetime.strptime(date, '%Y-%m-%d').date()
-    date = DT.date(date.year, date.month, 1)
-    main_summary = load_main_summary(spark)
-    month_frame = extract_month(date, main_summary)
-    if sample_id:
-        clause = "sample_id='{}'".format(sample_id)
-        month_frame = month_frame.where(clause)
-    with_searches = extract_search_counts(month_frame)
-    results = to_profile_day_aggregates(with_searches)
-    partition_count = get_partition_count_for_writing(bool(sample_id))
     # Per https://issues.apache.org/jira/browse/PARQUET-142 ,
     # don't write _SUCCESS files, which interfere w/ReDash discovery
     spark.conf.set(
         "mapreduce.fileoutputcommitter.marksuccessfuljobs", "false"
     )
-    write_by_activity_day(
-        results, date, output_bucket, output_prefix, partition_count
-    )
+    date = DT.datetime.strptime(date, '%Y-%m-%d').date()
+    main_summary = load_main_summary(spark)
+    day_frame = extract_submission_window_for_activity_day(
+        date, main_summary)
+    if sample_id:
+        clause = "sample_id='{}'".format(sample_id)
+        day_frame = day_frame.where(clause)
+    with_searches = extract_search_counts(day_frame)
+    results = to_profile_day_aggregates(with_searches)
+    partition_count = get_partition_count_for_writing(bool(sample_id))
+    write_one_activity_day(results, date, output_bucket,
+                           output_prefix, partition_count)
 
 
 if __name__ == '__main__':
