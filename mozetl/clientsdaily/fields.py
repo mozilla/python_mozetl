@@ -15,14 +15,13 @@ def mode(l, empty_value='MISSING'):
     return counts[-1][1]
 
 
-MAIN_SUMMARY_FIELD_AGGREGATORS = [
+_FIELD_AGGREGATORS = [
     F.sum('aborts_content').alias('aborts_content_sum'),
     F.sum('aborts_gmplugin').alias('aborts_gmplugin_sum'),
     F.sum('aborts_plugin').alias('aborts_plugin_sum'),
     # active_addons
     F.mean('active_addons_count').alias('active_addons_count_mean'),
-    F.first('active_experiment_branch').alias('active_experiment_branch'),
-    F.first('active_experiment_id').alias('active_experiment_id'),
+    # MAIN_SUMMARY_FIELD_AGGREGATORS inserts here
     # active_theme
     F.sum(F.expr('active_ticks/(3600.0/5)')).alias('active_hours_sum'),
     F.first('addon_compatibility_check_enabled').alias(
@@ -68,6 +67,7 @@ MAIN_SUMMARY_FIELD_AGGREGATORS = [
     F.first('env_build_id').alias('env_build_id'),
     F.first('env_build_version').alias('env_build_version'),
     # events
+    # EXPERIMENT_FIELD_AGGREGATORS inserts here
     # experiments
     F.mean('first_paint').alias('first_paint_mean'),
     # F.first(
@@ -189,3 +189,15 @@ MAIN_SUMMARY_FIELD_AGGREGATORS = [
     F.first('windows_build_number').alias('windows_build_number'),
     F.first('windows_ubr').alias('windows_ubr'),
 ]
+
+
+MAIN_SUMMARY_FIELD_AGGREGATORS = _FIELD_AGGREGATORS[:4] + [
+
+    F.first('active_experiment_branch').alias('active_experiment_branch'),
+    F.first('active_experiment_id').alias('active_experiment_id'),
+] + _FIELD_AGGREGATORS[4:]
+
+
+EXPERIMENT_FIELD_AGGREGATORS = _FIELD_AGGREGATORS[:15] + [
+    F.first('experiment_branch').alias('experiment_branch'),
+] + _FIELD_AGGREGATORS[15:]
