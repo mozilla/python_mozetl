@@ -5,7 +5,7 @@ import json
 import functools
 import pytest
 from moto import mock_s3
-from mozetl.taar import taar_locale
+from mozetl.taar import taar_locale, AMO_DUMP_BUCKET, AMO_DUMP_KEY
 from pyspark.sql.types import (
     StructField, StructType, StringType,
     LongType, BooleanType, ArrayType, MapType
@@ -185,23 +185,16 @@ def test_write_output():
 
 @mock_s3
 def test_load_amo_external_whitelist():
-    amo_test = taar_locale.load_amo_external_whitelist()
-    bucket = 'test-bucket'
-    prefix = 'test-prefix/'
 
     content = [fake_amo_sample_web_extension, fake_amo_sample_legacy]
 
     conn = boto3.resource('s3', region_name='us-west-2')
-    bucket_obj = conn.create_bucket(Bucket=bucket)
+    conn.create_bucket(Bucket=AMO_DUMP_BUCKET)
 
     # Store the data in the mocked bucket.
-    taar_locale.store(json.dumps(content), prefix, bucket)
-
-    # Get the content of the bucket.
-    available_objects = list(bucket_obj.objects.filter(Prefix=prefix))
-    assert len(available_objects) == 2
+    conn.Object(AMO_DUMP_BUCKET, key=AMO_DUMP_KEY).put(Body=json.dumps(content))
 
     # Check that the web_extension item is still present and the legacy addon is absent.
     white_listed_addons = taar_locale.load_amo_external_whitelist()
-    assert 'test-guid-0002' in white_listed_addons
-    assert 'test-guid-0001' not in white_listed_addons
+    assert 'test-guid-0001' in white_listed_addons
+    assert 'test-guid-0002' not in white_listed_addons
