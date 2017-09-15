@@ -31,21 +31,26 @@ def transform(spark):
     """Create the bookmark problem and summary tables."""
 
     query = """
-    SELECT s.app_build_id, s.app_version, s.app_display_version, s.app_name,
-       s.app_channel, s.uid, s.deviceID as device_id,
-       s.submission_date_s3 AS submission_day,
-       date_format(from_unixtime(s.when / 1000), 'YYYYMMdd') AS sync_day,
-       s.when,
-       s.status,
-       e.name AS engine_name,
-       e.status AS engine_status,
-       e.failureReason AS engine_failure_reason,
-       e.validation.problems IS NOT NULL AS engine_has_problems,
-       e.validation.version AS engine_validation_version,
-       e.validation.checked AS engine_validation_checked,
-       e.validation.took AS engine_validation_took,
-       p.name AS engine_validation_problem_name,
-       p.count AS engine_validation_problem_count
+    SELECT s.app_build_id,
+           s.app_version,
+           s.app_display_version,
+           s.app_name,
+           s.app_channel,
+           s.uid,
+           s.deviceID AS device_id,
+           s.submission_date_s3 AS submission_day,
+           date_format(from_unixtime(s.when / 1000), 'YYYYMMdd') AS sync_day,
+           s.when,
+           s.status,
+           e.name AS engine_name,
+           e.status AS engine_status,
+           e.failureReason AS engine_failure_reason,
+           e.validation.problems IS NOT NULL AS engine_has_problems,
+           e.validation.version AS engine_validation_version,
+           e.validation.checked AS engine_validation_checked,
+           e.validation.took AS engine_validation_took,
+           p.name AS engine_validation_problem_name,
+           p.count AS engine_validation_problem_count
     FROM sync_summary s
     LATERAL VIEW explode(s.engines) AS e
     LATERAL VIEW OUTER explode(e.validation.problems) AS p
@@ -70,7 +75,8 @@ def transform(spark):
         .filter(bmk_validation_results["engine_validation_checked"].isNotNull())
         .groupBy("sync_day")
         .agg(
-            F.countDistinct("uid", "device_id", "when").alias("total_bookmark_validations"),
+            F.countDistinct("uid", "device_id", "when")
+            .alias("total_bookmark_validations"),
             F.countDistinct("uid").alias("total_validated_users"),
             F.sum("engine_validation_checked").alias("total_bookmarks_checked")
         )
@@ -108,11 +114,6 @@ def main(start_date, end_date, bucket, prefix, input_bucket, input_prefix):
              .builder
              .appName("sync_bookmark")
              .getOrCreate())
-
-    # configure the spark session to partition the data reasonably
-    parquet_size = 512 * 1024 * 1024
-    spark.conf.set("parquet.block.size", parquet_size)
-    spark.conf.set("dfs.blocksize", parquet_size)
 
     version = 1
     input_path = "s3://{}/{}".format(input_bucket, input_prefix)
