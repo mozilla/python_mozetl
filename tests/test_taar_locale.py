@@ -5,7 +5,7 @@ import json
 import functools
 import pytest
 from moto import mock_s3
-from mozetl.taar import taar_locale, AMO_DUMP_BUCKET, AMO_DUMP_KEY
+from mozetl.taar import taar_locale
 from pyspark.sql.types import (
     StructField, StructType, StringType,
     LongType, BooleanType, ArrayType, MapType
@@ -62,20 +62,9 @@ default_sample = {
 
 fake_amo_sample_web_extension = {
     'test-addon-key':
-        {'ratings':
-             {'bayesian_average': 0.0,
-              'count': 0.0,
-              'average': 0.0},
-         'name':
-             {'en-US': 'test-amo-entry-1'},
+        {'name':
+            {'en-US': 'test-amo-entry-1'},
          'default_locale': 'en-US',
-         'tags': [
-             'test-tag-1',
-             'test-tag-2',
-             'test-tag-3'],
-         'summary': {
-             'en-US':
-                 'helps test taar_locale moz_etl job'},
          'current_version': {
              'files': [
                  {'status': 'public',
@@ -87,20 +76,9 @@ fake_amo_sample_web_extension = {
 
 fake_amo_sample_legacy = {
     'test-addon-key':
-        {'ratings':
-             {'bayesian_average': 0.0,
-              'count': 0.0,
-              'average': 0.0},
-         'name':
-             {'en-US': 'test-amo-entry-2'},
+        {'name':
+            {'en-US': 'test-amo-entry-2'},
          'default_locale': 'en-US',
-         'tags': [
-             'test-tag-1',
-             'test-tag-2',
-             'test-tag-3'],
-         'summary': {
-             'en-US':
-                 'helps test taar_locale moz_etl job'},
          'current_version': {
              'files': [
                  {'status': 'public',
@@ -185,16 +163,22 @@ def test_write_output():
 
 @mock_s3
 def test_load_amo_external_whitelist():
-
+    # Test whether the amo_white_list functionality is working correctly.
     content = [fake_amo_sample_web_extension, fake_amo_sample_legacy]
 
     conn = boto3.resource('s3', region_name='us-west-2')
-    conn.create_bucket(Bucket=AMO_DUMP_BUCKET)
+    conn.create_bucket(Bucket=taar_locale.AMO_DUMP_BUCKET)
 
     # Store the data in the mocked bucket.
-    conn.Object(AMO_DUMP_BUCKET, key=AMO_DUMP_KEY).put(Body=json.dumps(content))
+    conn.Object(taar_locale.AMO_DUMP_BUCKET, key=taar_locale.AMO_DUMP_KEY).\
+        put(Body=json.dumps(content))
 
-    # Check that the web_extension item is still present and the legacy addon is absent.
+    # Check that the web_extension item is still present
+    # and the legacy addon is absent.
     white_listed_addons = taar_locale.load_amo_external_whitelist()
+    assert 'this_guid_can_not_be_in_amo' not in white_listed_addons
+
+    # Verify that the legacy addon was removed while the
+    # web_extension compatible addon is still present.
     assert 'test-guid-0001' in white_listed_addons
     assert 'test-guid-0002' not in white_listed_addons

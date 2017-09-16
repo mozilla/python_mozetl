@@ -13,6 +13,7 @@ import json
 import logging
 import utils
 
+from botocore.exceptions import ClientError
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col
 
@@ -43,7 +44,13 @@ def store_new_state(source_file_name, s3_dest_file_name, s3_prefix, bucket):
 def load_amo_external_whitelist():
     white_list_inner = []
     # Load the most current AMO dump JSON resource.
-    amo_dump = utils.get_s3_json_content(AMO_DUMP_BUCKET, AMO_DUMP_KEY)
+    try:
+        amo_dump = utils.get_s3_json_content_no_cache(AMO_DUMP_BUCKET, AMO_DUMP_KEY)
+    except ClientError:
+        logger.exception("Failed to download from S3", extra={
+            "bucket": AMO_DUMP_BUCKET,
+            "key": AMO_DUMP_KEY})
+    # If the load fails, we will have an empty whitelist, this may be problematic.
     for key, value in amo_dump.items():
         addon_files = value.get('current_version', {}).get('files', {})
         # If any of the addon files are web_extensions compatible, it can be recommended.

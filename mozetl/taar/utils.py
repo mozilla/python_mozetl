@@ -69,3 +69,10 @@ def get_s3_json_content(s3_bucket, s3_key):
         os.remove(local_path)
 
     return None
+
+
+def get_s3_json_content_no_cache(s3_bucket, s3_key):
+    # Download and parse a json file stored on AWS S3 without caching.
+    s3 = boto3.client('s3')
+    s3_contents = s3.get_object(Bucket=s3_bucket, Key=s3_key)
+    return json.loads(s3_contents['Body'].read())
