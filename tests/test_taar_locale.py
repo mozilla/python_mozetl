@@ -190,30 +190,3 @@ def test_generate_dictionary(spark, multi_locales_df):
     }
 
     assert taar_locale.generate_dictionary(spark, 5) == expected
-
-
-@mock_s3
-def test_write_output():
-    bucket = 'test-bucket'
-    prefix = 'test-prefix/'
-
-    content = {
-        "it-IT": ["test-guid-0001"]
-    }
-
-    conn = boto3.resource('s3', region_name='us-west-2')
-    bucket_obj = conn.create_bucket(Bucket=bucket)
-
-    # Store the data in the mocked bucket.
-    taar_locale.store(content, '20171106', prefix, bucket)
-
-    # Get the content of the bucket.
-    available_objects = list(bucket_obj.objects.filter(Prefix=prefix))
-    assert len(available_objects) == 2
-
-    # Get the list of keys.
-    keys = [o.key for o in available_objects]
-    assert "{}{}.json".format(prefix, taar_locale.LOCALE_FILE_NAME) in keys
-    date_filename =\
-        "{}{}20171106.json".format(prefix, taar_locale.LOCALE_FILE_NAME)
-    assert date_filename in keys

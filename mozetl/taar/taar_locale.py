@@ -15,6 +15,7 @@ import logging
 from botocore.exceptions import ClientError
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col
+from taar_utils import store_json_to_s3
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -22,22 +23,6 @@ logger = logging.getLogger(__name__)
 LOCALE_FILE_NAME = 'top10_dict'
 AMO_DUMP_BUCKET = 'telemetry-parquet'
 AMO_DUMP_KEY = 'telemetry-ml/addon_recommender/addons_database.json'
-
-
-def store_new_state(source_file_name, s3_dest_file_name, s3_prefix, bucket):
-    """Store the new json file containing current top addons per locale to S3.
-
-    :param source_file_name: The name of the local source file.
-    :param s3_dest_file_name: The name of the destination file on S3.
-    :param s3_prefix: The S3 prefix in the bucket.
-    :param bucket: The S3 bucket.
-    """
-    client = boto3.client('s3', 'us-west-2')
-    transfer = boto3.s3.transfer.S3Transfer(client)
-
-    # Update the state in the analysis bucket.
-    key_path = s3_prefix + s3_dest_file_name
-    transfer.upload_file(source_file_name, bucket, key_path)
 
 
 def load_amo_external_whitelist():
@@ -173,22 +158,6 @@ def transform(addon_df, threshold, num_addons):
     return top10_per
 
 
-def store(dictionary, date, prefix, bucket):
-    FULL_FILENAME = "{}.json".format(LOCALE_FILE_NAME)
-
-    with open(FULL_FILENAME, "w+") as dict_file:
-        # If we attempt to load invalid JSON from the assembled file,
-        # the next function throws
-        dict_file.write(json.dumps(dictionary, indent=2))
-
-    archived_file_copy =\
-        "{}{}.json".format(LOCALE_FILE_NAME, date)
-
-    # Store a copy of the current JSON with datestamp.
-    store_new_state(FULL_FILENAME, archived_file_copy, prefix, bucket)
-    store_new_state(FULL_FILENAME, FULL_FILENAME, prefix, bucket)
-
-
 def generate_dictionary(spark, num_addons):
     """ Wrap the dictionary generation functions in an
     easily testable way.
@@ -221,6 +190,7 @@ def main(date, bucket, prefix, num_addons):
 
     logger.info("Processing top N addons per locale")
     locale_dict = generate_dictionary(spark, num_addons)
-    store(locale_dict, date, prefix, bucket)
+    store_json_to_s3(json.dumps(locale_dict, indent=2), LOCALE_FILE_NAME,
+                     date, prefix, bucket)
 
     spark.stop()
