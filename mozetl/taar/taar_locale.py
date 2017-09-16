@@ -11,7 +11,6 @@ import boto3
 import click
 import json
 import logging
-import utils
 
 from botocore.exceptions import ClientError
 from pyspark.sql import SparkSession
@@ -45,7 +44,9 @@ def load_amo_external_whitelist():
     white_list_inner = []
     # Load the most current AMO dump JSON resource.
     try:
-        amo_dump = utils.get_s3_json_content_no_cache(AMO_DUMP_BUCKET, AMO_DUMP_KEY)
+        s3 = boto3.client('s3')
+        s3_contents = s3.get_object(Bucket=AMO_DUMP_BUCKET, Key=AMO_DUMP_KEY)
+        amo_dump = json.loads(s3_contents['Body'].read())
     except ClientError:
         logger.exception("Failed to download from S3", extra={
             "bucket": AMO_DUMP_BUCKET,

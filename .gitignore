@@ -1,6 +1,9 @@
 *.pyc
 derby.log
 
+.DS_Store
+.idea/
+
 dist/
 build/
 .tox/
