@@ -1,6 +1,7 @@
 """Test suite for TAAR Locale Job."""
 
 import boto3
+import json
 import functools
 import pytest
 from moto import mock_s3
@@ -57,6 +58,34 @@ default_sample = {
         }
       }
     ]
+}
+
+fake_amo_sample_web_extension = {
+    'test-addon-key':
+        {'name':
+            {'en-US': 'test-amo-entry-1'},
+         'default_locale': 'en-US',
+         'current_version': {
+             'files': [
+                 {'status': 'public',
+                  'platform': 'all',
+                  'id': 000001,
+                  'is_webextension': True}]},
+         'guid': 'test-guid-0001'}
+}
+
+fake_amo_sample_legacy = {
+    'test-addon-key':
+        {'name':
+            {'en-US': 'test-amo-entry-2'},
+         'default_locale': 'en-US',
+         'current_version': {
+             'files': [
+                 {'status': 'public',
+                  'platform': 'all',
+                  'id': 000002,
+                  'is_webextension': False}]},
+         'guid': 'test-guid-0002'}
 }
 
 
@@ -130,3 +159,26 @@ def test_write_output():
     date_filename =\
         "{}{}20171106.json".format(prefix, taar_locale.LOCALE_FILE_NAME)
     assert date_filename in keys
+
+
+@mock_s3
+def test_load_amo_external_whitelist():
+    # Test whether the amo_white_list functionality is working correctly.
+    content = {'0001': fake_amo_sample_web_extension, '0002': fake_amo_sample_legacy}
+
+    conn = boto3.resource('s3', region_name='us-west-2')
+    conn.create_bucket(Bucket=taar_locale.AMO_DUMP_BUCKET)
+
+    # Store the data in the mocked bucket.
+    conn.Object(taar_locale.AMO_DUMP_BUCKET, key=taar_locale.AMO_DUMP_KEY).\
+        put(Body=json.dumps(content))
+
+    # Check that the web_extension item is still present
+    # and the legacy addon is absent.
+    white_listed_addons = taar_locale.load_amo_external_whitelist()
+    assert 'this_guid_can_not_be_in_amo' not in white_listed_addons
+
+    # Verify that the legacy addon was removed while the
+    # web_extension compatible addon is still present.
+    assert 'test-guid-0001' in white_listed_addons
+    assert 'test-guid-0002' not in white_listed_addons
