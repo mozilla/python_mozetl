@@ -43,6 +43,7 @@ def store_new_state(source_file_name, s3_dest_file_name, s3_prefix, bucket):
 def load_amo_external_whitelist():
     white_list_inner = []
     # Load the most current AMO dump JSON resource.
+    amo_dump = {}
     try:
         s3 = boto3.client('s3')
         s3_contents = s3.get_object(Bucket=AMO_DUMP_BUCKET, Key=AMO_DUMP_KEY)
