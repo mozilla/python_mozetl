@@ -164,7 +164,7 @@ def test_write_output():
 @mock_s3
 def test_load_amo_external_whitelist():
     # Test whether the amo_white_list functionality is working correctly.
-    content = [fake_amo_sample_web_extension, fake_amo_sample_legacy]
+    content = {'0001': fake_amo_sample_web_extension, '0002': fake_amo_sample_legacy}
 
     conn = boto3.resource('s3', region_name='us-west-2')
     conn.create_bucket(Bucket=taar_locale.AMO_DUMP_BUCKET)
