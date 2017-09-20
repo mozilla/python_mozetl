@@ -12,13 +12,16 @@ import click
 import json
 import logging
 
+from botocore.exceptions import ClientError
 from pyspark.sql import SparkSession
+from pyspark.sql.functions import col
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
-LOCALE_FILE_NAME = "top10_dict"
+LOCALE_FILE_NAME = 'top10_dict'
+AMO_DUMP_BUCKET = 'telemetry-parquet'
+AMO_DUMP_KEY = 'telemetry-ml/addon_recommender/addons_database.json'
 
 
 def store_new_state(source_file_name, s3_dest_file_name, s3_prefix, bucket):
@@ -35,6 +38,37 @@ def store_new_state(source_file_name, s3_dest_file_name, s3_prefix, bucket):
     # Update the state in the analysis bucket.
     key_path = s3_prefix + s3_dest_file_name
     transfer.upload_file(source_file_name, bucket, key_path)
+
+
+def load_amo_external_whitelist():
+    """ Download and parse the AMO add-on whitelist.
+
+    :raises RuntimeError: the AMO whitelist file cannot be downloaded or contains
+                          no valid add-ons.
+    """
+    final_whitelist = []
+    amo_dump = {}
+    try:
+        # Load the most current AMO dump JSON resource.
+        s3 = boto3.client('s3')
+        s3_contents = s3.get_object(Bucket=AMO_DUMP_BUCKET, Key=AMO_DUMP_KEY)
+        amo_dump = json.loads(s3_contents['Body'].read())
+    except ClientError:
+        logger.exception("Failed to download from S3", extra={
+            "bucket": AMO_DUMP_BUCKET,
+            "key": AMO_DUMP_KEY})
+
+    # If the load fails, we will have an empty whitelist, this may be problematic.
+    for key, value in amo_dump.items():
+        addon_files = value.get('current_version', {}).get('files', {})
+        # If any of the addon files are web_extensions compatible, it can be recommended.
+        if any([f.get("is_webextension", False) for f in addon_files]):
+            final_whitelist.append(value['guid'])
+
+    if len(final_whitelist) == 0:
+        raise RuntimeError("Empty AMO whitelist detected")
+
+    return final_whitelist
 
 
 def get_addons(spark):
@@ -159,9 +193,18 @@ def generate_dictionary(spark, num_addons):
     """ Wrap the dictionary generation functions in an
     easily testable way.
     """
+    # Execute spark.SQL query to get fresh addons from longitudinal telemetry data.
     addon_df = get_addons(spark)
-    locale_pop_threshold = compute_threshold(addon_df)
-    return transform(addon_df, locale_pop_threshold, num_addons)
+
+    # Load external whitelist based on AMO data.
+    amo_whitelist = load_amo_external_whitelist()
+
+    # Filter to include only addons present in AMO whitelist.
+    addon_df_filtered = addon_df.where(col("addon_key").isin(amo_whitelist))
+
+    # Make sure not to include addons from very small locales.
+    locale_pop_threshold = compute_threshold(addon_df_filtered)
+    return transform(addon_df_filtered, locale_pop_threshold, num_addons)
 
 
 @click.command()
