@@ -7,53 +7,18 @@ locale after filtering for good candidates (e.g. no unsigned, no disabled,
 [1] https://gist.github.com/mlopatka/46dddac9d063589275f06b0443fcc69d
 """
 
-import boto3
 import click
 import json
 import logging
 
-from botocore.exceptions import ClientError
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col
-from taar_utils import store_json_to_s3
+from taar_utils import store_json_to_s3, load_amo_external_whitelist
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 LOCALE_FILE_NAME = 'top10_dict'
-AMO_DUMP_BUCKET = 'telemetry-parquet'
-AMO_DUMP_KEY = 'telemetry-ml/addon_recommender/addons_database.json'
-
-
-def load_amo_external_whitelist():
-    """ Download and parse the AMO add-on whitelist.
-
-    :raises RuntimeError: the AMO whitelist file cannot be downloaded or contains
-                          no valid add-ons.
-    """
-    final_whitelist = []
-    amo_dump = {}
-    try:
-        # Load the most current AMO dump JSON resource.
-        s3 = boto3.client('s3')
-        s3_contents = s3.get_object(Bucket=AMO_DUMP_BUCKET, Key=AMO_DUMP_KEY)
-        amo_dump = json.loads(s3_contents['Body'].read())
-    except ClientError:
-        logger.exception("Failed to download from S3", extra={
-            "bucket": AMO_DUMP_BUCKET,
-            "key": AMO_DUMP_KEY})
-
-    # If the load fails, we will have an empty whitelist, this may be problematic.
-    for key, value in amo_dump.items():
-        addon_files = value.get('current_version', {}).get('files', {})
-        # If any of the addon files are web_extensions compatible, it can be recommended.
-        if any([f.get("is_webextension", False) for f in addon_files]):
-            final_whitelist.append(value['guid'])
-
-    if len(final_whitelist) == 0:
-        raise RuntimeError("Empty AMO whitelist detected")
-
-    return final_whitelist
 
 
 def get_addons(spark):
