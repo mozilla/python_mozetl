@@ -31,11 +31,14 @@ import operator
 import arrow
 import click
 from pyspark.sql import SparkSession, functions as F
-from pyspark.sql.types import DoubleType
 from pyspark.sql.window import Window
 
 from mozetl.churn.release import create_effective_version_table
 from mozetl.churn.schema import churn_schema
+from mozetl.churn import utils
+from utils import (
+    DS, DS_NODASH, preprocess_col_expr, build_col_expr
+)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -74,24 +77,7 @@ TOP_COUNTRIES = {
 SECONDS_PER_HOUR = float(60 * 60)
 SECONDS_PER_DAY = 24 * 60 * 60
 MAX_SUBSESSION_LENGTH = 60 * 60 * 48  # 48 hours in seconds.
-DS = "YYYY-MM-DD"
-DS_NODASH = "YYYYMMDD"
-
-# The default date used for cleaning columns
-DEFAULT_DATE = '2000-01-01'
-
-
-def format_date(start_date, format, offset=None):
-    """Format a date given an optional offset.
-
-    :param start_date:  an Arrow object representing the start date
-    :param format:      the format string
-    :param offset:      an offset measured in days
-    :return:            a formatted datestring
-    """
-    if offset is not None:
-        start_date = start_date.shift(days=offset)
-    return start_date.format(format)
+DEFAULT_DATE = '2000-01-01'  # The default date used for cleaning columns
 
 
 def extract_subset(main_summary, start_ds, period, slack, is_sampled):
@@ -108,11 +94,11 @@ def extract_subset(main_summary, start_ds, period, slack, is_sampled):
     start = arrow.get(start_ds, DS_NODASH)
 
     predicates = [
-        (F.col("subsession_start_date") >= format_date(start, DS)),
-        (F.col("subsession_start_date") < format_date(start, DS, period)),
-        (F.col("submission_date_s3") >= format_date(start, DS_NODASH)),
-        (F.col("submission_date_s3") < format_date(start, DS_NODASH,
-                                                   period + slack)),
+        (F.col("subsession_start_date") >= utils.format_date(start, DS)),
+        (F.col("subsession_start_date") < utils.format_date(start, DS, period)),
+        (F.col("submission_date_s3") >= utils.format_date(start, DS_NODASH)),
+        (F.col("submission_date_s3") < utils.format_date(start, DS_NODASH,
+                                                         period + slack)),
     ]
 
     if is_sampled:
@@ -122,69 +108,6 @@ def extract_subset(main_summary, start_ds, period, slack, is_sampled):
         main_summary
         .where(reduce(operator.__and__, predicates))
         .select(SOURCE_COLUMNS)
-    )
-
-
-def preprocess_col_expr(mapping):
-    """Pre-process the expression dictionary.
-
-     This replaces values with their appropriate column expressions. For
-     convenience, the expression dictionary accepts values of None which maps
-     the value to the key. In addition, it will accept string expressions that
-     are acceptable in `DataFrame.selectExpr(...)`. For example::
-
-        >>> preprocess_col_expr({
-        ...    "foo": None,
-        ...    "bar": "count(*)"
-        ...})
-        {'foo': Column<foo>, 'bar': Column<count(1)>}
-
-     :param mapping:    A dictionary mapping a string column to an expression
-     :returns:          A dictionary where all values are valid spark column
-                        expressions
-     """
-    select_expr = {}
-
-    for name, expr in mapping.iteritems():
-        column_expr = expr
-        if expr is None or isinstance(expr, basestring):
-            column_expr = F.expr(expr)
-        select_expr[name] = column_expr.alias(name)
-
-    return select_expr
-
-
-def build_col_expr(mapping):
-    """Build a dictionary into a list of column expressions.
-
-    This allows the building of fairly complex expressions by manipulating
-    dictionaries. These dictionaries can be reused across multiple expressions.
-
-    :param mapping:    A dictionary mapping column name to column expression. A
-                        value of None will use the key as the column expression.
-    :returns:           A list that can be used in `df.select(...)`
-    """
-    select_expr = []
-
-    preprocessed = preprocess_col_expr(mapping)
-    for name, expr in preprocessed.iteritems():
-        select_expr.append(expr.alias(name))
-    return select_expr
-
-
-def to_datetime(col, format='yyyyMMdd'):
-    """Convert a StringType column into a DateType column.
-
-    Default format is `yyyyMMdd`. Formats are specified by SimpleDateFormats_.
-    See `pyspark.sql.functions.to_timestamp` in the PySpark 2.2 docs for an
-    up to date implementation of this function.
-
-    .. _SimpleDateFormats: http://docs.oracle.com/javase/tutorial/i18n/format/simpleDateFormat.html
-    """
-    return (
-        F.from_unixtime(
-            F.unix_timestamp(col, format))
-        .alias("to_datetime({}, {})".format(col, format))
     )
 
 
@@ -343,7 +266,7 @@ def clean_columns(prepared_clients, effective_version, start_ds):
     is_valid = "_is_valid"
 
     pcd = F.from_unixtime(F.col("profile_creation_date") * SECONDS_PER_DAY)
-    client_date = to_datetime('subsession_start_date', "yyyy-MM-dd")
+    client_date = utils.to_datetime('subsession_start_date', "yyyy-MM-dd")
     days_since_creation = F.datediff(client_date, pcd)
     device_count = F.col("sync_count_desktop") + F.col("sync_count_mobile")
     is_funnelcake = F.col('distribution_id').rlike("^mozilla[0-9]+.*$")
@@ -382,7 +305,7 @@ def clean_columns(prepared_clients, effective_version, start_ds):
         'campaign': F.col('attribution.campaign'),
         'content': F.col('attribution.content'),
         'is_active': (
-            F.when(client_date < to_datetime(F.lit(start_ds)), F.lit("no"))
+            F.when(client_date < utils.to_datetime(F.lit(start_ds)), F.lit("no"))
             .otherwise(F.lit("yes"))),
     }
 
@@ -473,12 +396,8 @@ def transform(main_summary, effective_version, start_ds):
     return records.select(columns)
 
 
-def format_spark_path(bucket, prefix):
-    return 's3://{}/{}'.format(bucket, prefix)
-
-
 def save(dataframe, bucket, prefix, start_ds):
-    path = format_spark_path(
+    path = utils.format_spark_path(
         bucket, '{}/week_start={}'.format(prefix, start_ds)
     )
 
@@ -523,13 +442,17 @@ def main(start_date, bucket, prefix, input_bucket, input_prefix,
     # If this job is scheduled, we need the input date to lag a total of
     # 10 days of slack for incoming data. Airflow subtracts 7 days to
     # account for the weekly nature of this report.
-    start_ds = format_date(arrow.get(start_date, DS_NODASH), DS_NODASH, -slack)
+    start_ds = utils.format_date(
+        arrow.get(start_date, DS_NODASH),
+        DS_NODASH,
+        -slack
+    )
 
     main_summary = (
         spark
         .read
         .option("mergeSchema", "true")
-        .parquet(format_spark_path(input_bucket, input_prefix))
+        .parquet(utils.format_spark_path(input_bucket, input_prefix))
     )
     extracted = extract_subset(main_summary, start_ds, period, slack, sample)
 

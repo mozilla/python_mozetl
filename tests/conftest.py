@@ -68,6 +68,8 @@ class DataFrameFactory:
         samples = []
         for snippet in snippets:
             sample = base.copy()
+            if snippet is None:
+                snippet = {}
             sample.update(snippet)
             samples.append(sample)
 
