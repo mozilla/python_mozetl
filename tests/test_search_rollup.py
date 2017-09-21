@@ -341,3 +341,36 @@ def test_cli_monthly(generate_data, monkeypatch):
 
     row = body.rstrip().split(',')
     assert row[0] == '2017-05'
+
+
+@mock_s3
+def test_cli_monthly_offset(generate_data, monkeypatch):
+    bucket = 'test-bucket'
+    prefix = 'test-prefix'
+
+    conn = boto3.resource('s3', region_name='us-west-2')
+    conn.create_bucket(Bucket=bucket)
+
+    def mock_extract(spark_session, source_path, start_date, mode):
+        return generate_data(None)
+    monkeypatch.setattr(search_rollups, 'extract', mock_extract)
+
+    runner = CliRunner()
+    args = [
+        "--start_date", '20170502',
+        "--mode", 'monthly',
+        "--bucket", bucket,
+        "--prefix", prefix,
+    ]
+    result = runner.invoke(search_rollups.main, args)
+    assert result.exit_code == 0
+
+    body = (
+        conn
+        .Object(bucket, prefix + '/monthly/processed-2017-05-01.csv')
+        .get()['Body']
+        .read().decode('utf-8')
+    )
+
+    row = body.rstrip().split(',')
+    assert row[0] == '2017-05'
