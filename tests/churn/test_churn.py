@@ -8,7 +8,7 @@ from pyspark.sql.types import (
     LongType, IntegerType, BooleanType
 )
 
-from mozetl.churn import churn, release
+from mozetl.churn import churn
 
 SPBE = "scalar_parent_browser_engagement_"
 
@@ -198,52 +198,6 @@ def multi_profile_df(generate_data):
 
     snippets = [user_0, user_1, user_2]
     return generate_data(snippets)
-
-
-@pytest.fixture
-def release_info():
-    info = {
-        "major": {
-            "52.0": "2017-03-07"
-        },
-        "minor": {
-            "51.0.1": "2017-01-26",
-            "52.0.1": "2017-03-17",
-            "52.0.2": "2017-03-29"
-        }
-    }
-
-    return info
-
-
-@pytest.fixture(autouse=True)
-def no_get_release_info(release_info, monkeypatch):
-    """ Disable get_release_info because of requests change over time. """
-
-    def mock_get_release_info():
-        return release_info
-    monkeypatch.setattr(release, 'get_release_info', mock_get_release_info)
-
-    # disable fetch_json to cover all the bases
-    monkeypatch.delattr(release, 'fetch_json')
-
-
-@pytest.fixture()
-def effective_version(spark):
-    return release.create_effective_version_table(spark)
-
-
-def test_date_to_version_range(release_info):
-    result = release.make_d2v(release_info)
-
-    start = datetime.strptime(
-        release_info['minor']['51.0.1'], '%Y-%m-%d')
-    end = datetime.strptime(
-        release_info['minor']['52.0.2'], '%Y-%m-%d')
-
-    assert len(result) == (end - start).days + 1
-    assert result['2017-03-08'] == '52.0'
-    assert result['2017-03-17'] == '52.0.1'
 
 
 # testing d2v conflicting stability releases on the same day
