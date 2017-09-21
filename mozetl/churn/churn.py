@@ -206,7 +206,10 @@ def clean_columns(prepared_clients, effective_version, start_ds):
     pcd = F.from_unixtime(F.col("profile_creation_date") * SECONDS_PER_DAY)
     client_date = utils.to_datetime('subsession_start_date', "yyyy-MM-dd")
     days_since_creation = F.datediff(client_date, pcd)
-    device_count = F.col("sync_count_desktop") + F.col("sync_count_mobile")
+    device_count = (
+        F.coalesce(F.col("sync_count_desktop"), F.lit(0)) +
+        F.coalesce(F.col("sync_count_mobile"), F.lit(0))
+    )
     is_funnelcake = F.col('distribution_id').rlike("^mozilla[0-9]+.*$")
 
     attr_mapping = {
@@ -231,7 +234,9 @@ def clean_columns(prepared_clients, effective_version, start_ds):
             F.when(device_count > 1, F.lit("multiple"))
             .otherwise(
                 F.when((device_count == 1) | F.col("sync_configured"), F.lit("single"))
-                .otherwise(F.lit("no")))),
+                .otherwise(
+                    F.when(F.col("sync_configured").isNotNull(), F.lit("no"))
+                    .otherwise(F.lit(None))))),
         'current_version': F.col("app_version"),
         'current_week': (
             # -1 is a placeholder for bad data
