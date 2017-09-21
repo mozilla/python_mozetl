@@ -200,11 +200,6 @@ def multi_profile_df(generate_data):
     return generate_data(snippets)
 
 
-# testing d2v conflicting stability releases on the same day
-# testing effective version
-# testing effective release-channel version
-
-
 def test_ignored_submissions_outside_of_period(generate_data):
     # All pings within 17 days of the submission start date are valid.
     # However, only pings with ssd within the 7 day retention period
@@ -271,62 +266,54 @@ def test_cohort_by_channel_aggregates(multi_profile_df, effective_version):
     assert rows[0].usage_hours == 4
 
 
-@pytest.fixture
-def nulled_attribution_df(generate_data):
-    partial_attribution = {
-        'client_id': 'partial',
-        'attribution': {
-            'content': 'content'
+@pytest.fixture()
+def test_transform(generate_data, effective_version):
+    def _test_transform(snippets, week_start=week_start_ds):
+        return churn.transform(
+            generate_data(snippets),
+            effective_version,
+            week_start
+        )
+    return _test_transform
+
+
+def test_nulled_stub_attribution(test_transform):
+    df = test_transform([
+        {
+            'client_id': 'partial',
+            'attribution': {
+                'content': 'content'
+            }
+        },
+        {
+            'client_id': 'nulled',
+            'attribution': None,
         }
-    }
+    ])
 
-    nulled_attribution = {
-        'client_id': 'nulled',
-        'attribution': None,
-    }
-
-    snippets = [partial_attribution, nulled_attribution]
-    return generate_data(snippets)
-
-
-def test_nulled_stub_attribution_content(nulled_attribution_df, effective_version):
-    df = churn.transform(nulled_attribution_df, effective_version,  week_start_ds)
     rows = (
         df
-        .select('content')
+        .select('content', 'medium')
         .distinct()
         .collect()
     )
     actual = set([r.content for r in rows])
     expect = set(['content', 'unknown'])
-
     assert actual == expect
 
-
-def test_nulled_stub_attribution_medium(nulled_attribution_df, effective_version):
-    df = churn.transform(nulled_attribution_df, effective_version, week_start_ds)
-    rows = (
-        df
-        .select('medium')
-        .distinct()
-        .collect()
-    )
     actual = set([r.medium for r in rows])
     expect = set(['unknown'])
-
     assert actual == expect
 
 
-def test_simple_string_dimensions(generate_data, effective_version):
-    snippets = [
+def test_simple_string_dimensions(test_transform):
+    df = test_transform([
         {
             'distribution_id': None,
             'default_search_engine': None,
             'locale': None
         }
-    ]
-    input_df = generate_data(snippets)
-    df = churn.transform(input_df, effective_version, week_start_ds)
+    ])
     rows = df.collect()
 
     assert rows[0].distribution_id == 'unknown'
@@ -334,49 +321,112 @@ def test_simple_string_dimensions(generate_data, effective_version):
     assert rows[0].locale == 'unknown'
 
 
-def test_empty_total_uri_count(generate_data, effective_version):
-    snippets = [{SPBE + 'total_uri_count': None}]
-    input_df = generate_data(snippets)
-    df = churn.transform(input_df, effective_version, week_start_ds)
+def test_empty_total_uri_count(test_transform):
+    df = test_transform([
+        {SPBE + 'total_uri_count': None}
+    ])
     rows = df.collect()
 
     assert rows[0].total_uri_count == 0
 
 
-def test_total_uri_count_per_client(generate_data, effective_version):
-    snippets = [
+def test_total_uri_count_per_client(test_transform):
+    df = test_transform([
         {SPBE + 'total_uri_count': 1},
         {SPBE + 'total_uri_count': 2}
-    ]
-    input_df = generate_data(snippets)
-    df = churn.transform(input_df, effective_version, week_start_ds)
+    ])
     rows = df.collect()
 
     assert rows[0].total_uri_count == 3
 
 
-def test_average_unique_domains_count(generate_data, effective_version):
-    snippets = [
+def test_average_unique_domains_count(test_transform):
+    df = test_transform([
         # averages to 4
         {'client_id': '1', SPBE + 'unique_domains_count': 6},
         {'client_id': '1', SPBE + 'unique_domains_count': 2},
         # averages to 8
         {'client_id': '2', SPBE + 'unique_domains_count': 12},
         {'client_id': '2', SPBE + 'unique_domains_count': 4}
-    ]
-    input_df = generate_data(snippets)
-    df = churn.transform(input_df, effective_version, week_start_ds)
+    ])
     rows = df.collect()
 
     # (4 + 8) / 2 == 6
     assert rows[0].unique_domains_count_per_profile == 6
 
 
-@pytest.mark.skip()
-def test_top_countries():
-    assert churn.TOP_COUNTRIES("US") == "US"
-    assert churn.TOP_COUNTRIES("HK") == "HK"
-    assert churn.TOP_COUNTRIES("MR") == "ROW"
-    assert churn.TOP_COUNTRIES("??") == "ROW"
-    assert churn.TOP_COUNTRIES("Random") == "ROW"
-    assert churn.TOP_COUNTRIES(None) == "ROW"
+def test_top_countries(test_transform):
+    df = test_transform([
+        {"client_id": "1", "country": "US"},
+        {"client_id": "2", "country": "HK"},
+        {"client_id": "3", "country": "MR"},
+        {"client_id": "4", "country": "??"},
+        {"client_id": "5", "country": "Random"},
+        {"client_id": "6", "country": "None"},
+    ])
+
+    def country_count(geo):
+        return (
+            df
+            .where(F.col("geo") == geo)
+            .groupBy("geo")
+            .agg(F.sum("n_profiles").alias("n_profiles"))
+            .first()
+            .n_profiles
+        )
+
+    assert country_count("US") == 1
+    assert country_count("HK") == 1
+    assert country_count("ROW") == 4
+
+
+def test_sync_usage(test_transform):
+    # Generate a set of (test_func, snippet). Feed the snippets into
+    # the transformation, and then run the test function on each
+    # case afterwards.
+    def test_case(df, uid=None, expect=None):
+        actual = (
+            df
+            .where(F.col("distribution_id") == uid)
+            .first()
+            .sync_usage
+        )
+        assert actual == expect, "failed on {}".format(uid)
+
+    def case(name, expect, desktop, mobile, configured):
+        uid = "{}_{}".format(name, expect)
+        snippet = {
+            "client_id": uid,
+            "distribution_id": uid,
+            "sync_count_desktop": desktop,
+            "sync_count_mobile": mobile,
+            "sync_configured": configured,
+        }
+        test_func = functools.partial(test_case, uid=uid, expect=expect)
+        return snippet, test_func
+
+    snippets, test_func = zip(*[
+        # unobservable
+        case("1", "unknown", None, None, None),
+        # no reported devices, and not configured
+        case("2", "no", 0, 0, False),
+        # no reported devices, but they have a device
+        case("3", "single", 0, 0, True),
+        # has a single device, and is configured
+        case("4", "single", 1, 0, True),
+        # a single device is reported, but everything else is unobserved
+        case("5", "single", 1, None, None),
+        # sync is somehow disabled, but reporting a single device
+        case("6", "single", None, 1, False),
+        # same as case #5, but with multiple devices
+        case("7", "multiple", 2, None, None),
+        # multiple desktop devices, but sync is not configured
+        case("8", "multiple", 0, 2, False),
+        # a mobile and desktop device, but not configured
+        case("9", "multiple", 1, 1, False),
+    ])
+
+    df = test_transform(list(snippets))
+
+    for test in test_func:
+        test(df)
