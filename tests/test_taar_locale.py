@@ -5,7 +5,7 @@ import json
 import functools
 import pytest
 from moto import mock_s3
-from mozetl.taar import taar_locale
+from mozetl.taar import taar_locale, taar_utils
 from pyspark.sql.types import (
     StructField, StructType, StringType,
     LongType, BooleanType, ArrayType, MapType
@@ -137,48 +137,12 @@ def multi_locales_df(generate_data):
 
 
 @mock_s3
-def test_load_amo_external_whitelist():
-    conn = boto3.resource('s3', region_name='us-west-2')
-    conn.create_bucket(Bucket=taar_locale.AMO_DUMP_BUCKET)
-
-    # Make sure that whitelist loading fails before mocking the S3 file.
-    EXCEPTION_MSG = 'Empty AMO whitelist detected'
-    with pytest.raises(RuntimeError) as excinfo:
-        taar_locale.load_amo_external_whitelist()
-
-    assert EXCEPTION_MSG in str(excinfo.value)
-
-    # Store an empty file and verify that an exception is raised.
-    conn.Object(taar_locale.AMO_DUMP_BUCKET, key=taar_locale.AMO_DUMP_KEY)\
-        .put(Body=json.dumps({}))
-
-    with pytest.raises(RuntimeError) as excinfo:
-        taar_locale.load_amo_external_whitelist()
-
-    assert EXCEPTION_MSG in str(excinfo.value)
-
-    # Store the data in the mocked bucket.
-    conn.Object(taar_locale.AMO_DUMP_BUCKET, key=taar_locale.AMO_DUMP_KEY)\
-        .put(Body=json.dumps(FAKE_AMO_DUMP))
-
-    # Check that the web_extension item is still present
-    # and the legacy addon is absent.
-    whitelist = taar_locale.load_amo_external_whitelist()
-    assert 'this_guid_can_not_be_in_amo' not in whitelist
-
-    # Verify that the legacy addon was removed while the
-    # web_extension compatible addon is still present.
-    assert 'test-guid-0001' in whitelist
-    assert 'test-guid-0002' not in whitelist
-
-
-@mock_s3
 def test_generate_dictionary(spark, multi_locales_df):
     conn = boto3.resource('s3', region_name='us-west-2')
-    conn.create_bucket(Bucket=taar_locale.AMO_DUMP_BUCKET)
+    conn.create_bucket(Bucket=taar_utils.AMO_DUMP_BUCKET)
 
     # Store the data in the mocked bucket.
-    conn.Object(taar_locale.AMO_DUMP_BUCKET, key=taar_locale.AMO_DUMP_KEY)\
+    conn.Object(taar_utils.AMO_DUMP_BUCKET, key=taar_utils.AMO_DUMP_KEY)\
         .put(Body=json.dumps(FAKE_AMO_DUMP))
 
     multi_locales_df.createOrReplaceTempView("longitudinal")
@@ -190,30 +154,3 @@ def test_generate_dictionary(spark, multi_locales_df):
     }
 
     assert taar_locale.generate_dictionary(spark, 5) == expected
-
-
-@mock_s3
-def test_write_output():
-    bucket = 'test-bucket'
-    prefix = 'test-prefix/'
-
-    content = {
-        "it-IT": ["test-guid-0001"]
-    }
-
-    conn = boto3.resource('s3', region_name='us-west-2')
-    bucket_obj = conn.create_bucket(Bucket=bucket)
-
-    # Store the data in the mocked bucket.
-    taar_locale.store(content, '20171106', prefix, bucket)
-
-    # Get the content of the bucket.
-    available_objects = list(bucket_obj.objects.filter(Prefix=prefix))
-    assert len(available_objects) == 2
-
-    # Get the list of keys.
-    keys = [o.key for o in available_objects]
-    assert "{}{}.json".format(prefix, taar_locale.LOCALE_FILE_NAME) in keys
-    date_filename =\
-        "{}{}20171106.json".format(prefix, taar_locale.LOCALE_FILE_NAME)
-    assert date_filename in keys

@@ -7,68 +7,18 @@ locale after filtering for good candidates (e.g. no unsigned, no disabled,
 [1] https://gist.github.com/mlopatka/46dddac9d063589275f06b0443fcc69d
 """
 
-import boto3
 import click
 import json
 import logging
 
-from botocore.exceptions import ClientError
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col
+from taar_utils import store_json_to_s3, load_amo_external_whitelist
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 LOCALE_FILE_NAME = 'top10_dict'
-AMO_DUMP_BUCKET = 'telemetry-parquet'
-AMO_DUMP_KEY = 'telemetry-ml/addon_recommender/addons_database.json'
-
-
-def store_new_state(source_file_name, s3_dest_file_name, s3_prefix, bucket):
-    """Store the new json file containing current top addons per locale to S3.
-
-    :param source_file_name: The name of the local source file.
-    :param s3_dest_file_name: The name of the destination file on S3.
-    :param s3_prefix: The S3 prefix in the bucket.
-    :param bucket: The S3 bucket.
-    """
-    client = boto3.client('s3', 'us-west-2')
-    transfer = boto3.s3.transfer.S3Transfer(client)
-
-    # Update the state in the analysis bucket.
-    key_path = s3_prefix + s3_dest_file_name
-    transfer.upload_file(source_file_name, bucket, key_path)
-
-
-def load_amo_external_whitelist():
-    """ Download and parse the AMO add-on whitelist.
-
-    :raises RuntimeError: the AMO whitelist file cannot be downloaded or contains
-                          no valid add-ons.
-    """
-    final_whitelist = []
-    amo_dump = {}
-    try:
-        # Load the most current AMO dump JSON resource.
-        s3 = boto3.client('s3')
-        s3_contents = s3.get_object(Bucket=AMO_DUMP_BUCKET, Key=AMO_DUMP_KEY)
-        amo_dump = json.loads(s3_contents['Body'].read())
-    except ClientError:
-        logger.exception("Failed to download from S3", extra={
-            "bucket": AMO_DUMP_BUCKET,
-            "key": AMO_DUMP_KEY})
-
-    # If the load fails, we will have an empty whitelist, this may be problematic.
-    for key, value in amo_dump.items():
-        addon_files = value.get('current_version', {}).get('files', {})
-        # If any of the addon files are web_extensions compatible, it can be recommended.
-        if any([f.get("is_webextension", False) for f in addon_files]):
-            final_whitelist.append(value['guid'])
-
-    if len(final_whitelist) == 0:
-        raise RuntimeError("Empty AMO whitelist detected")
-
-    return final_whitelist
 
 
 def get_addons(spark):
@@ -173,22 +123,6 @@ def transform(addon_df, threshold, num_addons):
     return top10_per
 
 
-def store(dictionary, date, prefix, bucket):
-    FULL_FILENAME = "{}.json".format(LOCALE_FILE_NAME)
-
-    with open(FULL_FILENAME, "w+") as dict_file:
-        # If we attempt to load invalid JSON from the assembled file,
-        # the next function throws
-        dict_file.write(json.dumps(dictionary, indent=2))
-
-    archived_file_copy =\
-        "{}{}.json".format(LOCALE_FILE_NAME, date)
-
-    # Store a copy of the current JSON with datestamp.
-    store_new_state(FULL_FILENAME, archived_file_copy, prefix, bucket)
-    store_new_state(FULL_FILENAME, FULL_FILENAME, prefix, bucket)
-
-
 def generate_dictionary(spark, num_addons):
     """ Wrap the dictionary generation functions in an
     easily testable way.
@@ -221,6 +155,7 @@ def main(date, bucket, prefix, num_addons):
 
     logger.info("Processing top N addons per locale")
     locale_dict = generate_dictionary(spark, num_addons)
-    store(locale_dict, date, prefix, bucket)
+    store_json_to_s3(json.dumps(locale_dict, indent=2), LOCALE_FILE_NAME,
+                     date, prefix, bucket)
 
     spark.stop()
