@@ -1,10 +1,10 @@
 from datetime import datetime, timedelta
 import requests
-from pyspark.sql import Row
+from pyspark.sql import Row, functions as F
 
 
-def make_d2v(release_info):
-    """ Create a map of yyyy-mm-dd date to the effective Firefox version on the
+def create_date_to_version(release_info):
+    """Create a map of yyyy-mm-dd date to the effective Firefox version on the
     release channel.
     """
     # Combine major and minor releases into a map of day -> version
@@ -42,7 +42,7 @@ def make_d2v(release_info):
 
 
 def fetch_json(uri):
-    """ Perform an HTTP GET on the given uri, return the results as json. If
+    """Perform an HTTP GET on the given uri, return the results as json. If
     there is an error fetching the data, raise it.
     """
     data = requests.get(uri)
@@ -52,7 +52,7 @@ def fetch_json(uri):
 
 
 def compare_ver(a, b):
-    """ Logically compare two Firefox version strings. Split the string into
+    """Logically compare two Firefox version strings. Split the string into
     pieces, and compare each piece numerically.
 
     Returns -1, 0, or 1 depending on whether a is less than, equal to, or
@@ -90,11 +90,11 @@ def compare_ver(a, b):
 
 
 def get_release_info():
-    """ Fetch information about Firefox release dates. Returns an object
-    containing two sections:
+    """Fetch information about Firefox release dates.
 
-    'major' - contains major releases (i.e. 41.0)
-    'minor' - contains stability releases (i.e. 41.0.1)
+    :returns:  an object containing two sections:
+                   'major' - contains major releases (i.e. 41.0)
+                   'minor' - contains stability releases (i.e. 41.0.1)
     """
     major_info = fetch_json("https://product-details.mozilla.org/1.0/"
                             "firefox_history_major_releases.json")
@@ -104,11 +104,101 @@ def get_release_info():
                             "firefox_history_stability_releases.json")
     if minor_info is None:
         raise Exception("Failed to fetch minor version info")
-    return {"major": major_info, "minor": minor_info}
+
+    return {
+        "major": major_info,
+        "minor": minor_info
+    }
 
 
 def create_effective_version_table(spark):
-    d2v = make_d2v(get_release_info())
+    """Create the effective version table.
+
+    This will download the Firefox release history and map the date to a
+    particular version.
+
+    :param spark:   A SparkSession context.
+    :returns:       DataFrame containing the effective version information
+    """
+    d2v = create_date_to_version(get_release_info())
     rows = [Row(date, version) for date, version in d2v.iteritems()]
     df = spark.createDataFrame(rows, ["date", "effective_version"])
     return df
+
+
+def with_effective_version(dataframe, effective_version, join_key):
+    """Calculate the effective version of Firefox in the wild given the date
+    and channel.
+
+    For example, if the date is 2017-11-14 and the channel is 'Release', then
+    the effective Firefox version is 57.0.0, since this is the Firefox version
+    that would be available for installation from official sources. This is
+    used to determine the version a profile was acquired on.
+
+    :param dataframe:           A dataframe containing a date and channel col.
+    :param effective_version:   A table mapping dates to application versions.
+    :param join_key:            Column name generate version number on.
+    :returns:                   A with a calculated "start_version" column
+    """
+
+    in_columns = {"channel"}
+    out_columns = set(dataframe.columns) | {"start_version"}
+    assert in_columns <= set(dataframe.columns), "must contain channel"
+
+    # Firefox releases follow a train model. Each channel is a major revision
+    # ahead from the upstream channel. Nightly corresponds to the build on
+    # mozilla-central, and is always the head of the train. For example, if
+    # the release channel is "55", then beta will be "56".
+    #
+    # This logic will be affected by the decommissioning of aurora.
+    version_offset = (
+        F.when(F.col("channel").startswith("beta"), F.lit(1))
+        .otherwise(
+            F.when(F.col("channel").startswith("aurora"), F.lit(2))
+            .otherwise(
+                F.when(F.col("channel").startswith("nightly"), F.lit(3))
+                .otherwise(F.lit(0)))))
+
+    # Original effective version column name
+    ev_version = effective_version.columns[1]
+
+    # Column aliases in the joined table
+    version = F.col(ev_version)
+    date = F.col(join_key)
+
+    joined_df = (
+        dataframe
+        # Rename the date field to join against the left table
+        .join(effective_version.toDF(join_key, ev_version), join_key, "left")
+        # Major version number e.g. "57"
+        .withColumn("_major", F.split(version, "\.").getItem(0).cast("int"))
+        # Offset into the release train
+        .withColumn("_offset", version_offset)
+    )
+
+    # Build up operations to get the effective start version of a particular
+    # channel and date.
+
+    # There will be null values for the version if the date is not in
+    # the right table. This sets the start_version to one of two values.
+    fill_outer_range = (
+        F.when(date.isNull() | (date < "2015-01-01"), F.lit("older"))
+        .otherwise(F.lit("newer"))
+    )
+
+    calculate_channel_version = (
+        F.when(F.col("channel").startswith("release"), version)
+        .otherwise(F.concat(F.col("_major") + F.col("_offset"), F.lit(".0")))
+    )
+
+    start_version = (
+        F.when(version.isNull(), fill_outer_range)
+        .otherwise(calculate_channel_version)
+    )
+
+    return (
+        joined_df
+        .withColumn("start_version", start_version)
+        .fillna("unknown", ["start_version"])
+        .select(*out_columns)
+    )

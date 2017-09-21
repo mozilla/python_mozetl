@@ -33,9 +33,8 @@ import click
 from pyspark.sql import SparkSession, functions as F
 from pyspark.sql.window import Window
 
-from mozetl.churn.release import create_effective_version_table
+from mozetl.churn import utils, release
 from mozetl.churn.schema import churn_schema
-from mozetl.churn import utils
 from utils import (
     DS, DS_NODASH, preprocess_col_expr, build_col_expr
 )
@@ -185,67 +184,6 @@ def prepare_client_rows(main_summary):
     )
 
 
-def with_start_version(dataframe, effective_version, join_key):
-    """ Given a channel and an effective release-channel version, give the
-    calculated channel-specific version."""
-
-    in_columns = {"channel"}
-    out_columns = set(dataframe.columns) | {"start_version"}
-    assert in_columns <= set(dataframe.columns), "must contain channel"
-
-    # release version columns
-    version = F.col(effective_version.columns[1])
-    date = F.col(join_key)
-
-    release_version = (
-        effective_version
-        .withColumnRenamed(effective_version.columns[0], join_key)
-    )
-
-    version_offset = (
-        F.when(F.col("channel").startswith("beta"), F.lit(1))
-        .otherwise(
-            F.when(F.col("channel").startswith("aurora"), F.lit(2))
-            .otherwise(
-                F.when(F.col("channel").startswith("nightly"), F.lit(3))
-                .otherwise(F.lit(0))
-            )
-        )
-    )
-
-    result = (
-        dataframe.join(release_version, join_key, "left")
-        .withColumn("_major", F.split(version, "\.").getItem(0).cast("int"))
-        .withColumn("_offset", version_offset)
-    )
-
-    # build up operations to get the effective start version of a particular
-    # channel that is relative to the release channel
-
-    # remove older rows that are irrelevant to analysis
-    fill_outer_range = (
-        F.when(date.isNull() | (date < "2015-01-01"), F.lit("older"))
-        .otherwise(F.lit("newer"))
-    )
-
-    calculate_channel_version = (
-        F.when(F.col("channel").startswith("release"), version)
-        .otherwise(F.concat(F.col("_major") + F.col("_offset"), F.lit(".0")))
-    )
-
-    start_version = (
-        F.when(version.isNull(), fill_outer_range)
-        .otherwise(calculate_channel_version)
-    )
-
-    return (
-        result
-        .withColumn("start_version", start_version)
-        .fillna("unknown", ["start_version"])
-        .select(*out_columns)
-    )
-
-
 def clean_columns(prepared_clients, effective_version, start_ds):
     """Clean columns in preparation for aggregation.
 
@@ -350,7 +288,11 @@ def clean_columns(prepared_clients, effective_version, start_ds):
         .fillna(0.0)
         .fillna('unknown')
     )
-    result = with_start_version(cleaned_data, effective_version, "profile_creation")
+    result = release.with_effective_version(
+        cleaned_data,
+        effective_version,
+        "profile_creation"
+    )
 
     return result
 
@@ -457,7 +399,7 @@ def main(start_date, bucket, prefix, input_bucket, input_prefix,
     extracted = extract_subset(main_summary, start_ds, period, slack, sample)
 
     # Build the "effective version" cache:
-    effective_version = create_effective_version_table(spark)
+    effective_version = release.create_effective_version_table(spark)
 
     churn = transform(extracted, effective_version, start_ds)
     save(churn, bucket, prefix, start_ds)
