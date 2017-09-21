@@ -184,26 +184,30 @@ def format_spark_path(bucket, prefix):
     return "s3://{}/{}".format(bucket, prefix)
 
 
-def get_end_date(ds_start, period):
-    """ Return the end date given the start date and period. """
-    date_start = arrow.get(ds_start, "YYYYMMDD")
+def get_date_range(ds_start, period):
+    """ Return the start and end date given the start date and period. """
+    DS_NODASH = "YYYYMMDD"
+
+    date_start = arrow.get(ds_start, DS_NODASH)
     if period == "monthly":
+        date_start = date_start.replace(day=1)
         date_end = date_start.replace(months=+1)
     else:
         date_end = date_start.replace(days=+1)
-    ds_end = date_end.format("YYYYMMDD")
 
-    return ds_end
+    ds_start = date_start.format(DS_NODASH)
+    ds_end = date_end.format(DS_NODASH)
+
+    return ds_start, ds_end
 
 
-def extract(spark, path, ds_start, period):
+def extract(spark, path, ds_start, ds_end):
     """Extract the source dataframe from the spark compatible path.
 
     spark: SparkSession
     path: path to parquet files in s3
     ds_start: inclusive date
     """
-    ds_end = get_end_date(ds_start, period)
 
     return (
         spark.read
@@ -367,13 +371,14 @@ def main(start_date, mode, bucket, prefix, input_bucket, input_prefix):
         "starting {} over a {} period..."
         .format(source_path, start_date, mode)
     )
-    main_summary = extract(spark, source_path, start_date, mode)
+    ds_start, ds_end = get_date_range(start_date, mode)
+    main_summary = extract(spark, source_path, ds_start, ds_end)
 
     logging.info("Running the search rollup...")
     rollup = transform(main_summary, mode)
 
     logging.info("Saving rollup to disk...")
-    save(rollup, bucket, prefix, mode, version, start_date)
+    save(rollup, bucket, prefix, mode, version, ds_start)
 
 
 if __name__ == '__main__':
