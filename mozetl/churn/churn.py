@@ -327,7 +327,7 @@ def transform(main_summary, effective_version, start_ds):
     # Most aggregates are sums
     agg_expr = {col: F.sum(col).alias(col) for col in metrics}
 
-    # unique_domains_count_per_profile is an odd once, since it is the average
+    # unique_domains_count_per_profile is an odd one, since it is the average
     # across a group of users. In SQL terms:
     # `sum(udcpp) / sum(n_profiles)`
     udcpp = "unique_domains_count_per_profile"

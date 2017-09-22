@@ -1,5 +1,5 @@
 import functools
-from datetime import timedelta, datetime
+import arrow
 
 import pytest
 from pyspark.sql import functions as F
@@ -59,6 +59,15 @@ main_schema = StructType([
     StructField(SPBE + "total_uri_count", IntegerType(), True),
     StructField(SPBE + "unique_domains_count", IntegerType(), True)])
 
+# variables for conversion
+SECONDS_PER_DAY = 60 * 60 * 24
+
+# Generate the datasets
+# Sunday, also the first day in this collection period.
+subsession_start = arrow.get(2017, 1, 15)
+week_start_ds = subsession_start.format("YYYYMMDD")
+
+
 default_sample = {
     "app_version":           "57.0.0",
     "attribution": {
@@ -74,14 +83,14 @@ default_sample = {
     "distribution_id":       "mozilla42",
     "locale":                "en-US",
     "normalized_channel":    "release",
-    "profile_creation_date": 17181,
-    "submission_date_s3":    "20170115",
+    "profile_creation_date": subsession_start.timestamp / SECONDS_PER_DAY,
+    "submission_date_s3":    subsession_start.format("YYYYMMDD"),
     "subsession_length":     3600,
-    "subsession_start_date": "2017-01-15",
+    "subsession_start_date": str(subsession_start),
     "sync_configured":       False,
     "sync_count_desktop":    1,
     "sync_count_mobile":     1,
-    "timestamp":             1484438400000000000,  # nanoseconds
+    "timestamp":             subsession_start.timestamp * 10**9,  # nanoseconds
     SPBE + "total_uri_count":      20,
     SPBE + "unique_domains_count": 3
 }
@@ -96,15 +105,6 @@ def generate_data(dataframe_factory):
     )
 
 
-def seconds_since_epoch(date):
-    """ Calculate the total number of seconds since unix epoch.
-
-    :date datetime: datetime to calculate seconds
-    """
-    epoch = datetime.utcfromtimestamp(0)
-    return int((date - epoch).total_seconds())
-
-
 def generate_dates(subsession_date, submission_offset=0, creation_offset=0):
     """ Generate a tuple containing information about all pertinent dates
     in the input for the churn dataset.
@@ -114,41 +114,25 @@ def generate_dates(subsession_date, submission_offset=0, creation_offset=0):
     :creation_offset int: offset into the past for the profile creation date
     """
 
-    submission_date = subsession_date + timedelta(submission_offset)
-    profile_creation_date = subsession_date - timedelta(creation_offset)
-
-    # variables for conversion
-    seconds_in_day = 60 * 60 * 24
-    nanoseconds_in_second = 10**9
+    submission_date = subsession_date.replace(days=submission_offset)
+    profile_creation_date = subsession_date.replace(days=-creation_offset)
 
     date_snippet = {
-        "subsession_start_date": (
-            datetime.strftime(subsession_date, "%Y-%m-%d")
-        ),
-        "submission_date_s3": (
-            datetime.strftime(submission_date, "%Y%m%d")
-        ),
+        "subsession_start_date": str(subsession_date),
+        "submission_date_s3": submission_date.format("YYYYMMDD"),
         "profile_creation_date": (
-            seconds_since_epoch(profile_creation_date) / seconds_in_day
+            profile_creation_date.timestamp / SECONDS_PER_DAY
         ),
-        "timestamp": (
-            seconds_since_epoch(submission_date) * nanoseconds_in_second
-        )
+        "timestamp": submission_date.timestamp * 10**9
     }
 
     return date_snippet
 
 
-# Generate the datasets
-# Sunday, also the first day in this collection period.
-subsession_start = datetime(2017, 1, 15)
-week_start_ds = datetime.strftime(subsession_start, "%Y%m%d")
-
-
 @pytest.fixture
 def single_profile_df(generate_data):
     recent_ping = generate_dates(
-        subsession_start + timedelta(3), creation_offset=3)
+        subsession_start.replace(days=3), creation_offset=3)
 
     # create a duplicate ping for this user, earlier than the previous
     old_ping = generate_dates(subsession_start)
@@ -200,12 +184,17 @@ def multi_profile_df(generate_data):
     return generate_data(snippets)
 
 
+def test_extract_subset(generate_data):
+    df = churn.extract_subset(generate_data(None), week_start_ds, 1, 0, False)
+    assert df.count() == 1
+
+
 def test_ignored_submissions_outside_of_period(generate_data):
     # All pings within 17 days of the submission start date are valid.
     # However, only pings with ssd within the 7 day retention period
     # are used for computation. Generate pings for this case.
     late_submission = generate_dates(subsession_start, submission_offset=18)
-    early_subsession = generate_dates(subsession_start - timedelta(7))
+    early_subsession = generate_dates(subsession_start.replace(days=-7))
     late_submissions_df = generate_data([late_submission, early_subsession])
 
     df = churn.extract_subset(late_submissions_df, week_start_ds, 7, 10, False)
@@ -410,7 +399,7 @@ def test_sync_usage(test_transform):
         case("1", "unknown", None, None, None),
         # no reported devices, and not configured
         case("2", "no", 0, 0, False),
-        # no reported devices, but they have a device
+        # no reported devices, but sync is configured
         case("3", "single", 0, 0, True),
         # has a single device, and is configured
         case("4", "single", 1, 0, True),
