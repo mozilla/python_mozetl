@@ -26,6 +26,9 @@ from taar_utils import store_json_to_s3, load_amo_external_whitelist
 CATEGORICAL_FEATURES = ["geo_city", "locale", "os"]
 CONTINUOUS_FEATURES = \
     ["subsession_length", "bookmark_count", "tab_open_count", "total_uri", "unique_tlds"]
+# Set a constrain on the pairwise comparisons that are allowed
+#  both at an intra- and inter-custer level to avoid OOM errors in KDE.
+KDE_SIZE_THRESH = 1000
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -202,13 +205,18 @@ def similarity_function(x, y):
     return abs((j_c + 0.001) * j_d)
 
 
-def generate_non_cartesian_pairs(first_rdd, second_rdd):
+def generate_non_cartesian_pairs(first_rdd, second_rdd, random_seed=None):
     # Add an index to all the elements in each RDD.
     rdd1_with_indices = first_rdd.zipWithIndex().map(lambda p: (p[1], p[0]))
     rdd2_with_indices = second_rdd.zipWithIndex().map(lambda p: (p[1], p[0]))
     # Join the RDDs using the indices as keys, then strip
     # them off before returning an RDD like [<v1, v2>, ...]
-    return rdd1_with_indices.join(rdd2_with_indices).map(lambda p: p[1])
+    rdd_large_out = rdd1_with_indices.join(rdd2_with_indices).map(lambda p: p[1])
+    size_pair_rdd = rdd_large_out.count()
+    if size_pair_rdd > KDE_SIZE_THRESH:
+        return rdd_large_out.sample(False, KDE_SIZE_THRESH/size_pair_rdd, random_seed)
+    else:
+        return rdd_large_out
 
 
 def get_lr_curves(spark, features_df, cluster_ids, kernel_bandwidth,
