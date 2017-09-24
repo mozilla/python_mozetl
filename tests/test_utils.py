@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 import datetime as DT
 import boto3
+import os
 import pytest
 from moto import mock_s3
 
 from mozetl import utils
+from mozetl.utils import read_main_summary
 
 default_sample = {
     "test": "data",
@@ -132,3 +134,128 @@ def test_write_csv_to_s3_existing(generate_data):
 
     # header + 2x row = 3
     assert len(body.rstrip().split('\n')) == 3
+
+
+@pytest.fixture
+def sample_data_path():
+    root = os.path.dirname(__file__)
+    return os.path.join(root, 'resources', 'sample_main_summary', 'v1')
+
+
+@pytest.fixture
+def sample_data(spark, sample_data_path):
+    data = spark.read.parquet(sample_data_path)
+    return data
+
+
+@pytest.fixture
+def sample_data_merged(spark, sample_data_path):
+    reader = spark.read.option("mergeSchema", "true")
+    data = reader.parquet(sample_data_path)
+    return data
+
+
+def test_parquet_read(sample_data):
+    count = sample_data.count()
+    assert count == 90
+
+
+def test_schema_evolution(sample_data, sample_data_merged):
+    # submission_date_s3, sample_id, document_id, a
+    assert len(sample_data.columns) == 4
+
+    # submission_date_s3, sample_id, document_id, a, b, c
+    assert len(sample_data_merged.columns) == 6
+
+
+def test_read_main_summary(spark, sample_data_path,
+                           sample_data, sample_data_merged):
+    data = read_main_summary(spark, path=sample_data_path)
+    assert data.count() == sample_data.count()
+    assert data.count() == sample_data_merged.count()
+    assert len(data.columns) == len(sample_data_merged.columns)
+
+    data = read_main_summary(spark, path=sample_data_path, mergeSchema=False)
+    assert len(data.columns) == len(sample_data.columns)
+
+
+def test_base_path(spark, sample_data_path):
+    parts = "submission_date_s3=20170101/sample_id=2"
+    path = "{}/{}".format(sample_data_path, parts)
+    data = spark.read.option("basePath", sample_data_path) \
+                     .option("mergeSchema", True) \
+                     .parquet(path)
+    assert data.count() == 10
+    assert len(data.columns) == 4
+
+    parts = ["submission_date_s3=20170101/sample_id=2",
+             "submission_date_s3=20170102/sample_id=2"]
+    paths = ["{}/{}".format(sample_data_path, p) for p in parts]
+    data = spark.read.option("basePath", sample_data_path) \
+                     .option("mergeSchema", True) \
+                     .parquet(*paths)
+    assert data.count() == 20
+    assert len(data.columns) == 5
+
+
+def test_part_read_main_summary(spark, sample_data_path):
+    data = read_main_summary(spark, path=sample_data_path,
+                             submission_date_s3=['20170102'],
+                             sample_id=[2, 3])
+    assert data.count() == 20
+    assert len(data.columns) == 5
+
+    data = read_main_summary(spark, path=sample_data_path,
+                             submission_date_s3=['20170102', '20170103'],
+                             sample_id=[2])
+    assert data.count() == 20
+    assert len(data.columns) == 6
+
+    data = read_main_summary(spark, path=sample_data_path, mergeSchema=False,
+                             submission_date_s3=['20170102', '20170103'],
+                             sample_id=[2])
+    assert data.count() == 20
+    assert len(data.columns) == 5
+
+    data = read_main_summary(spark, path=sample_data_path,
+                             submission_date_s3=['20170101', '20170103'],
+                             sample_id=[2])
+    assert data.count() == 20
+    assert len(data.columns) == 6
+
+    data = read_main_summary(spark, path=sample_data_path, mergeSchema=False,
+                             submission_date_s3=['20170101', '20170103'],
+                             sample_id=[2])
+    assert data.count() == 20
+    assert len(data.columns) == 4
+
+    data = read_main_summary(spark, path=sample_data_path,
+                             submission_date_s3=['20170101', '20170103'])
+    assert data.count() == 60
+    assert len(data.columns) == 6
+
+    data = read_main_summary(spark, path=sample_data_path, sample_id=[1])
+    assert data.count() == 30
+
+
+def get_min_max_id(df):
+    ids = df.select("document_id").orderBy("document_id").collect()
+    return [ids[0], ids[-1]]
+
+
+# A trailing slash shouldn't make a difference.
+def test_trailing_slash(spark, sample_data_path):
+    with_slash = sample_data_path + '/'
+    without_slash = sample_data_path
+
+    assert with_slash[-1] == '/'
+    assert without_slash[-1] != '/'
+
+    dw = read_main_summary(spark, path=with_slash, submission_date_s3=['20170102'])
+    dwo = read_main_summary(spark, path=without_slash, submission_date_s3=['20170102'])
+
+    dw_min, dw_max = get_min_max_id(dw)
+    dwo_min, dwo_max = get_min_max_id(dwo)
+
+    assert dw_min == dwo_min
+    assert dw_max == dwo_max

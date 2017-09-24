@@ -94,3 +94,62 @@ def delete_from_s3(bucket_name, keys_to_delete):
     if code != 200:
         msg = "AWS returned {} when attempting to delete {}"
         raise RuntimeError(msg.format(code, keys_to_delete))
+
+
+def read_main_summary(spark,
+                      submission_date_s3=None,
+                      sample_id=None,
+                      mergeSchema=True,
+                      path='s3://telemetry-parquet/main_summary/v4'):
+    """ Efficiently read main_summary parquet data.
+
+    Read data from the given path, optionally filtering to a
+    specified set of partition values first. This can save a
+    time, particularly if `mergeSchema` is True.
+
+    Args:
+        spark: Spark context
+        submission_date_s3: Optional list of values to filter the
+            `submission_date_s3` partition
+        sample_id: Optional list of values to filter the `sample_id`
+            partition
+        mergeSchema (bool): Determines whether or not to merge the
+            schemas of the resulting parquet files (ie. whether to
+            support schema evolution or not)
+        path (str): Location (disk or S3) from which to read data
+
+    Returns:
+        A DataFrame loaded from the specified partitions.
+
+    """
+    base_path = path
+
+    # Specifying basePath retains the partition fields even
+    # if we read a bunch of paths separately.
+    reader = spark.read.option("basePath", base_path)
+    if mergeSchema:
+        reader = reader.option("mergeSchema", "true")
+
+    if submission_date_s3 is not None and sample_id is None:
+        paths = ["{}/submission_date_s3={}/".format(base_path, s) for s in submission_date_s3]
+        return reader.parquet(*paths)
+
+    if submission_date_s3 is not None and sample_id is not None:
+        paths = []
+        for sd in submission_date_s3:
+            for si in sample_id:
+                paths.append("{}/submission_date_s3={}/sample_id={}/".format(
+                    base_path, sd, si))
+        return reader.parquet(*paths)
+
+    if submission_date_s3 is None and sample_id is not None:
+        # Ugh, why? We would have to iterate the entire path to identify
+        # all the submission_date_s3 partitions, which may end up being
+        # slower.
+        data = reader.parquet(base_path)
+        sids = ["{}".format(s) for s in sample_id]
+        criteria = "sample_id IN ({})".format(",".join(sids))
+        return data.where(criteria)
+
+    # Neither partition is filtered.
+    return reader.parquet(base_path)
