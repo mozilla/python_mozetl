@@ -11,9 +11,6 @@ ACTIVITY_SUBMISSION_LAG = DT.timedelta(LAG)
 ACTIVITY_DATE_COLUMN = F.expr(
     "substr(subsession_start_date, 1, 10)"
 ).alias("activity_date")
-MAIN_SUMMARY_VERSION = 4
-MAIN_SUMMARY_PATH = "s3://telemetry-parquet/main_summary/v{}".format(
-    MAIN_SUMMARY_VERSION)
 WRITE_VERSION = '5'
 STORAGE_BUCKET = 'net-mozaws-prod-us-west-2-pipeline-analysis'
 STORAGE_PREFIX = '/spenrose/clients-daily/v{}/'.format(WRITE_VERSION)
@@ -27,12 +24,13 @@ SEARCH_ACCESS_COLUMNS = [
 ]
 
 
-def load_main_summary(spark):
+def load_main_summary(spark, input_bucket, input_prefix):
+    main_summary_path = format_spark_path(input_bucket, input_prefix)
     return (
         spark
         .read
         .option("mergeSchema", "true")
-        .parquet(MAIN_SUMMARY_PATH)
+        .parquet(main_summary_path)
     )
 
 
@@ -116,21 +114,21 @@ def extract_search_counts(frame):
 
 def extract_submission_window_for_activity_day(day, frame):
     """
-    Extract rows with an activity_date of first_day and a submission_date
-    between first_day and first_day + ACTIVITY_SUBMISSION_LAG.
+    Extract rows with an activity_date of `day` and a submission_date
+    between `day` and (`day` + ACTIVITY_SUBMISSION_LAG).
 
     :day DT.date(Y, m, d)
     :frame DataFrame homologous with main_summary
     """
     frame = frame.select("*", ACTIVITY_DATE_COLUMN)
-    activity_iso = day.isoformat()
+    activity_iso = day.strftime('%Y-%m-%d')
     activity_submission_str = day.strftime('%Y%m%d')
     submission_end = day + ACTIVITY_SUBMISSION_LAG
     submission_end_str = submission_end.strftime('%Y%m%d')
     result = frame.where(
         "submission_date_s3 >= '{}'".format(activity_submission_str)) \
         .where("submission_date_s3 <= '{}'".format(submission_end_str)) \
-        .where("activity_date='{}'".format(activity_iso))
+        .where("activity_date = '{}'".format(activity_iso))
     return result
 
 
@@ -148,7 +146,7 @@ def to_profile_day_aggregates(frame_with_extracts):
 def write_one_activity_day(results, date, output_bucket,
                            output_prefix, partition_count):
     prefix = os.path.join(
-        output_prefix, 'activity_date_s3={}'.format(date.isoformat()))
+        output_prefix, 'activity_date_s3={}'.format(date.strftime('%Y-%m-%d')))
     output_path = format_spark_path(output_bucket, prefix)
     to_write = results.coalesce(partition_count)
     to_write.write.parquet(output_path, mode='overwrite')
@@ -161,7 +159,7 @@ def get_partition_count_for_writing(is_sampled):
 
     using_sample_id: boolean
     One day is O(140MB) if filtering down to a single sample_id, but
-    O14GB) if not. Google reports 256MB < partition size < 1GB as ideal.
+    O(14GB) if not. Google reports 256MB < partition size < 1GB as ideal.
     '''
     if is_sampled:
         return 1
@@ -170,19 +168,19 @@ def get_partition_count_for_writing(is_sampled):
 
 @click.command()
 @click.argument('--date')
-@click.option('--input_bucket',
+@click.option('--input-bucket',
               default='telemetry-parquet',
               help='Bucket of the input dataset')
-@click.option('--input_prefix',
+@click.option('--input-prefix',
               default='main_summary/v4',
               help='Prefix of the input dataset')
-@click.option('--output_bucket',
+@click.option('--output-bucket',
               default=STORAGE_BUCKET,
               help='Bucket of the output dataset')
-@click.option('--output_prefix',
+@click.option('--output-prefix',
               default=STORAGE_PREFIX,
               help='Prefix of the output dataset')
-@click.option('--sample_id',
+@click.option('--sample-id',
               default=None,
               help='Sample_id to restrict results to')
 def main(date, input_bucket, input_prefix, output_bucket,
@@ -192,7 +190,7 @@ def main(date, input_bucket, input_prefix, output_bucket,
     """
     spark = (SparkSession
              .builder
-             .appName("engagement_modeling")
+             .appName("clients_daily")
              .getOrCreate())
     # Per https://issues.apache.org/jira/browse/PARQUET-142 ,
     # don't write _SUCCESS files, which interfere w/ReDash discovery
@@ -200,11 +198,11 @@ def main(date, input_bucket, input_prefix, output_bucket,
         "mapreduce.fileoutputcommitter.marksuccessfuljobs", "false"
     )
     date = DT.datetime.strptime(date, '%Y-%m-%d').date()
-    main_summary = load_main_summary(spark)
+    main_summary = load_main_summary(spark, input_bucket, input_prefix)
     day_frame = extract_submission_window_for_activity_day(
         date, main_summary)
     if sample_id:
-        clause = "sample_id='{}'".format(sample_id)
+        clause = "sample_id = '{}'".format(sample_id)
         day_frame = day_frame.where(clause)
     with_searches = extract_search_counts(day_frame)
     results = to_profile_day_aggregates(with_searches)

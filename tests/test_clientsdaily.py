@@ -111,3 +111,17 @@ def test_sessions_started_on_this_day(spark):
     ten_ssotds = clients_daily.select("sessions_started_on_this_day").take(10)
     actual = [r.asDict().values()[0] for r in ten_ssotds]
     assert actual == expected
+
+
+# Similar to the test above, but a little easier to compare with
+# the source data.
+def test_sessions_started_on_this_day_sorted(spark):
+    from mozetl.clientsdaily import rollup
+
+    frame = make_frame_with_extracts(spark)
+    clients_daily = rollup.to_profile_day_aggregates(frame)
+    expected = [1, 5, 1, 1, 1, 0, 0, 0, 0, 0]
+    one_day = clients_daily.where("activity_date == '2017-05-25'").orderBy("client_id")
+    ten_ssotds = one_day.select("sessions_started_on_this_day").take(10)
+    actual = [r.asDict().values()[0] for r in ten_ssotds]
+    assert actual == expected
