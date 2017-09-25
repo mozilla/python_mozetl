@@ -1,18 +1,6 @@
-# from collections import defaultdict
 import pyspark.sql.functions as F
 
 VERSION = 1
-
-
-# def mode(l, empty_value='MISSING'):
-#    if not l:
-#        return empty_value
-#    counts = defaultdict(int)
-#    for value in l:
-#        counts[value] += 1
-#    counts = [(v, k) for (k, v) in counts.items()]
-#    counts.sort()
-#    return counts[-1][1]
 
 def get_alias(field_name, alias, kind):
     field_alias = alias
@@ -197,3 +185,8 @@ MAIN_SUMMARY_FIELD_AGGREGATORS = _FIELD_AGGREGATORS[:4] + [
 EXPERIMENT_FIELD_AGGREGATORS = _FIELD_AGGREGATORS[:15] + [
     agg_first('experiment_branch'),
 ] + _FIELD_AGGREGATORS[15:]
+
+
+ACTIVITY_DATE_COLUMN = F.expr(
+    "substr(subsession_start_date, 1, 10)"
+).alias("activity_date")
