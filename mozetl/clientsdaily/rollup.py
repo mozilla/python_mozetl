@@ -4,13 +4,9 @@ from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 import click
 from mozetl.utils import format_spark_path
-from fields import MAIN_SUMMARY_FIELD_AGGREGATORS
 
 LAG = 10
 ACTIVITY_SUBMISSION_LAG = DT.timedelta(LAG)
-ACTIVITY_DATE_COLUMN = F.expr(
-    "substr(subsession_start_date, 1, 10)"
-).alias("activity_date")
 WRITE_VERSION = '5'
 STORAGE_BUCKET = 'net-mozaws-prod-us-west-2-pipeline-analysis'
 STORAGE_PREFIX = '/spenrose/clients-daily/v{}/'.format(WRITE_VERSION)
@@ -120,6 +116,7 @@ def extract_submission_window_for_activity_day(day, frame):
     :day DT.date(Y, m, d)
     :frame DataFrame homologous with main_summary
     """
+    from fields import ACTIVITY_DATE_COLUMN
     frame = frame.select("*", ACTIVITY_DATE_COLUMN)
     activity_iso = day.strftime('%Y-%m-%d')
     activity_submission_str = day.strftime('%Y%m%d')
@@ -133,7 +130,9 @@ def extract_submission_window_for_activity_day(day, frame):
 
 
 def to_profile_day_aggregates(frame_with_extracts):
+    from fields import MAIN_SUMMARY_FIELD_AGGREGATORS
     if "activity_date" not in frame_with_extracts.columns:
+        from fields import ACTIVITY_DATE_COLUMN
         with_activity_date = frame_with_extracts.select(
             "*", ACTIVITY_DATE_COLUMN
         )
@@ -167,7 +166,9 @@ def get_partition_count_for_writing(is_sampled):
 
 
 @click.command()
-@click.argument('--date')
+@click.option('--date',
+              default=None,
+              help='Start date to run on')
 @click.option('--input-bucket',
               default='telemetry-parquet',
               help='Bucket of the input dataset')
@@ -202,8 +203,7 @@ def main(date, input_bucket, input_prefix, output_bucket,
     day_frame = extract_submission_window_for_activity_day(
         date, main_summary)
     if sample_id:
-        clause = "sample_id = '{}'".format(sample_id)
-        day_frame = day_frame.where(clause)
+        day_frame = day_frame.where("sample_id = '{}'".format(sample_id))
     with_searches = extract_search_counts(day_frame)
     results = to_profile_day_aggregates(with_searches)
     partition_count = get_partition_count_for_writing(bool(sample_id))
