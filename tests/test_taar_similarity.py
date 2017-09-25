@@ -226,10 +226,11 @@ def test_similarity():
     # (categorical feature). The latter should never be possible, but let's be cautious.
     test_user_5 = UserDataRow("release", None, 10, "swodniW", "SU-ne", [], 1, None, 3, 4)
 
-    taar_similarity.similarity_function(test_user_1, test_user_4)
-
-    # Identical users should be very close (0 distance).
-    assert np.isclose(taar_similarity.similarity_function(test_user_1, test_user_1), 0.0)
+    # Identical users should be very close (0 distance) and the result must not
+    # be a Numpy number.
+    similarity_result = taar_similarity.similarity_function(test_user_1, test_user_1)
+    assert not isinstance(similarity_result, np.generic)
+    assert np.isclose(similarity_result, 0.0)
     # Users with completely different categorical features but identical
     # continuous features should be slightly different.
     assert np.isclose(taar_similarity.similarity_function(test_user_1, test_user_2), 0.001)

@@ -199,7 +199,11 @@ def similarity_function(x, y):
 
     # Take the product of similarities to attain a univariate similarity score.
     # Add a minimal constant to prevent zero values from categorical features.
-    return abs((j_c + 0.001) * j_d)
+    # Note: since both the distance function return a Numpy type, we need to
+    # call the |item| function to get the underlying Python type. If we don't
+    # do that this job will fail when performing KDE due to SPARK-20803 on
+    # Spark 2.2.0.
+    return abs((j_c + 0.001) * j_d).item()
 
 
 def generate_non_cartesian_pairs(first_rdd, second_rdd):
