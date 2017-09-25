@@ -2,6 +2,7 @@ import pyspark.sql.functions as F
 
 VERSION = 1
 
+
 def get_alias(field_name, alias, kind):
     field_alias = alias
     if field_alias is None:
@@ -116,8 +117,8 @@ _FIELD_AGGREGATORS = [
     agg_sum('push_api_notify'),
     agg_first('sample_id'),
     agg_first('scalar_parent_aushelper_websense_reg_version'),
-    agg_sum('scalar_parent_browser_engagement_max_concurrent_tab_count'),
-    agg_sum('scalar_parent_browser_engagement_max_concurrent_window_count'),
+    agg_max('scalar_parent_browser_engagement_max_concurrent_tab_count'),
+    agg_max('scalar_parent_browser_engagement_max_concurrent_window_count'),
     # scalar_parent_browser_engagement_navigation_about_home
     # scalar_parent_browser_engagement_navigation_about_newtab
     # scalar_parent_browser_engagement_navigation_contextmenu
@@ -126,7 +127,7 @@ _FIELD_AGGREGATORS = [
     agg_sum('scalar_parent_browser_engagement_tab_open_event_count'),
     agg_sum('scalar_parent_browser_engagement_total_uri_count'),
     agg_sum('scalar_parent_browser_engagement_unfiltered_uri_count'),
-    agg_sum('scalar_parent_browser_engagement_unique_domains_count'),
+    agg_max('scalar_parent_browser_engagement_unique_domains_count'),
     agg_sum('scalar_parent_browser_engagement_window_open_event_count'),
     # F.sum('scalar_parent_browser_browser_usage_graphite').alias(
     #     'scalar_parent_browser_browser_usage_graphite_sum')
