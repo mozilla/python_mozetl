@@ -1765,7 +1765,7 @@
       "name": "histogram_content_a11y_consumers",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -1776,7 +1776,7 @@
       "name": "histogram_content_a11y_instantiated_flag",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -1787,7 +1787,7 @@
       "name": "histogram_content_cert_validation_success_by_ca",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -1798,7 +1798,7 @@
       "name": "histogram_content_cycle_collector_max_pause",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -1809,7 +1809,7 @@
       "name": "histogram_content_gc_max_pause_ms",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -1820,7 +1820,7 @@
       "name": "histogram_content_gc_max_pause_ms_2",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -1831,7 +1831,7 @@
       "name": "histogram_content_ghost_windows",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -1842,7 +1842,7 @@
       "name": "histogram_content_http_channel_disposition",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -1853,7 +1853,7 @@
       "name": "histogram_content_http_pageload_is_ssl",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -1864,7 +1864,7 @@
       "name": "histogram_content_input_event_response_coalesced_ms",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -1875,7 +1875,7 @@
       "name": "histogram_content_ssl_handshake_result",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -1886,7 +1886,7 @@
       "name": "histogram_content_ssl_handshake_version",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -1897,7 +1897,7 @@
       "name": "histogram_content_ssl_tls12_intolerance_reason_pre",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -1908,7 +1908,7 @@
       "name": "histogram_content_ssl_tls13_intolerance_reason_pre",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -1919,7 +1919,7 @@
       "name": "histogram_content_time_to_dom_complete_ms",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -1930,7 +1930,7 @@
       "name": "histogram_content_time_to_dom_content_loaded_end_ms",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -1941,7 +1941,7 @@
       "name": "histogram_content_time_to_dom_content_loaded_start_ms",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -1952,7 +1952,7 @@
       "name": "histogram_content_time_to_dom_interactive_ms",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -1963,7 +1963,7 @@
       "name": "histogram_content_time_to_dom_loading_ms",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -1974,7 +1974,7 @@
       "name": "histogram_content_time_to_first_click_ms",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -1985,7 +1985,7 @@
       "name": "histogram_content_time_to_first_interaction_ms",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -1996,7 +1996,7 @@
       "name": "histogram_content_time_to_first_key_input_ms",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2007,7 +2007,7 @@
       "name": "histogram_content_time_to_first_mouse_move_ms",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2018,7 +2018,7 @@
       "name": "histogram_content_time_to_first_scroll_ms",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2029,7 +2029,7 @@
       "name": "histogram_content_time_to_load_event_end_ms",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2040,7 +2040,7 @@
       "name": "histogram_content_time_to_load_event_start_ms",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2051,7 +2051,7 @@
       "name": "histogram_content_time_to_non_blank_paint_ms",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2062,7 +2062,7 @@
       "name": "histogram_content_time_to_response_start_ms",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2073,7 +2073,7 @@
       "name": "histogram_gpu_a11y_consumers",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2084,7 +2084,7 @@
       "name": "histogram_gpu_a11y_instantiated_flag",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2095,7 +2095,7 @@
       "name": "histogram_gpu_cert_validation_success_by_ca",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2106,7 +2106,7 @@
       "name": "histogram_gpu_cycle_collector_max_pause",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2117,7 +2117,7 @@
       "name": "histogram_gpu_gc_max_pause_ms",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2128,7 +2128,7 @@
       "name": "histogram_gpu_ghost_windows",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2139,7 +2139,7 @@
       "name": "histogram_gpu_http_channel_disposition",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2150,7 +2150,7 @@
       "name": "histogram_gpu_http_pageload_is_ssl",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2161,7 +2161,7 @@
       "name": "histogram_gpu_ssl_handshake_result",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2172,7 +2172,7 @@
       "name": "histogram_gpu_ssl_handshake_version",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2183,7 +2183,7 @@
       "name": "histogram_gpu_ssl_tls12_intolerance_reason_pre",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2194,7 +2194,7 @@
       "name": "histogram_gpu_ssl_tls13_intolerance_reason_pre",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2205,7 +2205,7 @@
       "name": "histogram_gpu_time_to_first_click_ms",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2216,7 +2216,7 @@
       "name": "histogram_gpu_time_to_first_interaction_ms",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2227,7 +2227,7 @@
       "name": "histogram_gpu_time_to_first_key_input_ms",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2238,7 +2238,7 @@
       "name": "histogram_gpu_time_to_first_mouse_move_ms",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2249,7 +2249,7 @@
       "name": "histogram_gpu_time_to_first_scroll_ms",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2260,7 +2260,7 @@
       "name": "histogram_gpu_time_to_non_blank_paint_ms",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2271,7 +2271,7 @@
       "name": "histogram_parent_a11y_consumers",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2282,7 +2282,7 @@
       "name": "histogram_parent_a11y_instantiated_flag",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2293,7 +2293,7 @@
       "name": "histogram_parent_cert_validation_success_by_ca",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2304,7 +2304,7 @@
       "name": "histogram_parent_cycle_collector_max_pause",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2315,7 +2315,7 @@
       "name": "histogram_parent_gc_max_pause_ms",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2326,7 +2326,7 @@
       "name": "histogram_parent_gc_max_pause_ms_2",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2337,7 +2337,7 @@
       "name": "histogram_parent_ghost_windows",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2348,7 +2348,7 @@
       "name": "histogram_parent_http_channel_disposition",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2359,7 +2359,7 @@
       "name": "histogram_parent_http_pageload_is_ssl",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2370,7 +2370,7 @@
       "name": "histogram_parent_input_event_response_coalesced_ms",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2381,7 +2381,7 @@
       "name": "histogram_parent_ssl_handshake_result",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2392,7 +2392,7 @@
       "name": "histogram_parent_ssl_handshake_version",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2403,7 +2403,7 @@
       "name": "histogram_parent_ssl_tls12_intolerance_reason_pre",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2414,7 +2414,7 @@
       "name": "histogram_parent_ssl_tls13_intolerance_reason_pre",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2425,7 +2425,7 @@
       "name": "histogram_parent_time_to_dom_complete_ms",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2436,7 +2436,7 @@
       "name": "histogram_parent_time_to_dom_content_loaded_end_ms",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2447,7 +2447,7 @@
       "name": "histogram_parent_time_to_dom_content_loaded_start_ms",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2458,7 +2458,7 @@
       "name": "histogram_parent_time_to_dom_interactive_ms",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2469,7 +2469,7 @@
       "name": "histogram_parent_time_to_dom_loading_ms",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2480,7 +2480,7 @@
       "name": "histogram_parent_time_to_first_click_ms",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2491,7 +2491,7 @@
       "name": "histogram_parent_time_to_first_interaction_ms",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2502,7 +2502,7 @@
       "name": "histogram_parent_time_to_first_key_input_ms",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2513,7 +2513,7 @@
       "name": "histogram_parent_time_to_first_mouse_move_ms",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2524,7 +2524,7 @@
       "name": "histogram_parent_time_to_first_scroll_ms",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2535,7 +2535,7 @@
       "name": "histogram_parent_time_to_load_event_end_ms",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2546,7 +2546,7 @@
       "name": "histogram_parent_time_to_load_event_start_ms",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2557,7 +2557,7 @@
       "name": "histogram_parent_time_to_non_blank_paint_ms",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
@@ -2568,7 +2568,7 @@
       "name": "histogram_parent_time_to_response_start_ms",
       "nullable": true,
       "type": {
-        "keyType": "integer",
+        "keyType": "string",
         "type": "map",
         "valueContainsNull": true,
         "valueType": "integer"
