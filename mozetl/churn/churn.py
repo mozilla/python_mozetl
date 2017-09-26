@@ -61,7 +61,7 @@ SOURCE_COLUMNS = [
     "sync_count_mobile",
     "timestamp",
     "scalar_parent_browser_engagement_total_uri_count",
-    "scalar_parent_browser_engagement_unique_domains_count"
+    "scalar_parent_browser_engagement_unique_domains_count",
 ]
 
 TOP_COUNTRIES = {
@@ -79,12 +79,59 @@ MAX_SUBSESSION_LENGTH = 60 * 60 * 48  # 48 hours in seconds.
 DEFAULT_DATE = '2000-01-01'  # The default date used for cleaning columns
 
 
-def extract_subset(main_summary, start_ds, period, slack, is_sampled):
+def clean_new_profile(new_profile):
+    """Create a `main_summary` compatible dataset from the new profile ping.
+
+    :param new_profile:  dataframe conforming to the new profile ping
+    :returns:            subset of `main_summary` used in churn
+    """
+
+    iso8601_tz_format = "yyyy-MM-dd'T'HH:mm:ss.S'+00:00'"
+
+    subsession_length = (
+        F.col("metadata.timestamp") -
+        F.col("metadata.creation_timestamp")
+    ) / 10**9
+
+    select_expr = {
+        "app_version": "environment.build.version",
+        "attribution": "environment.settings.attribution",
+        "client_id": None,
+        "country": "metadata.geo_country",
+        "default_search_engine": "environment.settings.default_search_engine",
+        "distribution_id": "environment.partner.distribution_id",
+        "locale": "environment.settings.locale",
+        "normalized_channel": "metadata.normalized_channel",
+        "profile_creation_date": "environment.profile.creation_date",
+        "subsession_length": (
+            F.when(subsession_length < 0, 0)
+            .otherwise(subsession_length)
+            .cast('long')
+        ),
+        # The subsession_start_date is the profile_creation_date
+        "subsession_start_date": F.from_unixtime(
+            F.col("metadata.creation_timestamp") / 10 ** 9, iso8601_tz_format),
+        # no access to `WEAVE_CONFIGURED`, `WEAVE_DEVICE_COUNT_*` histograms in the new_profile
+        "sync_configured": F.lit(None).cast("boolean"),
+        "sync_count_desktop": F.lit(None).cast("int"),
+        "sync_count_mobile": F.lit(None).cast("int"),
+        "timestamp": F.col("metadata.timestamp"),
+        "scalar_parent_browser_engagement_total_uri_count": F.lit(None).cast("int"),
+        "scalar_parent_browser_engagement_unique_domains_count": F.lit(None).cast("int"),
+        "sample_id": F.expr("crc32(encode(client_id, 'UTF-8')) % 100"),
+        "submission_date_s3": "submission",
+    }
+
+    return new_profile.select(build_col_expr(select_expr))
+
+
+def extract(main_summary, new_profile, start_ds, period, slack, is_sampled):
     """
     Extract data from the main summary table taking into account the
     retention period and submission latency.
 
     :param main_summary: dataframe pointing to main_summary.v4
+    :param new_profile:  dataframe pointing to new_profile_ping_parquet
     :param start_ds:     start date of the retention period
     :param period:       length of the retention period
     :param slack:        slack added to account for submission latency
@@ -107,6 +154,13 @@ def extract_subset(main_summary, start_ds, period, slack, is_sampled):
         main_summary
         .where(reduce(operator.__and__, predicates))
         .select(SOURCE_COLUMNS)
+        .withColumn("is_new_profile", F.lit(False))
+        .union(
+            clean_new_profile(new_profile)
+            .where(reduce(operator.__and__, predicates))
+            .select(SOURCE_COLUMNS)
+            .withColumn("is_new_profile", F.lit(False))
+        )
     )
 
 
@@ -213,6 +267,7 @@ def clean_columns(prepared_clients, effective_version, start_ds):
     is_funnelcake = F.col('distribution_id').rlike("^mozilla[0-9]+.*$")
 
     attr_mapping = {
+        'is_new_profile': None,
         'distribution_id': None,
         'default_search_engine': None,
         'locale': None,
@@ -365,7 +420,7 @@ def save(dataframe, bucket, prefix, start_ds):
 @click.command()
 @click.option('--start_date', required=True)
 @click.option('--bucket', required=True)
-@click.option('--prefix', default='churn/v2',
+@click.option('--prefix', default='churn/v3',
               help="output prefix associated with the s3 bucket")
 @click.option('--input-bucket', default='telemetry-parquet',
               help="input bucket containing main_summary")
@@ -387,6 +442,7 @@ def main(start_date, bucket, prefix, input_bucket, input_prefix,
         .appName("churn")
         .getOrCreate()
     )
+    spark.conf.set("spark.sql.session.timeZone", "UTC")
 
     # If this job is scheduled, we need the input date to lag a total of
     # 10 days of slack for incoming data. Airflow subtracts 7 days to
@@ -403,7 +459,17 @@ def main(start_date, bucket, prefix, input_bucket, input_prefix,
         .option("mergeSchema", "true")
         .parquet(utils.format_spark_path(input_bucket, input_prefix))
     )
-    extracted = extract_subset(main_summary, start_ds, period, slack, sample)
+
+    new_profile = (
+        spark
+        .read
+        .parquet(
+            "s3://net-mozaws-prod-us-west-2-pipeline-data/"
+            "telemetry-new-profile-parquet/v1/"
+        )
+    )
+
+    extracted = extract(main_summary, new_profile, start_ds, period, slack, sample)
 
     # Build the "effective version" cache:
     effective_version = release.create_effective_version_table(spark)

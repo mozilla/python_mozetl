@@ -22,86 +22,152 @@ Su Mo Tu We Th Fr Sa
 15 16 17 18 19 20 21
 22 23 24 25 26 27 28
 29 30 31
-
-# General guidelines
-
-There are a few gotches that you should look out for while creating
-new tests for this suite that are all churn specific.
-
-* assign rows new client_ids if you want them to show up as unique
-rows in the output datafrane
-* create test fixtures for data shared across multiple tests
-* use snippets to create small datasets for single purpose use
 """
 
-main_schema = StructType([
-    StructField("app_version",           StringType(), True),
-    StructField("attribution",           StructType([
-        StructField("source",            StringType(), True),
-        StructField("medium",            StringType(), True),
-        StructField("campaign",          StringType(), True),
-        StructField("content",           StringType(), True)]), True),
-    StructField("channel",               StringType(),  True),
-    StructField("client_id",             StringType(),  True),
-    StructField("country",               StringType(),  True),
-    StructField("default_search_engine", StringType(),  True),
-    StructField("distribution_id",       StringType(),  True),
-    StructField("locale",                StringType(),  True),
-    StructField("normalized_channel",    StringType(),  True),
-    StructField("profile_creation_date", LongType(),    True),
-    StructField("submission_date_s3",    StringType(),  False),
-    StructField("subsession_length",     LongType(),    True),
-    StructField("subsession_start_date", StringType(),  True),
-    StructField("sync_configured",       BooleanType(), True),
-    StructField("sync_count_desktop",    IntegerType(), True),
-    StructField("sync_count_mobile",     IntegerType(), True),
-    StructField("timestamp",             LongType(),    True),
+main_summary_schema = StructType([
+    StructField("app_version", StringType(), True),
+    StructField("attribution", StructType([
+        StructField("source", StringType(), True),
+        StructField("medium", StringType(), True),
+        StructField("campaign", StringType(), True),
+        StructField("content", StringType(), True)]), True),
+    StructField("channel", StringType(), True),
+    StructField("client_id", StringType(), True),
+    StructField("country", StringType(), True),
+    StructField("default_search_engine", StringType(), True),
+    StructField("distribution_id", StringType(), True),
+    StructField("locale", StringType(), True),
+    StructField("normalized_channel", StringType(), True),
+    StructField("profile_creation_date", LongType(), True),
+    StructField("submission_date_s3", StringType(), False),
+    StructField("subsession_length", LongType(), True),
+    StructField("subsession_start_date", StringType(), True),
+    StructField("sync_configured", BooleanType(), True),
+    StructField("sync_count_desktop", IntegerType(), True),
+    StructField("sync_count_mobile", IntegerType(), True),
+    StructField("timestamp", LongType(), True),
     StructField(SPBE + "total_uri_count", IntegerType(), True),
     StructField(SPBE + "unique_domains_count", IntegerType(), True)])
+
+
+new_profile_schema = StructType([
+    StructField("submission", StringType(), True),
+    StructField("environment", StructType([
+        StructField("profile", StructType([
+            StructField("creation_date", LongType(), True),
+        ]), True),
+        StructField("build", StructType([
+            StructField("version", StringType(), True),
+        ]), True),
+        StructField("partner", StructType([
+            StructField("distribution_id", StringType(), True),
+        ]), True),
+        StructField("settings", StructType([
+            StructField("locale", StringType(), True),
+            StructField("is_default_browser", StringType(), True),
+            StructField("default_search_engine", StringType(), True),
+            StructField("attribution", StructType([
+                StructField("source", StringType(), True),
+                StructField("medium", StringType(), True),
+                StructField("campaign", StringType(), True),
+                StructField("content", StringType(), True)]), True),
+        ]), True),
+    ]), True),
+    StructField("client_id", StringType(), True),
+    StructField("metadata", StructType([
+        StructField("geo_country", StringType(), True),
+        StructField("timestamp", LongType(), True),
+        StructField("normalized_channel", StringType(), True),
+        StructField("creation_timestamp", LongType(), True),
+    ]), True)
+])
+
 
 # variables for conversion
 SECONDS_PER_DAY = 60 * 60 * 24
 
 # Generate the datasets
 # Sunday, also the first day in this collection period.
-subsession_start = arrow.get(2017, 1, 15)
+subsession_start = arrow.get(2017, 1, 15).replace(tzinfo='utc')
 week_start_ds = subsession_start.format("YYYYMMDD")
 
-
-default_sample = {
-    "app_version":           "57.0.0",
+main_summary_sample = {
+    "app_version": "57.0.0",
     "attribution": {
         "source": "source-value",
         "medium": "medium-value",
         "campaign": "campaign-value",
         "content": "content-value"
     },
-    "channel":               "release",
-    "client_id":             "client-id",
-    "country":               "US",
+    "channel": "release",
+    "client_id": "client-id",
+    "country": "US",
     "default_search_engine": "wikipedia",
-    "distribution_id":       "mozilla42",
-    "locale":                "en-US",
-    "normalized_channel":    "release",
+    "distribution_id": "mozilla42",
+    "locale": "en-US",
+    "normalized_channel": "release",
     "profile_creation_date": subsession_start.timestamp / SECONDS_PER_DAY,
-    "submission_date_s3":    subsession_start.format("YYYYMMDD"),
-    "subsession_length":     3600,
+    "submission_date_s3": subsession_start.format("YYYYMMDD"),
+    "subsession_length": 3600,
     "subsession_start_date": str(subsession_start),
-    "sync_configured":       False,
-    "sync_count_desktop":    1,
-    "sync_count_mobile":     1,
-    "timestamp":             subsession_start.timestamp * 10**9,  # nanoseconds
-    SPBE + "total_uri_count":      20,
+    "sync_configured": False,
+    "sync_count_desktop": 1,
+    "sync_count_mobile": 1,
+    "timestamp": subsession_start.timestamp * 10 ** 9,  # nanoseconds
+    SPBE + "total_uri_count": 20,
     SPBE + "unique_domains_count": 3
 }
 
 
+new_profile_sample = {
+    "submission": subsession_start.format("YYYYMMDD"),
+    "environment": {
+        "profile": {
+            "creation_date": long(subsession_start.timestamp / SECONDS_PER_DAY)
+        },
+        "build": {
+            "version": "57.0.0",
+        },
+        "partner": {
+            "distribution_id": "mozilla57"
+        },
+        "settings": {
+            "locale": "en-US",
+            "is_default_browser": True,
+            "default_search_engine": "google",
+            "attribution": {
+                "source": "source-value",
+                "medium": "medium-value",
+                "campaign": "campaign-value",
+                "content": "content-value"
+            },
+        }
+    },
+    "client_id": "new-profile",
+    "metadata": {
+        "geo_country": "US",
+        "timestamp": (subsession_start.timestamp+3600) * 10 ** 9,
+        "normalized_channel": "release",
+        "creation_timestamp": subsession_start.timestamp * 10 ** 9
+    }
+}
+
+
 @pytest.fixture()
-def generate_data(dataframe_factory):
+def generate_main_summary_data(dataframe_factory):
     return functools.partial(
         dataframe_factory.create_dataframe,
-        base=default_sample,
-        schema=main_schema
+        base=main_summary_sample,
+        schema=main_summary_schema
+    )
+
+
+@pytest.fixture()
+def generate_new_profile_data(dataframe_factory):
+    return functools.partial(
+        dataframe_factory.create_dataframe,
+        base=new_profile_sample,
+        schema=new_profile_schema
     )
 
 
@@ -123,14 +189,14 @@ def generate_dates(subsession_date, submission_offset=0, creation_offset=0):
         "profile_creation_date": (
             profile_creation_date.timestamp / SECONDS_PER_DAY
         ),
-        "timestamp": submission_date.timestamp * 10**9
+        "timestamp": submission_date.timestamp * 10 ** 9
     }
 
     return date_snippet
 
 
 @pytest.fixture
-def single_profile_df(generate_data):
+def single_profile_df(generate_main_summary_data):
     recent_ping = generate_dates(
         subsession_start.replace(days=3), creation_offset=3)
 
@@ -138,12 +204,14 @@ def single_profile_df(generate_data):
     old_ping = generate_dates(subsession_start)
 
     snippets = [recent_ping, old_ping]
-    return generate_data(snippets)
+    return (
+        generate_main_summary_data(snippets)
+        .withColumn("is_new_profile", F.lit(False))
+    )
 
 
 @pytest.fixture
-def multi_profile_df(generate_data):
-
+def multi_profile_df(generate_main_summary_data):
     # generate different cohort of users based on creation date
     cohort_0 = generate_dates(subsession_start, creation_offset=14)
     cohort_1 = generate_dates(subsession_start, creation_offset=7)
@@ -181,27 +249,69 @@ def multi_profile_df(generate_data):
     })
 
     snippets = [user_0, user_1, user_2]
-    return generate_data(snippets)
+    return (
+        generate_main_summary_data(snippets)
+        .withColumn("is_new_profile", F.lit(False))
+    )
 
 
-def test_extract_subset(generate_data):
-    df = churn.extract_subset(generate_data(None), week_start_ds, 1, 0, False)
+def test_extract_main_summary(spark, generate_main_summary_data):
+    df = churn.extract(
+        generate_main_summary_data(None),
+        spark.createDataFrame([], new_profile_schema),
+        week_start_ds, 1, 0, False
+    )
     assert df.count() == 1
 
 
-def test_ignored_submissions_outside_of_period(generate_data):
+def test_extract_new_profile(spark, generate_new_profile_data):
+    df = churn.extract(
+        spark.createDataFrame([], main_summary_schema),
+        generate_new_profile_data([dict()]),
+        week_start_ds, 1, 0, False
+    )
+    assert df.count() == 1
+
+    row = df.first()
+    assert row['subsession_length'] == 3600
+    assert (row['profile_creation_date'] ==
+            new_profile_sample['environment']['profile']['creation_date'])
+    assert row['scalar_parent_browser_engagement_total_uri_count'] is None
+
+
+def test_extract_new_profile_non_negative_subsession(spark, generate_new_profile_data):
+    meta = new_profile_sample["metadata"]
+    meta["creation_timestamp"] = (subsession_start.timestamp + 100) * 10**9
+    meta["timestamp"] = subsession_start.timestamp * 10 ** 9
+
+    df = churn.extract(
+        spark.createDataFrame([], main_summary_schema),
+        generate_new_profile_data([{"metadata": meta}]),
+        week_start_ds, 1, 0, False
+    )
+
+    row = df.first()
+    assert row['subsession_length'] == 0
+
+
+def test_ignored_submissions_outside_of_period(spark, generate_main_summary_data):
     # All pings within 17 days of the submission start date are valid.
     # However, only pings with ssd within the 7 day retention period
     # are used for computation. Generate pings for this case.
     late_submission = generate_dates(subsession_start, submission_offset=18)
     early_subsession = generate_dates(subsession_start.replace(days=-7))
-    late_submissions_df = generate_data([late_submission, early_subsession])
+    late_submissions_df = generate_main_summary_data([late_submission, early_subsession])
 
-    df = churn.extract_subset(late_submissions_df, week_start_ds, 7, 10, False)
+    df = churn.extract(
+        late_submissions_df,
+        spark.createDataFrame([], new_profile_schema),
+        week_start_ds, 7, 10, False
+    )
     assert df.count() == 0
 
 
-def test_latest_submission_from_client_exists(single_profile_df, effective_version):
+def test_latest_submission_from_client_exists(single_profile_df,
+                                              effective_version):
     df = churn.transform(single_profile_df, effective_version, week_start_ds)
     assert df.count() == 1
 
@@ -256,13 +366,17 @@ def test_cohort_by_channel_aggregates(multi_profile_df, effective_version):
 
 
 @pytest.fixture()
-def test_transform(generate_data, effective_version):
+def test_transform(generate_main_summary_data, effective_version):
     def _test_transform(snippets, week_start=week_start_ds):
         return churn.transform(
-            generate_data(snippets),
+            (
+                generate_main_summary_data(snippets)
+                .withColumn("is_new_profile", F.lit(False))
+            ),
             effective_version,
             week_start
         )
+
     return _test_transform
 
 
