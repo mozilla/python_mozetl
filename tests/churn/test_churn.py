@@ -8,7 +8,7 @@ from pyspark.sql.types import (
     LongType, IntegerType, BooleanType
 )
 
-from mozetl.churn import churn
+from mozetl.churn import churn, schema
 
 SPBE = "scalar_parent_browser_engagement_"
 
@@ -264,6 +264,18 @@ def test_transform(generate_data, effective_version):
             week_start
         )
     return _test_transform
+
+
+def test_transform_adheres_to_schema(test_transform):
+    df = test_transform(None)
+
+    def column_types(schema):
+        return {
+            col.name: col.dataType.typeName()
+            for col in schema.fields
+        }
+
+    assert column_types(df.schema) == column_types(schema.churn_schema)
 
 
 def test_nulled_stub_attribution(test_transform):
