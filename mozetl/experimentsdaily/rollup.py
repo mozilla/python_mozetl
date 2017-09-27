@@ -3,11 +3,7 @@ from pyspark.sql import SparkSession
 from mozetl.clientsdaily.rollup import extract_search_counts
 from mozetl.utils import format_spark_path
 
-EXPERIMENTS_SUMMARY_PATH = 's3://telemetry-parquet/experiments/v1/'
 EXCLUDED_ID = 'pref-flip-screenshots-release-1369150'
-WRITE_VERSION = '2'
-STORAGE_BUCKET = 'net-mozaws-prod-us-west-2-pipeline-analysis'
-STORAGE_PREFIX = '/spenrose/experiments-daily/v{}/'.format(WRITE_VERSION)
 
 
 def load_experiments_summary(spark, parquet_path):
@@ -42,12 +38,18 @@ def to_experiment_profile_day_aggregates(frame_with_extracts):
               default='experiments/v1/',
               help='Prefix of the input dataset')
 @click.option('--output-bucket',
-              default=STORAGE_BUCKET,
+              default='net-mozaws-prod-us-west-2-pipeline-analysis',
               help='Bucket of the output dataset')
 @click.option('--output-prefix',
-              default=STORAGE_PREFIX,
+              default='/experiments-daily',
               help='Prefix of the output dataset')
-def main(input_bucket, input_prefix, output_bucket, output_prefix):
+@click.option('--output-version',
+              default=2,
+              help='Version of the output dataset')
+def main(input_bucket, input_prefix, output_bucket, output_prefix, output_version):
+    """
+    Aggregate by (client_id, experiment_id, day).
+    """
     spark = SparkSession.builder.appName("experiments_daily").getOrCreate()
     parquet_path = format_spark_path(input_bucket, input_prefix)
     frame = load_experiments_summary(spark, parquet_path)
@@ -56,8 +58,10 @@ def main(input_bucket, input_prefix, output_bucket, output_prefix):
     spark.conf.set(
         "mapreduce.fileoutputcommitter.marksuccessfuljobs", "false"
     )  # Don't write _SUCCESS files, which interfere w/ReDash discovery
-    output_path = format_spark_path(output_bucket, output_prefix)
-    results.write.mode("overwrite").parquet(output_path)
+    output_base_path = "{}/v{}".format(
+        format_spark_path(output_bucket, output_prefix),
+        output_version)
+    results.write.mode("overwrite").parquet(output_base_path)
 
 
 if __name__ == '__main__':

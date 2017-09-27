@@ -1,15 +1,9 @@
 import datetime as DT
-import os
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 import click
 from mozetl.utils import format_spark_path
 
-LAG = 10
-ACTIVITY_SUBMISSION_LAG = DT.timedelta(LAG)
-WRITE_VERSION = '5'
-STORAGE_BUCKET = 'net-mozaws-prod-us-west-2-pipeline-analysis'
-STORAGE_PREFIX = '/spenrose/clients-daily/v{}/'.format(WRITE_VERSION)
 SEARCH_ACCESS_POINTS = [
     'abouthome', 'contextmenu', 'newtab', 'searchbar', 'system', 'urlbar'
 ]
@@ -108,22 +102,22 @@ def extract_search_counts(frame):
     return result
 
 
-def extract_submission_window_for_activity_day(day, frame):
+def extract_submission_window_for_activity_day(frame, start_date, end_date):
     """
-    Extract rows with an activity_date of `day` and a submission_date
-    between `day` and (`day` + ACTIVITY_SUBMISSION_LAG).
+    Extract rows with an activity_date of `start_date` and a submission_date
+    between `start_date` and `end_date` (inclusive).
 
-    :day DT.date(Y, m, d)
+    :start_date DT.date(Y, m, d) of the beginning of the target period
+    :end_date DT.date(Y, m, d) of the end of the submission date period
     :frame DataFrame homologous with main_summary
     """
     from fields import ACTIVITY_DATE_COLUMN
     frame = frame.select("*", ACTIVITY_DATE_COLUMN)
-    activity_iso = day.strftime('%Y-%m-%d')
-    activity_submission_str = day.strftime('%Y%m%d')
-    submission_end = day + ACTIVITY_SUBMISSION_LAG
-    submission_end_str = submission_end.strftime('%Y%m%d')
+    activity_iso = start_date.strftime('%Y-%m-%d')
+    submission_start_str = start_date.strftime('%Y%m%d')
+    submission_end_str = end_date.strftime('%Y%m%d')
     result = frame.where(
-        "submission_date_s3 >= '{}'".format(activity_submission_str)) \
+        "submission_date_s3 >= '{}'".format(submission_start_str)) \
         .where("submission_date_s3 <= '{}'".format(submission_end_str)) \
         .where("activity_date = '{}'".format(activity_iso))
     return result
@@ -142,11 +136,8 @@ def to_profile_day_aggregates(frame_with_extracts):
     return grouped.agg(*MAIN_SUMMARY_FIELD_AGGREGATORS)
 
 
-def write_one_activity_day(results, date, output_bucket,
-                           output_prefix, partition_count):
-    prefix = os.path.join(
-        output_prefix, 'activity_date_s3={}'.format(date.strftime('%Y-%m-%d')))
-    output_path = format_spark_path(output_bucket, prefix)
+def write_one_activity_day(results, date, output_prefix, partition_count):
+    output_path = "{}/activity_date_s3={}".format(output_prefix, date.strftime('%Y-%m-%d'))
     to_write = results.coalesce(partition_count)
     to_write.write.parquet(output_path, mode='overwrite')
     to_write.unpersist()
@@ -176,18 +167,31 @@ def get_partition_count_for_writing(is_sampled):
               default='main_summary/v4',
               help='Prefix of the input dataset')
 @click.option('--output-bucket',
-              default=STORAGE_BUCKET,
+              default='net-mozaws-prod-us-west-2-pipeline-analysis',
               help='Bucket of the output dataset')
 @click.option('--output-prefix',
-              default=STORAGE_PREFIX,
+              default='/clients-daily',
               help='Prefix of the output dataset')
+@click.option('--output-version',
+              default=5,
+              help='Version of the output dataset')
 @click.option('--sample-id',
               default=None,
               help='Sample_id to restrict results to')
+@click.option('--lag-days',
+              default=10,
+              help='Number of days to allow for submission latency')
 def main(date, input_bucket, input_prefix, output_bucket,
-         output_prefix, sample_id):
+         output_prefix, output_version, sample_id, lag_days):
     """
-    Daywise rollup.
+    Aggregate by (client_id, day) for a given day.
+
+    Note that the target day will actually be `lag-days` days before
+    the supplied date. In other words, if you pass in 2017-01-20 and
+    set `lag-days` to 5, the aggregation will be processed for
+    day 2017-01-15 (the resulting data will cover submission dates
+    including the activity day itself plus 5 days of lag for a total
+    of 6 days).
     """
     spark = (SparkSession
              .builder
@@ -198,17 +202,20 @@ def main(date, input_bucket, input_prefix, output_bucket,
     spark.conf.set(
         "mapreduce.fileoutputcommitter.marksuccessfuljobs", "false"
     )
-    date = DT.datetime.strptime(date, '%Y-%m-%d').date()
+    end_date = DT.datetime.strptime(date, '%Y-%m-%d').date()
+
+    # Rewind by `lag_days` to the desired activity date.
+    start_date = end_date - DT.timedelta(lag_days)
     main_summary = load_main_summary(spark, input_bucket, input_prefix)
-    day_frame = extract_submission_window_for_activity_day(
-        date, main_summary)
+    day_frame = extract_submission_window_for_activity_day(main_summary, start_date, end_date)
     if sample_id:
         day_frame = day_frame.where("sample_id = '{}'".format(sample_id))
     with_searches = extract_search_counts(day_frame)
     results = to_profile_day_aggregates(with_searches)
     partition_count = get_partition_count_for_writing(bool(sample_id))
-    write_one_activity_day(results, date, output_bucket,
-                           output_prefix, partition_count)
+    output_base_path = "{}/v{}/".format(
+        format_spark_path(output_bucket, output_prefix), output_version)
+    write_one_activity_day(results, start_date, output_base_path, partition_count)
 
 
 if __name__ == '__main__':

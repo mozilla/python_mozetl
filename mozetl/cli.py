@@ -22,4 +22,4 @@ entry_point.add_command(taar_locale.main, "taar_locale")
 entry_point.add_command(taar_similarity.main, "taar_similarity")
 
 if __name__ == '__main__':
-	entry_point()
+    entry_point()
