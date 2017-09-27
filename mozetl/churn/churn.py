@@ -109,7 +109,7 @@ def clean_new_profile(new_profile):
         "timestamp": F.col("metadata.timestamp"),
         "scalar_parent_browser_engagement_total_uri_count": F.lit(None).cast("int"),
         "scalar_parent_browser_engagement_unique_domains_count": F.lit(None).cast("int"),
-        "sample_id": F.expr("crc32(encode(client_id, 'UTF-8')) % 100"),
+        "sample_id": F.expr("crc32(encode(client_id, 'UTF-8')) % 100").cast("string"),
         "submission_date_s3": "submission",
     }
 
@@ -150,7 +150,7 @@ def extract(main_summary, new_profile, start_ds, period, slack, is_sampled):
             clean_new_profile(new_profile)
             .where(reduce(operator.__and__, predicates))
             .select(SOURCE_COLUMNS)
-            .withColumn("is_new_profile", F.lit(False))
+            .withColumn("is_new_profile", F.lit(True))
         )
     )
 

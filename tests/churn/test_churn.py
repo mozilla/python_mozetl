@@ -264,6 +264,17 @@ def test_extract_main_summary(spark, generate_main_summary_data):
     assert df.count() == 1
 
 
+def test_clean_new_profile_sample_id(generate_new_profile_data):
+    df = churn.clean_new_profile(
+        generate_new_profile_data([{
+            "client_id": "c4582ba1-79fc-1f47-ae2a-671118dccd8b"
+        }])
+    )
+    expect = "4"
+
+    assert df.first().sample_id == expect
+
+
 def test_extract_new_profile(spark, generate_new_profile_data):
     df = churn.extract(
         spark.createDataFrame([], main_summary_schema),
@@ -293,6 +304,34 @@ def test_ignored_submissions_outside_of_period(spark, generate_main_summary_data
         week_start_ds, 7, 10, False
     )
     assert df.count() == 0
+
+
+def test_multiple_sources_transform(effective_version,
+                                    generate_main_summary_data,
+                                    generate_new_profile_data):
+    main_summary = generate_main_summary_data([
+        {"client_id": "1"},
+        {"client_id": "3"},
+    ])
+    new_profile = generate_new_profile_data([
+        {"client_id": "1"},
+        {"client_id": "2"},
+        {"client_id": "2"},
+    ])
+    sources = churn.extract(main_summary, new_profile, week_start_ds, 1, 0, False)
+
+    assert sources.where("is_new_profile").count() == 3
+    assert sources.where("NOT is_new_profile").count() == 2
+
+    df = churn.transform(sources, effective_version, week_start_ds)
+
+    # There are now two rows, representing the source of these clients
+    assert df.count() == 2
+
+    assert (
+        df.select(F.sum("n_profiles").alias("n_profiles"))
+        .first().n_profiles
+    ) == 3
 
 
 def test_latest_submission_from_client_exists(single_profile_df,
