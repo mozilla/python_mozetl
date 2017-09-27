@@ -88,11 +88,6 @@ def clean_new_profile(new_profile):
 
     iso8601_tz_format = "yyyy-MM-dd'T'HH:mm:ss.S'+00:00'"
 
-    subsession_length = (
-        F.col("metadata.timestamp") -
-        F.col("metadata.creation_timestamp")
-    ) / 10**9
-
     select_expr = {
         "app_version": "environment.build.version",
         "attribution": "environment.settings.attribution",
@@ -103,11 +98,7 @@ def clean_new_profile(new_profile):
         "locale": "environment.settings.locale",
         "normalized_channel": "metadata.normalized_channel",
         "profile_creation_date": "environment.profile.creation_date",
-        "subsession_length": (
-            F.when(subsession_length < 0, 0)
-            .otherwise(subsession_length)
-            .cast('long')
-        ),
+        "subsession_length": F.lit(None).cast('long'),
         # The subsession_start_date is the profile_creation_date
         "subsession_start_date": F.from_unixtime(
             F.col("metadata.creation_timestamp") / 10 ** 9, iso8601_tz_format),

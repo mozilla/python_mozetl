@@ -273,25 +273,10 @@ def test_extract_new_profile(spark, generate_new_profile_data):
     assert df.count() == 1
 
     row = df.first()
-    assert row['subsession_length'] == 3600
+    assert row['subsession_length'] is None
     assert (row['profile_creation_date'] ==
             new_profile_sample['environment']['profile']['creation_date'])
     assert row['scalar_parent_browser_engagement_total_uri_count'] is None
-
-
-def test_extract_new_profile_non_negative_subsession(spark, generate_new_profile_data):
-    meta = new_profile_sample["metadata"]
-    meta["creation_timestamp"] = (subsession_start.timestamp + 100) * 10**9
-    meta["timestamp"] = subsession_start.timestamp * 10 ** 9
-
-    df = churn.extract(
-        spark.createDataFrame([], main_summary_schema),
-        generate_new_profile_data([{"metadata": meta}]),
-        week_start_ds, 1, 0, False
-    )
-
-    row = df.first()
-    assert row['subsession_length'] == 0
 
 
 def test_ignored_submissions_outside_of_period(spark, generate_main_summary_data):
@@ -434,6 +419,18 @@ def test_simple_string_dimensions(test_transform):
     assert rows[0].distribution_id == 'unknown'
     assert rows[0].default_search_engine == 'unknown'
     assert rows[0].locale == 'unknown'
+
+
+def test_empty_session_length(test_transform):
+    df = test_transform([
+        {'client_id': '1', 'subsession_length': None},
+        {'client_id': '2', 'subsession_length': 3600},
+        {'client_id': '3', 'subsession_length': None},
+        {'client_id': '3', 'subsession_length': 3600},
+    ])
+    row = df.first()
+
+    assert row.usage_hours == 2
 
 
 def test_empty_total_uri_count(test_transform):
