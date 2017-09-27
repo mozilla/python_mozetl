@@ -8,6 +8,7 @@ import click
 import json
 import glob
 import summarize_json
+from check_output import check_output
 from click_datetime import Datetime
 from datetime import datetime, timedelta
 from pyspark.sql import SparkSession
@@ -66,6 +67,8 @@ def main(start_date, end_date, bucket):
         datetime.today().strftime("%Y%d%m") + ".json"
     summarize_json.store_new_state("hwsurvey-weekly.json", archived_file_copy, bucket)
     summarize_json.store_new_state("hwsurvey-weekly.json", "hwsurvey-weekly.json", bucket)
+
+    check_output()
 
 
 if __name__ == '__main__':
