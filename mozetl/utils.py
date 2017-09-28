@@ -5,6 +5,10 @@ import os
 import shutil
 import tempfile
 
+from email.mime.application import MIMEApplication
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
 import boto3
 
 ACTIVITY_SUBMISSION_LAG = DT.timedelta(10)
@@ -94,3 +98,36 @@ def delete_from_s3(bucket_name, keys_to_delete):
     if code != 200:
         msg = "AWS returned {} when attempting to delete {}"
         raise RuntimeError(msg.format(code, keys_to_delete))
+
+
+def send_ses(fromaddr,
+             subject,
+             body,
+             recipient,
+             filename=''):
+    """Send an email via the Amazon SES service.
+    Example:
+    ```
+    send_ses('me@example.com, 'greetings', "Hi!", 'you@example.com)
+    ```
+
+    Raises a RuntimeError if the message did not send correctly."""
+    msg = MIMEMultipart()
+    msg['Subject'] = subject
+    msg['From'] = fromaddr
+    msg['To'] = recipient
+    msg.attach(MIMEText(body))
+
+    if filename:
+        attachment = open(filename, 'rb').read()
+        part = MIMEApplication(attachment)
+        part.add_header('Content-Disposition', 'attachment', filename=filename)
+        msg.attach(part)
+
+    ses = boto3.client('ses', region_name='us-west-2')
+    result = ses.send_raw_email(
+        RawMessage={'Data': msg.as_string()}
+    )
+
+    if 'ErrorResponse' in result:
+        raise RuntimeError("Error sending email: " + result)
