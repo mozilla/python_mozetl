@@ -8,10 +8,8 @@ This job is added by Bug 1364530 and was originally located at
 """
 
 import logging
-import re
 
 import arrow
-import boto3
 import click
 from pyspark.sql import SparkSession, functions as F
 
@@ -218,80 +216,6 @@ def extract(spark, path, ds_start, ds_end):
     )
 
 
-def get_last_manifest_version(bucket, prefix, pattern):
-    """ Get the version of the last manifest with the same pattern."""
-    s3 = boto3.resource('s3')
-    bucket_obj = s3.Bucket(bucket)
-
-    last_manifest_version = None
-    for obj in bucket_obj.objects.filter(Prefix=prefix):
-        # match for items that match the current pattern
-        if re.search(pattern, obj.key):
-            # capture the current version number of this pattern
-            search_version = re.search("-v(.*?)\.txt", obj.key)
-            if search_version and search_version.group(1):
-                # get the captured group
-                version = int(search_version.group(1))
-                last_manifest_version = max(last_manifest_version, version)
-
-    return last_manifest_version
-
-
-def get_csv_locations(bucket, prefix):
-    """Return the locations of csv files within a prefix. The final locations
-    are formatted path strings that can be read by spark.
-    """
-    s3 = boto3.resource('s3')
-    bucket_obj = s3.Bucket(bucket)
-
-    csv_files = []
-    for obj in bucket_obj.objects.filter(Prefix=prefix):
-        if obj.key.endswith(".csv"):
-            csv_files.append("s3://{}/{}".format(bucket, obj.key))
-    return csv_files
-
-
-def write_manifest(bucket, prefix, mode, version, start_ds, csv_paths, retry_max=10):
-    """ Write a manifest file with the location of the daily rollup files.
-
-    Manifests are part of the current Vertica integration process. A manifest
-    enumerates the locations of csv files that contain the rollup. This might be
-    useful if the file is partitioned across multiple files.
-
-    :bucket str: s3 bucket
-    :prefix str: s3 prefix
-    :mode str: either `daily` or `monthly`
-    :version int: version of the rollup
-    :start_ds str: yyyymmdd
-    :csv_paths list[str]: a list of fill s3 path(s) to the csv rollup
-    :retry_max int: max number of manifest files that should be generated
-    """
-    # create the s3 resource for this transaction
-    s3 = boto3.client('s3', region_name='us-west-2')
-
-    date_formatted = arrow.get(start_ds, "YYYYMMDD").format("YYYY-MM-DD")
-    pattern = "{}-search-rollup-manifest-{}".format(mode, date_formatted)
-    prev_version = get_last_manifest_version(bucket, prefix, pattern)
-
-    # there have been too many revisions to this manifest
-    if prev_version and prev_version > version + retry_max:
-        raise Exception("Too many revisions to manifest")
-
-    # name of the manifest file
-    version = version if not prev_version else prev_version + 1
-    manifest_basename = "{}-v{}.txt".format(pattern, version)
-
-    # generate the key and data for this transaction
-    key = "{}/manifests/{}".format(prefix, manifest_basename)
-    data = '\n'.join(csv_paths) + '\n'
-
-    # write the contents of the file to right location
-    s3.put_object(Bucket=bucket,
-                  Key=key,
-                  Body=data,
-                  ACL='bucket-owner-full-control')
-
-
 def save(dataframe, bucket, prefix, mode, version, start_ds):
     """Write dataframe to an s3 location and generate a manifest
 
@@ -337,11 +261,6 @@ def save(dataframe, bucket, prefix, mode, version, start_ds):
     # persist the dataframe to disk
     logging.info("Writing dataframe to {}/{}".format(bucket, key))
     utils.write_csv_to_s3(dataframe.select(select_expr), bucket, key, header=False)
-
-    csv_paths = get_csv_locations(bucket, key)
-
-    # write the manifest to disk
-    write_manifest(bucket, prefix, mode, version, start_ds, csv_paths)
 
 
 @click.command()

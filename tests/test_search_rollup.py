@@ -196,67 +196,6 @@ def test_transform_excludes_profile_shares_for_monthly(generate_data):
 
 
 @mock_s3
-def test_get_last_manifest_version_pre_existing():
-    bucket = 'test-bucket'
-    prefix = 'test-prefix'
-
-    conn = boto3.resource('s3', region_name='us-west-2')
-    bucket_obj = conn.create_bucket(Bucket=bucket)
-
-    # add a new item to the bucket
-    bucket_obj.Object(key=prefix + '/test-v2.txt').put()
-
-    ver = search_rollups.get_last_manifest_version(bucket, prefix, "test")
-    assert ver == 2
-
-
-@mock_s3
-def test_get_last_manifest_version_non_existing():
-    bucket = 'test-bucket'
-    prefix = 'test-prefix'
-    conn = boto3.resource('s3', region_name='us-west-2')
-    conn.create_bucket(Bucket=bucket)
-
-    ver = search_rollups.get_last_manifest_version(bucket, prefix, "test")
-    assert ver is None
-
-
-@mock_s3
-def test_get_csv_locations():
-    bucket = 'test-bucket'
-    prefix = 'test-prefix'
-    conn = boto3.resource('s3', region_name='us-west-2')
-    bucket_obj = conn.create_bucket(Bucket=bucket)
-
-    # generate 3 csv files
-    for i in range(3):
-        key = "{}/file_{}.csv".format(prefix, i)
-        bucket_obj.Object(key=key).put()
-
-    locs = search_rollups.get_csv_locations(bucket, prefix)
-    assert len(locs) == 3
-
-
-@mock_s3
-def test_write_manifest_exists_and_valid():
-    bucket = 'test-bucket'
-    prefix = 'test-prefix'
-
-    conn = boto3.resource('s3', region_name='us-west-2')
-    bucket_obj = conn.create_bucket(Bucket=bucket)
-
-    # add a new item to the bucket
-    bucket_obj.Object(key=prefix + '/test-v2.csv').put()
-    loc = search_rollups.get_csv_locations(bucket, prefix)
-
-    search_rollups.write_manifest(bucket, prefix, "daily", 1, "20170501", loc)
-
-    expect = "{}/manifests/daily-search-rollup-manifest-2017-05-01-v1.txt".format(prefix)
-    res = list(bucket_obj.objects.filter(Prefix=expect))
-    assert len(res) > 0 and res[0].key == expect
-
-
-@mock_s3
 def test_cli_daily(generate_data, monkeypatch):
     bucket = 'test-bucket'
     prefix = 'test-prefix'
@@ -276,23 +215,13 @@ def test_cli_daily(generate_data, monkeypatch):
         "--prefix", prefix,
     ]
     result = runner.invoke(search_rollups.main, args)
-    import traceback
-    traceback.print_tb(result.exc_info[2])
     assert result.exit_code == 0
 
-    body = (
-        conn
-        .Object(bucket, prefix + '/manifests/daily-search-rollup-manifest-2017-05-01-v2.txt')
-        .get()['Body']
-        .read().decode('utf-8')
-    )
-
-    csv_key = body.rstrip().split(bucket + '/')[-1]
-    assert ".csv" in csv_key
+    csv_key = "/daily/processed-2017-05-01.csv"
 
     body = (
         conn
-        .Object(bucket, csv_key)
+        .Object(bucket, prefix + csv_key)
         .get()['Body']
         .read().decode('utf-8')
     )
@@ -323,18 +252,11 @@ def test_cli_monthly(generate_data, monkeypatch):
     result = runner.invoke(search_rollups.main, args)
     assert result.exit_code == 0
 
-    body = (
-        conn
-        .Object(bucket, prefix + '/manifests/monthly-search-rollup-manifest-2017-05-01-v2.txt')
-        .get()['Body']
-        .read().decode('utf-8')
-    )
-    csv_key = body.rstrip().split(bucket + '/')[-1]
-    assert ".csv" in csv_key
+    csv_key = "/monthly/processed-2017-05-01.csv"
 
     body = (
         conn
-        .Object(bucket, csv_key)
+        .Object(bucket, prefix + csv_key)
         .get()['Body']
         .read().decode('utf-8')
     )
