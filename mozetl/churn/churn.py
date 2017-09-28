@@ -145,12 +145,10 @@ def extract(main_summary, new_profile, start_ds, period, slack, is_sampled):
         main_summary
         .where(reduce(operator.__and__, predicates))
         .select(SOURCE_COLUMNS)
-        .withColumn("is_new_profile", F.lit(False))
         .union(
             clean_new_profile(new_profile)
             .where(reduce(operator.__and__, predicates))
             .select(SOURCE_COLUMNS)
-            .withColumn("is_new_profile", F.lit(True))
         )
     )
 
@@ -258,7 +256,6 @@ def clean_columns(prepared_clients, effective_version, start_ds):
     is_funnelcake = F.col('distribution_id').rlike("^mozilla[0-9]+.*$")
 
     attr_mapping = {
-        'is_new_profile': None,
         'distribution_id': None,
         'default_search_engine': None,
         'locale': None,

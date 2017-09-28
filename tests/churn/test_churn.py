@@ -204,10 +204,7 @@ def single_profile_df(generate_main_summary_data):
     old_ping = generate_dates(subsession_start)
 
     snippets = [recent_ping, old_ping]
-    return (
-        generate_main_summary_data(snippets)
-        .withColumn("is_new_profile", F.lit(False))
-    )
+    return generate_main_summary_data(snippets)
 
 
 @pytest.fixture
@@ -249,10 +246,7 @@ def multi_profile_df(generate_main_summary_data):
     })
 
     snippets = [user_0, user_1, user_2]
-    return (
-        generate_main_summary_data(snippets)
-        .withColumn("is_new_profile", F.lit(False))
-    )
+    return generate_main_summary_data(snippets)
 
 
 def test_extract_main_summary(spark, generate_main_summary_data):
@@ -319,13 +313,9 @@ def test_multiple_sources_transform(effective_version,
         {"client_id": "2"},
     ])
     sources = churn.extract(main_summary, new_profile, week_start_ds, 1, 0, False)
-
-    assert sources.where("is_new_profile").count() == 3
-    assert sources.where("NOT is_new_profile").count() == 2
-
     df = churn.transform(sources, effective_version, week_start_ds)
 
-    # There are now two rows, representing the source of these clients
+    # There are two different channels
     assert df.count() == 2
 
     assert (
@@ -393,10 +383,7 @@ def test_cohort_by_channel_aggregates(multi_profile_df, effective_version):
 def test_transform(generate_main_summary_data, effective_version):
     def _test_transform(snippets, week_start=week_start_ds):
         return churn.transform(
-            (
-                generate_main_summary_data(snippets)
-                .withColumn("is_new_profile", F.lit(False))
-            ),
+            generate_main_summary_data(snippets),
             effective_version,
             week_start
         )

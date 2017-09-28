@@ -1,5 +1,5 @@
 from pyspark.sql.types import (DoubleType, LongType, StringType, StructField,
-                               StructType, BooleanType)
+                               StructType)
 
 churn_schema = StructType([
     StructField('channel', StringType(), True, metadata={
@@ -67,10 +67,6 @@ churn_schema = StructType([
         'description':
             'Used to determine if the profile seen during processing is active'
             'during the particular week of churn.'
-    }),
-    StructField('is_new_profile', BooleanType(), True, metadata={
-        'description':
-            'Distinguishes whether the client appeared as a new profile ping.'
     }),
     StructField('n_profiles', LongType(), True, metadata={
         'description':
