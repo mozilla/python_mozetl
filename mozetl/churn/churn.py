@@ -229,7 +229,9 @@ def clean_columns(prepared_clients, effective_version, start_ds):
         'is_funnelcake': (
             F.when(is_funnelcake, F.lit("yes"))
             .otherwise(F.lit("no"))),
-        'acquisition_period': F.date_sub(F.next_day(pcd, 'Sun'), 7),
+        'acquisition_period': F.date_format(
+            F.date_sub(F.next_day(pcd, 'Sun'), 7),
+            "yyyy-MM-dd"),
         'sync_usage': (
             F.when(device_count > 1, F.lit("multiple"))
             .otherwise(
