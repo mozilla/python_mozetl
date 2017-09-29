@@ -11,6 +11,8 @@ def spark():
         .appName("python_mozetl_test")
         .getOrCreate()
     )
+    # Set server timezone at UTC+0
+    spark.conf.set("spark.sql.session.timeZone", "UTC")
     yield spark
     spark.stop()
 
