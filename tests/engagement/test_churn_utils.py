@@ -1,6 +1,7 @@
 import pytest
 from pyspark.sql import functions as F
-from mozetl.churn import utils
+
+from mozetl.engagement.churn import utils
 
 
 def test_to_datetime(spark):

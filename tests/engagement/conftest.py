@@ -1,5 +1,27 @@
+import functools
+
 import pytest
-from mozetl.churn import release
+
+from . import data
+from mozetl.engagement.churn import release
+
+
+@pytest.fixture()
+def generate_main_summary_data(dataframe_factory):
+    return functools.partial(
+        dataframe_factory.create_dataframe,
+        base=data.main_summary_sample,
+        schema=data.main_summary_schema
+    )
+
+
+@pytest.fixture()
+def generate_new_profile_data(dataframe_factory):
+    return functools.partial(
+        dataframe_factory.create_dataframe,
+        base=data.new_profile_sample,
+        schema=data.new_profile_schema
+    )
 
 
 @pytest.fixture()

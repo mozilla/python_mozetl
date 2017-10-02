@@ -3,7 +3,7 @@ from datetime import datetime
 import pytest
 from pyspark.sql import functions as F
 
-from mozetl.churn import release
+from mozetl.engagement.churn import release
 
 """
 For reference:
