@@ -33,11 +33,9 @@ import click
 from pyspark.sql import SparkSession, functions as F
 from pyspark.sql.window import Window
 
-from mozetl.churn import utils, release
-from mozetl.churn.schema import churn_schema
-from utils import (
-    DS, DS_NODASH, preprocess_col_expr, build_col_expr
-)
+from . import release, utils
+from .schema import churn_schema
+from .utils import DS, DS_NODASH
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -113,7 +111,7 @@ def clean_new_profile(new_profile):
         "submission_date_s3": "submission",
     }
 
-    return new_profile.select(build_col_expr(select_expr))
+    return new_profile.select(utils.build_col_expr(select_expr))
 
 
 def extract(main_summary, new_profile, start_ds, period, slack, is_sampled):
@@ -186,7 +184,7 @@ def prepare_client_rows(main_summary):
     )
 
     # Compute per client aggregates lost during newest client computation
-    select_expr = build_col_expr({
+    select_expr = utils.build_col_expr({
         "client_id": None,
         "total_uri_count": (
             F.coalesce(
@@ -227,6 +225,41 @@ def prepare_client_rows(main_summary):
     )
 
 
+def sync_usage(desktop_count, mobile_count, sync_configured):
+    """Determine sync usage of a client.
+
+    :param desktop_count:       Column name for "sync_count_desktop"
+    :param mobile_count:        Column name for "sync_count_mobile"
+    :param sync_configured:     Column name for "sync_configured"
+    :return:                    One of `multiple`, `single`, `no`, `null`
+    """
+    device_count = (
+        F.coalesce(F.col(desktop_count), F.lit(0)) +
+        F.coalesce(F.col(mobile_count), F.lit(0))
+    )
+    return (
+        F.when(device_count > 1, F.lit("multiple"))
+        .otherwise(
+            F.when((device_count == 1) | F.col(sync_configured),
+                   F.lit("single"))
+            .otherwise(
+                F.when(F.col(sync_configured).isNotNull(), F.lit("no"))
+                .otherwise(F.lit(None))))
+    )
+
+
+def in_top_countries(country):
+    """Normalize country to be within a top country list.
+
+    :param country:    Column name for "country"
+    :return:           set(TOP_COUNTRIES) | "ROW"
+    """
+    return (
+        F.when(F.col(country).isin(TOP_COUNTRIES), F.col(country))
+        .otherwise(F.lit("ROW"))
+    )
+
+
 def clean_columns(prepared_clients, effective_version, start_ds):
     """Clean columns in preparation for aggregation.
 
@@ -249,10 +282,7 @@ def clean_columns(prepared_clients, effective_version, start_ds):
     pcd = F.from_unixtime(F.col("profile_creation_date") * SECONDS_PER_DAY)
     client_date = utils.to_datetime('subsession_start_date', "yyyy-MM-dd")
     days_since_creation = F.datediff(client_date, pcd)
-    device_count = (
-        F.coalesce(F.col("sync_count_desktop"), F.lit(0)) +
-        F.coalesce(F.col("sync_count_mobile"), F.lit(0))
-    )
+
     is_funnelcake = F.col('distribution_id').rlike("^mozilla[0-9]+.*$")
 
     attr_mapping = {
@@ -265,9 +295,7 @@ def clean_columns(prepared_clients, effective_version, start_ds):
                 F.col("normalized_channel"), F.lit("-cck-"), F.col("distribution_id")
             ))
             .otherwise(F.col(("normalized_channel")))),
-        'geo': (
-            F.when(F.col("country").isin(TOP_COUNTRIES), F.col("country"))
-            .otherwise(F.lit("ROW"))),
+        'geo': in_top_countries("country"),
         # Bug 1289573: Support values like "mozilla86" and "mozilla86-utility-existing"
         'is_funnelcake': (
             F.when(is_funnelcake, F.lit("yes"))
@@ -275,13 +303,11 @@ def clean_columns(prepared_clients, effective_version, start_ds):
         'acquisition_period': F.date_format(
             F.date_sub(F.next_day(pcd, 'Sun'), 7),
             "yyyy-MM-dd"),
-        'sync_usage': (
-            F.when(device_count > 1, F.lit("multiple"))
-            .otherwise(
-                F.when((device_count == 1) | F.col("sync_configured"), F.lit("single"))
-                .otherwise(
-                    F.when(F.col("sync_configured").isNotNull(), F.lit("no"))
-                    .otherwise(F.lit(None))))),
+        'sync_usage': sync_usage(
+            "sync_count_desktop",
+            "sync_count_mobile",
+            "sync_configured"
+        ),
         'current_version': F.col("app_version"),
         'current_week': (
             # -1 is a placeholder for bad data
@@ -307,11 +333,11 @@ def clean_columns(prepared_clients, effective_version, start_ds):
     }
 
     # Set the attributes to null if it's invalid
-    select_attr = build_col_expr({
+    select_attr = utils.build_col_expr({
         attr: F.when(F.col(is_valid), expr).otherwise(F.lit(None))
-        for attr, expr in preprocess_col_expr(attr_mapping).iteritems()
+        for attr, expr in utils.preprocess_col_expr(attr_mapping).iteritems()
     })
-    select_metrics = build_col_expr(metric_mapping)
+    select_metrics = utils.build_col_expr(metric_mapping)
     select_expr = select_attr + select_metrics
 
     cleaned_data = (
