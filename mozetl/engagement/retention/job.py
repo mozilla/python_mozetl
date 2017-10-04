@@ -1,3 +1,35 @@
+"""
+# 1 Day Retention
+
+This job generates the intermediate dataset used to generate the 1 day retention
+dataset, as outlined in [this proposal][1]. The primary use-case to provide a
+descriptive view of engagement over sub-populations of users over various
+attributes (e.g. channel, version, acquisition attribution) and time. This
+dataset is spun off of the churn dataset, retaining many of the same dimensions.
+This job takes advantage of the new-profile ping that was [added to the
+`churn_v3` job][2]. This data source will become irrelevant if the shutdown
+pingsender is enabled for first sessions.
+
+This job generally runs with a [2 day latency to account for 95% of pings][3] to
+arrive along the data pipeline using the shutdown ping-sender. This means the
+data is generally only valid for Firefox 55+. If you would like to perform
+engagement analysis on pre-55 data, please refer to `mozetl.engagement.churn`
+for data latency and data sources that would be advantageous.
+
+This intermediate dataset is aggregated by a job in
+`mozilla/telemetry-batch-view`, which takes advantage of the HyperLogLog
+data structure to count over sets of clients. In addition, a small set of
+engagement metrics have been included for describing cohorts in moore detail.
+
+See the [`Firefox Telemetry Retention: Dataset Example Usage` Dashboard][4] for
+details on using this dataset.
+
+
+[1]: https://bugzilla.mozilla.org/show_bug.cgi?id=1381840
+[2]: https://bugzilla.mozilla.org/show_bug.cgi?id=1389231
+[3]: https://sql.telemetry.mozilla.org/dashboard/telemetry-health
+[4]: https://sql.telemetry.mozilla.org/dashboard/firefox-telemetry-retention-dataset-example-usage
+"""
 import operator
 
 import arrow
@@ -14,6 +46,8 @@ from .schema import retention_schema
 
 
 def valid_pcd(pcd, client_date):
+    """Determine if the profile creation date column is valid given the date
+    reported by the client."""
     pcd_format = F.date_format(pcd, 'yyyy-MM-dd')
     is_valid_pcd = [
         pcd_format.isNotNull(),
@@ -27,7 +61,7 @@ def valid_pcd(pcd, client_date):
 
 
 def transform(main_summary, start_ds):
-    """Process a subset of `main_summary` to be used in aggregaates."""
+    """Process a subset of `main_summary` to be used in aggregates."""
     client_date = utils.to_datetime('subsession_start_date', 'yyyy-MM-dd')
 
     pcd = valid_pcd(
@@ -102,9 +136,10 @@ def save(cleaned, path):
 
 
 @click.command()
-@click.option('--start_date', required=True)
+@click.option('--start-date', required=True)
 @click.option('--path', default='retention_intermediate',
-              help='Path on hdfs to store intermediate data')
+              help='Spark compatible route for sharing intermediate data '
+                   'with the aggregate job.')
 @click.option('--input-bucket', default='telemetry-parquet',
               help='input bucket containing main_summary')
 @click.option('--input-prefix', default='main_summary/v4',
