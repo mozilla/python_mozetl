@@ -157,7 +157,7 @@ _FIELD_AGGREGATORS = [
     agg_mean('session_restored'),
     agg_sum('subsession_counter', alias='sessions_started_on_this_day',
             expression=F.expr("IF(subsession_counter = 1, 1, 0)")),
-    # shutdown_kill
+    agg_sum('shutdown_kill'),
     agg_sum('subsession_length', alias='subsession_hours_sum',
             expression=F.expr('subsession_length/3600.0')),
     # ssl_handshake_result
