@@ -170,7 +170,7 @@ def get_partition_count_for_writing(is_sampled):
               default='net-mozaws-prod-us-west-2-pipeline-analysis',
               help='Bucket of the output dataset')
 @click.option('--output-prefix',
-              default='/clients-daily',
+              default='/clients_daily',
               help='Prefix of the output dataset')
 @click.option('--output-version',
               default=5,

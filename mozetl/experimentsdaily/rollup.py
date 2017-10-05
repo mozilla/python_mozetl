@@ -41,7 +41,7 @@ def to_experiment_profile_day_aggregates(frame_with_extracts):
               default='net-mozaws-prod-us-west-2-pipeline-analysis',
               help='Bucket of the output dataset')
 @click.option('--output-prefix',
-              default='/experiments-daily',
+              default='/experiments_daily',
               help='Prefix of the output dataset')
 @click.option('--output-version',
               default=2,
