@@ -153,11 +153,11 @@ def derived_columns(define_dataframe_factory):
 
     return factory([
         {'source': 'sap:urlbar:SomeCodeHere',
-         'type': 'in-content-sap'},
+         'type': 'tagged-sap'},
         {'source': 'follow-on:urlbar:SomeCodeHere',
-         'type': 'follow-on'},
+         'type': 'tagged-follow-on'},
         {'source': 'urlbar',
-         'type': 'chrome-sap'},
+         'type': 'sap'},
     ])
 
 
@@ -171,7 +171,7 @@ def expected_search_dashboard_data(define_dataframe_factory):
         ('engine',          'google',     StringType(), False),
         ('source',          'urlbar',     StringType(), False),
         ('search_count',    4,            LongType(),   False),
-        ('type',            'chrome-sap', StringType(), False),
+        ('type',            'sap',        StringType(), False),
     ]))
 
     return factory([
