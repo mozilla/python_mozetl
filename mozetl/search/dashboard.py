@@ -65,10 +65,10 @@ def add_derived_columns(exploded_search_counts):
         exploded_search_counts
         .withColumn(
             'type',
-            when(col('source').startswith('sap:'), 'in-content-sap')
+            when(col('source').startswith('sap:'), 'tagged-sap')
             .otherwise(
-                when(col('source').startswith('follow-on:'), 'follow-on')
-                .otherwise('chrome-sap')
+                when(col('source').startswith('follow-on:'), 'tagged-follow-on')
+                .otherwise('sap')
             )
         )
     )
