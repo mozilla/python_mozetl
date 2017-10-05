@@ -64,3 +64,22 @@ def test_transform_valid_profile_creation(test_transform):
     assert (
         df.where(df.client_id == '4').first().profile_creation
     ) == '2017-01-12'
+
+
+def test_transform_valid_app_version(spark, test_transform, df_equals):
+
+    expect = spark.createDataFrame([
+        {'client_id': '1', 'app_version': '55'},
+        {'client_id': '2', 'app_version': '57.0.1'},
+        {'client_id': '3', 'app_version': None},
+        {'client_id': '4', 'app_version': 'older'},
+    ])
+
+    actual = test_transform([
+        {'client_id': '1', 'app_version': '55'},
+        {'client_id': '2', 'app_version': '57.0.1'},
+        {'client_id': '3', 'app_version': None},
+        {'client_id': '4', 'app_version': '54.0'},
+    ])
+
+    df_equals(actual, expect)
