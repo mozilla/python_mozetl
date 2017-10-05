@@ -91,7 +91,12 @@ def transform(main_summary, start_ds):
             .otherwise(days_since_creation)
             .cast('long')),
         'channel': 'normalized_channel',
-        'app_version': None,
+        'app_version': (
+            # Support before Firefox 55 is limited due to high submission latency
+            F.when(F.col('app_version').isNull() |
+                   (F.split('app_version', '\.')[0] >= '55'), 'app_version')
+            .otherwise(F.lit("older"))
+        ),
         'geo': churn_job.in_top_countries('country'),
         'distribution_id': None,
         'is_funnelcake': is_funnelcake,
