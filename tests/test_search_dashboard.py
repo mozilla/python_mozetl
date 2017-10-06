@@ -144,6 +144,7 @@ def exploded_data_for_derived_cols(generate_exploded_data):
 
 @pytest.fixture()
 def derived_columns(define_dataframe_factory):
+    # template for the expected results
     factory = define_dataframe_factory(map(to_field, [
         ('submission_date', '20170101',   StringType(), False),
         ('country',         'DE',         StringType(), True),
@@ -169,6 +170,7 @@ def derived_columns(define_dataframe_factory):
 
 @pytest.fixture()
 def expected_search_dashboard_data(define_dataframe_factory):
+    # template for the expected results
     factory = define_dataframe_factory(map(to_field, [
         ('submission_date', '20170101',   StringType(), False),
         ('country',         'DE',         StringType(), True),
