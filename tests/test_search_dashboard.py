@@ -172,16 +172,17 @@ def derived_columns(define_dataframe_factory):
 def expected_search_dashboard_data(define_dataframe_factory):
     # template for the expected results
     factory = define_dataframe_factory(map(to_field, [
-        ('submission_date', '20170101',   StringType(), False),
-        ('country',         'DE',         StringType(), True),
+        ('submission_date',  '20170101',   StringType(), False),
+        ('country',          'DE',         StringType(), True),
         ('locale',          'de',         StringType(), True),
         ('search_cohort',   None,         StringType(), True),
-        ('app_version',     '54.0.1',     StringType(), True),
-        ('distribution_id', None,         StringType(), True),
-        ('engine',          'google',     StringType(), False),
-        ('source',          'urlbar',     StringType(), False),
-        ('search_count',    4,            LongType(),   False),
-        ('type',            'sap',        StringType(), False),
+        ('app_version',      '54.0.1',     StringType(), True),
+        ('distribution_id',  None,         StringType(), True),
+        ('engine',           'google',     StringType(), False),
+        ('source',           'urlbar',     StringType(), False),
+        ('tagged-sap',       None,         LongType(), True),
+        ('tagged-follow-on', None,         LongType(), True),
+        ('sap',              4,            LongType(), True),
     ]))
 
     return factory([
@@ -190,7 +191,7 @@ def expected_search_dashboard_data(define_dataframe_factory):
         {'distribution_id': 'totally not null'},
         {'engine': 'yahoo'},
         {'engine': 'bing'},
-        {'search_count': 20},
+        {'sap': 20},
     ])
 
 
@@ -216,5 +217,4 @@ def test_basic_aggregation(main_summary,
                            expected_search_dashboard_data,
                            df_equals):
     actual = search_dashboard_etl(main_summary)
-
     assert df_equals(actual, expected_search_dashboard_data)
