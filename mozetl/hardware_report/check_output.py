@@ -8,7 +8,7 @@ def check_output():
     data = _get_data()
     changes = _check_most_recent_change(data, min_change=.3)
 
-    if len(changes > 0):
+    if len(changes) > 0:
         _report_changes(changes)
 
 
