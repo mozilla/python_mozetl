@@ -31,18 +31,26 @@ def fetch_legacy_replacement_masterlist():
     legacy_replacement_dict = {}
 
     while request_uri is not None:
-        print("Fetching {}\n".format(request_uri))
+        logger.info("Fetching " + request_uri)
         # Request the data and get it in JSON format.
         r = requests.get(request_uri)
         page_blob = r.json()
-        # Re map as {guid : [guid-1, guid-2,... guid-n]}
+        # Re-map as {guid : [guid-1, guid-2, ... guid-n]}
         for addon in page_blob.get('results'):
             legacy_replacement_dict[addon.get('guid')] =\
                 addon.get('replacement')
 
         request_uri = page_blob.get('next')
 
-    return legacy_replacement_dict
+    # Remove invalid and empty value in the dict.
+    legacy_replacement_dict_valid =\
+        {k: v for k, v in legacy_replacement_dict.items() if v}
+
+    # Log any instance of removed (bad) data from the AMO API.
+    if len(legacy_replacement_dict) > len(legacy_replacement_dict_valid):
+        logger.info("Some invalid data purged from AMO provided JSON")
+
+    return legacy_replacement_dict_valid
 
 
 @click.command()
@@ -57,3 +65,5 @@ def main(date, bucket, prefix):
         logger.info("Updating active legacy addon replacements list in s3")
         store_json_to_s3(json.dumps(legacy_dict, indent=2), EXPORT_FILE_NAME,
                          date, prefix, bucket)
+    else:
+        logger.info("EMPTY list retrieved from AMO legacy recs API")
