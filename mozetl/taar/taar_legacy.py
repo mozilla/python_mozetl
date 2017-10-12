@@ -27,23 +27,23 @@ def fetch_legacy_replacement_masterlist():
     # Set the initial URI to the REST API entry point.
     request_uri = AMO_LEGACY_RECS_URI
 
-    # Put all the mappings in this dictionary, keyed on legacy guid.
-    legacy_replacement_dict = {}
+    def parse_from_amo_api(api_uri, storage_dict):
+        while request_uri is not None:
+            logger.info("Fetching " + api_uri)
+            # Request the data and get it in JSON format.
+            r = requests.get(request_uri)
+            page_blob = r.json()
+            # Re-map as {guid : [guid-1, guid-2, ... guid-n]}
+            for addon in page_blob.get('results'):
+                storage_dict[addon.get('guid')] = \
+                    addon.get('replacement')
+            api_uri = page_blob.get('next')
+        return storage_dict
 
-    while request_uri is not None:
-        logger.info("Fetching " + request_uri)
-        # Request the data and get it in JSON format.
-        r = requests.get(request_uri)
-        page_blob = r.json()
-        # Re-map as {guid : [guid-1, guid-2, ... guid-n]}
-        for addon in page_blob.get('results'):
-            legacy_replacement_dict[addon.get('guid')] =\
-                addon.get('replacement')
-
-        request_uri = page_blob.get('next')
+    legacy_replacement_dict = parse_from_amo_api({}, request_uri)
 
     # Remove invalid and empty value in the dict.
-    legacy_replacement_dict_valid =\
+    legacy_replacement_dict_valid = \
         {k: v for k, v in legacy_replacement_dict.items() if v}
 
     # Log any instance of removed (bad) data from the AMO API.
