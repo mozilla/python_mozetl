@@ -34,17 +34,17 @@ FAKE_MIXED_LEGACY_DATA = {
 
 @pytest.fixture
 def mock_amo_api_response(monkeypatch):
-    monkeypatch.setattr(requests, 'requests.get', lambda x, y: FAKE_LEGACY_DATA)
+    monkeypatch.setattr('requests.get', lambda x, y: FAKE_LEGACY_DATA)
 
 
 @pytest.fixture
 def mock_amo_broke(monkeypatch):
-    monkeypatch.setattr(requests, 'requests.get', lambda x, y: FAKE_BROKEN_LEGACY_DATA)
+    monkeypatch.setattr('requests.get', lambda x, y: FAKE_BROKEN_LEGACY_DATA)
 
 
 @pytest.fixture
 def mock_amo_mixed(monkeypatch):
-    monkeypatch.setattr(requests, 'requests.get', lambda x, y: FAKE_MIXED_LEGACY_DATA)
+    monkeypatch.setattr('requests.get', lambda x, y: FAKE_MIXED_LEGACY_DATA)
 
 
 def test_fetch_legacy_replacement_masterlist(mock_amo_api_response):
