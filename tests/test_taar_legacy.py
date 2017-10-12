@@ -85,3 +85,11 @@ def test_fetch_mixed_legacy(mock_amo_mixed):
     assert "guid-29" in test_data.keys()
     assert test_data["guid-29"] == ["guid-30"]
     assert len(test_data) == 1
+
+
+def test_parse_from_amo_api():
+    # Test api reading function with None URL.
+    expected = {'test-key': 'test-val'}
+    new_dict = taar_legacy.parse_from_amo_api(None, expected)
+    assert expected == new_dict
+

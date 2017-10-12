@@ -38,9 +38,8 @@ def parse_from_amo_api(api_uri, storage_dict):
 
 
 def fetch_legacy_replacement_masterlist():
-    # Set the initial URI to the REST API entry point.
-    legacy_replacement_dict = {}
-    legacy_replacement_dict = parse_from_amo_api(AMO_LEGACY_RECS_URI, legacy_replacement_dict)
+    empty_dict = {}
+    legacy_replacement_dict = parse_from_amo_api(AMO_LEGACY_RECS_URI, empty_dict)
 
     # Remove invalid and empty value in the dict.
     legacy_replacement_dict_valid = \
