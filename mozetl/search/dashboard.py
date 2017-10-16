@@ -21,13 +21,16 @@ def search_dashboard_etl(main_summary):
     # todo: this function should consume already exploded and augmented data
     exploded = explode_search_counts(main_summary)
     augmented = add_derived_columns(exploded)
-    group_cols = filter(lambda x: x != 'count', augmented.columns)
+    group_cols = filter(lambda x: x not in ['count', 'type'], augmented.columns)
 
     return (
         augmented
         .groupBy(group_cols)
+        .pivot(
+            'type',
+            ['tagged-sap', 'tagged-follow-on', 'sap']
+        )
         .sum('count')
-        .withColumnRenamed('sum(count)', 'search_count')
     )
 
 
@@ -63,10 +66,10 @@ def add_derived_columns(exploded_search_counts):
         exploded_search_counts
         .withColumn(
             'type',
-            when(col('source').startswith('sap:'), 'in-content-sap')
+            when(col('source').startswith('sap:'), 'tagged-sap')
             .otherwise(
-                when(col('source').startswith('follow-on:'), 'follow-on')
-                .otherwise('chrome-sap')
+                when(col('source').startswith('follow-on:'), 'tagged-follow-on')
+                .otherwise('sap')
             )
         )
     )
