@@ -37,14 +37,14 @@ def transform(spark):
            s.app_name,
            s.app_channel,
            s.uid,
-           s.deviceID AS device_id,
+           s.device_id AS device_id,
            s.submission_date_s3 AS submission_day,
            date_format(from_unixtime(s.when / 1000), 'YYYYMMdd') AS sync_day,
            s.when,
            s.status,
            e.name AS engine_name,
            e.status AS engine_status,
-           e.failureReason AS engine_failure_reason,
+           e.failure_reason AS engine_failure_reason,
            e.validation.problems IS NOT NULL AS engine_has_problems,
            e.validation.version AS engine_validation_version,
            e.validation.checked AS engine_validation_checked,
@@ -54,7 +54,7 @@ def transform(spark):
     FROM sync_summary s
     LATERAL VIEW explode(s.engines) AS e
     LATERAL VIEW OUTER explode(e.validation.problems) AS p
-    WHERE s.failureReason IS NULL
+    WHERE s.failure_reason IS NULL
     """
     engine_validation_results = spark.sql(query)
 
@@ -105,10 +105,10 @@ def load(spark, bucket, prefix, version, start_date):
 @click.command()
 @click.option('--start_date', required=True, help="Date to process")
 @click.option('--end_date', help="Optional end date to run until")
-@click.option('--bucket', default='net-mozaws-prod-us-west-2-pipeline-analysis')
-@click.option('--prefix', default='kit/sync')
+@click.option('--bucket', default='telemetry-parquet')
+@click.option('--prefix', default='sync')
 @click.option('--input_bucket', default='telemetry-parquet')
-@click.option('--input_prefix', default='sync_summary/v1')
+@click.option('--input_prefix', default='sync_summary/v2')
 def main(start_date, end_date, bucket, prefix, input_bucket, input_prefix):
     spark = (SparkSession
              .builder
