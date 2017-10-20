@@ -71,7 +71,7 @@ def test_transform_valid_app_version(spark, test_transform, df_equals):
     expect = spark.createDataFrame([
         {'client_id': '1', 'app_version': '55'},
         {'client_id': '2', 'app_version': '57.0.1'},
-        {'client_id': '3', 'app_version': None},
+        {'client_id': '3', 'app_version': 'unknown'},
         {'client_id': '4', 'app_version': 'older'},
     ])
 
@@ -80,6 +80,6 @@ def test_transform_valid_app_version(spark, test_transform, df_equals):
         {'client_id': '2', 'app_version': '57.0.1'},
         {'client_id': '3', 'app_version': None},
         {'client_id': '4', 'app_version': '54.0'},
-    ])
+    ]).select("client_id", "app_version")
 
-    df_equals(actual, expect)
+    assert df_equals(actual, expect)
