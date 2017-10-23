@@ -13,6 +13,10 @@ from pyspark.sql.functions import explode, col, when
 from pyspark.sql import SparkSession
 
 
+DEFAULT_INPUT_BUCKET = 'telemetry-parquet'
+DEFAULT_INPUT_PREFIX = 'main_summary/v4'
+DEFAULT_SAVE_MODE = 'error'
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -77,21 +81,10 @@ def add_derived_columns(exploded_search_counts):
     )
 
 
-@click.command()
-@click.option('--submission_date', required=True)
-@click.option('--bucket', required=True)
-@click.option('--prefix', required=True)
-@click.option('--input_bucket',
-              default='telemetry-parquet',
-              help='Bucket of the input dataset')
-@click.option('--input_prefix',
-              default='main_summary/v4',
-              help='Prefix of the input dataset')
-@click.option('--save_mode',
-              default='error',
-              help='Save mode for writing data')
-def main(submission_date, bucket, prefix, input_bucket, input_prefix,
-         save_mode):
+def generate_dashboard(submission_date, bucket, prefix,
+                       input_bucket=DEFAULT_INPUT_BUCKET,
+                       input_prefix=DEFAULT_INPUT_PREFIX,
+                       save_mode=DEFAULT_SAVE_MODE):
     spark = (
         SparkSession
         .builder
@@ -128,3 +121,22 @@ def main(submission_date, bucket, prefix, input_bucket, input_prefix,
     )
 
     spark.stop()
+
+
+@click.command()
+@click.option('--submission_date', required=True)
+@click.option('--bucket', required=True)
+@click.option('--prefix', required=True)
+@click.option('--input_bucket',
+              default=DEFAULT_INPUT_BUCKET,
+              help='Bucket of the input dataset')
+@click.option('--input_prefix',
+              default=DEFAULT_INPUT_PREFIX,
+              help='Prefix of the input dataset')
+@click.option('--save_mode',
+              default=DEFAULT_SAVE_MODE,
+              help='Save mode for writing data')
+def main(submission_date, bucket, prefix, input_bucket, input_prefix,
+         save_mode):
+    generate_dashboard(submission_date, bucket, prefix, input_bucket,
+                       input_prefix, save_mode)
