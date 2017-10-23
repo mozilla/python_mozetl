@@ -174,7 +174,7 @@ def test_transform(spark, generate_data, monkeypatch):
             "pyspark.sql.DataFrameReader.parquet",
             mock_parquet
         )
-        sbv.extract(spark, None, "20171001")
+        sbv.extract(spark, None, to_submission_date(SYNC_ACTIVITY_DATE))
         sbv.transform(spark)
         return spark.table("bmk_validation_problems"), \
             spark.table("bmk_total_per_day")
@@ -292,29 +292,27 @@ def test_total_bookmark_validations(test_transform):
 
 
 def test_total_users_per_day(test_transform, row_to_dict):
-    day_1 = to_when(SYNC_ACTIVITY_DATE)
-    day_2 = to_when(SYNC_ACTIVITY_DATE.replace(days=-1))
+    day_1 = SYNC_ACTIVITY_DATE
+    day_2 = SYNC_ACTIVITY_DATE.replace(days=-1)
 
     _, df = test_transform([
-        {'uid': '0', 'when': day_1},
-        {'uid': '1', 'when': day_1},
-        {'uid': '1', 'when': day_2},
-        {'uid': '1', 'when': day_2},
-        {'uid': '2', 'when': day_2},
+        {'uid': 'date not included', 'submission_date_s3': to_submission_date(day_2)},
+        {'uid': '0', 'when': to_when(day_1)},
+        {'uid': '1', 'when': to_when(day_1)},
+        {'uid': '1', 'when': to_when(day_2)},
+        {'uid': '1', 'when': to_when(day_2)},
+        {'uid': '2', 'when': to_when(day_2)},
     ])
 
-    assert df.count() == 2
-    rows = (df
-            .select('sync_day', 'total_validated_users')
-            .orderBy('sync_day')
-            .collect())
+    assert df.count() == 1
+    rows = (
+        df
+        .select('submission_day', 'total_validated_users')
+        .collect()
+    )
     assert map(row_to_dict, rows) == [
         {
-            'sync_day': to_submission_date(SYNC_ACTIVITY_DATE.replace(days=-1)),
-            'total_validated_users': 2
-        },
-        {
-            'sync_day': to_submission_date(SYNC_ACTIVITY_DATE),
-            'total_validated_users': 2
-        },
+            'submission_day': to_submission_date(day_1),
+            'total_validated_users': 3
+        }
     ]

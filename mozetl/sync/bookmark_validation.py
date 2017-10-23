@@ -1,8 +1,11 @@
 """
-Bug 1349065, 1374831 - Sync Bookmark Validation Dataset
+# Sync Bookmark Validation Dataset
 
-This notebook is adapted from a gist that transforms the `sync_summary` into
-a flat table to avoid straining the resources on the Presto cluster.[1]
+This notebook is adapted from a gist that transforms the `sync_summary` into a
+flat table to avoid straining the resources on the Presto cluster.[1] The
+bookmark totals table generates statistics relative to the server clock.
+
+See bugs 1349065, 1374831, 1410963
 
 [1] https://gist.github.com/kitcambridge/364f56182f3e96fb3131bf38ff648609
 """
@@ -19,12 +22,9 @@ logger = logging.getLogger(__name__)
 
 def extract(spark, path, start_date):
     """Register a temporary `sync_summary` view on the start date."""
-
-    (
-        spark.read.parquet(path)
-        .where(F.col("submission_date_s3") == start_date)
-        .createOrReplaceTempView("sync_summary")
-    )
+    sync_summary = spark.read.parquet(path)
+    subset = sync_summary.where(F.col("submission_date_s3") == start_date)
+    subset.createOrReplaceTempView("sync_summary")
 
 
 def transform(spark):
@@ -56,24 +56,24 @@ def transform(spark):
     LATERAL VIEW OUTER explode(e.validation.problems) AS p
     WHERE s.failure_reason IS NULL
     """
-    engine_validation_results = spark.sql(query)
+    engine_validations = spark.sql(query)
 
-    bmk_validation_results = (
-        engine_validation_results
-        .filter(engine_validation_results["engine_name"] == "bookmarks")
+    bookmark_validations = (
+        engine_validations
+        .where(F.col("engine_name") == "bookmarks")
     )
 
-    # Bookmark validations with problems.
-    bmk_validation_problems = (
-        bmk_validation_results
-        .filter(bmk_validation_results["engine_has_problems"])
+    bookmark_validation_problems = (
+        bookmark_validations
+        .where(F.col("engine_has_problems"))
     )
 
-    # All bookmark validations, including without problems.
-    bmk_total_per_day = (
-        bmk_validation_results
-        .filter(bmk_validation_results["engine_validation_checked"].isNotNull())
-        .groupBy("sync_day")
+    # Generate aggregates over all bookmarks
+    bookmark_aggregates = (
+        bookmark_validations
+        .where(F.col("engine_validation_checked").isNotNull())
+        # see bug 1410963 for submission date vs sync date
+        .groupBy("submission_day")
         .agg(
             F.countDistinct("uid", "device_id", "when")
             .alias("total_bookmark_validations"),
@@ -82,8 +82,8 @@ def transform(spark):
         )
     )
 
-    bmk_validation_problems.createOrReplaceTempView("bmk_validation_problems")
-    bmk_total_per_day.createOrReplaceTempView("bmk_total_per_day")
+    bookmark_validation_problems.createOrReplaceTempView("bmk_validation_problems")
+    bookmark_aggregates.createOrReplaceTempView("bmk_total_per_day")
 
 
 def load(spark, bucket, prefix, version, start_date):
