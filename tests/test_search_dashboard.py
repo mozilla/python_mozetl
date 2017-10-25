@@ -2,7 +2,7 @@ import functools
 import pytest
 from collections import namedtuple
 from pyspark.sql.types import (
-    StructField, ArrayType, StringType, LongType, StructType, DoubleType
+    StructField, ArrayType, BooleanType, StringType, LongType, StructType, DoubleType
 )
 from mozetl.search.dashboard import (
     search_dashboard_etl, explode_search_counts, add_derived_columns
@@ -59,12 +59,38 @@ def generate_search_count(engine='google', source='urlbar', count=4):
     }
 
 
+def generate_addon(addon_id, name, version):
+    return {
+        'addon_id': addon_id,
+        'name': name,
+        'version': version,
+    }
+
+
 @pytest.fixture()
 def generate_main_summary_data(define_dataframe_factory):
     search_type = ArrayType(StructType([
         StructField('engine', StringType(), False),
         StructField('source', StringType(), False),
         StructField('count',  LongType(),   False),
+    ]))
+    addons_type = ArrayType(StructType([
+        StructField('addon_id', StringType(), False),
+        StructField('blocklisted', BooleanType(), True),
+        StructField('name', StringType(), True),
+        StructField('user_disabled', BooleanType(), True),
+        StructField('app_disabled', BooleanType(), True),
+        StructField('version', StringType(), True),
+        StructField('scope', LongType(), True),
+        StructField('type', StringType(), True),
+        StructField('foreign_install', BooleanType(), True),
+        StructField('has_binary_components', BooleanType(), True),
+        StructField('install_day', LongType(), True),
+        StructField('update_day', LongType(), True),
+        StructField('signed_state', LongType(), True),
+        StructField('is_system', BooleanType(), True),
+        StructField('is_web_extension', BooleanType(), True),
+        StructField('multiprocess_compatible', BooleanType(), True),
     ]))
 
     return define_dataframe_factory(map(to_field, [
@@ -76,6 +102,10 @@ def generate_main_summary_data(define_dataframe_factory):
         ('distribution_id', None,                      StringType(), True),
         ('ignored_col',     1.0,                       DoubleType(), True),
         ('search_counts',   [generate_search_count()], search_type,  True),
+        ('active_addons',   [generate_addon('random@mozilla.com', 'random', '0.1'),
+                             generate_addon('followonsearch@mozilla.com',
+                                            'Follow-on Search Telemetry',
+                                            '0.9.5')], addons_type, True),
     ]))
 
 
@@ -119,6 +149,7 @@ def generate_exploded_data(define_dataframe_factory):
         ('search_cohort',   None,       StringType(), True),
         ('app_version',     '54.0.1',   StringType(), True),
         ('distribution_id', None,       StringType(), True),
+        ('addon_version',   '0.9.5',    StringType(), False),
         ('engine',          'google',   StringType(), False),
         ('source',          'urlbar',   StringType(), False),
         ('count',           4,          LongType(),   False),
@@ -152,6 +183,7 @@ def derived_columns(define_dataframe_factory):
         ('search_cohort',   None,         StringType(), True),
         ('app_version',     '54.0.1',     StringType(), True),
         ('distribution_id', None,         StringType(), True),
+        ('addon_version',   '0.9.5',      StringType(), False),
         ('engine',          'google',     StringType(), False),
         ('source',          'urlbar',     StringType(), False),
         ('count',           4,            LongType(),   False),
@@ -178,6 +210,7 @@ def expected_search_dashboard_data(define_dataframe_factory):
         ('search_cohort',   None,         StringType(), True),
         ('app_version',      '54.0.1',     StringType(), True),
         ('distribution_id',  None,         StringType(), True),
+        ('addon_version',    '0.9.5',      StringType(), False),
         ('engine',           'google',     StringType(), False),
         ('source',           'urlbar',     StringType(), False),
         ('tagged-sap',       None,         LongType(), True),
