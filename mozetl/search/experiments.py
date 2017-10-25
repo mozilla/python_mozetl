@@ -7,7 +7,6 @@ from .dashboard import (
     run_main_summary_based_etl,
     DEFAULT_INPUT_BUCKET,
     DEFAULT_INPUT_PREFIX,
-    DEFAULT_SAVE_MODE,
     DEFAULT_GROUPING_COLS,
 )
 
@@ -67,7 +66,7 @@ def filter_to_experiment(dataset, experiment_id):
               default=DEFAULT_INPUT_PREFIX,
               help='Prefix of the input dataset')
 @click.option('--save_mode',
-              default=DEFAULT_SAVE_MODE,
+              default="overwrite",
               help='Save mode for writing data')
 def main(submission_date, bucket, prefix, input_bucket, input_prefix,
          save_mode):
