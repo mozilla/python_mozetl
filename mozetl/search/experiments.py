@@ -55,6 +55,24 @@ def filter_to_experiment(dataset, experiment_id):
     )
 
 
+def add_derived_columns(exploded_search_counts):
+    '''Adds the following columns to the provided dataset:
+
+    type: One of 'in-content-sap', 'follow-on', or 'chrome-sap'.
+    '''
+    return (
+        exploded_search_counts
+        .withColumn(
+            'type',
+            when(col('source').startswith('sap:'), 'in-content-sap')
+            .otherwise(
+                when(col('source').startswith('follow-on:'), 'follow-on')
+                .otherwise('chrome-sap')
+            )
+        )
+    )
+
+
 @click.command()
 @click.option('--submission_date', required=True)
 @click.option('--bucket', required=True)
