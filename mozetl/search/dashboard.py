@@ -104,6 +104,7 @@ def run_main_summary_based_etl(submission_date, bucket, prefix, version,
         input_prefix,
         submission_date
     )
+
     output_path = 's3://{}/{}/v{}/submission_date_s3={}'.format(
         bucket,
         prefix,
@@ -111,7 +112,7 @@ def run_main_summary_based_etl(submission_date, bucket, prefix, version,
         submission_date
     )
 
-    logger.info('Loading main_summary...')
+    logger.info('Loading main_summary from {}...'.format(source_path))
     main_summary = spark.read.parquet(source_path)
 
     logger.info('Running the ETL job...')
@@ -144,6 +145,6 @@ def run_main_summary_based_etl(submission_date, bucket, prefix, version,
               help='Save mode for writing data')
 def main(submission_date, bucket, prefix, input_bucket, input_prefix,
          save_mode):
-    generate_dashboard(submission_date, bucket, prefix, 1,
-                       search_dashboard_etl, input_bucket,
-                       input_prefix, save_mode)
+    run_main_summary_based_etl(submission_date, bucket, prefix, 1,
+                               search_dashboard_etl, input_bucket,
+                               input_prefix, save_mode)
