@@ -1,8 +1,7 @@
 import click
-from pyspark.sql.functions import col, lit
+from pyspark.sql.functions import col, lit, when
 from .dashboard import (
     explode_search_counts,
-    add_derived_columns,
     aggregate_search,
     run_main_summary_based_etl,
     DEFAULT_INPUT_BUCKET,
@@ -52,6 +51,24 @@ def filter_to_experiment(dataset, experiment_id):
         .withColumn('branch', col('experiments.' + experiment_id))
         .withColumn('experiment_id', lit(experiment_id))
         .where(col('branch').isNull() == False)
+    )
+
+
+def add_derived_columns(exploded_search_counts):
+    '''Adds the following columns to the provided dataset:
+
+    type: One of 'in-content-sap', 'follow-on', or 'chrome-sap'.
+    '''
+    return (
+        exploded_search_counts
+        .withColumn(
+            'type',
+            when(col('source').startswith('sap:'), 'in-content-sap')
+            .otherwise(
+                when(col('source').startswith('follow-on:'), 'follow-on')
+                .otherwise('chrome-sap')
+            )
+        )
     )
 
 

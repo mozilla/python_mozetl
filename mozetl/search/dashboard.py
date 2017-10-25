@@ -47,10 +47,7 @@ def aggregate_search(exploded_main_summary):
     return (
         exploded_main_summary
         .groupBy(group_cols)
-        .pivot(
-            'type',
-            ['tagged-sap', 'tagged-follow-on', 'sap']
-        )
+        .pivot('type')
         .sum('count')
     )
 
