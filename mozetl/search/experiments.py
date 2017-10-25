@@ -87,6 +87,6 @@ def add_derived_columns(exploded_search_counts):
               help='Save mode for writing data')
 def main(submission_date, bucket, prefix, input_bucket, input_prefix,
          save_mode):
-    run_main_summary_based_etl(submission_date, bucket, prefix, 2,
+    run_main_summary_based_etl(submission_date, bucket, prefix, 3,
                                search_experiment_etl, input_bucket,
                                input_prefix, save_mode)
