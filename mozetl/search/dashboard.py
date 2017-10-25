@@ -88,7 +88,7 @@ def add_derived_columns(exploded_search_counts):
     )
 
 
-def run_main_summary_based_etl(submission_date, bucket, prefix,
+def run_main_summary_based_etl(submission_date, bucket, prefix, version,
                                etl_job, input_bucket=DEFAULT_INPUT_BUCKET,
                                input_prefix=DEFAULT_INPUT_PREFIX,
                                save_mode=DEFAULT_SAVE_MODE):
@@ -99,7 +99,6 @@ def run_main_summary_based_etl(submission_date, bucket, prefix,
         .getOrCreate()
     )
 
-    version = 1
     source_path = 's3://{}/{}/submission_date_s3={}'.format(
         input_bucket,
         input_prefix,
@@ -145,6 +144,6 @@ def run_main_summary_based_etl(submission_date, bucket, prefix,
               help='Save mode for writing data')
 def main(submission_date, bucket, prefix, input_bucket, input_prefix,
          save_mode):
-    generate_dashboard(submission_date, bucket, prefix, input_bucket,
-                       search_dashboard_etl,
+    generate_dashboard(submission_date, bucket, prefix, 1,
+                       search_dashboard_etl, input_bucket,
                        input_prefix, save_mode)

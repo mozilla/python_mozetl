@@ -11,7 +11,7 @@ from .dashboard import (
 
 
 DEFAULT_EXPERIMENT_GROUPING_COLS = (
-    DEFAULT_GROUPING_CALLS + 
+    DEFAULT_GROUPING_COLS + 
     [
         'client_id',
         'default_search_engine',
@@ -69,7 +69,7 @@ def filter_to_experiment(dataset, experiment_id):
               help='Save mode for writing data')
 def main(submission_date, bucket, prefix, input_bucket, input_prefix,
          save_mode):
-    generate_dashboard(submission_date, bucket, prefix, input_bucket,
+    generate_dashboard(submission_date, bucket, prefix, 2, input_bucket,
                        search_dashboard_etl,
                        input_prefix, save_mode)
 
