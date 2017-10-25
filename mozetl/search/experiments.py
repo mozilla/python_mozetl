@@ -1,8 +1,7 @@
 import click
-from pyspark.sql.functions import col, lit
+from pyspark.sql.functions import col, lit, when
 from .dashboard import (
     explode_search_counts,
-    add_derived_columns,
     aggregate_search,
     run_main_summary_based_etl,
     DEFAULT_INPUT_BUCKET,
