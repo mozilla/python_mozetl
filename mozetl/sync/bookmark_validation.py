@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 def extract(spark, path, start_date):
     """Register a temporary `sync_summary` view on the start date."""
-    sync_summary = spark.read.parquet(path)
+    sync_summary = spark.read.option("mergeSchema", "true").parquet(path)
     subset = sync_summary.where(F.col("submission_date_s3") == start_date)
     subset.createOrReplaceTempView("sync_summary")
 
