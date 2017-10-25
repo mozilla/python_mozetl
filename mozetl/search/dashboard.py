@@ -16,6 +16,14 @@ from pyspark.sql import SparkSession
 DEFAULT_INPUT_BUCKET = 'telemetry-parquet'
 DEFAULT_INPUT_PREFIX = 'main_summary/v4'
 DEFAULT_SAVE_MODE = 'error'
+DEFAULT_GROUPING_COLS = [
+    'search_counts',
+    'submission_date',
+    'country',
+    'app_version',
+    'distribution_id',
+]
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -25,10 +33,19 @@ def search_dashboard_etl(main_summary):
     # todo: this function should consume already exploded and augmented data
     exploded = explode_search_counts(main_summary)
     augmented = add_derived_columns(exploded)
-    group_cols = filter(lambda x: x not in ['count', 'type'], augmented.columns)
+    aggregated = aggregate_search(augmented)
+
+    return aggregated
+
+
+def aggregate_search(exploded_main_summary):
+    group_cols = filter(
+        lambda x: x not in ['count', 'type'],
+        exploded_main_summary.columns
+    )
 
     return (
-        augmented
+        exploded_main_summary
         .groupBy(group_cols)
         .pivot(
             'type',
@@ -38,15 +55,7 @@ def search_dashboard_etl(main_summary):
     )
 
 
-def explode_search_counts(main_summary):
-    input_columns = [
-        'search_counts',
-        'submission_date',
-        'country',
-        'app_version',
-        'distribution_id',
-    ]
-
+def explode_search_counts(main_summary, input_columns=DEFAULT_GROUPING_COLS):
     exploded_col_name = 'single_search_count'
     search_fields = [exploded_col_name + '.' + field
                      for field in ['engine', 'source', 'count']]
@@ -79,10 +88,10 @@ def add_derived_columns(exploded_search_counts):
     )
 
 
-def generate_dashboard(submission_date, bucket, prefix,
-                       input_bucket=DEFAULT_INPUT_BUCKET,
-                       input_prefix=DEFAULT_INPUT_PREFIX,
-                       save_mode=DEFAULT_SAVE_MODE):
+def run_main_summary_based_etl(submission_date, bucket, prefix,
+                               etl_job, input_bucket=DEFAULT_INPUT_BUCKET,
+                               input_prefix=DEFAULT_INPUT_PREFIX,
+                               save_mode=DEFAULT_SAVE_MODE):
     spark = (
         SparkSession
         .builder
@@ -106,8 +115,8 @@ def generate_dashboard(submission_date, bucket, prefix,
     logger.info('Loading main_summary...')
     main_summary = spark.read.parquet(source_path)
 
-    logger.info('Running the search dashboard ETL job...')
-    search_dashboard_data = search_dashboard_etl(main_summary)
+    logger.info('Running the ETL job...')
+    search_dashboard_data = etl_job(main_summary)
 
     logger.info('Saving rollups to: {}'.format(output_path))
     (
@@ -137,4 +146,5 @@ def generate_dashboard(submission_date, bucket, prefix,
 def main(submission_date, bucket, prefix, input_bucket, input_prefix,
          save_mode):
     generate_dashboard(submission_date, bucket, prefix, input_bucket,
+                       search_dashboard_etl,
                        input_prefix, save_mode)
