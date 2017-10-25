@@ -127,6 +127,8 @@ def run_main_summary_based_etl(submission_date, bucket, prefix, version,
         .save(output_path)
     )
 
+    logger.info('Completed successfully!')
+
     spark.stop()
 
 
