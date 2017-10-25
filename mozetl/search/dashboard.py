@@ -9,7 +9,8 @@ For more information, see Bug 1381140 [1].
 '''
 import click
 import logging
-from pyspark.sql.functions import explode, col, when
+from pyspark.sql.functions import explode, col, when, udf
+from pyspark.sql.types import StringType
 from pyspark.sql import SparkSession
 
 
@@ -38,6 +39,13 @@ def search_dashboard_etl(main_summary):
     )
 
 
+def get_search_addon_version(active_addons):
+    if not active_addons:
+        return None
+    return next((a[5] for a in active_addons if a[0] == "followonsearch@mozilla.com"),
+                None)
+
+
 def explode_search_counts(main_summary):
     input_columns = [
         'search_counts',
@@ -47,19 +55,23 @@ def explode_search_counts(main_summary):
         'distribution_id',
         'locale',
         'search_cohort',
+        'active_addons',
     ]
 
     exploded_col_name = 'single_search_count'
     search_fields = [exploded_col_name + '.' + field
                      for field in ['engine', 'source', 'count']]
+    udf_get_search_addon_version = udf(get_search_addon_version, StringType())
 
     return (
         main_summary
         .select(input_columns)
         .withColumn(exploded_col_name, explode(col('search_counts')))
+        .withColumn('addon_version', udf_get_search_addon_version('active_addons'))
         .select(['*'] + search_fields)
         .drop(exploded_col_name)
         .drop('search_counts')
+        .drop('active_addons')
     )
 
 
