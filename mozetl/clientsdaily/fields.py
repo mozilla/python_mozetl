@@ -127,7 +127,9 @@ _FIELD_AGGREGATORS = [
     agg_sum('scalar_parent_browser_engagement_tab_open_event_count'),
     agg_sum('scalar_parent_browser_engagement_total_uri_count'),
     agg_sum('scalar_parent_browser_engagement_unfiltered_uri_count'),
+    # Include both max and mean for unique domains:
     agg_max('scalar_parent_browser_engagement_unique_domains_count'),
+    agg_mean('scalar_parent_browser_engagement_unique_domains_count'),
     agg_sum('scalar_parent_browser_engagement_window_open_event_count'),
     # F.sum('scalar_parent_browser_browser_usage_graphite').alias(
     #     'scalar_parent_browser_browser_usage_graphite_sum')
