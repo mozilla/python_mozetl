@@ -1,6 +1,7 @@
 import pytest
 import os
 from mozetl.schemas import MAIN_SUMMARY_SCHEMA
+from mozetl.clientsdaily import rollup as cd
 
 
 EXPECTED_INTEGER_VALUES = {
@@ -8,12 +9,14 @@ EXPECTED_INTEGER_VALUES = {
     'crashes_detected_content_sum': 9,
     'first_paint_mean': 12802105,
     'pings_aggregated_by_this_row': 1122,
-    'search_count_all_sum': 1043
+    'search_count_all_sum': 1043,
+    'scalar_parent_browser_engagement_unique_domains_count_max': 3160,
+    'scalar_parent_browser_engagement_unique_domains_count_mean': 2628
 }
 
 
 @pytest.fixture
-def make_frame(spark):
+def main_summary(spark):
     root = os.path.dirname(__file__)
     path = os.path.join(root, 'resources',
                         'main_summary-late-may-1123-rows-anonymized.json')
@@ -22,27 +25,29 @@ def make_frame(spark):
 
 
 @pytest.fixture
-def make_frame_with_extracts(spark):
-    from mozetl.clientsdaily import rollup
-    frame = make_frame(spark)
-    return rollup.extract_search_counts(frame)
+def main_summary_with_search(main_summary):
+    return cd.extract_search_counts(main_summary)
 
 
-def test_extract_search_counts(spark):
-    from mozetl.clientsdaily import rollup
+@pytest.fixture
+def clients_daily(main_summary_with_search):
+    return cd.to_profile_day_aggregates(main_summary_with_search)
 
-    frame = make_frame(spark)
-    extracted = rollup.extract_search_counts(frame)
-    row = extracted.agg({'search_count_all': 'sum'}).collect()[0]
+
+def test_extract_search_counts(main_summary_with_search):
+    row = main_summary_with_search.agg({'search_count_all': 'sum'}).collect()[0]
     total = row.asDict().values()[0]
     assert total == EXPECTED_INTEGER_VALUES['search_count_all_sum']
 
 
-def test_to_profile_day_aggregates(spark):
-    from mozetl.clientsdaily import rollup
+def test_domains_count(main_summary_with_search):
+    unique_domains = 'scalar_parent_browser_engagement_unique_domains_count'
+    row = main_summary_with_search.agg({unique_domains: 'sum'}).collect()[0]
+    total = row.asDict().values()[0]
+    assert total == 4402
 
-    frame = make_frame_with_extracts(spark)
-    clients_daily = rollup.to_profile_day_aggregates(frame)
+
+def test_to_profile_day_aggregates(clients_daily):
     # Sum up the means and sums as calculated over 1123 rows,
     # one of which is a duplicate.
     aggd = dict([(k, 'sum') for k in EXPECTED_INTEGER_VALUES])
@@ -53,12 +58,7 @@ def test_to_profile_day_aggregates(spark):
         assert actual == expected
 
 
-def test_profile_creation_date_fields(spark):
-    from mozetl.clientsdaily import rollup
-
-    frame = make_frame_with_extracts(spark)
-    clients_daily = rollup.to_profile_day_aggregates(frame)
-
+def test_profile_creation_date_fields(clients_daily):
     # Spark's from_unixtime() is apparently sensitive to environment TZ
     # See https://issues.apache.org/jira/browse/SPARK-17971
     # There are therefore three possible expected results, depending on
@@ -102,11 +102,7 @@ def test_profile_creation_date_fields(spark):
     assert actual2 in (expected2_back, expected2_utc, expected2_forward)
 
 
-def test_sessions_started_on_this_day(spark):
-    from mozetl.clientsdaily import rollup
-
-    frame = make_frame_with_extracts(spark)
-    clients_daily = rollup.to_profile_day_aggregates(frame)
+def test_sessions_started_on_this_day(clients_daily):
     expected = [2, 0, 3, 2, 1, 0, 1, 0, 0, 3]
     ten_ssotds = clients_daily.select("sessions_started_on_this_day").take(10)
     actual = [r.asDict().values()[0] for r in ten_ssotds]
@@ -115,11 +111,7 @@ def test_sessions_started_on_this_day(spark):
 
 # Similar to the test above, but a little easier to compare with
 # the source data.
-def test_sessions_started_on_this_day_sorted(spark):
-    from mozetl.clientsdaily import rollup
-
-    frame = make_frame_with_extracts(spark)
-    clients_daily = rollup.to_profile_day_aggregates(frame)
+def test_sessions_started_on_this_day_sorted(clients_daily):
     expected = [1, 5, 1, 1, 1, 0, 0, 0, 0, 0]
     one_day = clients_daily.where("activity_date == '2017-05-25'").orderBy("client_id")
     ten_ssotds = one_day.select("sessions_started_on_this_day").take(10)
