@@ -9,6 +9,7 @@ For more information, see Bug 1381140 [1].
 '''
 import click
 import logging
+import datetime
 from pyspark.sql.functions import explode, col, when, udf
 from pyspark.sql.types import StringType
 from pyspark.sql import SparkSession
@@ -95,6 +96,7 @@ def generate_dashboard(submission_date, bucket, prefix,
                        input_bucket=DEFAULT_INPUT_BUCKET,
                        input_prefix=DEFAULT_INPUT_PREFIX,
                        save_mode=DEFAULT_SAVE_MODE):
+    start = datetime.now()
     spark = (
         SparkSession
         .builder
@@ -131,6 +133,7 @@ def generate_dashboard(submission_date, bucket, prefix,
     )
 
     spark.stop()
+    logger.info('... done (took: %s)', str(datetime.now() - start))
 
 
 @click.command()
