@@ -96,7 +96,7 @@ def generate_dashboard(submission_date, bucket, prefix,
                        input_bucket=DEFAULT_INPUT_BUCKET,
                        input_prefix=DEFAULT_INPUT_PREFIX,
                        save_mode=DEFAULT_SAVE_MODE):
-    start = datetime.now()
+    start = datetime.datetime.now()
     spark = (
         SparkSession
         .builder
@@ -133,7 +133,7 @@ def generate_dashboard(submission_date, bucket, prefix,
     )
 
     spark.stop()
-    logger.info('... done (took: %s)', str(datetime.now() - start))
+    logger.info('... done (took: %s)', str(datetime.datetime.now() - start))
 
 
 @click.command()
