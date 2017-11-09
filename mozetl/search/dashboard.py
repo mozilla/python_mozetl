@@ -96,7 +96,7 @@ def main(submission_date, bucket, prefix, input_bucket, input_prefix,
         .getOrCreate()
     )
 
-    version = 1
+    version = 2
     source_path = 's3://{}/{}/submission_date_s3={}'.format(
         input_bucket,
         input_prefix,
