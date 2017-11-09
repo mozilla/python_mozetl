@@ -70,6 +70,8 @@ def generate_main_summary_data(define_dataframe_factory):
     return define_dataframe_factory(map(to_field, [
         ('submission_date', '20170101',                StringType(), False),
         ('country',         'DE',                      StringType(), True),
+        ('locale',          'de',                      StringType(), True),
+        ('search_cohort',   None,                      StringType(), True),
         ('app_version',     '54.0.1',                  StringType(), True),
         ('distribution_id', None,                      StringType(), True),
         ('ignored_col',     1.0,                       DoubleType(), True),
@@ -113,6 +115,8 @@ def generate_exploded_data(define_dataframe_factory):
     return define_dataframe_factory(map(to_field, [
         ('submission_date', '20170101', StringType(), False),
         ('country',         'DE',       StringType(), True),
+        ('locale',          'de',       StringType(), True),
+        ('search_cohort',   None,       StringType(), True),
         ('app_version',     '54.0.1',   StringType(), True),
         ('distribution_id', None,       StringType(), True),
         ('engine',          'google',   StringType(), False),
@@ -143,6 +147,8 @@ def derived_columns(define_dataframe_factory):
     factory = define_dataframe_factory(map(to_field, [
         ('submission_date', '20170101',   StringType(), False),
         ('country',         'DE',         StringType(), True),
+        ('locale',          'de',         StringType(), True),
+        ('search_cohort',   None,         StringType(), True),
         ('app_version',     '54.0.1',     StringType(), True),
         ('distribution_id', None,         StringType(), True),
         ('engine',          'google',     StringType(), False),
@@ -166,6 +172,8 @@ def expected_search_dashboard_data(define_dataframe_factory):
     factory = define_dataframe_factory(map(to_field, [
         ('submission_date', '20170101',   StringType(), False),
         ('country',         'DE',         StringType(), True),
+        ('locale',          'de',         StringType(), True),
+        ('search_cohort',   None,         StringType(), True),
         ('app_version',     '54.0.1',     StringType(), True),
         ('distribution_id', None,         StringType(), True),
         ('engine',          'google',     StringType(), False),

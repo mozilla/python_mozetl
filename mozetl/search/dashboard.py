@@ -38,6 +38,8 @@ def explode_search_counts(main_summary):
         'country',
         'app_version',
         'distribution_id',
+        'locale',
+        'search_cohort',
     ]
 
     exploded_col_name = 'single_search_count'
