@@ -24,7 +24,7 @@ def agg_mean(field_name, alias=None):
 
 
 def agg_first(field_name):
-    return F.first(field_name).alias(field_name)
+    return F.first(field_name, ignorenulls=True).alias(field_name)
 
 
 def agg_max(field_name, alias=None):
