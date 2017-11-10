@@ -117,3 +117,19 @@ def test_sessions_started_on_this_day_sorted(clients_daily):
     ten_ssotds = one_day.select("sessions_started_on_this_day").take(10)
     actual = [r.asDict().values()[0] for r in ten_ssotds]
     assert actual == expected
+
+
+# Ensure that "first" aggregations skip null values
+def test_first_skips_nulls(clients_daily):
+    filter_template = "client_id = '{}' and activity_date = '{}'"
+    client = '0c495fce-5fbf-4f4a-ac03-2dedcef0a8d0'
+    day = '2017-05-25'
+    filter_clause = filter_template.format(client, day)
+    null_to_false = clients_daily.where(filter_clause).select("sync_configured").first()
+    expected = False
+    actual = null_to_false.sync_configured
+    assert actual == expected
+
+    expected = 230
+    actual = clients_daily.where("sync_configured is null").count()
+    assert actual == expected
