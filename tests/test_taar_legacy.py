@@ -1,7 +1,6 @@
 """Test suite for TAAR Legacy Job."""
 
 import pytest
-import requests
 from mozetl.taar import taar_legacy
 
 FAKE_LEGACY_DATA = {
@@ -92,4 +91,3 @@ def test_parse_from_amo_api():
     expected = {'test-key': 'test-val'}
     new_dict = taar_legacy.parse_from_amo_api(None, expected)
     assert expected == new_dict
-
