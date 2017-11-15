@@ -1,7 +1,7 @@
-import datetime as DT
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 import click
+from mozetl.utils import extract_submission_window_for_activity_day
 from mozetl.utils import format_spark_path
 
 SEARCH_ACCESS_POINTS = [
@@ -102,27 +102,6 @@ def extract_search_counts(frame):
     return result
 
 
-def extract_submission_window_for_activity_day(frame, start_date, end_date):
-    """
-    Extract rows with an activity_date of `start_date` and a submission_date
-    between `start_date` and `end_date` (inclusive).
-
-    :start_date DT.date(Y, m, d) of the beginning of the target period
-    :end_date DT.date(Y, m, d) of the end of the submission date period
-    :frame DataFrame homologous with main_summary
-    """
-    from fields import ACTIVITY_DATE_COLUMN
-    frame = frame.select("*", ACTIVITY_DATE_COLUMN)
-    activity_iso = start_date.strftime('%Y-%m-%d')
-    submission_start_str = start_date.strftime('%Y%m%d')
-    submission_end_str = end_date.strftime('%Y%m%d')
-    result = frame.where(
-        "submission_date_s3 >= '{}'".format(submission_start_str)) \
-        .where("submission_date_s3 <= '{}'".format(submission_end_str)) \
-        .where("activity_date = '{}'".format(activity_iso))
-    return result
-
-
 def to_profile_day_aggregates(frame_with_extracts):
     from fields import MAIN_SUMMARY_FIELD_AGGREGATORS
     if "activity_date" not in frame_with_extracts.columns:
@@ -202,12 +181,8 @@ def main(date, input_bucket, input_prefix, output_bucket,
     spark.conf.set(
         "mapreduce.fileoutputcommitter.marksuccessfuljobs", "false"
     )
-    end_date = DT.datetime.strptime(date, '%Y-%m-%d').date()
-
-    # Rewind by `lag_days` to the desired activity date.
-    start_date = end_date - DT.timedelta(lag_days)
     main_summary = load_main_summary(spark, input_bucket, input_prefix)
-    day_frame = extract_submission_window_for_activity_day(main_summary, start_date, end_date)
+    day_frame, start_date = extract_submission_window_for_activity_day(main_summary, date, lag_days)
     if sample_id:
         day_frame = day_frame.where("sample_id = '{}'".format(sample_id))
     with_searches = extract_search_counts(day_frame)

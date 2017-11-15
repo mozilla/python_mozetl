@@ -131,3 +131,33 @@ def send_ses(fromaddr,
 
     if 'ErrorResponse' in result:
         raise RuntimeError("Error sending email: " + result)
+
+
+def extract_submission_window_for_activity_day(frame, date, lag_days):
+    """
+    Extract rows with an activity_date of `date` minus lag_days and a
+    submission_date between `activity_date` and `date` (inclusive).
+
+    :date 'Y-m-d' of the end of the target period
+    :lag_days number of days after `date` in the target period
+    :frame DataFrame homologous with main_summary
+
+    Note that the start_date will be `lag-days` days before date. In other
+    words, if you pass in 2017-01-20 and set `lag-days` to 5, the aggregation
+    will be processed for day 2017-01-15 (the resulting data will cover
+    submission dates including the activity day itself plus 5 days of lag for
+    a total of 6 days).
+    """
+    from clientsdaily.fields import ACTIVITY_DATE_COLUMN
+    end_date = DT.datetime.strptime(date, '%Y-%m-%d').date()
+    # Rewind by `lag_days` to the desired activity date.
+    start_date = end_date - DT.timedelta(lag_days)
+    frame = frame.select("*", ACTIVITY_DATE_COLUMN)
+    activity_iso = start_date.strftime('%Y-%m-%d')
+    submission_start_str = start_date.strftime('%Y%m%d')
+    submission_end_str = end_date.strftime('%Y%m%d')
+    result = frame.where(
+        "submission_date_s3 >= '{}'".format(submission_start_str)) \
+        .where("submission_date_s3 <= '{}'".format(submission_end_str)) \
+        .where("activity_date = '{}'".format(activity_iso))
+    return result, start_date
