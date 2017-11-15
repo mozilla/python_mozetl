@@ -70,7 +70,6 @@ _FIELD_AGGREGATORS = [
     agg_sum('devtools_toolbox_opened_count'),
     agg_first('distribution_id'),
     # userprefs/dom_ipc_process_count
-    agg_first('e10s_cohort'),
     agg_first('e10s_enabled'),
     agg_first('env_build_arch'),
     agg_first('env_build_id'),
