@@ -182,12 +182,6 @@
     }, 
     {
       "metadata": {}, 
-      "name": "e10s_cohort", 
-      "nullable": true, 
-      "type": "string"
-    }, 
-    {
-      "metadata": {}, 
       "name": "locale", 
       "nullable": true, 
       "type": "string"
