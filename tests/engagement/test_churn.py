@@ -1,4 +1,5 @@
 import functools
+import copy
 
 import pytest
 from pyspark.sql import functions as F
@@ -383,3 +384,60 @@ def test_sync_usage(test_transform):
 
     for test in test_func:
         test(df)
+
+
+def test_attribution_from_new_profile(effective_version,
+                                      generate_main_summary_data,
+                                      generate_new_profile_data):
+    main_summary = generate_main_summary_data([
+        {'client_id': '1', 'attribution': {'source': 'mozilla.org'}},
+        {'client_id': '3', 'attribution': None},
+        {'client_id': '4', 'attribution': None},
+        {
+            'client_id': '5',
+            'attribution': {'source': 'mozilla.org'},
+            'timestamp': SUBSESSION_START.shift(days=1).timestamp * 10 ** 9,
+        },
+        {
+            'client_id': '6',
+            'attribution': {'source': 'mozilla.org'},
+            'timestamp': SUBSESSION_START.shift(days=1).timestamp * 10 ** 9,
+        },
+        {'client_id': '7', 'attribution': {'source': 'mozilla.org'}},
+    ])
+
+    def update_attribution(attribution):
+        # only updates the attribution section in the environment
+        env = copy.deepcopy(data.new_profile_sample['environment'])
+        env['settings']['attribution'] = attribution
+        return env
+
+    new_profile = generate_new_profile_data([
+        # new profile without a main summary companion
+        {'client_id': '2', 'environment': update_attribution({'source': 'mozilla.org'})},
+        # recover null attribution
+        {'client_id': '3', 'environment': update_attribution({'source': 'mozilla.org'})},
+        # new-profile ping used to recover attribution, but outside of the
+        # the current retention period
+        {
+            'client_id': '4',
+            'environment': update_attribution({'source': 'mozilla.org'}),
+            'submission': SUBSESSION_START.shift(days=-7).format("YYYYMMDD"),
+        },
+        # avoid accidentally overwriting an existing value with an empty structure
+        {'client_id': '5', 'environment': update_attribution({})},
+        # main-pings have higher latency than new-profile pings, so the main
+        # ping attribution state will be set correctly
+        {'client': '6', 'environment': update_attribution(None)},
+        # new-profile timestamp is newer than main-ping, so attribution for the
+        # client is unset
+        {
+            'client_id': '7',
+            'environment': update_attribution(None),
+            'timestamp': SUBSESSION_START.shift(days=1).timestamp * 10 ** 9,
+        },
+    ])
+    sources = job.extract(main_summary, new_profile, WEEK_START_DS, 2, 0, False)
+    df = job.transform(sources, effective_version, WEEK_START_DS)
+
+    assert df.where("source='mozilla.org'").agg(F.sum("n_profiles")).first()[0] == 6
