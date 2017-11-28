@@ -114,6 +114,33 @@ def clean_new_profile(new_profile):
     return new_profile.select(utils.build_col_expr(select_expr))
 
 
+def join_and_coalesce(lhs, rhs, on, col):
+    """ Join two dataframes on a common column, coalescing the value of a
+    target column to the right hand side over the left hand side.
+
+    :param lhs: dataframe as the frame of reference, left hand side
+    :param rhs: dataframe to coalesce values from, right hand side
+    :param on:  column name to join on
+    :param col: name of the column in the rhs to coalesce with lhs
+    :return:    a dataframe with the same schema as the lhs
+    """
+
+    assert len({on, col} & set(lhs.columns) & set(rhs.columns)) == 2, \
+        "both dataframes should contain join key and coalesce column"
+
+    rhs_name = "_rhs_column_name"
+    rhs = rhs.select(on, F.col(col).alias(rhs_name))
+
+    coalesced = (
+        lhs
+        .join(rhs, on, "left")
+        .withColumn(col, F.coalesce(rhs_name, col))
+        .select(lhs.columns)
+    )
+
+    return coalesced
+
+
 def extract(main_summary, new_profile, start_ds, period, slack, is_sampled):
     """
     Extract data from the main summary table taking into account the
@@ -139,15 +166,23 @@ def extract(main_summary, new_profile, start_ds, period, slack, is_sampled):
     if is_sampled:
         predicates.append((F.col("sample_id") == "57"))
 
-    return (
+    extract_ms = (
         main_summary
         .where(reduce(operator.__and__, predicates))
         .select(SOURCE_COLUMNS)
-        .union(
-            clean_new_profile(new_profile)
-            .where(reduce(operator.__and__, predicates))
-            .select(SOURCE_COLUMNS)
-        )
+    )
+
+    np = clean_new_profile(new_profile)
+    extract_np = (
+        np
+        .where(reduce(operator.__and__, predicates))
+        .select(SOURCE_COLUMNS)
+    )
+
+    return (
+        # bug 1416364: use attribution from new profiles
+        join_and_coalesce(extract_ms, np, "client_id", "attribution")
+        .union(extract_np)
     )
 
 
