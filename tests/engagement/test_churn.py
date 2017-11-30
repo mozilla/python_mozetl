@@ -441,3 +441,29 @@ def test_attribution_from_new_profile(effective_version,
     df = job.transform(sources, effective_version, WEEK_START_DS)
 
     assert df.where("source='mozilla.org'").agg(F.sum("n_profiles")).first()[0] == 6
+
+
+def test_invalid_profile_creation_date(test_transform):
+    df = test_transform([
+        {
+            "client_id": "created when?",
+            "profile_creation_date": None
+        },
+        {
+            "client_id": "older than firefox",
+            "profile_creation_date": data.format_pcd(data.SUBSESSION_START.shift(years=-50))
+        },
+        {
+            "client_id": "created in the future",
+            "profile_creation_date": data.format_pcd(data.SUBSESSION_START.shift(days=+10))
+        },
+        {"client_id": "sanity"},
+    ])
+
+    # null and the single sane row
+    assert df.count() == 2
+
+    # attributes like `geo` head to null space if pcd is invalid
+    # pings in these tests share a common geo value ("US")
+    df.where("geo='US'").agg(F.sum("n_profiles")).first()[0] == 1
+    df.where("geo='unknown'").agg(F.sum("n_profiles")).first()[0] == 3
