@@ -388,7 +388,15 @@ def clean_columns(prepared_clients, effective_version, start_ds):
             (F.col("profile_creation") > DEFAULT_DATE) &
             (pcd <= client_date)
         ))
-        .select("profile_creation", *select_expr)
+        .select(
+            # avoid acquisition dates in the future
+            (
+                F.when(F.col(is_valid), F.col("profile_creation"))
+                .otherwise(F.lit(None))
+                .alias("profile_creation")
+            ),
+            *select_expr
+        )
         # Set default values for the rows
         .fillna({
             'acquisition_period': DEFAULT_DATE,
