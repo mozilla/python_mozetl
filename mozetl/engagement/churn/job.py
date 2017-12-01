@@ -508,6 +508,12 @@ def main(start_date, bucket, prefix, input_bucket, input_prefix,
     )
     spark.conf.set("spark.sql.session.timeZone", "UTC")
 
+    shuffle_partitions = max(
+        spark.sparkContext.defaultParallelism * 4,
+        int(spark.conf.get("spark.sql.shuffle.partitions"))
+    )
+    spark.conf.set("spark.sql.shuffle.partitions", shuffle_partitions)
+
     # If this job is scheduled, we need the input date to lag a total of
     # 10 days of slack for incoming data. Airflow subtracts 7 days to
     # account for the weekly nature of this report.
