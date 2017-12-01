@@ -179,9 +179,16 @@ def extract(main_summary, new_profile, start_ds, period, slack, is_sampled):
         .select(SOURCE_COLUMNS)
     )
 
+    np_attribution = (
+        np
+        .where("attribution is not null")
+        .groupBy("client_id")
+        .agg(F.first("attribution").alias("attribution"))
+    )
+
     return (
         # bug 1416364: use attribution from new profiles
-        join_and_coalesce(extract_ms, np, "client_id", "attribution")
+        join_and_coalesce(extract_ms, np_attribution, "client_id", "attribution")
         .union(extract_np)
     )
 
