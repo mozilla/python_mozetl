@@ -40,7 +40,7 @@ def _build_cell(ping, column_config):
     if func is not None:
         try:
             return func(raw_value)
-        except:  # TODO: what exception could happen here, fill in?
+        except Exception:
             return None
     else:
         return raw_value
