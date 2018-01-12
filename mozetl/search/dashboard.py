@@ -70,6 +70,7 @@ def explode_search_counts(main_summary):
         .withColumn(exploded_col_name, explode(col('search_counts')))
         .withColumn('addon_version', udf_get_search_addon_version('active_addons'))
         .select(['*'] + search_fields)
+        .filter('single_search_count.count < 1000')
         .drop(exploded_col_name)
         .drop('search_counts')
         .drop('active_addons')
