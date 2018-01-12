@@ -9,9 +9,15 @@ For more information, see Bug 1381140 [1].
 '''
 import click
 import logging
-from pyspark.sql.functions import explode, col, when
+import datetime
+from pyspark.sql.functions import explode, col, when, udf
+from pyspark.sql.types import StringType
 from pyspark.sql import SparkSession
 
+
+DEFAULT_INPUT_BUCKET = 'telemetry-parquet'
+DEFAULT_INPUT_PREFIX = 'main_summary/v4'
+DEFAULT_SAVE_MODE = 'error'
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -21,14 +27,24 @@ def search_dashboard_etl(main_summary):
     # todo: this function should consume already exploded and augmented data
     exploded = explode_search_counts(main_summary)
     augmented = add_derived_columns(exploded)
-    group_cols = filter(lambda x: x != 'count', augmented.columns)
+    group_cols = filter(lambda x: x not in ['count', 'type'], augmented.columns)
 
     return (
         augmented
         .groupBy(group_cols)
+        .pivot(
+            'type',
+            ['tagged-sap', 'tagged-follow-on', 'sap']
+        )
         .sum('count')
-        .withColumnRenamed('sum(count)', 'search_count')
     )
+
+
+def get_search_addon_version(active_addons):
+    if not active_addons:
+        return None
+    return next((a[5] for a in active_addons if a[0] == "followonsearch@mozilla.com"),
+                None)
 
 
 def explode_search_counts(main_summary):
@@ -40,19 +56,23 @@ def explode_search_counts(main_summary):
         'distribution_id',
         'locale',
         'search_cohort',
+        'active_addons',
     ]
 
     exploded_col_name = 'single_search_count'
     search_fields = [exploded_col_name + '.' + field
                      for field in ['engine', 'source', 'count']]
+    udf_get_search_addon_version = udf(get_search_addon_version, StringType())
 
     return (
         main_summary
         .select(input_columns)
         .withColumn(exploded_col_name, explode(col('search_counts')))
+        .withColumn('addon_version', udf_get_search_addon_version('active_addons'))
         .select(['*'] + search_fields)
         .drop(exploded_col_name)
         .drop('search_counts')
+        .drop('active_addons')
     )
 
 
@@ -65,30 +85,20 @@ def add_derived_columns(exploded_search_counts):
         exploded_search_counts
         .withColumn(
             'type',
-            when(col('source').startswith('sap:'), 'in-content-sap')
+            when(col('source').startswith('sap:'), 'tagged-sap')
             .otherwise(
-                when(col('source').startswith('follow-on:'), 'follow-on')
-                .otherwise('chrome-sap')
+                when(col('source').startswith('follow-on:'), 'tagged-follow-on')
+                .otherwise('sap')
             )
         )
     )
 
 
-@click.command()
-@click.option('--submission_date', required=True)
-@click.option('--bucket', required=True)
-@click.option('--prefix', required=True)
-@click.option('--input_bucket',
-              default='telemetry-parquet',
-              help='Bucket of the input dataset')
-@click.option('--input_prefix',
-              default='main_summary/v4',
-              help='Prefix of the input dataset')
-@click.option('--save_mode',
-              default='error',
-              help='Save mode for writing data')
-def main(submission_date, bucket, prefix, input_bucket, input_prefix,
-         save_mode):
+def generate_dashboard(submission_date, bucket, prefix,
+                       input_bucket=DEFAULT_INPUT_BUCKET,
+                       input_prefix=DEFAULT_INPUT_PREFIX,
+                       save_mode=DEFAULT_SAVE_MODE):
+    start = datetime.datetime.now()
     spark = (
         SparkSession
         .builder
@@ -125,3 +135,23 @@ def main(submission_date, bucket, prefix, input_bucket, input_prefix,
     )
 
     spark.stop()
+    logger.info('... done (took: %s)', str(datetime.datetime.now() - start))
+
+
+@click.command()
+@click.option('--submission_date', required=True)
+@click.option('--bucket', required=True)
+@click.option('--prefix', required=True)
+@click.option('--input_bucket',
+              default=DEFAULT_INPUT_BUCKET,
+              help='Bucket of the input dataset')
+@click.option('--input_prefix',
+              default=DEFAULT_INPUT_PREFIX,
+              help='Prefix of the input dataset')
+@click.option('--save_mode',
+              default=DEFAULT_SAVE_MODE,
+              help='Save mode for writing data')
+def main(submission_date, bucket, prefix, input_bucket, input_prefix,
+         save_mode):
+    generate_dashboard(submission_date, bucket, prefix, input_bucket,
+                       input_prefix, save_mode)
