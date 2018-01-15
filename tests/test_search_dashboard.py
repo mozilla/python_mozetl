@@ -5,7 +5,7 @@ from pyspark.sql.types import (
     StructField, ArrayType, BooleanType, StringType, LongType, StructType, DoubleType
 )
 from mozetl.search.dashboard import (
-    search_dashboard_etl, explode_search_counts, add_derived_columns
+    search_dashboard_etl, explode_search_counts, add_derived_columns, MAX_CLIENT_SEARCH_COUNT
 )
 
 
@@ -236,6 +236,27 @@ def test_explode_search_counts(simple_main_summary,
     actual = explode_search_counts(simple_main_summary)
 
     assert df_equals(actual, exploded_simple_main_summary)
+
+
+def test_explode_search_counts_bing_absurd(generate_main_summary_data,
+                                           generate_exploded_data,
+                                           df_equals):
+    main_summary_bing_absurd = generate_main_summary_data(
+        [
+            {'search_counts': [
+                generate_search_count(engine='bing', count=(MAX_CLIENT_SEARCH_COUNT + 1)),
+                generate_search_count(engine='yahoo'),
+            ]}
+        ]
+    )
+
+    # expected result only includes yahoo, because the bing entry had an absurd
+    # number of searches
+    expected = generate_exploded_data([{'engine': 'yahoo'}])
+
+    actual = explode_search_counts(main_summary_bing_absurd)
+
+    assert df_equals(expected, actual)
 
 
 def test_add_derived_columns(exploded_data_for_derived_cols,
