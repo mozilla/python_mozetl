@@ -18,6 +18,7 @@ from pyspark.sql import SparkSession
 DEFAULT_INPUT_BUCKET = 'telemetry-parquet'
 DEFAULT_INPUT_PREFIX = 'main_summary/v4'
 DEFAULT_SAVE_MODE = 'error'
+MAX_CLIENT_SEARCH_COUNT = 10000
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -70,6 +71,7 @@ def explode_search_counts(main_summary):
         .withColumn(exploded_col_name, explode(col('search_counts')))
         .withColumn('addon_version', udf_get_search_addon_version('active_addons'))
         .select(['*'] + search_fields)
+        .filter('single_search_count.count < %s' % MAX_CLIENT_SEARCH_COUNT)
         .drop(exploded_col_name)
         .drop('search_counts')
         .drop('active_addons')
