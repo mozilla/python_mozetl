@@ -2,10 +2,11 @@ import functools
 import pytest
 from collections import namedtuple
 from pyspark.sql.types import (
-    StructField, ArrayType, BooleanType, StringType, LongType, StructType
+    StructField, ArrayType, BooleanType, StringType, LongType, StructType, DoubleType
 )
 from mozetl.search.aggregates import (
-    search_aggregates, explode_search_counts, add_derived_columns, MAX_CLIENT_SEARCH_COUNT
+    search_aggregates, search_clients_daily,
+    explode_search_counts, add_derived_columns, MAX_CLIENT_SEARCH_COUNT
 )
 
 
@@ -97,24 +98,75 @@ active_addons = [
 ]
 
 
+search_type = ArrayType(StructType([
+    StructField('engine', StringType(), False),
+    StructField('source', StringType(), False),
+    StructField('count', LongType(), False),
+]))
+
+
+main_summary_schema = [
+    ('client_id', 'a', StringType(), False),
+    ('submission_date', '20170101', StringType(), False),
+    ('os', 'windows', StringType(), True),
+    ('channel', 'release', StringType(), True),
+    ('country', 'DE', StringType(), True),
+    ('locale', 'de', StringType(), True),
+    ('search_cohort', None, StringType(), True),
+    ('app_version', '54.0.1', StringType(), True),
+    ('distribution_id', None, StringType(), True),
+    ('subsession_counter', 1, LongType(), True),
+    ('search_counts', [generate_search_count()], search_type, True),
+    ('active_addons', active_addons, addons_type, True),
+    # 30 minutes in active_ticks (30min * 60sec/min / 5sec/tick)
+    ('active_ticks', 360, LongType(), True),
+    (
+        'scalar_parent_browser_engagement_tab_open_event_count',
+        5,
+        LongType(),
+        True
+    ),
+    (
+        'scalar_parent_browser_engagement_max_concurrent_tab_count',
+        10,
+        LongType(),
+        True
+    ),
+    ('subsession_start_date', '2017-01-01 10:00', StringType(), False),
+    # One hour per ping
+    ('subsession_length', 60 * 60, LongType(), False),
+    # Roughly 2016-01-01
+    ('profile_creation_date', 16801, LongType(), False),
+    ('default_search_engine', 'google', StringType(), False),
+    (
+        'default_search_engine_data_load_path',
+        'jar:[app]/omni.ja!browser/google.xml',
+        StringType(),
+        False
+    ),
+    (
+        'default_search_engine_data_submission_url',
+        'https://www.google.com/search?q=&ie=utf-8&oe=utf-8&client=firefox-b',
+        StringType(),
+        False
+    ),
+]
+
+exploded_schema = filter(lambda x: x[0] != 'search_counts', main_summary_schema) + [
+    ('engine', 'google', StringType(), False),
+    ('source', 'urlbar', StringType(), False),
+    ('count', 4, LongType(), False),
+]
+
+derived_schema = exploded_schema + [
+    ('type', 'chrome-sap', StringType(), False),
+    ('addon_version', '0.9.5', StringType(), False),
+]
+
+
 @pytest.fixture()
 def generate_main_summary_data(define_dataframe_factory):
-    search_type = ArrayType(StructType([
-        StructField('engine', StringType(), False),
-        StructField('source', StringType(), False),
-        StructField('count',  LongType(),   False),
-    ]))
-
-    return define_dataframe_factory(map(to_field, [
-        ('submission_date', '20170101',                StringType(), False),
-        ('country',         'DE',                      StringType(), True),
-        ('locale',          'de',                      StringType(), True),
-        ('search_cohort',   None,                      StringType(), True),
-        ('app_version',     '54.0.1',                  StringType(), True),
-        ('distribution_id', None,                      StringType(), True),
-        ('search_counts',   [generate_search_count()], search_type,  True),
-        ('active_addons',   active_addons,             addons_type,  True),
-    ]))
+    return define_dataframe_factory(map(to_field, main_summary_schema))
 
 
 @pytest.fixture
@@ -122,6 +174,7 @@ def main_summary(generate_main_summary_data):
     return generate_main_summary_data(
         [
             {
+                'client_id': 'b',
                 'country': 'US',
             },
             {'app_version': '52.0.3'},
@@ -149,18 +202,7 @@ def simple_main_summary(generate_main_summary_data):
 
 @pytest.fixture()
 def generate_exploded_data(define_dataframe_factory):
-    return define_dataframe_factory(map(to_field, [
-        ('submission_date', '20170101',    StringType(), False),
-        ('country',         'DE',          StringType(), True),
-        ('locale',          'de',          StringType(), True),
-        ('search_cohort',   None,          StringType(), True),
-        ('app_version',     '54.0.1',      StringType(), True),
-        ('distribution_id', None,          StringType(), True),
-        ('engine',          'google',      StringType(), False),
-        ('source',          'urlbar',      StringType(), False),
-        ('count',           4,             LongType(),   False),
-        ('active_addons',   active_addons, addons_type,  True),
-    ]))
+    return define_dataframe_factory(map(to_field, exploded_schema))
 
 
 @pytest.fixture()
@@ -183,20 +225,7 @@ def exploded_data_for_derived_cols(generate_exploded_data):
 @pytest.fixture()
 def derived_columns(define_dataframe_factory):
     # template for the expected results
-    factory = define_dataframe_factory(map(to_field, [
-        ('submission_date', '20170101',    StringType(), False),
-        ('country',         'DE',          StringType(), True),
-        ('locale',          'de',          StringType(), True),
-        ('search_cohort',   None,          StringType(), True),
-        ('app_version',     '54.0.1',      StringType(), True),
-        ('distribution_id', None,          StringType(), True),
-        ('addon_version',   '0.9.5',       StringType(), False),
-        ('engine',          'google',      StringType(), False),
-        ('source',          'urlbar',      StringType(), False),
-        ('count',           4,             LongType(),   False),
-        ('type',            'chrome-sap',  StringType(), False),
-        ('active_addons',   active_addons, addons_type,  True),
-    ]))
+    factory = define_dataframe_factory(map(to_field, derived_schema))
 
     return factory([
         {'source': 'sap:urlbar:SomeCodeHere',
@@ -212,18 +241,18 @@ def derived_columns(define_dataframe_factory):
 def expected_search_dashboard_data(define_dataframe_factory):
     # template for the expected results
     factory = define_dataframe_factory(map(to_field, [
-        ('submission_date',  '20170101',   StringType(), False),
-        ('country',          'DE',         StringType(), True),
-        ('locale',           'de',         StringType(), True),
-        ('search_cohort',    None,         StringType(), True),
-        ('app_version',      '54.0.1',     StringType(), True),
-        ('distribution_id',  None,         StringType(), True),
-        ('addon_version',    '0.9.5',      StringType(), False),
-        ('engine',           'google',     StringType(), False),
-        ('source',           'urlbar',     StringType(), False),
-        ('tagged-sap',       None,         LongType(), True),
-        ('tagged-follow-on', None,         LongType(), True),
-        ('sap',              4,            LongType(), True),
+        ('submission_date', '20170101', StringType(), False),
+        ('country', 'DE', StringType(), True),
+        ('locale', 'de', StringType(), True),
+        ('search_cohort', None, StringType(), True),
+        ('app_version', '54.0.1', StringType(), True),
+        ('distribution_id', None, StringType(), True),
+        ('addon_version', '0.9.5', StringType(), False),
+        ('engine', 'google', StringType(), False),
+        ('source', 'urlbar', StringType(), False),
+        ('tagged-sap', None, LongType(), True),
+        ('tagged-follow-on', None, LongType(), True),
+        ('sap', 4, LongType(), True),
     ]))
 
     return factory([
@@ -233,6 +262,70 @@ def expected_search_dashboard_data(define_dataframe_factory):
         {'engine': 'yahoo'},
         {'engine': 'bing'},
         {'sap': 20},
+    ])
+
+
+@pytest.fixture()
+def expected_search_clients_daily_data(define_dataframe_factory):
+    # template for the expected results
+    factory = define_dataframe_factory(map(to_field, [
+        ('client_id', 'a', StringType(), False),
+        ('submission_date', '20170101', StringType(), False),
+        ('os', 'windows', StringType(), True),
+        ('channel', 'release', StringType(), True),
+        ('country', 'DE', StringType(), True),
+        ('locale', 'de', StringType(), True),
+        ('search_cohort', None, StringType(), True),
+        ('app_version', '54.0.1', StringType(), True),
+        ('distribution_id', None, StringType(), True),
+        ('addon_version', '0.9.5', StringType(), False),
+        ('engine', 'google', StringType(), False),
+        ('source', 'urlbar', StringType(), False),
+        ('tagged-sap', None, LongType(), True),
+        ('tagged-follow-on', None, LongType(), True),
+        ('sap', 4, LongType(), True),
+        # Roughly 2016-01-01
+        ('profile_creation_date', 16801, LongType(), False),
+        ('default_search_engine', 'google', StringType(), False),
+        (
+            'default_search_engine_data_load_path',
+            'jar:[app]/omni.ja!browser/google.xml',
+            StringType(),
+            False
+        ),
+        (
+            'default_search_engine_data_submission_url',
+            'https://www.google.com/search?q=&ie=utf-8&oe=utf-8&client=firefox-b',
+            StringType(),
+            False
+        ),
+        ('sessions_started_on_this_day', 1, LongType(), True),
+        (
+            'profile_age_in_days',
+            366,
+            LongType(),
+            True
+        ),
+        ('subsession_hours_sum', 1.0, DoubleType(), True),
+        ('active_addons_count_mean', 2.0, DoubleType(), True),
+        ('max_concurrent_tab_count_max', 10, LongType(), True),
+        ('tab_open_event_count_sum', 5, LongType(), True),
+        ('active_hours_sum', .5, DoubleType(), True),
+    ]))
+
+    return factory([
+        {'client_id': 'b', 'country': 'US'},
+        # Covers 5 dupe rows and custom app_version, distribution_id rows
+        {
+            'app_version': '52.0.3',
+            'sap': 28,
+            'sessions_started_on_this_day': 7,
+            'subsession_hours_sum': 7.0,
+            'tab_open_event_count_sum': 35,
+            'active_hours_sum': 3.5,
+        },
+        {'engine': 'bing'},
+        {'engine': 'yahoo'},
     ])
 
 
@@ -280,3 +373,11 @@ def test_basic_aggregation(main_summary,
                            df_equals):
     actual = search_aggregates(main_summary)
     assert df_equals(actual, expected_search_dashboard_data)
+
+
+def test_search_clients_daily(main_summary,
+                              expected_search_clients_daily_data,
+                              df_equals):
+    actual = search_clients_daily(main_summary)
+
+    assert df_equals(actual, expected_search_clients_daily_data)
