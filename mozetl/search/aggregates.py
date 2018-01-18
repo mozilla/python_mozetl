@@ -13,7 +13,10 @@ This allows for deeper analysis into user level search behavior.
 import click
 import logging
 import datetime
-from pyspark.sql.functions import explode, col, when, udf, sum
+from pyspark.sql.functions import (
+    explode, col, when, udf, sum, first, count, datediff, from_unixtime, mean,
+    size, max
+)
 from pyspark.sql.types import StringType
 from pyspark.sql import SparkSession
 
@@ -25,6 +28,60 @@ MAX_CLIENT_SEARCH_COUNT = 10000
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+def agg_first(col):
+    return first(col).alias(col)
+
+
+def search_clients_daily(main_summary):
+    return agg_search_data(
+        main_summary,
+        [
+            'client_id',
+            'submission_date',
+            'engine',
+            'source',
+        ],
+        map(agg_first, [
+            'country',
+            'app_version',
+            'distribution_id',
+            'locale',
+            'search_cohort',
+            'addon_version',
+            'os',
+            'channel',
+            'profile_creation_date',
+            'default_search_engine',
+            'default_search_engine_data_load_path',
+            'default_search_engine_data_submission_url',
+        ]) + [
+            # Count of 'first' subsessions seen for this client_day
+            (
+                count(when(col('subsession_counter') == 1, 1))
+                .alias('sessions_started_on_this_day')
+            ),
+            first(datediff(
+                'subsession_start_date',
+                from_unixtime(col('profile_creation_date') * 24 * 60 * 60)
+            )).alias('profile_age_in_days'),
+            sum(col('subsession_length')/3600.0).alias('subsession_hours_sum'),
+            mean(size('active_addons')).alias('active_addons_count_mean'),
+            (
+                max('scalar_parent_browser_engagement_max_concurrent_tab_count')
+                .alias('max_concurrent_tab_count_max')
+            ),
+            (
+                sum('scalar_parent_browser_engagement_tab_open_event_count')
+                .alias('tab_open_event_count_sum')
+            ),
+            (
+                sum(col('active_ticks') * 5 / 3600.0)
+                .alias('active_hours_sum')
+            ),
+        ]
+    )
 
 
 def search_aggregates(main_summary):
@@ -129,64 +186,85 @@ def add_derived_columns(exploded_search_counts):
     )
 
 
-def generate_dashboard(submission_date, bucket, prefix,
-                       input_bucket=DEFAULT_INPUT_BUCKET,
-                       input_prefix=DEFAULT_INPUT_PREFIX,
-                       save_mode=DEFAULT_SAVE_MODE):
-    start = datetime.datetime.now()
-    spark = (
-        SparkSession
-        .builder
-        .appName('search_dashboard_etl')
-        .getOrCreate()
-    )
+def gen_etl_function(transform_func, version):
+    """Generate and ETL job for a given Transform function
 
-    version = 3
-    source_path = 's3://{}/{}/submission_date_s3={}'.format(
-        input_bucket,
-        input_prefix,
-        submission_date
-    )
-    output_path = 's3://{}/{}/v{}/submission_date_s3={}'.format(
-        bucket,
-        prefix,
-        version,
-        submission_date
-    )
+    Takes a function to be applied to main_summary data and returns a function
+    which loads main_summary, executes the transform, and saves the results to
+    S3.
+    """
 
-    logger.info('Loading main_summary...')
-    main_summary = spark.read.parquet(source_path)
+    def etl_func(submission_date, bucket, prefix,
+                 input_bucket=DEFAULT_INPUT_BUCKET,
+                 input_prefix=DEFAULT_INPUT_PREFIX,
+                 save_mode=DEFAULT_SAVE_MODE):
+        """Load main_summary, apply transform_func, and write to S3"""
+        start = datetime.datetime.now()
+        spark = (
+            SparkSession
+            .builder
+            .appName('search_dashboard_etl')
+            .getOrCreate()
+        )
 
-    logger.info('Running the search dashboard ETL job...')
-    search_dashboard_data = search_aggregates(main_summary)
+        source_path = 's3://{}/{}/submission_date_s3={}'.format(
+            input_bucket,
+            input_prefix,
+            submission_date
+        )
+        output_path = 's3://{}/{}/v{}/submission_date_s3={}'.format(
+            bucket,
+            prefix,
+            version,
+            submission_date
+        )
 
-    logger.info('Saving rollups to: {}'.format(output_path))
-    (
-        search_dashboard_data
-        .repartition(10)
-        .write
-        .mode(save_mode)
-        .save(output_path)
-    )
+        logger.info('Loading main_summary...')
+        main_summary = spark.read.parquet(source_path)
 
-    spark.stop()
-    logger.info('... done (took: %s)', str(datetime.datetime.now() - start))
+        logger.info('Running the search dashboard ETL job...')
+        search_dashboard_data = transform_func(main_summary)
+
+        logger.info('Saving rollups to: {}'.format(output_path))
+        (
+            search_dashboard_data
+            .repartition(10)
+            .write
+            .mode(save_mode)
+            .save(output_path)
+        )
+
+        spark.stop()
+        logger.info('... done (took: %s)', str(datetime.datetime.now() - start))
+
+    return etl_func
 
 
-@click.command()
-@click.option('--submission_date', required=True)
-@click.option('--bucket', required=True)
-@click.option('--prefix', required=True)
-@click.option('--input_bucket',
-              default=DEFAULT_INPUT_BUCKET,
-              help='Bucket of the input dataset')
-@click.option('--input_prefix',
-              default=DEFAULT_INPUT_PREFIX,
-              help='Prefix of the input dataset')
-@click.option('--save_mode',
-              default=DEFAULT_SAVE_MODE,
-              help='Save mode for writing data')
-def main(submission_date, bucket, prefix, input_bucket, input_prefix,
-         save_mode):
-    generate_dashboard(submission_date, bucket, prefix, input_bucket,
-                       input_prefix, save_mode)
+def gen_click_command(etl_job):
+    """Wrap an ETL job with click arguements"""
+    @click.command()
+    @click.option('--submission_date', required=True)
+    @click.option('--bucket', required=True)
+    @click.option('--prefix', required=True)
+    @click.option('--input_bucket',
+                  default=DEFAULT_INPUT_BUCKET,
+                  help='Bucket of the input dataset')
+    @click.option('--input_prefix',
+                  default=DEFAULT_INPUT_PREFIX,
+                  help='Prefix of the input dataset')
+    @click.option('--save_mode',
+                  default=DEFAULT_SAVE_MODE,
+                  help='Save mode for writing data')
+    def wrapper(*args, **posargs):
+        return etl_job(*args, **posargs)
+
+    return wrapper
+
+
+# Generate ETL jobs - these are useful if you want to run a job from ATMO
+search_aggregates_etl = gen_etl_function(search_aggregates, 2)
+search_clients_daily_etl = gen_etl_function(search_clients_daily, 1)
+
+# Generate click commands - wrap ETL jobs to accept click arguements
+search_aggregates_click = gen_click_command(search_aggregates_etl)
+search_clients_daily_click = gen_click_command(search_clients_daily_etl)
