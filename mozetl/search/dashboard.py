@@ -58,6 +58,7 @@ def explode_search_counts(main_summary):
         'locale',
         'search_cohort',
         'active_addons',
+        'normalized_channel',
     ]
 
     exploded_col_name = 'single_search_count'
