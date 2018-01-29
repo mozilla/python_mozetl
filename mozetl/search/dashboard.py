@@ -10,7 +10,7 @@ For more information, see Bug 1381140 [1].
 import click
 import logging
 import datetime
-from pyspark.sql.functions import explode, col, when, udf
+from pyspark.sql.functions import explode, col, when, udf, expr
 from pyspark.sql.types import StringType
 from pyspark.sql import SparkSession
 
@@ -37,7 +37,7 @@ def search_dashboard_etl(main_summary):
             'type',
             ['tagged-sap', 'tagged-follow-on', 'sap']
         )
-        .sum('count')
+        .sum('count', expr('active_ticks/(3600.0/5)'))
     )
 
 
@@ -58,6 +58,7 @@ def explode_search_counts(main_summary):
         'locale',
         'search_cohort',
         'active_addons',
+        'normalized_channel',
     ]
 
     exploded_col_name = 'single_search_count'
