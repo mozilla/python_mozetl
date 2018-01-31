@@ -161,7 +161,6 @@ def generate_dashboard(submission_date, bucket, prefix,
     logger.info('Running the search dashboard ETL job...')
     search_dashboard_data = search_aggregates(main_summary)
 
-    # TODO: move this to a function and simplify saving
     logger.info('Saving rollups to: {}'.format(output_path))
     (
         search_dashboard_data
