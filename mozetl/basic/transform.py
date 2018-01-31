@@ -1,7 +1,12 @@
+import logging
 from collections import namedtuple
 
 from moztelemetry import get_pings_properties
 from pyspark.sql.types import StructType, StructField
+
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 ColumnConfig = namedtuple('ColumnConfig',
@@ -40,7 +45,9 @@ def _build_cell(ping, column_config):
     if func is not None:
         try:
             return func(raw_value)
-        except Exception as e:  # TODO: should we make this more specific?
+        except Exception as e:
+            logger.warning("Unable to apply transform on data '%s': %s",
+                           raw_value, e)
             return None
     else:
         return raw_value
