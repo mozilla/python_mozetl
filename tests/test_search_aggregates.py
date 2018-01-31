@@ -2,10 +2,10 @@ import functools
 import pytest
 from collections import namedtuple
 from pyspark.sql.types import (
-    StructField, ArrayType, BooleanType, StringType, LongType, StructType, DoubleType
+    StructField, ArrayType, BooleanType, StringType, LongType, StructType
 )
-from mozetl.search.dashboard import (
-    search_dashboard_etl, explode_search_counts, add_derived_columns, MAX_CLIENT_SEARCH_COUNT
+from mozetl.search.aggregates import (
+    search_aggregates, explode_search_counts, add_derived_columns, MAX_CLIENT_SEARCH_COUNT
 )
 
 
@@ -59,12 +59,42 @@ def generate_search_count(engine='google', source='urlbar', count=4):
     }
 
 
+addons_type = ArrayType(StructType([
+    StructField('addon_id', StringType(), False),
+    StructField('blocklisted', BooleanType(), True),
+    StructField('name', StringType(), True),
+    StructField('user_disabled', BooleanType(), True),
+    StructField('app_disabled', BooleanType(), True),
+    StructField('version', StringType(), True),
+    StructField('scope', LongType(), True),
+    StructField('type', StringType(), True),
+    StructField('foreign_install', BooleanType(), True),
+    StructField('has_binary_components', BooleanType(), True),
+    StructField('install_day', LongType(), True),
+    StructField('update_day', LongType(), True),
+    StructField('signed_state', LongType(), True),
+    StructField('is_system', BooleanType(), True),
+    StructField('is_web_extension', BooleanType(), True),
+    StructField('multiprocess_compatible', BooleanType(), True),
+]))
+
+
 def generate_addon(addon_id, name, version):
     return {
         'addon_id': addon_id,
         'name': name,
         'version': version,
     }
+
+
+active_addons = [
+    generate_addon('random@mozilla.com', 'random', '0.1'),
+    generate_addon(
+        'followonsearch@mozilla.com',
+        'Follow-on Search Telemetry',
+        '0.9.5'
+    )
+]
 
 
 @pytest.fixture()
@@ -74,24 +104,6 @@ def generate_main_summary_data(define_dataframe_factory):
         StructField('source', StringType(), False),
         StructField('count',  LongType(),   False),
     ]))
-    addons_type = ArrayType(StructType([
-        StructField('addon_id', StringType(), False),
-        StructField('blocklisted', BooleanType(), True),
-        StructField('name', StringType(), True),
-        StructField('user_disabled', BooleanType(), True),
-        StructField('app_disabled', BooleanType(), True),
-        StructField('version', StringType(), True),
-        StructField('scope', LongType(), True),
-        StructField('type', StringType(), True),
-        StructField('foreign_install', BooleanType(), True),
-        StructField('has_binary_components', BooleanType(), True),
-        StructField('install_day', LongType(), True),
-        StructField('update_day', LongType(), True),
-        StructField('signed_state', LongType(), True),
-        StructField('is_system', BooleanType(), True),
-        StructField('is_web_extension', BooleanType(), True),
-        StructField('multiprocess_compatible', BooleanType(), True),
-    ]))
 
     return define_dataframe_factory(map(to_field, [
         ('submission_date', '20170101',                StringType(), False),
@@ -100,12 +112,8 @@ def generate_main_summary_data(define_dataframe_factory):
         ('search_cohort',   None,                      StringType(), True),
         ('app_version',     '54.0.1',                  StringType(), True),
         ('distribution_id', None,                      StringType(), True),
-        ('ignored_col',     1.0,                       DoubleType(), True),
         ('search_counts',   [generate_search_count()], search_type,  True),
-        ('active_addons',   [generate_addon('random@mozilla.com', 'random', '0.1'),
-                             generate_addon('followonsearch@mozilla.com',
-                                            'Follow-on Search Telemetry',
-                                            '0.9.5')], addons_type, True),
+        ('active_addons',   active_addons,             addons_type,  True),
     ]))
 
 
@@ -115,7 +123,6 @@ def main_summary(generate_main_summary_data):
         [
             {
                 'country': 'US',
-                'ignored_col': 3.14,
             },
             {'app_version': '52.0.3'},
             {'distribution_id': 'totally not null'},
@@ -143,16 +150,16 @@ def simple_main_summary(generate_main_summary_data):
 @pytest.fixture()
 def generate_exploded_data(define_dataframe_factory):
     return define_dataframe_factory(map(to_field, [
-        ('submission_date', '20170101', StringType(), False),
-        ('country',         'DE',       StringType(), True),
-        ('locale',          'de',       StringType(), True),
-        ('search_cohort',   None,       StringType(), True),
-        ('app_version',     '54.0.1',   StringType(), True),
-        ('distribution_id', None,       StringType(), True),
-        ('addon_version',   '0.9.5',    StringType(), False),
-        ('engine',          'google',   StringType(), False),
-        ('source',          'urlbar',   StringType(), False),
-        ('count',           4,          LongType(),   False),
+        ('submission_date', '20170101',    StringType(), False),
+        ('country',         'DE',          StringType(), True),
+        ('locale',          'de',          StringType(), True),
+        ('search_cohort',   None,          StringType(), True),
+        ('app_version',     '54.0.1',      StringType(), True),
+        ('distribution_id', None,          StringType(), True),
+        ('engine',          'google',      StringType(), False),
+        ('source',          'urlbar',      StringType(), False),
+        ('count',           4,             LongType(),   False),
+        ('active_addons',   active_addons, addons_type,  True),
     ]))
 
 
@@ -177,17 +184,18 @@ def exploded_data_for_derived_cols(generate_exploded_data):
 def derived_columns(define_dataframe_factory):
     # template for the expected results
     factory = define_dataframe_factory(map(to_field, [
-        ('submission_date', '20170101',   StringType(), False),
-        ('country',         'DE',         StringType(), True),
-        ('locale',          'de',         StringType(), True),
-        ('search_cohort',   None,         StringType(), True),
-        ('app_version',     '54.0.1',     StringType(), True),
-        ('distribution_id', None,         StringType(), True),
-        ('addon_version',   '0.9.5',      StringType(), False),
-        ('engine',          'google',     StringType(), False),
-        ('source',          'urlbar',     StringType(), False),
-        ('count',           4,            LongType(),   False),
-        ('type',            'chrome-sap', StringType(), False),
+        ('submission_date', '20170101',    StringType(), False),
+        ('country',         'DE',          StringType(), True),
+        ('locale',          'de',          StringType(), True),
+        ('search_cohort',   None,          StringType(), True),
+        ('app_version',     '54.0.1',      StringType(), True),
+        ('distribution_id', None,          StringType(), True),
+        ('addon_version',   '0.9.5',       StringType(), False),
+        ('engine',          'google',      StringType(), False),
+        ('source',          'urlbar',      StringType(), False),
+        ('count',           4,             LongType(),   False),
+        ('type',            'chrome-sap',  StringType(), False),
+        ('active_addons',   active_addons, addons_type,  True),
     ]))
 
     return factory([
@@ -206,8 +214,8 @@ def expected_search_dashboard_data(define_dataframe_factory):
     factory = define_dataframe_factory(map(to_field, [
         ('submission_date',  '20170101',   StringType(), False),
         ('country',          'DE',         StringType(), True),
-        ('locale',          'de',         StringType(), True),
-        ('search_cohort',   None,         StringType(), True),
+        ('locale',           'de',         StringType(), True),
+        ('search_cohort',    None,         StringType(), True),
         ('app_version',      '54.0.1',     StringType(), True),
         ('distribution_id',  None,         StringType(), True),
         ('addon_version',    '0.9.5',      StringType(), False),
@@ -270,5 +278,5 @@ def test_add_derived_columns(exploded_data_for_derived_cols,
 def test_basic_aggregation(main_summary,
                            expected_search_dashboard_data,
                            df_equals):
-    actual = search_dashboard_etl(main_summary)
+    actual = search_aggregates(main_summary)
     assert df_equals(actual, expected_search_dashboard_data)
