@@ -31,16 +31,15 @@ def search_aggregates(main_summary):
     return agg_search_data(
         main_summary,
         [
-            'country',
-            'engine',
-            'source',
-            'submission_date',
-            'country',
+            'addon_version',
             'app_version',
+            'country',
             'distribution_id',
+            'engine',
             'locale',
             'search_cohort',
-            'addon_version',
+            'source',
+            'submission_date',
         ],
         []
     )
