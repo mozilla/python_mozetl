@@ -141,7 +141,7 @@ def generate_dashboard(submission_date, bucket, prefix,
         .getOrCreate()
     )
 
-    version = 2
+    version = 3
     source_path = 's3://{}/{}/submission_date_s3={}'.format(
         input_bucket,
         input_prefix,
