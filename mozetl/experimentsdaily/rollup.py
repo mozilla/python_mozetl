@@ -17,6 +17,19 @@ def load_experiments_summary(spark, parquet_path):
     )
 
 
+def add_missing_columns(frame):
+    """
+    to_experiment_profile_day_aggregates() needs the column
+    "scalar_parent_telemetry_os_shutting_down" for EXPERIMENT_FIELD_AGGREGATORS
+    so this function adds it if it's missing from the frame.
+    """
+    from pyspark.sql.functions import lit
+    from pyspark.sql.types import BooleanType
+    if "scalar_parent_telemetry_os_shutting_down" not in frame.columns:
+        frame = frame.withColumn("scalar_parent_telemetry_os_shutting_down", lit(None).cast(BooleanType()))
+    return frame
+
+
 def to_experiment_profile_day_aggregates(frame_with_extracts):
     from mozetl.clientsdaily.fields import EXPERIMENT_FIELD_AGGREGATORS
     from mozetl.clientsdaily.fields import ACTIVITY_DATE_COLUMN
@@ -70,7 +83,8 @@ def main(date, input_bucket, input_prefix, output_bucket,
     frame = load_experiments_summary(spark, parquet_path)
     day_frame, start_date = extract_submission_window_for_activity_day(frame, date, lag_days)
     searches_frame = extract_search_counts(frame)
-    results = to_experiment_profile_day_aggregates(searches_frame)
+    searches_frame_with_columns = add_missing_columns(searches_frame)
+    results = to_experiment_profile_day_aggregates(searches_frame_with_columns)
     spark.conf.set(
         "mapreduce.fileoutputcommitter.marksuccessfuljobs", "false"
     )  # Don't write _SUCCESS files, which interfere w/ReDash discovery
