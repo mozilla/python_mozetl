@@ -30,16 +30,6 @@ def aggregate_data(add_columns):
 # tests for helper/non-spark functions ###
 
 
-def test_get_test_pilot_addons():
-    '''
-    Ensure the test pilot api call returns a nonemtpy list
-    '''
-    tp = addon_aggregates.get_test_pilot_addons()
-
-    assert type(tp) == list
-    assert len(tp) > 0
-
-
 def test_get_dest():
     '''
     Ensure proper contruction of input/output s3 paths
@@ -52,23 +42,6 @@ def test_get_dest():
     assert gd('bucket', 'prefix', 'version') == s1
     assert gd('bucket', 'prefix', 'version', '20170101') == s2
     assert gd('bucket', 'prefix', 'version', '20170101', '42') == s3
-
-
-def test_unix_days_to_dt():
-    '''
-    Ensure functionality and proper error handling when
-    converting unix time in days to a date string
-    '''
-    true_values = {
-      17000: '20160717',
-      17200: '20170202',
-      17800: '20180925',
-      None: None,
-      10000000: None
-    }
-
-    for ud, str_date in true_values.iteritems():
-        assert addon_aggregates._unix_days_to_dt(ud) == true_values[ud]
 
 
 # tests for pyspark functions ###

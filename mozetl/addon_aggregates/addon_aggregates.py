@@ -2,8 +2,6 @@
 
 from pyspark.sql import SparkSession
 import pyspark.sql.functions as fun
-import pyspark.sql.types as st
-import datetime as dt
 import json
 import urllib
 import click
@@ -53,21 +51,6 @@ def get_dest(output_bucket, output_prefix, output_version, date=None, sample_id=
     if sample_id is not None:
         suffix += "/sample_id={}".format(sample_id)
     return 's3://' + '/'.join([output_bucket, output_prefix, output_version]) + suffix + '/'
-
-
-def _unix_days_to_dt(unix_days):
-    '''
-    Converts unix time in days to a string in %Y%m%d format
-
-    :param unix_days: integer unix date (i.e. 17300)
-    :return str date (i.e. '20171101')
-    '''
-    try:
-        if unix_days:
-            return dt.datetime.fromtimestamp(unix_days * 24 * 60 * 60).strftime('%Y%m%d')
-        return None
-    except ValueError:  # date out of range
-        return None
 
 
 def load_main_summary(spark, input_bucket, input_prefix, input_version):
@@ -172,24 +155,29 @@ def aggregate_addons(df):
              fun.sum("is_foreign_install").alias("n_foreign_installed_addons"),
              fun.sum("is_system").alias("n_system_addons"),
              fun.sum("is_web_extension").alias("n_web_extensions"),
-             unix_days_to_dt(fun.min("install_day")).alias("first_addon_install_date"),
-             unix_days_to_dt(fun.min("profile_creation_date")).alias("profile_creation_date")))
+             fun.date_format(
+                fun.from_unixtime(
+                    fun.min("install_day")*60*60*24), "yyyyMMdd")
+             .alias("first_addon_install_date"),
+             fun.date_format(
+                fun.from_unixtime(
+                    fun.min("profile_creation_date")*60*60*24), "yyyyMMdd")
+             .alias("profile_creation_date")))
     return addon_aggregates
 
 
-unix_days_to_dt = fun.udf(_unix_days_to_dt, st.StringType())
 NON_MOZ_TEST_PILOT_ADDONS = set([i for i in get_test_pilot_addons() if 'mozilla' not in i])
 DEFAULT_THEME_ID = "{972ce4c6-7e08-4474-a285-3208198ce6fd}"
 
 
 @click.command()
 @click.option('--date', required=True)
-@click.option('--input_bucket', default='telemetry-parquet')
-@click.option('--input_prefix', default='main_summary')
-@click.option('--input_version', default='v4')
-@click.option('--output_bucket', default='telemetry-parquet')
-@click.option('--output_prefix', default='addons/agg')
-@click.option('--output_version', default='v2')
+@click.option('--input-bucket', default='telemetry-parquet')
+@click.option('--input-prefix', default='main_summary')
+@click.option('--input-version', default='v4')
+@click.option('--output-bucket', default='telemetry-parquet')
+@click.option('--output-prefix', default='addons/agg')
+@click.option('--output-version', default='v2')
 def main(date, input_bucket, input_prefix, input_version,
          output_bucket, output_prefix, output_version):
     '''
