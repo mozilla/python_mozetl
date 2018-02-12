@@ -20,6 +20,7 @@ import argparse
 import dateutil.parser
 import json
 import boto3
+import time
 
 
 MAX_RECORDS = 50
@@ -116,7 +117,10 @@ class DynamoReducer(object):
         """
         # Transformt the data into something that DynamoDB will always
         # accept
+        # Set TTL to 60 days from now
+        ttl = int(time.time()) + 60*60*24*60
         item_list = [{'client_id': item['client_id'],
+                      'TTL': ttl,
                       'json_payload': json.dumps(item, default=json_serial)}
                      for item in data_tuple[2]]
 
