@@ -20,7 +20,9 @@ import argparse
 import dateutil.parser
 import json
 import boto3
+from boto3.dynamodb.types import Binary as DynamoBinary
 import time
+import zlib
 
 
 MAX_RECORDS = 50
@@ -121,8 +123,12 @@ class DynamoReducer(object):
         ttl = int(time.time()) + 60*60*24*60
         item_list = [{'client_id': item['client_id'],
                       'TTL': ttl,
-                      'json_payload': json.dumps(item, default=json_serial)}
-                     for item in data_tuple[2]]
+                      'json_payload': DynamoBinary(
+                                          zlib.compress(json.dumps(item,
+                                                                   default=json_serial)
+                                                        .encode('utf8'))
+                                      )
+                      } for item in data_tuple[2]]
 
         conn = boto3.resource('dynamodb', region_name=self._region_name)
         table = conn.Table(self._table_name)
