@@ -186,7 +186,7 @@ def add_derived_columns(exploded_search_counts):
     )
 
 
-def gen_etl_function(transform_func, version):
+def gen_etl_function(transform_func, version, job_name):
     """Generate and ETL job for a given Transform function
 
     Takes a function to be applied to main_summary data and returns a function
@@ -194,10 +194,10 @@ def gen_etl_function(transform_func, version):
     S3.
     """
 
-    def etl_func(submission_date, bucket, prefix,
-                 input_bucket=DEFAULT_INPUT_BUCKET,
-                 input_prefix=DEFAULT_INPUT_PREFIX,
-                 save_mode=DEFAULT_SAVE_MODE):
+    def _etl_func(submission_date, bucket, prefix,
+                  input_bucket=DEFAULT_INPUT_BUCKET,
+                  input_prefix=DEFAULT_INPUT_PREFIX,
+                  save_mode=DEFAULT_SAVE_MODE):
         """Load main_summary, apply transform_func, and write to S3"""
         start = datetime.datetime.now()
         spark = (
@@ -222,7 +222,7 @@ def gen_etl_function(transform_func, version):
         logger.info('Loading main_summary...')
         main_summary = spark.read.parquet(source_path)
 
-        logger.info('Running the search dashboard ETL job...')
+        logger.info('Running the {0} ETL job...'.format(job_name))
         search_dashboard_data = transform_func(main_summary)
 
         logger.info('Saving rollups to: {}'.format(output_path))
@@ -237,7 +237,7 @@ def gen_etl_function(transform_func, version):
         spark.stop()
         logger.info('... done (took: %s)', str(datetime.datetime.now() - start))
 
-    return etl_func
+    return _etl_func
 
 
 def gen_click_command(etl_job):
@@ -262,8 +262,8 @@ def gen_click_command(etl_job):
 
 
 # Generate ETL jobs - these are useful if you want to run a job from ATMO
-search_aggregates_etl = gen_etl_function(search_aggregates, 2)
-search_clients_daily_etl = gen_etl_function(search_clients_daily, 1)
+search_aggregates_etl = gen_etl_function(search_aggregates, 2, "search_aggregates")
+search_clients_daily_etl = gen_etl_function(search_clients_daily, 1, "search_clients_daily")
 
 # Generate click commands - wrap ETL jobs to accept click arguements
 search_aggregates_click = gen_click_command(search_aggregates_etl)
