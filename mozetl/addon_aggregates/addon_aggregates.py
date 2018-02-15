@@ -155,9 +155,9 @@ def aggregate_addons(df):
              fun.sum("is_foreign_install").alias("n_foreign_installed_addons"),
              fun.sum("is_system").alias("n_system_addons"),
              fun.sum("is_web_extension").alias("n_web_extensions"),
-             fun.date_format(
-                fun.from_unixtime(
-                    fun.min("install_day")*60*60*24), "yyyyMMdd")
+             fun.min(fun.when(df.is_self_install == 1,
+                              fun.date_format(fun.from_unixtime(fun.col("install_day")*60*60*24),
+                                              "yyyyMMdd")).otherwise(None))
              .alias("first_addon_install_date"),
              fun.date_format(
                 fun.from_unixtime(
