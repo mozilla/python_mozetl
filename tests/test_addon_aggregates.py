@@ -138,9 +138,9 @@ def test_unix_dates(aggregate_data):
     # min install_day - pcd
     true_client_days_to_install = {
         1: {'min_install_day': 16890 - 15000},
-        2: {'min_install_day': 17000 - 15001},
+        2: {'min_install_day': None},
         3: {'min_install_day': 16800 - 15002},
-        4: {'min_install_day': 16900 - 15003}
+        4: {'min_install_day': None}
 
     }
 
@@ -152,7 +152,7 @@ def test_unix_dates(aggregate_data):
         fmt = '%Y%m%d'
         days_to_install = (
             dt.datetime.strptime(first_install, fmt) - dt.datetime.strptime(pcd, fmt)
-        ).days
+        ).days if first_install is not None else None
 
         assert true_client_days_to_install[client_id]['min_install_day'] == days_to_install
 
