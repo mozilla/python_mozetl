@@ -10,6 +10,7 @@ from mozetl.sync import bookmark_validation
 from mozetl.taar import taar_locale, taar_similarity, taar_legacy
 from mozetl.addon_aggregates import addon_aggregates
 
+
 @click.group()
 def entry_point():
     pass
