@@ -262,7 +262,7 @@ def gen_click_command(etl_job):
 
 
 # Generate ETL jobs - these are useful if you want to run a job from ATMO
-search_aggregates_etl = gen_etl_function(search_aggregates, 2, "search_aggregates")
+search_aggregates_etl = gen_etl_function(search_aggregates, 3, "search_aggregates")
 search_clients_daily_etl = gen_etl_function(search_clients_daily, 1, "search_clients_daily")
 
 # Generate click commands - wrap ETL jobs to accept click arguements
