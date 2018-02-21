@@ -186,60 +186,66 @@ def add_derived_columns(exploded_search_counts):
     )
 
 
-def gen_etl_function(transform_func, version, job_name):
-    """Generate and ETL job for a given Transform function
+def generate_rollups(submission_date, output_bucket, output_prefix,
+                     output_version, transform_func,
+                     input_bucket=DEFAULT_INPUT_BUCKET,
+                     input_prefix=DEFAULT_INPUT_PREFIX,
+                     save_mode=DEFAULT_SAVE_MODE):
+    """Load main_summary, apply transform_func, and write to S3"""
+    logger.info('Running the {0} ETL job...'.format(transform_func.__name__))
+    start = datetime.datetime.now()
+    spark = (
+        SparkSession
+        .builder
+        .appName('search_dashboard_etl')
+        .getOrCreate()
+    )
 
-    Takes a function to be applied to main_summary data and returns a function
-    which loads main_summary, executes the transform, and saves the results to
-    S3.
-    """
+    source_path = 's3://{}/{}/submission_date_s3={}'.format(
+        input_bucket,
+        input_prefix,
+        submission_date
+    )
+    output_path = 's3://{}/{}/v{}/submission_date_s3={}'.format(
+        output_bucket,
+        output_prefix,
+        output_version,
+        submission_date
+    )
 
-    def _etl_func(submission_date, bucket, prefix,
-                  input_bucket=DEFAULT_INPUT_BUCKET,
-                  input_prefix=DEFAULT_INPUT_PREFIX,
-                  save_mode=DEFAULT_SAVE_MODE):
-        """Load main_summary, apply transform_func, and write to S3"""
-        start = datetime.datetime.now()
-        spark = (
-            SparkSession
-            .builder
-            .appName('search_dashboard_etl')
-            .getOrCreate()
-        )
+    logger.info('Loading main_summary...')
+    main_summary = spark.read.parquet(source_path)
 
-        source_path = 's3://{}/{}/submission_date_s3={}'.format(
-            input_bucket,
-            input_prefix,
-            submission_date
-        )
-        output_path = 's3://{}/{}/v{}/submission_date_s3={}'.format(
-            bucket,
-            prefix,
-            version,
-            submission_date
-        )
+    logger.info('Applying transformation function...')
+    search_dashboard_data = transform_func(main_summary)
 
-        logger.info('Loading main_summary...')
-        main_summary = spark.read.parquet(source_path)
+    logger.info('Saving rollups to: {}'.format(output_path))
+    (
+        search_dashboard_data
+        .repartition(10)
+        .write
+        .mode(save_mode)
+        .save(output_path)
+    )
 
-        logger.info('Running the {0} ETL job...'.format(job_name))
-        search_dashboard_data = transform_func(main_summary)
-
-        logger.info('Saving rollups to: {}'.format(output_path))
-        (
-            search_dashboard_data
-            .repartition(10)
-            .write
-            .mode(save_mode)
-            .save(output_path)
-        )
-
-        spark.stop()
-        logger.info('... done (took: %s)', str(datetime.datetime.now() - start))
-
-    return _etl_func
+    spark.stop()
+    logger.info('... done (took: %s)', str(datetime.datetime.now() - start))
 
 
+# Generate ETL jobs - these are useful if you want to run a job from ATMO
+def search_aggregates_etl(submission_date, output_bucket, output_prefix,
+                          **kwargs):
+    generate_rollups(submission_date, output_bucket, output_prefix,
+                     3, search_aggregates, **kwargs)
+
+
+def search_clients_daily_etl(submission_date, output_bucket, output_prefix,
+                             **kwargs):
+    generate_rollups(submission_date, output_bucket, output_prefix,
+                     1, search_clients_daily, **kwargs)
+
+
+# Generate click commands - wrap ETL jobs to accept click arguements
 def gen_click_command(etl_job):
     """Wrap an ETL job with click arguements"""
     @click.command()
@@ -261,10 +267,5 @@ def gen_click_command(etl_job):
     return wrapper
 
 
-# Generate ETL jobs - these are useful if you want to run a job from ATMO
-search_aggregates_etl = gen_etl_function(search_aggregates, 3, "search_aggregates")
-search_clients_daily_etl = gen_etl_function(search_clients_daily, 1, "search_clients_daily")
-
-# Generate click commands - wrap ETL jobs to accept click arguements
 search_aggregates_click = gen_click_command(search_aggregates_etl)
 search_clients_daily_click = gen_click_command(search_clients_daily_etl)
