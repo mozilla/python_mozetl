@@ -142,7 +142,6 @@ _FIELD_AGGREGATORS = [
     agg_sum('scalar_parent_storage_sync_api_usage_extensions_using'),
     # scalar_parent_storage_sync_api_usage_items_stored
     # scalar_parent_storage_sync_api_usage_storage_consumed
-    agg_first('scalar_parent_telemetry_os_shutting_down'),
     agg_sum('scalar_parent_webrtc_nicer_stun_retransmits'),
     agg_sum('scalar_parent_webrtc_nicer_turn_401s'),
     agg_sum('scalar_parent_webrtc_nicer_turn_403s'),
