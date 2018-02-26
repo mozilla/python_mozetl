@@ -298,7 +298,7 @@ def get_lr_curves(spark, features_df, cluster_ids, kernel_bandwidth,
 
 @click.command()
 @click.option('--date', required=True)
-@click.option('--bucket', default='telemetry-private-analysis-2')
+@click.option('--bucket', default='telemetry-parquet')
 @click.option('--prefix', default='taar/similarity/')
 @click.option('--num_clusters', default=20)
 @click.option('--num_donors', default=1000)
