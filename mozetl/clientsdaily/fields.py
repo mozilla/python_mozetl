@@ -1,4 +1,5 @@
 import pyspark.sql.functions as F
+import pyspark.sql.types as T
 
 VERSION = 1
 
@@ -30,6 +31,12 @@ def agg_first(field_name):
 def agg_max(field_name, alias=None):
     field_alias = get_alias(field_name, alias, "max")
     return F.max(field_name).alias(field_alias)
+
+
+def agg_map(key_field_name, value_field_name, alias=None, returnType=T.MapType(T.StringType(), T.StringType())):
+    field_alias = get_alias(key_field_name, alias, value_field_name)
+    toMap = F.udf(lambda x: dict(x), returnType)
+    return toMap(F.collect_list(F.struct(field_name))).alias(field_alias)
 
 
 _FIELD_AGGREGATORS = [
@@ -181,12 +188,14 @@ _FIELD_AGGREGATORS = [
 MAIN_SUMMARY_FIELD_AGGREGATORS = _FIELD_AGGREGATORS[:4] + [
     agg_first('active_experiment_branch'),
     agg_first('active_experiment_id'),
-] + _FIELD_AGGREGATORS[4:]
-
-
-EXPERIMENT_FIELD_AGGREGATORS = _FIELD_AGGREGATORS[:15] + [
-    agg_first('experiment_branch'),
+] + _FIELD_AGGREGATORS[4:15] + [
+    agg_map('experiment_id', 'experiment_branch', 'experiments'),
 ] + _FIELD_AGGREGATORS[15:]
+
+
+EXPERIMENT_FIELD_AGGREGATORS = MAIN_SUMMARY_FIELD_AGGREGATORS[:17] + [
+    agg_first('experiment_branch'),
+] + MAIN_SUMMARY_FIELD_AGGREGATORS[18:]
 
 
 ACTIVITY_DATE_COLUMN = F.expr(
