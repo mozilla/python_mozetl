@@ -169,7 +169,7 @@ credentials = CredentialSingleton()
 
 
 class DynamoReducer(object):
-    def __init__(self, region_name=None, table_name=None):
+    def __init__(self, prod_iam_role, region_name=None, table_name=None):
 
         if region_name is None:
             region_name = 'us-west-2'
@@ -179,6 +179,7 @@ class DynamoReducer(object):
 
         self._region_name = region_name
         self._table_name = table_name
+        self._prod_iam_role = prod_iam_role
 
     def push_to_dynamo(self, data_tuple):
         """
@@ -202,7 +203,7 @@ class DynamoReducer(object):
                       } for item in data_tuple[2]]
 
         # Obtain credentials from the singleton
-        cred_args = credentials.getInstance()
+        cred_args = credentials.getInstance(self._prod_iam_role)
         conn = boto3.resource('dynamodb', region_name=self._region_name, **cred_args)
         table = conn.Table(self._table_name)
         try:
@@ -370,7 +371,7 @@ def extract_transform(spark, run_date, sample_rate=0):
 
 def load_rdd(prod_iam_role, region_name, table_name, rdd):
     # Apply a MapReduce operation to the RDD
-    dynReducer = DynamoReducer(region_name, table_name)
+    dynReducer = DynamoReducer(prod_iam_role, region_name, table_name)
 
     reduction_output = rdd.reduce(dynReducer.dynamo_reducer)
     print("1st pass dynamo reduction completed")
