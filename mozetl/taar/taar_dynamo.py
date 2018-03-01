@@ -25,7 +25,7 @@ from pyspark import SparkConf
 from pyspark.sql import SparkSession
 from pyspark.sql import Window
 from pyspark.sql.functions import desc, row_number
-import argparse
+import click
 import dateutil.parser
 import json
 import boto3
@@ -292,10 +292,10 @@ def extract_transform(spark, run_date, sample_rate=0):
     datasetForDate = spark.read.parquet(template % currentDateString)
 
     if sample_rate is not None and sample_rate != 0:
-        print ("Sample rate set to %0.9f" % sample_rate)
+        print("Sample rate set to %0.9f" % sample_rate)
         datasetForDate = datasetForDate.sample(False, sample_rate)
     else:
-        print ("No sampling on dataset")
+        print("No sampling on dataset")
 
     print("Parquet data loaded")
 
@@ -398,77 +398,21 @@ def run_etljob(spark, run_date, region_name, table_name, prod_iam_role, sample_r
     return reduction_output
 
 
-def main():
-    args = parse_args()
+@click.command()
+@click.option('--date', required=True)  # YYYYMMDD
+@click.option('--region', default='us-west-2')
+@click.option('--table', default='taar_addon_data_20180206')
+@click.option('--prod-iam-role', default='arn:aws:iam::361527076523:role/taar-write-dynamodb-from-dev')
+@click.option('--sample-rate', default=0)
+def main(date, region, table, prod_iam_role, sample_rate):
     APP_NAME = "HBaseAddonRecommenderView"
     conf = SparkConf().setAppName(APP_NAME)
     conf = conf.setMaster("local[*]")
     spark = SparkSession.builder.config(conf=conf).getOrCreate()
     reduction_output = run_etljob(spark,
-                                  args.run_date,
-                                  args.region_name,
-                                  args.table_name,
-                                  args.prod_iam_role,
-                                  args.sample_rate)
+                                  date,
+                                  region,
+                                  table,
+                                  prod_iam_role,
+                                  sample_rate)
     pprint(reduction_output)
-
-
-def parse_args():
-    def valid_date_type(arg_date_str):
-        """custom argparse *date* type for user dates values given from the command line"""
-        try:
-            return datetime.strptime(arg_date_str, "%Y%m%d").date()
-        except ValueError:
-            msg = "Given Date ({0}) not valid! Expected format, YYYYMMDD!".format(arg_date_str)
-            raise argparse.ArgumentTypeError(msg)
-
-    yesterday_str = (date.today() - timedelta(days=1)).strftime("%Y%m%d")
-
-    description = 'Copy data from telemetry S3 parquet files to DynamoDB'
-    parser = argparse.ArgumentParser(description=description)
-
-    parser.add_argument('--date',
-                        dest='run_date',
-                        action='store',
-                        type=valid_date_type,
-                        default=yesterday_str,
-                        required=False,
-                        help='Start date for data submission (YYYYMMDD)')
-
-    parser.add_argument('--region',
-                        dest='region_name',
-                        action='store',
-                        type=str,
-                        default='us-west-2',
-                        required=True,
-                        help='DynamoDB region to write to')
-
-    parser.add_argument('--table',
-                        dest='table_name',
-                        action='store',
-                        type=str,
-                        default='taar_addon_data',
-                        required=True,
-                        help='DynamoDB table to write to')
-
-    parser.add_argument('--prod-iam-role',
-                        dest='prod_iam_role',
-                        action='store',
-                        type=str,
-                        required=True,
-                        help='Production IAM Role to assume')
-
-    parser.add_argument('--sample-rate',
-                        dest='sample_rate',
-                        action='store',
-                        type=float,
-                        default=0,
-                        required=False,
-                        help='DynamoDB table to write to')
-
-    args = parser.parse_args()
-    return args
-
-
-if __name__ == '__main__':
-    main()
