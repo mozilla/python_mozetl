@@ -104,6 +104,7 @@ def extract_search_counts(frame):
 
 def to_profile_day_aggregates(frame_with_extracts):
     from fields import MAIN_SUMMARY_FIELD_AGGREGATORS
+    from fields import EXPERIMENT_FIELD_AGGREGATORS
     if "activity_date" not in frame_with_extracts.columns:
         from fields import ACTIVITY_DATE_COLUMN
         with_activity_date = frame_with_extracts.select(
@@ -111,7 +112,9 @@ def to_profile_day_aggregates(frame_with_extracts):
         )
     else:
         with_activity_date = frame_with_extracts
-    grouped = with_activity_date.groupby('client_id', 'activity_date')
+    experiment_grouped = with_activity_date.groupBy('experiment_id', 'client_id', 'activity_date')
+    with_experiment_id = experiment_grouped.agg(*EXPERIMENT_FIELD_AGGREGATORS)
+    grouped = with_experiment_id.groupBy('client_id', 'activity_date')
     return grouped.agg(*MAIN_SUMMARY_FIELD_AGGREGATORS)
 
 
