@@ -332,8 +332,8 @@ def expected_search_clients_daily_data(define_dataframe_factory):
         {
             'client_id': 'c',
             'sap': 0,
-            'tagged-sap': 0,
-            'tagged-follow-on': 0,
+            'tagged-sap': None,
+            'tagged-follow-on': None,
             'source': None,
             'engine': None,
         }
