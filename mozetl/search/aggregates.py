@@ -171,7 +171,6 @@ def explode_search_counts(main_summary):
         .withColumn('source', lit(None))
         # Using 0 instead of None for search_count makes many queries easier
         # (e.g. average searche per user)
-        # Missing search_counts is a clear signal that this ping represents 0 searches
         .withColumn('count', lit(0))
         .drop('search_counts')
     )
