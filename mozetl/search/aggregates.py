@@ -15,7 +15,7 @@ import logging
 import datetime
 from pyspark.sql.functions import (
     explode, col, when, udf, sum, first, count, datediff, from_unixtime, mean,
-    size, max
+    size, max, lit
 )
 from pyspark.sql.types import StringType
 from pyspark.sql import SparkSession
@@ -99,7 +99,7 @@ def search_aggregates(main_summary):
             'submission_date',
         ],
         []
-    )
+    ).where(col('engine').isNotNull())
 
 
 def agg_search_data(main_summary, grouping_cols, agg_functions):
@@ -154,7 +154,7 @@ def explode_search_counts(main_summary):
     search_fields = [exploded_col_name + '.' + field
                      for field in ['engine', 'source', 'count']]
 
-    return (
+    exploded_search_counts = (
         main_summary
         .withColumn(exploded_col_name, explode(col('search_counts')))
         .select(['*'] + search_fields)
@@ -162,6 +162,19 @@ def explode_search_counts(main_summary):
         .drop(exploded_col_name)
         .drop('search_counts')
     )
+
+    zero_search_users = (
+        main_summary
+        .where(col('search_counts').isNull())
+        .withColumn('engine', lit(None))
+        .withColumn('source', lit(None))
+        # Using 0 instead of None for search_count makes many queries easier
+        # (e.g. average searche per user)
+        .withColumn('count', lit(0))
+        .drop('search_counts')
+    )
+
+    return exploded_search_counts.union(zero_search_users)
 
 
 def add_derived_columns(exploded_search_counts):
