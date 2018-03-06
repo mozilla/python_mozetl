@@ -184,7 +184,10 @@ def main_summary(generate_main_summary_data):
                 generate_search_count(engine='yahoo'),
             ]}
         ] +
-        [{}] * 5  # Some duplicate default rows to test aggregation
+        # Some duplicate default rows to test aggregation
+        [{}] * 5 +
+        # Client with no searches
+        [{'client_id': 'c', 'search_counts': None}]
     )
 
 
