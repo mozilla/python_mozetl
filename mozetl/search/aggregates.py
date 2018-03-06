@@ -56,7 +56,6 @@ def search_clients_daily(main_summary):
             'default_search_engine',
             'default_search_engine_data_load_path',
             'default_search_engine_data_submission_url',
-            'sample_id',
         ]) + [
             # Count of 'first' subsessions seen for this client_day
             (
@@ -200,7 +199,7 @@ def add_derived_columns(exploded_search_counts):
     )
 
 
-def gen_etl_function(transform_func, version, job_name, partitionBy=None):
+def gen_etl_function(transform_func, version, job_name):
     """Generate and ETL job for a given Transform function
 
     Takes a function to be applied to main_summary data and returns a function
@@ -242,12 +241,10 @@ def gen_etl_function(transform_func, version, job_name, partitionBy=None):
         logger.info('Saving rollups to: {}'.format(output_path))
         (
             search_dashboard_data
+            .repartition(10)
             .write
-            .parquet(
-                output_path,
-                mode=save_mode,
-                partitionBy=partitionBy
-            )
+            .mode(save_mode)
+            .save(output_path)
         )
 
         spark.stop()
@@ -278,13 +275,8 @@ def gen_click_command(etl_job):
 
 
 # Generate ETL jobs - these are useful if you want to run a job from ATMO
-search_aggregates_etl = gen_etl_function(search_aggregates, 3, 'search_aggregates')
-search_clients_daily_etl = gen_etl_function(
-    search_clients_daily,
-    1,
-    'search_clients_daily',
-    partitionBy='sample_id',
-)
+search_aggregates_etl = gen_etl_function(search_aggregates, 3, "search_aggregates")
+search_clients_daily_etl = gen_etl_function(search_clients_daily, 1, "search_clients_daily")
 
 # Generate click commands - wrap ETL jobs to accept click arguements
 search_aggregates_click = gen_click_command(search_aggregates_etl)
