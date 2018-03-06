@@ -408,8 +408,9 @@ def main(date, region, table, prod_iam_role, sample_rate):
     APP_NAME = "HBaseAddonRecommenderView"
     conf = SparkConf().setAppName(APP_NAME)
     spark = SparkSession.builder.config(conf=conf).getOrCreate()
+    date_obj = datetime.strptime(date, "%Y%m%d")
     reduction_output = run_etljob(spark,
-                                  date,
+                                  date_obj,
                                   region,
                                   table,
                                   prod_iam_role,
