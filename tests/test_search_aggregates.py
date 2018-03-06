@@ -184,7 +184,10 @@ def main_summary(generate_main_summary_data):
                 generate_search_count(engine='yahoo'),
             ]}
         ] +
-        [{}] * 5  # Some duplicate default rows to test aggregation
+        # Some duplicate default rows to test aggregation
+        [{}] * 5 +
+        # Client with no searches
+        [{'client_id': 'c', 'search_counts': None}]
     )
 
 
@@ -279,8 +282,8 @@ def expected_search_clients_daily_data(define_dataframe_factory):
         ('app_version', '54.0.1', StringType(), True),
         ('distribution_id', None, StringType(), True),
         ('addon_version', '0.9.5', StringType(), False),
-        ('engine', 'google', StringType(), False),
-        ('source', 'urlbar', StringType(), False),
+        ('engine', 'google', StringType(), True),
+        ('source', 'urlbar', StringType(), True),
         ('tagged-sap', None, LongType(), True),
         ('tagged-follow-on', None, LongType(), True),
         ('sap', 4, LongType(), True),
@@ -326,6 +329,14 @@ def expected_search_clients_daily_data(define_dataframe_factory):
         },
         {'engine': 'bing'},
         {'engine': 'yahoo'},
+        {
+            'client_id': 'c',
+            'sap': 0,
+            'tagged-sap': None,
+            'tagged-follow-on': None,
+            'source': None,
+            'engine': None,
+        }
     ])
 
 
