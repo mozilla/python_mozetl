@@ -260,7 +260,7 @@ def search_aggregates_etl(submission_date, bucket, prefix,
 
 def search_clients_daily_etl(submission_date, bucket, prefix,
                              **kwargs):
-    generate_rollups(submission_date, output_bucket, output_prefix,
+    generate_rollups(submission_date, bucket, prefix,
                      2, search_clients_daily, orderBy=['sample_id'], **kwargs)
 
 
