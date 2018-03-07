@@ -107,6 +107,7 @@ search_type = ArrayType(StructType([
 
 main_summary_schema = [
     ('client_id', 'a', StringType(), False),
+    ('sample_id', '42', StringType(), False),
     ('submission_date', '20170101', StringType(), False),
     ('os', 'windows', StringType(), True),
     ('channel', 'release', StringType(), True),
@@ -273,6 +274,7 @@ def expected_search_clients_daily_data(define_dataframe_factory):
     # template for the expected results
     factory = define_dataframe_factory(map(to_field, [
         ('client_id', 'a', StringType(), False),
+        ('sample_id', '42', StringType(), False),
         ('submission_date', '20170101', StringType(), False),
         ('os', 'windows', StringType(), True),
         ('channel', 'release', StringType(), True),
