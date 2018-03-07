@@ -138,6 +138,10 @@ def agg_search_data(main_summary, grouping_cols, agg_functions):
             ['tagged-sap', 'tagged-follow-on', 'sap']
         )
         .sum('count')
+        # Add convenience columns with underscores instead of hyphens.
+        # This makes the table easier to query from Presto.
+        .withColumn('tagged_sap', 'tagged-sap')
+        .withColumn('tagged_follow_on', 'tagged-follow-on')
     )
 
     return pivoted
