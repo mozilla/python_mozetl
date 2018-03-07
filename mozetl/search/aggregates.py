@@ -233,15 +233,15 @@ def generate_rollups(submission_date, output_bucket, output_prefix,
 
 
 # Generate ETL jobs - these are useful if you want to run a job from ATMO
-def search_aggregates_etl(submission_date, output_bucket, output_prefix,
+def search_aggregates_etl(submission_date, bucket, prefix,
                           **kwargs):
-    generate_rollups(submission_date, output_bucket, output_prefix,
+    generate_rollups(submission_date, bucket, prefix,
                      3, search_aggregates, **kwargs)
 
 
-def search_clients_daily_etl(submission_date, output_bucket, output_prefix,
+def search_clients_daily_etl(submission_date, bucket, prefix,
                              **kwargs):
-    generate_rollups(submission_date, output_bucket, output_prefix,
+    generate_rollups(submission_date, bucket, prefix,
                      1, search_clients_daily, **kwargs)
 
 
