@@ -132,7 +132,8 @@ def agg_search_data(main_summary, grouping_cols, agg_functions):
     # Pivot on search type
     pivoted = (
         aggregated
-        .groupBy([col for col in aggregated.columns if col not in ['type', 'count']])
+        .groupBy([column for column in aggregated.columns
+                  if column not in ['type', 'count']])
         .pivot(
             'type',
             ['tagged-sap', 'tagged-follow-on', 'sap']
@@ -140,8 +141,8 @@ def agg_search_data(main_summary, grouping_cols, agg_functions):
         .sum('count')
         # Add convenience columns with underscores instead of hyphens.
         # This makes the table easier to query from Presto.
-        .withColumn('tagged_sap', 'tagged-sap')
-        .withColumn('tagged_follow_on', 'tagged-follow-on')
+        .withColumn('tagged_sap', col('tagged-sap'))
+        .withColumn('tagged_follow_on', col('tagged-follow-on'))
     )
 
     return pivoted

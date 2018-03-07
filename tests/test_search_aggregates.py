@@ -256,6 +256,8 @@ def expected_search_dashboard_data(define_dataframe_factory):
         ('source', 'urlbar', StringType(), False),
         ('tagged-sap', None, LongType(), True),
         ('tagged-follow-on', None, LongType(), True),
+        ('tagged_sap', None, LongType(), True),
+        ('tagged_follow_on', None, LongType(), True),
         ('sap', 4, LongType(), True),
     ]))
 
@@ -288,6 +290,8 @@ def expected_search_clients_daily_data(define_dataframe_factory):
         ('source', 'urlbar', StringType(), True),
         ('tagged-sap', None, LongType(), True),
         ('tagged-follow-on', None, LongType(), True),
+        ('tagged_sap', None, LongType(), True),
+        ('tagged_follow_on', None, LongType(), True),
         ('sap', 4, LongType(), True),
         # Roughly 2016-01-01
         ('profile_creation_date', 16801, LongType(), False),
@@ -336,6 +340,8 @@ def expected_search_clients_daily_data(define_dataframe_factory):
             'sap': 0,
             'tagged-sap': None,
             'tagged-follow-on': None,
+            'tagged_sap': None,
+            'tagged_follow_on': None,
             'source': None,
             'engine': None,
         }
