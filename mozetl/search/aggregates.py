@@ -56,6 +56,7 @@ def search_clients_daily(main_summary):
             'default_search_engine',
             'default_search_engine_data_load_path',
             'default_search_engine_data_submission_url',
+            'sample_id',
         ]) + [
             # Count of 'first' subsessions seen for this client_day
             (
@@ -203,7 +204,7 @@ def generate_rollups(submission_date, output_bucket, output_prefix,
                      output_version, transform_func,
                      input_bucket=DEFAULT_INPUT_BUCKET,
                      input_prefix=DEFAULT_INPUT_PREFIX,
-                     save_mode=DEFAULT_SAVE_MODE):
+                     save_mode=DEFAULT_SAVE_MODE, orderBy=[]):
     """Load main_summary, apply transform_func, and write to S3"""
     logger.info('Running the {0} ETL job...'.format(transform_func.__name__))
     start = datetime.datetime.now()
@@ -235,7 +236,7 @@ def generate_rollups(submission_date, output_bucket, output_prefix,
     logger.info('Saving rollups to: {}'.format(output_path))
     (
         search_dashboard_data
-        .repartition(10)
+        .orderBy(*orderBy)
         .write
         .mode(save_mode)
         .save(output_path)
@@ -254,8 +255,8 @@ def search_aggregates_etl(submission_date, bucket, prefix,
 
 def search_clients_daily_etl(submission_date, bucket, prefix,
                              **kwargs):
-    generate_rollups(submission_date, bucket, prefix,
-                     1, search_clients_daily, **kwargs)
+    generate_rollups(submission_date, output_bucket, output_prefix,
+                     1, search_clients_daily, orderBy='sample_id', **kwargs)
 
 
 # Generate click commands - wrap ETL jobs to accept click arguements
