@@ -132,12 +132,17 @@ def agg_search_data(main_summary, grouping_cols, agg_functions):
     # Pivot on search type
     pivoted = (
         aggregated
-        .groupBy([col for col in aggregated.columns if col not in ['type', 'count']])
+        .groupBy([column for column in aggregated.columns
+                  if column not in ['type', 'count']])
         .pivot(
             'type',
             ['tagged-sap', 'tagged-follow-on', 'sap']
         )
         .sum('count')
+        # Add convenience columns with underscores instead of hyphens.
+        # This makes the table easier to query from Presto.
+        .withColumn('tagged_sap', col('tagged-sap'))
+        .withColumn('tagged_follow_on', col('tagged-follow-on'))
     )
 
     return pivoted
@@ -256,7 +261,7 @@ def search_aggregates_etl(submission_date, bucket, prefix,
 def search_clients_daily_etl(submission_date, bucket, prefix,
                              **kwargs):
     generate_rollups(submission_date, output_bucket, output_prefix,
-                     1, search_clients_daily, orderBy='sample_id', **kwargs)
+                     2, search_clients_daily, orderBy='sample_id', **kwargs)
 
 
 # Generate click commands - wrap ETL jobs to accept click arguements
