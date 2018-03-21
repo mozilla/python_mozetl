@@ -17,7 +17,7 @@ from requests_toolbelt.threaded import pool
 
 AMO_DUMP_BUCKET = 'telemetry-parquet'
 AMO_DUMP_PREFIX = 'telemetry-ml/addon_recommender/'
-AMO_DUMP_FILENAME = 'extended_addons_database.json'
+AMO_DUMP_FILENAME = 'extended_addons_database'
 
 DEFAULT_AMO_REQUEST_URI = "https://addons.mozilla.org/api/v3/addons/search/"
 QUERY_PARAMS = "?app=firefox&sort=created&type=extension"
@@ -172,6 +172,11 @@ class AMODatabase:
             p.join_all()
             last_page_urls = self._handle_version_responses(p)
 
+            # Try processing the exceptions once
+            p = pool.Pool.from_exceptions(p.exceptions(), num_processes=self._max_processes)
+            p.join_all()
+            last_page_urls.extend(self._handle_version_responses(p))
+
             # Now fetch the last version of each addon
             print("Processing Last page urls: %d" % len(last_page_urls))
             p = pool.Pool.from_urls(last_page_urls,
@@ -179,6 +184,11 @@ class AMODatabase:
             p.join_all()
 
             print ("Writing create dates")
+            self._handle_last_version_responses(p, date_db)
+
+            # Try processing exceptions once
+            p = pool.Pool.from_exceptions(p.exceptions(), num_processes=self._max_processes)
+            p.join_all()
             self._handle_last_version_responses(p, date_db)
 
     def _handle_last_version_responses(self, p, db):
@@ -221,8 +231,11 @@ class AMODatabase:
             try:
                 if resp.status_code == 200:
                     jdata = json.loads(resp.content.decode('utf8'))
-                    page_count = jdata['page_count']
-                    page_urls.append(resp.url+"?page=%d" % page_count)
+                    page_count = int(jdata['page_count'])
+                    if page_count > 1:
+                        page_urls.append(resp.url+"?page=%d" % page_count)
+                    else:
+                        page_urls.append(resp.url)
             except Exception as e:
                 # Skip this record
                 logger.error(e)
@@ -294,7 +307,7 @@ def main(path, date, workers):
             sys.stdout.write('.')
             sys.stdout.flush()
 
-    store_json_to_s3(large_blob,
+    store_json_to_s3(json.dumps(large_blob),
                      AMO_DUMP_FILENAME,
                      date,
                      AMO_DUMP_PREFIX,
