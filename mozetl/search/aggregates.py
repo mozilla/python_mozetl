@@ -19,7 +19,6 @@ from pyspark.sql.functions import (
 )
 from pyspark.sql.types import StringType
 from pyspark.sql import SparkSession
-from .transform import transform
 
 
 DEFAULT_INPUT_BUCKET = 'telemetry-parquet'
@@ -206,14 +205,6 @@ def add_derived_columns(exploded_search_counts):
     )
 
 
-def orderByIf(df, columns):
-    """Wrapper for orderBy, do nothing if no columns specified"""
-    if columns:
-        return(df.orderBy(*columns))
-    else:
-        return(df)
-
-
 def generate_rollups(submission_date, output_bucket, output_prefix,
                      output_version, transform_func,
                      input_bucket=DEFAULT_INPUT_BUCKET,
@@ -247,10 +238,14 @@ def generate_rollups(submission_date, output_bucket, output_prefix,
     logger.info('Applying transformation function...')
     search_dashboard_data = transform_func(main_summary)
 
+    if orderBy:
+        ordered_data = search_dashboard_data.orderBy(*orderBy)
+    else:
+        ordered_data = search_dashboard_data
+
     logger.info('Saving rollups to: {}'.format(output_path))
     (
         search_dashboard_data
-        .transform(lambda df: orderByIf(df, *orderBy))
         .write
         .mode(save_mode)
         .save(output_path)
