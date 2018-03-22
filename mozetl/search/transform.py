@@ -1,7 +1,7 @@
-from pyspark.sql import DataFrame
+from pyspark.sql.dataframe import DataFrame
 
 
-def tranform(self, f):
+def transform(self, f):
     """Apply generic tranform function to a DataFrame
     
     Allows us to chain custom transformations to DataFrames.
