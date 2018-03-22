@@ -37,7 +37,7 @@ def get_test_pilot_addons():
 
 def get_dest(output_bucket, output_prefix, output_version, date=None, sample_id=None):
     '''
-    Stiches together an s3 destination.
+    Stitches together an s3 destination.
 
     :param output_bucket: s3 output_bucket
     :param output_prefix: s3 output_prefix (within output_bucket)
