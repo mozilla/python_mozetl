@@ -239,9 +239,7 @@ def generate_rollups(submission_date, output_bucket, output_prefix,
     search_dashboard_data = transform_func(main_summary)
 
     if orderBy:
-        ordered_data = search_dashboard_data.orderBy(*orderBy)
-    else:
-        ordered_data = search_dashboard_data
+        search_dashboard_data = search_dashboard_data.orderBy(*orderBy)
 
     logger.info('Saving rollups to: {}'.format(output_path))
     (
