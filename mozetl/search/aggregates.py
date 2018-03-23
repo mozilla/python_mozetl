@@ -238,10 +238,12 @@ def generate_rollups(submission_date, output_bucket, output_prefix,
     logger.info('Applying transformation function...')
     search_dashboard_data = transform_func(main_summary)
 
+    if orderBy:
+        search_dashboard_data = search_dashboard_data.orderBy(*orderBy)
+
     logger.info('Saving rollups to: {}'.format(output_path))
     (
         search_dashboard_data
-        .orderBy(*orderBy)
         .write
         .mode(save_mode)
         .save(output_path)
