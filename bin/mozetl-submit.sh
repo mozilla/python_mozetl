@@ -7,11 +7,13 @@
 # mozetl.cli entry point. All necessary context for the job should be available
 # though the environment in the following form: MOZETL_${COMMAND}_${OPTION}.
 #
-# MOZETL_COMMAND:       a command that runs a particular ETL job; this causes all
-#                       arguments to be read through the environment
-# MOZETL_GIT_PATH:      (optional) path to the repository
-# MOZETL_GIT_BRANCH:    (optional) git branch to use
-# MOZETL_SPARK_MASTER:  (optional) spark-submit --master (defaults to yarn)
+# MOZETL_COMMAND:           a command that runs a particular ETL job; this causes all
+#                           arguments to be read through the environment
+# MOZETL_GIT_PATH:          (optional) path to the repository
+# MOZETL_GIT_BRANCH:        (optional) git branch to use
+# MOZETL_SPARK_MASTER:      (optional) spark-submit --master (defaults to yarn)
+# MOZETL_SUBMISSION_METHOD: (optional) specify either spark or python 
+#                                      (defaults to spark)
 #
 # Flags for running this script in development, always has precedence
 # -d (dev mode)     use local repository, script must be run from within the git project
@@ -53,6 +55,7 @@ MOZETL_ARGS=${MOZETL_COMMAND:-$@}
 MOZETL_GIT_PATH=${MOZETL_GIT_PATH:-https://github.com/mozilla/python_mozetl.git}
 MOZETL_GIT_BRANCH=${MOZETL_GIT_BRANCH:-master}
 MOZETL_SPARK_MASTER=${MOZETL_SPARK_MASTER:-yarn}
+MOZETL_SUBMISSION_METHOD=${MOZETL_SUBMISSION_METHOD:-spark}
 
 # Jupyter is the default driver, execute with python instead
 unset PYSPARK_DRIVER_PYTHON
@@ -82,7 +85,12 @@ fi
 pip install .
 python setup.py bdist_egg
 
-spark-submit --master ${MOZETL_SPARK_MASTER} \
-             --deploy-mode client \
-             --py-files dist/*.egg \
-             ${workdir}/runner.py ${MOZETL_ARGS}
+if [[ "${MOZETL_SUBMISSION_METHOD}" = "spark" ]]; then
+    spark-submit --master ${MOZETL_SPARK_MASTER} \
+                 --deploy-mode client \
+                 --py-files dist/*.egg \
+                 ${workdir}/runner.py ${MOZETL_ARGS}
+else
+    cd ${workdir}
+    python ./runner.py ${MOZETL_ARGS}
+fi
