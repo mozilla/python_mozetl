@@ -1,19 +1,30 @@
-import boto3        # noqa
-import itertools    # noqa
-import json         # noqa
-import sys          # noqa 
-import logging      # noqa
+"""
+This ETL job computed the computes the coinstallaton rate for whitelisted
+addons for a smaple of the longitudinal telemetry dataset.
+"""
 
+import click
+import boto3        # noqa
+import datetime as dt    # noqa
+import json         # noqa
+import logging      # noqa
 from botocore.exceptions import ClientError    # noqa
-from collections import Counter                # noqa
-from pyspark.sql.functions import collect_list, explode, udf # noqa
-from pyspark.sql.types import *                # noqa
+from pyspark.sql import Row, SparkSession  # noqa
+from pyspark.sql.functions import col, collect_list, explode, udf, sum as sum_, max as max_, first  # noqa
+from pyspark.sql.types import StructType, StructField, StringType, LongType, IntegerType
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
+OUTPUT_BUCKET = 'telemetry-parquet'
+OUTPUT_PREFIX = 'taar/lite/'
+OUTOUT_FILE_NAME = 'guid_coinstallation.json'
+
 AMO_DUMP_BUCKET = 'telemetry-parquet'
 AMO_DUMP_KEY = 'telemetry-ml/addon_recommender/addons_database.json'
+MAIN_SUMMARY_PATH = 's3://telemetry-parquet/main_summary/v4/'
+ONE_WEEK_AGO = (dt.datetime.now() - dt.timedelta(days=7)).strftime('%Y%m%d')
+
 
 def write_to_s3(source_file_name, s3_dest_file_name, s3_prefix, bucket):
     """Store the new json file containing current top addons per locale to S3.
@@ -57,6 +68,7 @@ def store_json_to_s3(json_data, base_filename, date, prefix, bucket):
     write_to_s3(FULL_FILENAME, FULL_FILENAME, prefix, bucket)
 
 
+# TODO: eventually replace this with the whitelist that Victor is writing ETL for.
 def load_amo_external_whitelist():
     """ Download and parse the AMO add-on whitelist.
 
@@ -87,13 +99,15 @@ def load_amo_external_whitelist():
 
     return final_whitelist
 
+
 def load_training_from_telemetry(spark):
     """ load some training data from telemetry given a sparkContext
     """
     sc = spark.sparkContext
+
     # Define the set of feature names to be used in the donor computations.
 
-    def get_initial_sample():
+    def get_initial_sample(pct_sample=10):
         # noqa: ignore=E127,E502,E999
         """ Takes an initial sample from the longitudinal dataset
         (randomly sampled from main summary). Coarse filtering on:
@@ -101,18 +115,22 @@ def load_training_from_telemetry(spark):
         - corrupt and generally wierd telemetry entries
         - isolating release channel
         - column selection
+        -
+        - pct_sample is an integer [1, 100] indicating sample size
         """
+        # Could scale this up to grab more than what is in longitudinal and see how long it takes to run.
         return spark.sql("SELECT * FROM longitudinal") \
-                    .where("active_addons IS NOT null")\
-                    .where("size(active_addons[0]) > 1")\
-                    .where("normalized_channel = 'release'")\
-                    .where("build IS NOT NULL AND build[0].application_name = 'Firefox'")\
-                    .selectExpr("client_id as client_id", "active_addons[0] as active_addons")
+            .where("active_addons IS NOT null") \
+            .where("size(active_addons[0]) > 1") \
+            .where("normalized_channel = 'release'") \
+            .where("build IS NOT NULL AND build[0].application_name = 'Firefox'") \
+            .selectExpr("client_id as client_id", "active_addons[0] as active_addons")
 
     def get_addons_per_client(users_df):
         """ Extracts a DataFrame that contains one row
         for each client along with the list of active add-on GUIDs.
         """
+
         def is_valid_addon(guid, addon):
             """ Filter individual addons out to exclude, system addons,
             legacy addons, disabled addons, sideloaded addons.
@@ -126,73 +144,102 @@ def load_training_from_telemetry(spark):
                 # make sure the amo_whitelist has been broadcast to woreker nodes.
                 guid not in broadcast_amo_whitelist.value
             )
+
         # TODO: may need addiitonal whitelisting to remove shield addons
-        # TODO: Here we should have a blacklist as well, 
         # it should be populated from the current list of shield studies.
 
         # Create an add-ons dataset un-nesting the add-on map from each
         # user to a list of add-on GUIDs. Also filter undesired add-ons.
         return (
             users_df.rdd
-            .map(lambda p: (p["client_id"],
-                 [guid for guid, data in p["active_addons"].items() if is_valid_addon(guid, data)]))
-            .filter(lambda p: len(p[1]) > 1)
-            .toDF(["client_id", "addon_ids"])
+                .map(lambda p: (p["client_id"],
+                                [guid for guid, data in p["active_addons"].items() if is_valid_addon(guid, data)]))
+                .filter(lambda p: len(p[1]) > 1)
+                .toDF(["client_id", "addon_ids"])
         )
 
-    log.info("Init loading client features")
+    logging.info("Init loading client features")
     client_features_frame = get_initial_sample()
-    log.info("Loaded client features")
+    logging.info("Loaded client features")
 
     amo_white_list = load_amo_external_whitelist()
-    log.info("AMO White list loaded")
+    logging.info("AMO White list loaded")
 
     broadcast_amo_whitelist = sc.broadcast(amo_white_list)
-    log.info("Broadcast AMO whitelist success")
+    logging.info("Broadcast AMO whitelist success")
 
     addons_info_frame = get_addons_per_client(client_features_frame)
-    log.info("Filtered for valid addons only.")
+    logging.info("Filtered for valid addons only.")
 
-    taar_training = addons_info_frame.join(client_features_frame, 'client_id', 'inner')\
-                                     .drop('active_addons')\
-                                     .selectExpr("addon_ids as installed_addons")
-    log.info("JOIN completed on TAAR training data")
+    taar_training = addons_info_frame.join(client_features_frame, 'client_id', 'inner') \
+        .drop('active_addons') \
+        .selectExpr("addon_ids as installed_addons")
+    logging.info("JOIN completed on TAAR training data")
 
     return taar_training
 
-def main():
-	spark = (SparkSession.builder.enableHiveSupport().getOrCreate())
-	df = load_training_from_telemetry(spark)
-	df.take(10)
+
+def key_all(a):
+    """
+    Return for each Row a two column set of Rows that contains each individual installed addon (the key_addon) as the first column
+    and an array of guids of all *other* addons that were seen co-installed with the key addon. Excluding the key_addon from the second  column to avoid inflated counts in later aggregation.
+    """
+    return [(i, [b for b in a if not b is i]) for i in a]
 
 
-	# Isolate the individual guids that are found installed by any client who has more than one addon installed
-	# then collect as a list for keying a new dict later.
-	guid_set_unique = df.withColumn("exploded", explode(df.installed_addons)).select("exploded").rdd.flatMap(lambda x: x).distinct().collect()
+@click.command()
+@click.option('--date', required=True)
+@click.option('--bucket', default=OUTPUT_BUCKET)
+@click.option('--prefix', default=OUTPUT_PREFIX)
+def main(date, bucket, prefix):
+    spark = (SparkSession
+             .builder
+             .appName("taar_lite=")
+             .enableHiveSupport()
+             .getOrCreate())
 
-	# print guid_set_unique[0:20]
-	print 'Number of unique guids co-installed in sample: ' + str(len(guid_set_unique))
+    logging.info("Loading telemetry sample.")
+    longitudinal_addons = load_training_from_telemetry(spark)
 
-	unpack_udf = udf(
-	    lambda l: [item for sublist in l for item in sublist]
-	)
+    guid_set_unique = longitudinal_addons.withColumn("exploded", explode(longitudinal_addons.installed_addons)).select(
+        "exploded").rdd.flatMap(lambda x: x).distinct().collect()
+    logging.info("Number of unique guids co-installed in sample: " + str(len(guid_set_unique)))
 
+    restructured = longitudinal_addons.rdd.flatMap(lambda x: key_all(x.installed_addons)).toDF(
+        ['key_addon', "coinstalled_addons"])
 
-	schema_coinst = ArrayType(StructType([
-	    StructField("guid", StringType(), False),
-	    StructField("count", IntegerType(), False)
-	]))
+    # explode the list of co-installs and count pair occurances.
+    addon_co_installations = (restructured.select('key_addon', explode('coinstalled_addons').alias('coinstalled_addon'))
+                              .groupBy("key_addon", 'coinstalled_addon').count())
 
-	count_udf = udf(
-	    lambda s: Counter(s).most_common(), 
-	    schema_coinst
-	)
+    # collect the set of coinstalled_addon, count pairs for each key_addon
+    combine_and_map_cols = udf(lambda x, y: (x, y),
+                               StructType([
+                                   StructField('id', StringType()),
+                                   StructField('n', LongType())
+                               ]))
 
+    addon_co_installations_collapsed = (addon_co_installations
+                                        .select('key_addon', combine_and_map_cols('coinstalled_addon', 'count')
+                                        .alias('id_n'))
+                                        .groupby("key_addon")
+                                        .agg(collect_list('id_n')
+                                        .alias('coinstallation_counts')))
+    logging.info(addon_co_installations_collapsed.printSchema())
 
-	small_subset = df.sample(False, 0.01).cache()
+    logging.info("Collecting final result of co-installations.")
 
-	df2 = small_subset.groupBy("installed_addons").agg(collect_list("installed_addons").alias("installed_addons_3")).withColumn("installed_addons", unpack_udf("installed_addons")).withColumn("installed_addons_2", count_udf("installed_addons"))
+    result_list = addon_co_installations_collapsed.collect()
 
-	df2.take(10)
+    result_json = {}
+    for key_addon, coinstalls in result_list:
+        value_json = {}
+        for _id, n in coinstalls:
+            value_json[_id] = n
+        result_json[key_addon] = value_json
 
-	return df2
+    store_json_to_s3(json.dumps(result_json, indent=2), OUTOUT_FILE_NAME,
+                     date, prefix, bucket)
+
+    spark.stop()
+
