@@ -3,6 +3,7 @@
 import json
 import boto3
 import pytest
+import mock
 from moto import mock_s3
 from mozetl.taar import taar_lite_guidguid, taar_utils
 from pyspark.sql import Row
@@ -49,19 +50,12 @@ MOCK_KEYED_ADDONS = [
         coinstalled_addons=['test-guid-1'])
     ]
 
+
+
+@mock.patch('mozetl.taar.taar_lite_guidguid.load_training_from_telemetry',
+            return_value=MOCK_TELEMETRY_SAMPLE)
 @mock_s3
 def test_load_training_from_telemetry(spark):
-    conn = boto3.resource('s3', region_name='us-west-2')
-    conn.create_bucket(Bucket=taar_utils.AMO_DUMP_BUCKET)
-
-    # Store the data in the mocked bucket.
-    conn.Object(taar_utils.AMO_DUMP_BUCKET, key=taar_utils.AMO_DUMP_KEY)\
-        .put(Body=json.dumps(MOCK_TELEMETRY_SAMPLE))
-
-    expected = {
-        "it-IT": ["test-guid-0001"]
-    }
-
     # Sanity check that mocking is happening correctly.
     assert taar_lite_guidguid.load_training_from_telemetry(spark) == MOCK_TELEMETRY_SAMPLE
 
