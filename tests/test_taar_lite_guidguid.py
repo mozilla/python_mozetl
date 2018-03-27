@@ -6,7 +6,7 @@ import pytest
 from moto import mock_s3
 from mozetl.taar import taar_lite_guidguid, taar_utils
 from pyspark.sql import Row
-from taar_utils import store_json_to_s3, load_amo_external_whitelist
+from mozetl.taar.taar_utils import store_json_to_s3, load_amo_external_whitelist
 
 
 """
