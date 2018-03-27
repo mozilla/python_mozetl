@@ -1,10 +1,10 @@
 """Test suite for taar_lite_guidguid Job."""
 
-import pytest
-import mock
-from moto import mock_s3
-from mozetl.taar import taar_lite_guidguid, taar_utils # noqa
-from pyspark.sql import Row
+import pytest  # noqa
+import mock  # noqa
+from moto import mock_s3  # noqa
+from mozetl.taar import taar_lite_guidguid, taar_utils  # noqa
+from pyspark.sql import Row  # noqa
 
 """
 Expected schema of co-installation counts dict.
@@ -53,7 +53,6 @@ MOCK_KEYED_ADDONS = [
 def test_load_training_from_telemetry(spark):
     # Sanity check that mocking is happening correctly.
     assert taar_lite_guidguid.load_training_from_telemetry(spark) == MOCK_TELEMETRY_SAMPLE
-
 
 # Exercise the only part of the ETL job happening outside of spark.
 def test_addon_keying():
