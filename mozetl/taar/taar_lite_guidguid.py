@@ -1,7 +1,3 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
-
 """
 This ETL job computes the co-installation occurrence of white-listed
 Firefox webextensions for a sample of the longitudinal telemetry dataset.
@@ -216,11 +212,11 @@ def main(date, bucket, prefix):
     restructured = longitudinal_addons.rdd.flatMap(lambda x: key_all(x.installed_addons)).toDF(
         ['key_addon', "coinstalled_addons"])
 
-    # explode the list of co-installs and count pair occurances.
+    # Explode the list of co-installs and count pair occurrences.
     addon_co_installations = (restructured.select('key_addon', explode('coinstalled_addons').alias('coinstalled_addon'))
                               .groupBy("key_addon", 'coinstalled_addon').count())
 
-    # collect the set of coinstalled_addon, count pairs for each key_addon
+    # Collect the set of coinstalled_addon, count pairs for each key_addon.
     combine_and_map_cols = udf(lambda x, y: (x, y),
                                StructType([
                                    StructField('id', StringType()),
@@ -234,7 +230,6 @@ def main(date, bucket, prefix):
                                         .agg(collect_list('id_n')
                                         .alias('coinstallation_counts')))
     logging.info(addon_co_installations_collapsed.printSchema())
-
     logging.info("Collecting final result of co-installations.")
 
     result_list = addon_co_installations_collapsed.collect()
