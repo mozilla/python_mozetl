@@ -1,14 +1,10 @@
 """Test suite for taar_lite_guidguid Job."""
 
-import json
-import boto3
 import pytest
 import mock
 from moto import mock_s3
-from mozetl.taar import taar_lite_guidguid, taar_utils
+from mozetl.taar import taar_lite_guidguid, taar_utils # noqa
 from pyspark.sql import Row
-from mozetl.taar.taar_utils import store_json_to_s3, load_amo_external_whitelist
-
 
 """
 Expected schema of co-installation counts dict.
@@ -51,7 +47,6 @@ MOCK_KEYED_ADDONS = [
     ]
 
 
-
 @mock.patch('mozetl.taar.taar_lite_guidguid.load_training_from_telemetry',
             return_value=MOCK_TELEMETRY_SAMPLE)
 @mock_s3
@@ -59,13 +54,7 @@ def test_load_training_from_telemetry(spark):
     # Sanity check that mocking is happening correctly.
     assert taar_lite_guidguid.load_training_from_telemetry(spark) == MOCK_TELEMETRY_SAMPLE
 
-    assert taar_lite_guidguid\
-        .load_training_from_telemetry(spark)\
-        .rdd\
-        .flatMap(lambda x: taar_lite_guidguid
-                 .key_all(x.installed_addons))\
-        .toDF(['key_addon', "coinstalled_addons"]) == MOCK_KEYED_ADDONS
 
-
+# Exercise the only part of the ETL job happening outside of spark.
 def test_addon_keying():
     assert taar_lite_guidguid.key_all(MOCK_KEYED_ADDONS) == MOCK_ADDON_INSTALLATIONS
