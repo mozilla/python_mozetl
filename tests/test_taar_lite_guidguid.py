@@ -61,12 +61,12 @@ MOCK_KEYED_ADDONS = [
     ]
 
 
-@mock.patch('mozetl.taar.taar_lite_guidguid.load_training_from_telemetry',
+@mock.patch('mozetl.taar.taar_lite_guidguid.extract_telemetry',
             return_value=MOCK_TELEMETRY_SAMPLE)
 @mock_s3
-def test_load_training_from_telemetry(spark):
+def test_extract_telemetry(spark):
     # Sanity check that mocking is happening correctly.
-    assert taar_lite_guidguid.load_training_from_telemetry(spark) == MOCK_TELEMETRY_SAMPLE
+    assert taar_lite_guidguid.extract_telemetry(spark) == MOCK_TELEMETRY_SAMPLE
 
 # Exercise the only part of the ETL job happening outside of spark.
 def test_addon_keying():
