@@ -112,10 +112,10 @@ def load_training_from_telemetry(spark):
         # user to a list of add-on GUIDs. Also filter undesired add-ons.
         return (
             users_df.rdd
-                .map(lambda p: (p["client_id"],
-                                [guid for guid, data in p["active_addons"].items() if is_valid_addon(guid, data)]))
-                .filter(lambda p: len(p[1]) > 1)
-                .toDF(["client_id", "addon_ids"])
+                    .map(lambda p: (p["client_id"],
+                                    [guid for guid, data in p["active_addons"].items() if is_valid_addon(guid, data)]))
+                    .filter(lambda p: len(p[1]) > 1)
+                    .toDF(["client_id", "addon_ids"])
         )
 
     logging.info("Init loading client features")
