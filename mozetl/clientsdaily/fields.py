@@ -51,8 +51,27 @@ _FIELD_AGGREGATORS = [
     # attribution
     agg_first('blocklist_enabled'),
     agg_first('channel'),
-    agg_first('city'),
-    agg_first('country'),
+    F.first(
+        F.expr(
+            "IF(country IS NOT NULL AND country != '??'," \
+            " IF(city IS NOT NULL, city, '??'), NULL)"
+        )
+    ).alias('city'),
+    F.first(
+        F.expr(
+            "IF(country IS NOT NULL AND country != '??'," \
+            " IF(geo_subdivision1 IS NOT NULL, geo_subdivision1, '??'), NULL)"
+        )
+    ).alias('geo_subdivision1'),
+    F.first(
+        F.expr(
+            "IF(country IS NOT NULL AND country != '??'," \
+            " IF(geo_subdivision2 IS NOT NULL, geo_subdivision2, '??'), NULL)"
+        )
+    ).alias('geo_subdivision2'),
+    F.first(
+        F.expr("IF(country IS NOT NULL AND country != '??', country, NULL)")
+    ).alias('country'),
     agg_sum('crashes_detected_content'),
     agg_sum('crashes_detected_gmplugin'),
     agg_sum('crashes_detected_plugin'),
@@ -192,3 +211,5 @@ EXPERIMENT_FIELD_AGGREGATORS = _FIELD_AGGREGATORS[:15] + [
 ACTIVITY_DATE_COLUMN = F.expr(
     "substr(subsession_start_date, 1, 10)"
 ).alias("activity_date")
+
+NULL_STRING_COLUMN = F.expr("STRING(NULL)")

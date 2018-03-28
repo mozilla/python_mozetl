@@ -111,6 +111,12 @@ def to_profile_day_aggregates(frame_with_extracts):
         )
     else:
         with_activity_date = frame_with_extracts
+    if "geo_subdivision1" not in with_activity_date.columns:
+        from fields import NULL_STRING_COLUMN
+        with_activity_date = with_activity_date.withColumn("geo_subdivision1", NULL_STRING_COLUMN)
+    if "geo_subdivision2" not in with_activity_date.columns:
+        from fields import NULL_STRING_COLUMN
+        with_activity_date = with_activity_date.withColumn("geo_subdivision2", NULL_STRING_COLUMN)
     grouped = with_activity_date.groupby('client_id', 'activity_date')
     return grouped.agg(*MAIN_SUMMARY_FIELD_AGGREGATORS)
 
