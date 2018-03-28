@@ -20,7 +20,7 @@ log = logging.getLogger(__name__)
 OUTPUT_BUCKET = 'telemetry-parquet'
 OUTPUT_BUCKET = 'telemetry-parquet'
 OUTPUT_PREFIX = 'taar/lite/'
-OUTOUT_FILE_NAME = 'guid_coinstallation.json'
+OUTPUT_BASE_FILENAME = 'guid_coinstallation'
 
 AMO_DUMP_BUCKET = 'telemetry-parquet'
 AMO_DUMP_KEY = 'telemetry-ml/addon_recommender/addons_database.json'
@@ -60,7 +60,7 @@ def load_amo_external_whitelist():
     return final_whitelist
 
 
-def load_training_from_telemetry(spark):
+def extract_telemetry(spark):
     """ load some training data from telemetry given a sparkContext
     """
     sc = spark.sparkContext
@@ -149,20 +149,7 @@ def key_all(a):
     return [(i, [b for b in a if not b is i]) for i in a]
 
 
-@click.command()
-@click.option('--date', required=True)
-@click.option('--bucket', default=OUTPUT_BUCKET)
-@click.option('--prefix', default=OUTPUT_PREFIX)
-def main(date, bucket, prefix):
-    spark = (SparkSession
-             .builder
-             .appName("taar_lite=")
-             .enableHiveSupport()
-             .getOrCreate())
-
-    logging.info("Loading telemetry sample.")
-    longitudinal_addons = load_training_from_telemetry(spark)
-
+def transform_dataframe(longitudinal_addons):
     # Only for logging, not used, but may be interesting for later analysis.
     guid_set_unique = longitudinal_addons.withColumn("exploded", explode(longitudinal_addons.installed_addons)).select(
         "exploded").rdd.flatMap(lambda x: x).distinct().collect()
@@ -200,8 +187,26 @@ def main(date, bucket, prefix):
             value_json[_id] = n
         result_json[key_addon] = value_json
 
-    store_json_to_s3(json.dumps(result_json, indent=2), OUTOUT_FILE_NAME,
-                     date, prefix, bucket)
+
+@click.command()
+@click.option('--date', required=True)
+@click.option('--bucket', default=OUTPUT_BUCKET)
+@click.option('--prefix', default=OUTPUT_PREFIX)
+def main(date, bucket, prefix):
+    spark = (SparkSession
+             .builder
+             .appName("taar_lite=")
+             .enableHiveSupport()
+             .getOrCreate())
+
+    logging.info("Loading telemetry sample.")
+
+    longitudinal_addons = extract_telemetry(spark)
+    result_json = transform_dataframe(longitudinal_addons)
+    store_json_to_s3(json.dumps(result_json, indent=2),
+                     OUTPUT_BASE_FILENAME,
+                     date,
+                     prefix,
+                     bucket)
 
     spark.stop()
-
