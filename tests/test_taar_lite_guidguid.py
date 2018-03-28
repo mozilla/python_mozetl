@@ -8,10 +8,10 @@ from pyspark.sql import Row  # noqa
 
 """
 Expected schema of co-installation counts dict.
-| -- key_addon: string(nullable=true) 
-| -- coinstallation_counts: array(nullable=true) 
-| | -- element: struct(containsNull=true) 
-| | | -- id: string(nullable=true) 
+| -- key_addon: string(nullable=true)
+| -- coinstallation_counts: array(nullable=true)
+| | -- element: struct(containsNull=true)
+| | | -- id: string(nullable=true)
 | | | -- n: long(nullable=true)
 """
 
