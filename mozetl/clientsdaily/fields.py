@@ -51,8 +51,21 @@ _FIELD_AGGREGATORS = [
     # attribution
     agg_first('blocklist_enabled'),
     agg_first('channel'),
-    agg_first('city'),
-    agg_first('country'),
+    F.first(
+        F.expr(
+            "IF(country IS NOT NULL AND country != '??'," \
+            " IF(city IS NOT NULL, city, '??'), NULL)"
+        )
+    ).alias('city'),
+    F.first(
+        F.expr(
+            "IF(country IS NOT NULL AND country != '??'," \
+            " IF(city_geoname_id IS NOT NULL, city_geoname_id, -1), NULL)"
+        )
+    ).alias('city_geoname_id'),
+    F.first(
+        F.expr("IF(country IS NOT NULL AND country != '??', country, NULL)")
+    ).alias('country'),
     agg_sum('crashes_detected_content'),
     agg_sum('crashes_detected_gmplugin'),
     agg_sum('crashes_detected_plugin'),

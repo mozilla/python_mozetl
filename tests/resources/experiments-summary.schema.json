@@ -38,6 +38,12 @@
     },
     {
       "metadata": {},
+      "name": "city_geoname_id",
+      "nullable": true,
+      "type": "integer"
+    },
+    {
+      "metadata": {},
       "name": "os",
       "nullable": true,
       "type": "string"
