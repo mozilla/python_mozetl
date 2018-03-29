@@ -187,6 +187,8 @@ def transform_dataframe(longitudinal_addons):
             value_json[_id] = n
         result_json[key_addon] = value_json
 
+    return result_json
+
 
 @click.command()
 @click.option('--date', required=True)
