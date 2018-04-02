@@ -149,7 +149,7 @@ def key_all(a):
     return [(i, [b for b in a if not b is i]) for i in a]
 
 
-def transform_dataframe(longitudinal_addons):
+def transform(longitudinal_addons):
     # Only for logging, not used, but may be interesting for later analysis.
     guid_set_unique = longitudinal_addons.withColumn("exploded", explode(longitudinal_addons.installed_addons)).select(
         "exploded").rdd.flatMap(lambda x: x).distinct().collect()
@@ -178,7 +178,11 @@ def transform_dataframe(longitudinal_addons):
     logging.info(addon_co_installations_collapsed.printSchema())
     logging.info("Collecting final result of co-installations.")
 
-    result_list = addon_co_installations_collapsed.collect()
+    return addon_co_installations_collapsed
+
+
+def load_s3(result_df, date, prefix, bucket):
+    result_list = result_df.collect()
 
     result_json = {}
     for key_addon, coinstalls in result_list:
@@ -187,7 +191,11 @@ def transform_dataframe(longitudinal_addons):
             value_json[_id] = n
         result_json[key_addon] = value_json
 
-    return result_json
+    store_json_to_s3(json.dumps(result_json, indent=2),
+                     OUTPUT_BASE_FILENAME,
+                     date,
+                     prefix,
+                     bucket)
 
 
 @click.command()
@@ -204,11 +212,7 @@ def main(date, bucket, prefix):
     logging.info("Loading telemetry sample.")
 
     longitudinal_addons = extract_telemetry(spark)
-    result_json = transform_dataframe(longitudinal_addons)
-    store_json_to_s3(json.dumps(result_json, indent=2),
-                     OUTPUT_BASE_FILENAME,
-                     date,
-                     prefix,
-                     bucket)
+    result_df = transform(longitudinal_addons)
+    load_s3(result_df, date, prefix, bucket)
 
     spark.stop()

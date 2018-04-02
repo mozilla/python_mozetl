@@ -23,7 +23,7 @@ MOCK_TELEMETRY_SAMPLE = [
     Row(installed_addons=["test-guid-1", "test-guid-1"])
 ]
 
-MOCK_ADDON_INSTALLATIONS = [
+EXPECTED_ADDON_INSTALLATIONS = [
         (
             Row(key_addon='test-guid-1', coinstalled_addons=['test-guid-2', 'test-guid-3', 'test-guid-4']),
             [Row(key_addon='test-guid-1', coinstalled_addons=['test-guid-3', 'test-guid-4']),
@@ -70,4 +70,4 @@ def test_extract_telemetry(spark):
 
 # Exercise the only part of the ETL job happening outside of spark.
 def test_addon_keying():
-    assert taar_lite_guidguid.key_all(MOCK_KEYED_ADDONS) == MOCK_ADDON_INSTALLATIONS
+    assert taar_lite_guidguid.key_all(MOCK_KEYED_ADDONS) == EXPECTED_ADDON_INSTALLATIONS
