@@ -11,6 +11,15 @@ AMO_DUMP_BUCKET = 'telemetry-parquet'
 AMO_DUMP_KEY = 'telemetry-ml/addon_recommender/addons_database.json'
 
 
+def read_from_s3(dst_file_name, s3_dest_file_name, s3_prefix, bucket):
+    client = boto3.client('s3', 'us-west-2')
+    transfer = boto3.s3.transfer.S3Transfer(client)
+
+    # Update the state in the analysis bucket.
+    key_path = s3_prefix + s3_dest_file_name
+    transfer.download_file(bucket, key_path, dst_file_name)
+
+
 def write_to_s3(source_file_name, s3_dest_file_name, s3_prefix, bucket):
     """Store the new json file containing current top addons per locale to S3.
 

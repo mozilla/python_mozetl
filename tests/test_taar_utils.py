@@ -43,6 +43,31 @@ FAKE_AMO_DUMP = {
 
 
 @mock_s3
+def test_read_from_s3():
+    # Write a JSON blob
+    bucket = 'test-bucket'
+    prefix = 'test-prefix/'
+    s3_json_fname = 'test.json'
+
+    conn = boto3.resource('s3', region_name='us-west-2')
+    bucket_obj = conn.create_bucket(Bucket=bucket)
+
+    with NamedTemporaryFile() as json_file:
+        json_file.write(json.dumps(SAMPLE_DATA))
+        # Seek to the beginning of the file to allow the tested
+        # function to find the file content.
+        json_file.seek(0)
+        # Upload the temp file to S3.
+        taar_utils.write_to_s3(json_file.name, s3_json_fname, prefix, bucket)
+
+    with NamedTemporaryFile() as dst_json_file:
+        taar_utils.read_from_s3(dst_json_file.name, s3_json_fname, prefix, bucket)
+
+        data = open(dst_json_file.name).read()
+        assert data == json.dumps(SAMPLE_DATA)
+
+
+@mock_s3
 def test_write_to_s3():
     bucket = 'test-bucket'
     prefix = 'test-prefix/'
