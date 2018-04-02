@@ -38,6 +38,18 @@
     },
     {
       "metadata": {},
+      "name": "geo_subdivision1",
+      "nullable": true,
+      "type": "string"
+    },
+    {
+      "metadata": {},
+      "name": "geo_subdivision2",
+      "nullable": true,
+      "type": "string"
+    },
+    {
+      "metadata": {},
       "name": "os",
       "nullable": true,
       "type": "string"
