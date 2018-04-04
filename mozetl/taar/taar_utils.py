@@ -10,6 +10,8 @@ logger = logging.getLogger(__name__)
 AMO_DUMP_BUCKET = 'telemetry-parquet'
 AMO_DUMP_KEY = 'telemetry-ml/addon_recommender/addons_database.json'
 
+AMO_WHITELIST_KEY = 'telemetry-ml/addon_recommender/whitelist_addons_database.json'
+
 
 def read_from_s3(s3_dest_file_name, s3_prefix, bucket):
     """
@@ -81,7 +83,7 @@ def load_amo_external_whitelist():
     try:
         # Load the most current AMO dump JSON resource.
         s3 = boto3.client('s3')
-        s3_contents = s3.get_object(Bucket=AMO_DUMP_BUCKET, Key=AMO_DUMP_KEY)
+        s3_contents = s3.get_object(Bucket=AMO_DUMP_BUCKET, Key=AMO_WHITELIST_KEY)
         amo_dump = json.loads(s3_contents['Body'].read())
     except ClientError:
         logger.exception("Failed to download from S3", extra={
