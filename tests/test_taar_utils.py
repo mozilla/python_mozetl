@@ -134,7 +134,7 @@ def test_load_amo_external_whitelist():
     assert EXCEPTION_MSG in str(excinfo.value)
 
     # Store an empty file and verify that an exception is raised.
-    conn.Object(taar_utils.AMO_DUMP_BUCKET, key=taar_utils.AMO_DUMP_KEY)\
+    conn.Object(taar_utils.AMO_DUMP_BUCKET, key=taar_utils.AMO_WHITELIST_KEY)\
         .put(Body=json.dumps({}))
 
     with pytest.raises(RuntimeError) as excinfo:
@@ -143,7 +143,7 @@ def test_load_amo_external_whitelist():
     assert EXCEPTION_MSG in str(excinfo.value)
 
     # Store the data in the mocked bucket.
-    conn.Object(taar_utils.AMO_DUMP_BUCKET, key=taar_utils.AMO_DUMP_KEY)\
+    conn.Object(taar_utils.AMO_DUMP_BUCKET, key=taar_utils.AMO_WHITELIST_KEY)\
         .put(Body=json.dumps(FAKE_AMO_DUMP))
 
     # Check that the web_extension item is still present
