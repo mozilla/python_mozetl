@@ -50,7 +50,7 @@ def test_read_from_s3():
     s3_json_fname = 'test.json'
 
     conn = boto3.resource('s3', region_name='us-west-2')
-    bucket_obj = conn.create_bucket(Bucket=bucket)
+    conn.create_bucket(Bucket=bucket)
 
     with NamedTemporaryFile() as json_file:
         json_file.write(json.dumps(SAMPLE_DATA))
@@ -60,11 +60,8 @@ def test_read_from_s3():
         # Upload the temp file to S3.
         taar_utils.write_to_s3(json_file.name, s3_json_fname, prefix, bucket)
 
-    with NamedTemporaryFile() as dst_json_file:
-        taar_utils.read_from_s3(dst_json_file.name, s3_json_fname, prefix, bucket)
-
-        data = open(dst_json_file.name).read()
-        assert data == json.dumps(SAMPLE_DATA)
+    data = taar_utils.read_from_s3(s3_json_fname, prefix, bucket)
+    assert data == SAMPLE_DATA
 
 
 @mock_s3
@@ -92,14 +89,7 @@ def test_write_to_s3():
     keys = [o.key for o in available_objects]
     assert full_s3_name in keys
 
-    stored_data = json.loads(
-        conn
-        .Object(bucket, full_s3_name)
-        .get()['Body']
-        .read()
-        .decode('utf-8')
-    )
-
+    stored_data = taar_utils.read_from_s3(dest_filename, prefix, bucket)
     assert SAMPLE_DATA == stored_data
 
 
