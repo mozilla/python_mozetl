@@ -13,6 +13,7 @@ from pyspark.sql import Row, SparkSession     # noqa
 from pyspark.sql.functions import col, collect_list, explode, udf, sum as sum_, max as max_, first  # noqa
 from pyspark.sql.types import StructType, StructField, StringType, LongType, IntegerType  # noqa
 from taar_utils import store_json_to_s3
+from taar_utils import load_amo_external_whitelist
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
@@ -26,38 +27,6 @@ AMO_DUMP_BUCKET = 'telemetry-parquet'
 AMO_DUMP_KEY = 'telemetry-ml/addon_recommender/addons_database.json'
 MAIN_SUMMARY_PATH = 's3://telemetry-parquet/main_summary/v4/'
 ONE_WEEK_AGO = (dt.datetime.now() - dt.timedelta(days=7)).strftime('%Y%m%d')
-
-
-# TODO: eventually replace this with the whitelist that Victor is writing ETL for.
-def load_amo_external_whitelist():
-    """ Download and parse the AMO add-on whitelist.
-
-    :raises RuntimeError: the AMO whitelist file cannot be downloaded or contains
-                          no valid add-ons.
-    """
-    final_whitelist = []
-    amo_dump = {}
-    try:
-        # Load the most current AMO dump JSON resource.
-        s3 = boto3.client('s3')
-        s3_contents = s3.get_object(Bucket=AMO_DUMP_BUCKET, Key=AMO_DUMP_KEY)
-        amo_dump = json.loads(s3_contents['Body'].read())
-    except ClientError:
-        log.exception("Failed to download from S3", extra={
-            "bucket": AMO_DUMP_BUCKET,
-            "key": AMO_DUMP_KEY})
-
-    # If the load fails, we will have an empty whitelist, this may be problematic.
-    for key, value in amo_dump.items():
-        addon_files = value.get('current_version', {}).get('files', {})
-        # If any of the addon files are web_extensions compatible, it can be recommended.
-        if any([f.get("is_webextension", False) for f in addon_files]):
-            final_whitelist.append(value['guid'])
-
-    if len(final_whitelist) == 0:
-        raise RuntimeError("Empty AMO whitelist detected")
-
-    return final_whitelist
 
 
 def extract_telemetry(spark):
