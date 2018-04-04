@@ -1,22 +1,20 @@
 """Test suite for taar_lite_guidguid Job."""
 
-import json
+import mock
 import boto3
-import pytest
 from moto import mock_s3
-from mozetl.taar import taar_lite_guidguid, taar_utils
+from mozetl.taar import taar_lite_guidguid
 from pyspark.sql import Row
-from taar_utils import store_json_to_s3, load_amo_external_whitelist
-
 
 """
 Expected schema of co-installation counts dict.
-| -- key_addon: string(nullable=true) 
-| -- coinstallation_counts: array(nullable=true) 
-| | -- element: struct(containsNull=true) 
-| | | -- id: string(nullable=true) 
+| -- key_addon: string(nullable=true)
+| -- coinstallation_counts: array(nullable=true)
+| | -- element: struct(containsNull=true)
+| | | -- id: string(nullable=true)
 | | | -- n: long(nullable=true)
 """
+
 
 MOCK_TELEMETRY_SAMPLE = [
     Row(installed_addons=["test-guid-1", "test-guid-2", "test-guid-3"]),
@@ -26,52 +24,112 @@ MOCK_TELEMETRY_SAMPLE = [
     Row(installed_addons=["test-guid-1", "test-guid-1"])
 ]
 
-MOCK_ADDON_INSTALLATIONS = {
-    "test-guid-1":
-        {"test-guid-2": 1,
-         "test-guid-3": 2,
-         "test-guid-4": 2
-         },
-    "test-guid-2":
-        {"test-guid-1": 2,
-         "test-guid-5": 1,
-         "test-guid-6": 1
-         }}
+EXPECTED_ADDON_INSTALLATIONS = [
+        (    # noqa
+            Row(key_addon='test-guid-1', coinstalled_addons=['test-guid-2', 'test-guid-3', 'test-guid-4']),
+            [Row(key_addon='test-guid-1', coinstalled_addons=['test-guid-3', 'test-guid-4']),
+             Row(key_addon='test-guid-2', coinstalled_addons=['test-guid-1', 'test-guid-5', 'test-guid-6']),
+             Row(key_addon='test-guid-2', coinstalled_addons=['test-guid-1'])]
+        ),
+        (
+            Row(key_addon='test-guid-1', coinstalled_addons=['test-guid-3', 'test-guid-4']),
+            [Row(key_addon='test-guid-1', coinstalled_addons=['test-guid-2', 'test-guid-3', 'test-guid-4']),
+             Row(key_addon='test-guid-2', coinstalled_addons=['test-guid-1', 'test-guid-5', 'test-guid-6']),
+             Row(key_addon='test-guid-2', coinstalled_addons=['test-guid-1'])]
+        ),
+        (
+            Row(key_addon='test-guid-2', coinstalled_addons=['test-guid-1', 'test-guid-5', 'test-guid-6']),
+            [Row(key_addon='test-guid-1', coinstalled_addons=['test-guid-2', 'test-guid-3', 'test-guid-4']),
+             Row(key_addon='test-guid-1', coinstalled_addons=['test-guid-3', 'test-guid-4']),
+             Row(key_addon='test-guid-2', coinstalled_addons=['test-guid-1'])]
+        ),
+        (
+            Row(key_addon='test-guid-2', coinstalled_addons=['test-guid-1']),
+            [Row(key_addon='test-guid-1', coinstalled_addons=['test-guid-2', 'test-guid-3', 'test-guid-4']),
+             Row(key_addon='test-guid-1', coinstalled_addons=['test-guid-3', 'test-guid-4']),
+             Row(key_addon='test-guid-2', coinstalled_addons=['test-guid-1', 'test-guid-5', 'test-guid-6'])]
+        )]
 
 MOCK_KEYED_ADDONS = [
     Row(key_addon='test-guid-1',
-        coinstalled_addons=['test-guid-2','test-guid-3', 'test-guid-4']),
+        coinstalled_addons=['test-guid-2', 'test-guid-3', 'test-guid-4']),
     Row(key_addon='test-guid-1',
-        coinstalled_addons=['test-guid-3','test-guid-4']),
+        coinstalled_addons=['test-guid-3', 'test-guid-4']),
     Row(key_addon="test-guid-2",
-        coinstalled_addons=['test-guid-1','test-guid-5', 'test-guid-6']),
+        coinstalled_addons=['test-guid-1', 'test-guid-5', 'test-guid-6']),
     Row(key_addon="test-guid-2",
         coinstalled_addons=['test-guid-1'])
     ]
 
+
+EXPECTED_GUID_GUID_DATA = [
+    Row(key_addon=u'test-guid-2',
+        coinstallation_counts=[Row(id=u'test-guid-6', n=1),
+                               Row(id=u'test-guid-5', n=1),
+                               Row(id=u'test-guid-3', n=1),
+                               Row(id=u'test-guid-1', n=1)]),
+    Row(key_addon=u'test-guid-4',
+        coinstallation_counts=[Row(id=u'test-guid-1', n=1)]),
+    Row(key_addon=u'test-guid-3',
+        coinstallation_counts=[Row(id=u'test-guid-2', n=1), Row(id=u'test-guid-1', n=2)]),
+    Row(key_addon=u'test-guid-5',
+        coinstallation_counts=[Row(id=u'test-guid-6', n=1), Row(id=u'test-guid-2', n=1)]),
+    Row(key_addon=u'test-guid-1',
+        coinstallation_counts=[Row(id=u'test-guid-2', n=1),
+                               Row(id=u'test-guid-1', n=2),
+                               Row(id=u'test-guid-3', n=2),
+                               Row(id=u'test-guid-4', n=1)]),
+    Row(key_addon=u'test-guid-6',
+        coinstallation_counts=[Row(id=u'test-guid-2', n=1), Row(id=u'test-guid-5', n=1)])]
+
+
+@mock.patch('mozetl.taar.taar_lite_guidguid.extract_telemetry',
+            return_value=MOCK_TELEMETRY_SAMPLE)
 @mock_s3
-def test_load_training_from_telemetry(spark):
-    conn = boto3.resource('s3', region_name='us-west-2')
-    conn.create_bucket(Bucket=taar_utils.AMO_DUMP_BUCKET)
-
-    # Store the data in the mocked bucket.
-    conn.Object(taar_utils.AMO_DUMP_BUCKET, key=taar_utils.AMO_DUMP_KEY)\
-        .put(Body=json.dumps(MOCK_TELEMETRY_SAMPLE))
-
-    expected = {
-        "it-IT": ["test-guid-0001"]
-    }
-
+def test_extract_telemetry(spark):
     # Sanity check that mocking is happening correctly.
-    assert taar_lite_guidguid.load_training_from_telemetry(spark) == MOCK_TELEMETRY_SAMPLE
-
-    assert taar_lite_guidguid\
-        .load_training_from_telemetry(spark)\
-        .rdd\
-        .flatMap(lambda x: taar_lite_guidguid
-                 .key_all(x.installed_addons))\
-        .toDF(['key_addon', "coinstalled_addons"]) == MOCK_KEYED_ADDONS
+    assert taar_lite_guidguid.extract_telemetry(spark) == MOCK_TELEMETRY_SAMPLE
 
 
+# Exercise the only part of the ETL job happening outside of spark.
 def test_addon_keying():
-    assert taar_lite_guidguid.key_all(MOCK_KEYED_ADDONS) == MOCK_ADDON_INSTALLATIONS
+    assert taar_lite_guidguid.key_all(MOCK_KEYED_ADDONS) == EXPECTED_ADDON_INSTALLATIONS
+
+
+@mock_s3
+def test_transform_is_valid(spark):
+    """
+    Check that the contents of a sample transformation of extracted
+    data
+    """
+    # Build a dataframe using the mocked telemetry data sample
+    df = spark.createDataFrame(MOCK_TELEMETRY_SAMPLE)
+
+    result_data = taar_lite_guidguid.transform(df)
+
+    # Convert the dataframe into a plain list of dictionaries
+    result_data = sorted([r.asDict() for r in result_data.collect()])
+
+    # Convert the expected data into a plain list of dictionaries
+    expected = sorted([r.asDict() for r in EXPECTED_GUID_GUID_DATA])
+    assert expected == result_data
+
+
+@mock_s3
+def test_load_s3(spark):
+    BUCKET = taar_lite_guidguid.OUTPUT_BUCKET
+    PREFIX = taar_lite_guidguid.OUTPUT_PREFIX
+    dest_filename = taar_lite_guidguid.OUTPUT_BASE_FILENAME + '.json'
+
+    # Create the bucket before we upload
+    conn = boto3.resource('s3', region_name='us-west-2')
+    bucket_obj = conn.create_bucket(Bucket=BUCKET)
+
+    load_df = spark.createDataFrame(EXPECTED_GUID_GUID_DATA)
+    taar_lite_guidguid.load_s3(load_df, '20180301', PREFIX, BUCKET)
+
+    # Now check that the file is there
+    available_objects = list(bucket_obj.objects.filter(Prefix=PREFIX))
+    full_s3_name = '{}{}'.format(PREFIX, dest_filename)
+    keys = [o.key for o in available_objects]
+    assert full_s3_name in keys
