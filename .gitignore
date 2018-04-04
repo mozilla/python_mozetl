@@ -16,3 +16,6 @@ build/
 metastore_db/
 
 *.egg-info/
+
+# Ignore vim temp files
+.*sw?
