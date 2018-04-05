@@ -86,9 +86,7 @@ def extract_telemetry(spark):
                     .toDF(["client_id", "addon_ids"])
         )
 
-    logging.info("Init loading client features")
     client_features_frame = get_initial_sample()
-    logging.info("Loaded client features")
 
     amo_white_list = load_amo_external_whitelist()
     logging.info("AMO White list loaded")

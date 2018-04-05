@@ -83,14 +83,6 @@ EXPECTED_GUID_GUID_DATA = [
         coinstallation_counts=[Row(id=u'test-guid-2', n=1), Row(id=u'test-guid-5', n=1)])]
 
 
-@mock.patch('mozetl.taar.taar_lite_guidguid.extract_telemetry',
-            return_value=MOCK_TELEMETRY_SAMPLE)
-@mock_s3
-def test_extract_telemetry(spark):
-    # Sanity check that mocking is happening correctly.
-    assert taar_lite_guidguid.extract_telemetry(spark) == MOCK_TELEMETRY_SAMPLE
-
-
 # Exercise the only part of the ETL job happening outside of spark.
 def test_addon_keying():
     assert taar_lite_guidguid.key_all(MOCK_KEYED_ADDONS) == EXPECTED_ADDON_INSTALLATIONS
