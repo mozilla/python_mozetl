@@ -36,7 +36,6 @@ def extract_telemetry(spark):
     # Define the set of feature names to be used in the donor computations.
 
     def get_initial_sample(pct_sample=10):
-        # noqa: ignore=E127,E502,E999
         """ Takes an initial sample from the longitudinal dataset
         (randomly sampled from main summary). Coarse filtering on:
         - number of installed addons (greater than 1)
@@ -116,6 +115,7 @@ def key_all(a):
 
 
 def transform(longitudinal_addons):
+
     # Only for logging, not used, but may be interesting for later analysis.
     guid_set_unique = longitudinal_addons.withColumn("exploded", explode(longitudinal_addons.installed_addons)).select(
         "exploded").rdd.flatMap(lambda x: x).distinct().collect()
@@ -135,7 +135,9 @@ def transform(longitudinal_addons):
                                    StructField('n', LongType())
                                ]))
 
-    addon_co_installations_collapsed = (addon_co_installations
+    # Spark functions are sometimes long and unwieldy. Tough luck.
+    # Ignore E128 long line errors
+    addon_co_installations_collapsed = (addon_co_installations  # noqa: E128
                                         .select('key_addon', combine_and_map_cols('coinstalled_addon', 'count')
                                         .alias('id_n'))
                                         .groupby("key_addon")
