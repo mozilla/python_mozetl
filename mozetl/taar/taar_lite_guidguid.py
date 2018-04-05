@@ -19,7 +19,6 @@ logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
 OUTPUT_BUCKET = 'telemetry-parquet'
-OUTPUT_BUCKET = 'telemetry-parquet'
 OUTPUT_PREFIX = 'taar/lite/'
 OUTPUT_BASE_FILENAME = 'guid_coinstallation'
 
