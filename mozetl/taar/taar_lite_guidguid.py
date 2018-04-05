@@ -115,7 +115,7 @@ def key_all(a):
     all *other* addons that were seen co-installed with the key_addon. Excluding
     the key_addon from the second column to avoid inflated counts in later aggregation.
     """
-    return [(i, [b for b in a if not b is i]) for i in a]
+    return [(i, [b for b in a if b is not i]) for i in a]
 
 
 def transform(longitudinal_addons):
