@@ -3,15 +3,13 @@ This ETL job computes the co-installation occurrence of white-listed
 Firefox webextensions for a sample of the longitudinal telemetry dataset.
 """
 
-import click            # noqa
-import boto3            # noqa
-import datetime as dt   # noqa
-import json             # noqa
-import logging          # noqa
-from botocore.exceptions import ClientError   # noqa
-from pyspark.sql import Row, SparkSession     # noqa
-from pyspark.sql.functions import col, collect_list, explode, udf, sum as sum_, max as max_, first  # noqa
-from pyspark.sql.types import StructType, StructField, StringType, LongType, IntegerType  # noqa
+import click
+import datetime as dt
+import json
+import logging
+from pyspark.sql import SparkSession
+from pyspark.sql import functions as F
+from pyspark.sql.types import StructType, StructField, StringType, LongType
 from taar_utils import store_json_to_s3
 from taar_utils import load_amo_external_whitelist
 
@@ -115,9 +113,9 @@ def key_all(a):
 
 
 def transform(longitudinal_addons):
-
     # Only for logging, not used, but may be interesting for later analysis.
-    guid_set_unique = longitudinal_addons.withColumn("exploded", explode(longitudinal_addons.installed_addons)).select(
+    guid_set_unique = longitudinal_addons.withColumn("exploded",
+            F.explode(longitudinal_addons.installed_addons)).select(  # noqa: E501 - long lines
         "exploded").rdd.flatMap(lambda x: x).distinct().collect()
     logging.info("Number of unique guids co-installed in sample: " + str(len(guid_set_unique)))
 
@@ -125,15 +123,14 @@ def transform(longitudinal_addons):
         ['key_addon', "coinstalled_addons"])
 
     # Explode the list of co-installs and count pair occurrences.
-    addon_co_installations = (restructured.select('key_addon', explode('coinstalled_addons').alias('coinstalled_addon'))
+    addon_co_installations = (restructured.select('key_addon',
+        F.explode('coinstalled_addons').alias('coinstalled_addon'))  # noqa: E501 - long lines
                               .groupBy("key_addon", 'coinstalled_addon').count())
 
     # Collect the set of coinstalled_addon, count pairs for each key_addon.
-    combine_and_map_cols = udf(lambda x, y: (x, y),
-                               StructType([
-                                   StructField('id', StringType()),
-                                   StructField('n', LongType())
-                               ]))
+    combine_and_map_cols = F.udf(lambda x, y: (x, y),
+                                 StructType([StructField('id', StringType()),
+                                             StructField('n', LongType())]))
 
     # Spark functions are sometimes long and unwieldy. Tough luck.
     # Ignore E128 long line errors
@@ -141,7 +138,7 @@ def transform(longitudinal_addons):
                                         .select('key_addon', combine_and_map_cols('coinstalled_addon', 'count')
                                         .alias('id_n'))
                                         .groupby("key_addon")
-                                        .agg(collect_list('id_n')
+                                        .agg(F.collect_list('id_n')
                                         .alias('coinstallation_counts')))
     logging.info(addon_co_installations_collapsed.printSchema())
     logging.info("Collecting final result of co-installations.")
