@@ -33,6 +33,7 @@ entry_point.add_command(taar_similarity.main, "taar_similarity")
 entry_point.add_command(taar_legacy.main, "taar_legacy")
 entry_point.add_command(taar_dynamo.main, "taar_dynamo")
 entry_point.add_command(taar_amodump.main, "taar_amodump")
+entry_point.add_command(taar_amowhitelist.main, "taar_amowhitelist")
 entry_point.add_command(addon_aggregates.main, "addon_aggregates")
 
 # Kept for backwards compatibility
