@@ -96,5 +96,6 @@ def main(s3_prefix, s3_bucket, input_filename, min_rating, min_age):
     final_jdata = etl.transform(jdata)
     etl.load(final_jdata)
 
+
 if __name__ == '__main__':
     main()

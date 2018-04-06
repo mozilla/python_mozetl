@@ -8,7 +8,7 @@ from dateutil.parser import parse
 import datetime
 
 SAMPLE_DATA = {
-  "gnome-download-notify@ion201": {
+    "gnome-download-notify@ion201": {
         "categories": {
             "firefox": [
                 "alerts-updates"
@@ -26,7 +26,7 @@ SAMPLE_DATA = {
         },
         "default_locale": "en-US",
         "description": {
-            "en-US": "Native notification integration for completed downloads. \n\nSource and issue tracker on github for any bugs or feature requests: <a rel=\"nofollow\" href=\"https://outgoing.prod.mozaws.net/v1/35a102f0eff94ad22c601a940a275bbb5088d4e7e64b37077a40a4e58d9a1755/https%3A//github.com/ion201/gnome-download-notify\">https://github.com/ion201/gnome-download-notify</a>"
+            "en-US": "Native notification integration for completed downloads."
         },
         "first_create_date": "2015-06-20T11:21:58Z",
         "guid": "gnome-download-notify@ion201",
@@ -147,7 +147,7 @@ SAMPLE_DATA = {
         },
         "default_locale": "en-US",
         "description": {
-            "en-US": "What am I downloading? An .xpi file that only takes seconds to install. It's an add-on to the Firefox browser. It will enhance your browsing experience and keep you connected to something you love."
+            "en-US": "What am I downloading? An .xpi file that only takes seconds to install."
         },
         "first_create_date": "2010-11-03T09:38:20Z",
         "guid": "nellyfurtado@browsernation.com",
@@ -161,7 +161,7 @@ SAMPLE_DATA = {
             "text_count": 0.0
         },
         "summary": {
-            "en-US": "Stay connected to Nelly Furtado and download her new browser application. This is an add-on to your existing browser, meaning you can surf the web in a more familiar environment while staying connected to Nelly all the time you\u2019re online."
+            "en-US": "Stay connected to Nelly Furtado and download her new browser application."
         },
         "tags": [
             "artist",
@@ -196,7 +196,7 @@ EXPECTED_FINAL_JDATA = {
         },
         "default_locale": "en-US",
         "description": {
-            "en-US": "Native notification integration for completed downloads. \n\nSource and issue tracker on github for any bugs or feature requests: <a rel=\"nofollow\" href=\"https://outgoing.prod.mozaws.net/v1/35a102f0eff94ad22c601a940a275bbb5088d4e7e64b37077a40a4e58d9a1755/https%3A//github.com/ion201/gnome-download-notify\">https://github.com/ion201/gnome-download-notify</a>"
+            "en-US": "Native notification integration for completed downloads."
         },
         "first_create_date": "2015-06-20T11:21:58Z",
         "guid": "gnome-download-notify@ion201",
@@ -258,7 +258,8 @@ EXPECTED_FINAL_JDATA = {
             "text_count": 0.0
         },
         "summary": {
-            "zh-CN": "\\u4f7f\\u7528OSD Lyrics\\u663e\\u793a\\u8c46\\u74e3\\u7535\\u53f0\\u6b4c\\u8bcd"
+            "zh-CN":
+                "\\u4f7f\\u7528OSD Lyrics\\u663e\\u793a\\u8c46\\u74e3\\u7535\\u53f0\\u6b4c\\u8bcd"
         },
         "tags": [
             "douban",
@@ -269,7 +270,6 @@ EXPECTED_FINAL_JDATA = {
         "weekly_downloads": 1
     }
 }
-
 
 
 @pytest.yield_fixture(scope="function")
@@ -285,6 +285,7 @@ def s3_fixture():
                                 taar_amowhitelist.AMO_DUMP_BUCKET)
     yield conn, SAMPLE_DATA
     mock_s3().stop()
+
 
 def test_extract(s3_fixture):
     '''
@@ -328,7 +329,6 @@ def test_transform(s3_fixture):
 def test_load(s3_fixture):
     conn, data = s3_fixture
 
-
     etl = taar_amowhitelist.AMOTransformer(taar_amowhitelist.AMO_DUMP_BUCKET,
                                            taar_amowhitelist.AMO_DUMP_PREFIX,
                                            taar_amowhitelist.AMO_DUMP_FILENAME,
@@ -341,6 +341,7 @@ def test_load(s3_fixture):
 
     available_objects = list(bucket_obj.objects.filter(Prefix=taar_amowhitelist.AMO_DUMP_PREFIX))
     # Check that our file is there.
-    full_s3_name = '{}{}'.format(taar_amowhitelist.AMO_DUMP_PREFIX, taar_amowhitelist.FILTERED_AMO_FILENAME)
+    full_s3_name = '{}{}'.format(taar_amowhitelist.AMO_DUMP_PREFIX,
+                                 taar_amowhitelist.FILTERED_AMO_FILENAME)
     keys = [o.key for o in available_objects]
     assert full_s3_name in keys
