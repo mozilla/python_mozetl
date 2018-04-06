@@ -12,7 +12,9 @@ from mozetl.search.aggregates import (
 )
 from mozetl.sync import bookmark_validation
 from mozetl.taar import (
-    taar_locale, taar_similarity, taar_legacy, taar_dynamo, taar_amodump, taar_amowhitelist
+    taar_locale, taar_similarity, taar_legacy,
+    taar_dynamo, taar_amodump, taar_amowhitelist,
+    taar_lite_guidguid
 )
 
 
@@ -33,6 +35,7 @@ entry_point.add_command(bookmark_validation.main, "sync_bookmark_validation")
 entry_point.add_command(taar_locale.main, "taar_locale")
 entry_point.add_command(taar_similarity.main, "taar_similarity")
 entry_point.add_command(taar_legacy.main, "taar_legacy")
+entry_point.add_command(taar_lite_guidguid.main, "taar_lite")
 entry_point.add_command(taar_dynamo.main, "taar_dynamo")
 entry_point.add_command(taar_amodump.main, "taar_amodump")
 entry_point.add_command(taar_amowhitelist.main, "taar_amowhitelist")
