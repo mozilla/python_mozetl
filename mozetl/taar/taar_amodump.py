@@ -117,7 +117,7 @@ class URLIteratorFactory(object):
 
     def generatorFactory(self):
         data_slice, self._fnames = self._fnames[:self.BATCH_SIZE], self._fnames[self.BATCH_SIZE:]
-        logger.info("%d in current batch.  %d remaining URLs" % (len(data_slice), len(self._fnames)))
+        logger.info("%d in current batch. %d remaining URLs" % (len(data_slice), len(self._fnames)))
         for i, fname in enumerate(data_slice):
             guid = fname.split(".json")[0]
             url = "https://addons.mozilla.org/api/v3/addons/addon/%s/versions/" % guid
@@ -177,7 +177,7 @@ class AMODatabase:
             data = json.loads(jbdata.decode('utf8'))
             result['first_create_date'] = data['create_date']
             return result
-        except:
+        except ValueError:
             logger.warn("Error parsing version json. GUID: %s" % guid)
             return None
 
@@ -353,7 +353,8 @@ def main(path, date, workers, s3_prefix, s3_bucket):
 
         fail_rate = 1.0 - (successful * 1.0 / len(os.listdir(amodb._amo_cache_dir)))
         if fail_rate >= 0.01:
-            logger.error("Unexpectedly high failure rate for merging versions with addon JSON.  %0.4f" % (fail_rate))
+            msg = "Unexpectedly high failure rate for merging versions with addon JSON.  %0.4f"
+            logger.error(msg % (fail_rate))
             sys.exit(1)
         else:
             logger.info("Version merging failure rate: %0.4f" % fail_rate)
