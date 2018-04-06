@@ -9,11 +9,12 @@ https://github.com/mozilla/telemetry-batch-view/blob/1c544f65ad2852703883fe31a9f
 
 This should be invoked with something like this:
 
-     spark-submit --master=spark://ec2-52-32-39-246.us-west-2.compute.amazonaws.com taar_dynamo.py  \
-                  --date=20180218  \
-                  --region=us-west-2  \
-                  --table=taar_addon_data_20180206 \
-                  --prod-iam-role=arn:aws:iam::361527076523:role/taar-write-dynamodb-from-dev
+spark-submit \
+    --master=spark://ec2-52-32-39-246.us-west-2.compute.amazonaws.com taar_dynamo.py \
+    --date=20180218  \
+    --region=us-west-2  \
+    --table=taar_addon_data_20180206 \
+    --prod-iam-role=arn:aws:iam::361527076523:role/taar-write-dynamodb-from-dev
 
 """
 
@@ -402,7 +403,8 @@ def run_etljob(spark, run_date, region_name, table_name, prod_iam_role, sample_r
 @click.option('--date', required=True)  # YYYYMMDD
 @click.option('--region', default='us-west-2')
 @click.option('--table', default='taar_addon_data_20180206')
-@click.option('--prod-iam-role', default='arn:aws:iam::361527076523:role/taar-write-dynamodb-from-dev')
+@click.option('--prod-iam-role',
+              default='arn:aws:iam::361527076523:role/taar-write-dynamodb-from-dev')
 @click.option('--sample-rate', default=0)
 def main(date, region, table, prod_iam_role, sample_rate):
     APP_NAME = "HBaseAddonRecommenderView"
