@@ -34,9 +34,7 @@ def collect_and_upload_csv(df, filename, upload_config):
                 fout.write(csv(r))
                 fout.write("\n")
             except UnicodeEncodeError as e:
-                print(
-                "{}: Error writing line: {} // {}".format(datetime.utcnow(), e,
-                                                          r))
+                print("{}: Error writing line: {} // {}".format(datetime.utcnow(), e, r))
         print("{}: finished writing lines".format(datetime.utcnow()))
 
     # upload files to s3
@@ -51,8 +49,7 @@ def collect_and_upload_csv(df, filename, upload_config):
                                  extra_args={
                                      'ACL': 'bucket-owner-full-control'})
     except botocore.exceptions.ClientError as e:
-        print(
-        "File for {} already exists, skipping upload: {}".format(filename, e))
+        print("File for {} already exists, skipping upload: {}".format(filename, e))
 
 
 def marginalize_dataframe(df, attributes, aggregates):
