@@ -1,17 +1,19 @@
 import click
 
+from mozetl.addon_aggregates import addon_aggregates
 from mozetl.clientsdaily import rollup as clientsdaily
 from mozetl.engagement.churn import job as churn_job
 from mozetl.engagement.churn_to_csv import job as churn_to_csv_job
 from mozetl.engagement.retention import job as retention_job
 from mozetl.experimentsdaily import rollup as experimentsdaily
 from mozetl.search import search_rollups
-from mozetl.search.aggregates import search_aggregates_click, search_clients_daily_click
+from mozetl.search.aggregates import (
+    search_aggregates_click, search_clients_daily_click
+)
 from mozetl.sync import bookmark_validation
-from mozetl.taar import taar_locale, taar_similarity, taar_legacy
-from mozetl.taar import taar_dynamo
-from mozetl.taar import taar_amodump
-from mozetl.addon_aggregates import addon_aggregates
+from mozetl.taar import (
+    taar_locale, taar_similarity, taar_legacy, taar_dynamo, taar_amodump, taar_amowhitelist
+)
 
 
 @click.group()
