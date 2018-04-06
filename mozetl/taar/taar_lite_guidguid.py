@@ -10,8 +10,8 @@ import logging
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 from pyspark.sql.types import StructType, StructField, StringType, LongType
-from taar_utils import store_json_to_s3
-from taar_utils import load_amo_external_whitelist
+import mozetl.taar.taar_utils as taar_utils
+
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
@@ -85,7 +85,7 @@ def extract_telemetry(spark):
 
     client_features_frame = get_initial_sample()
 
-    amo_white_list = load_amo_external_whitelist()
+    amo_white_list = taar_utils.load_amo_external_whitelist()
     logging.info("AMO White list loaded")
 
     broadcast_amo_whitelist = sc.broadcast(amo_white_list)
@@ -158,11 +158,11 @@ def load_s3(result_df, date, prefix, bucket):
             value_json[_id] = n
         result_json[key_addon] = value_json
 
-    store_json_to_s3(json.dumps(result_json, indent=2),
-                     OUTPUT_BASE_FILENAME,
-                     date,
-                     prefix,
-                     bucket)
+    taar_utils.store_json_to_s3(json.dumps(result_json, indent=2),
+                                OUTPUT_BASE_FILENAME,
+                                date,
+                                prefix,
+                                bucket)
 
 
 @click.command()
