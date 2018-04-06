@@ -8,6 +8,7 @@ test_deps = [
     'moto',
     'mock',
     'pytest',
+    'flake8'
 ]
 
 extras = {

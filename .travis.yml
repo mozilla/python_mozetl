@@ -5,6 +5,11 @@ addons:
     packages:
       - libsnappy-dev
       - oracle-java8-set-default
+matrix:
+    include:
+        - python: 2.7
+        - python: 2.7
+          env: TOXENV=flake8
 install:
   - pip install tox-travis codecov
 script:
