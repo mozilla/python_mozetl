@@ -43,8 +43,9 @@ def extract_telemetry(spark):
         -
         - pct_sample is an integer [1, 100] indicating sample size
         """
-        # Could scale this up to grab more than what is in longitudinal and see how long it takes to run.
-        return (spark.table("longitudinal")
+        # Could scale this up to grab more than what is in
+        # longitudinal and see how long it takes to run.
+        return (spark.table("longitudinal")  # noqa: E127,E501,E502,E999
                 .where("active_addons IS NOT null")
                 .where("size(active_addons[0]) > 1")
                 .where("normalized_channel = 'release'")
@@ -78,7 +79,9 @@ def extract_telemetry(spark):
         return (
             users_df.rdd
                     .map(lambda p: (p["client_id"],
-                                    [guid for guid, data in p["active_addons"].items() if is_valid_addon(guid, data)]))
+                                    [guid
+                                     for guid, data in p["active_addons"].items()
+                                     if is_valid_addon(guid, data)]))
                     .filter(lambda p: len(p[1]) > 1)
                     .toDF(["client_id", "addon_ids"])
         )
@@ -133,9 +136,10 @@ def transform(longitudinal_addons):
                                              StructField('n', LongType())]))
 
     # Spark functions are sometimes long and unwieldy. Tough luck.
-    # Ignore E128 long line errors
+    # Ignore E128 and E501 long line errors
     addon_co_installations_collapsed = (addon_co_installations  # noqa: E128
-                                        .select('key_addon', combine_and_map_cols('coinstalled_addon', 'count')
+                                        .select('key_addon',
+                                            combine_and_map_cols('coinstalled_addon', 'count')  # noqa: E501
                                         .alias('id_n'))
                                         .groupby("key_addon")
                                         .agg(F.collect_list('id_n')
