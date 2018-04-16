@@ -1,7 +1,15 @@
-import boto3
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this file,
+# You can obtain one at http://mozilla.org/MPL/2.0/.
+
+import contextlib
 import json
 import logging
+import os.path
+import shutil
+import tempfile
 
+import boto3
 from botocore.exceptions import ClientError
 
 logging.basicConfig(level=logging.INFO)
@@ -11,6 +19,12 @@ AMO_DUMP_BUCKET = 'telemetry-parquet'
 AMO_DUMP_KEY = 'telemetry-ml/addon_recommender/addons_database.json'
 
 AMO_WHITELIST_KEY = 'telemetry-ml/addon_recommender/whitelist_addons_database.json'
+
+
+@contextlib.contextmanager
+def selfdestructing_path(dirname):
+    yield dirname
+    shutil.rmtree(dirname)
 
 
 def read_from_s3(s3_dest_file_name, s3_prefix, bucket):
@@ -59,17 +73,21 @@ def store_json_to_s3(json_data, base_filename, date, prefix, bucket):
     :param prefix: The S3 prefix.
     :param bucket: The S3 bucket name.
     """
-    FULL_FILENAME = "{}.json".format(base_filename)
 
-    with open(FULL_FILENAME, "w+") as json_file:
-        json_file.write(json_data)
+    tempdir = tempfile.mkdtemp()
 
-    archived_file_copy =\
-        "{}{}.json".format(base_filename, date)
+    with selfdestructing_path(tempdir):
+        JSON_FILENAME = "{}.json".format(base_filename)
+        FULL_FILENAME = os.path.join(tempdir, JSON_FILENAME)
+        with open(FULL_FILENAME, "w+") as json_file:
+            json_file.write(json_data)
 
-    # Store a copy of the current JSON with datestamp.
-    write_to_s3(FULL_FILENAME, archived_file_copy, prefix, bucket)
-    write_to_s3(FULL_FILENAME, FULL_FILENAME, prefix, bucket)
+        archived_file_copy =\
+            "{}{}.json".format(base_filename, date)
+
+        # Store a copy of the current JSON with datestamp.
+        write_to_s3(FULL_FILENAME, archived_file_copy, prefix, bucket)
+        write_to_s3(FULL_FILENAME, JSON_FILENAME, prefix, bucket)
 
 
 def load_amo_external_whitelist():
