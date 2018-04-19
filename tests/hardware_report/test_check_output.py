@@ -4,7 +4,8 @@ import os
 
 from mozetl.hardware_report.check_output import (
     _check_most_recent_change as check_most_recent_change,
-    _get_data as get_data)
+    _get_data as get_data,
+    _make_report as make_report)
 
 
 def test_check_most_recent_change_min_change():
@@ -99,3 +100,15 @@ def test_get_data():
 
     assert get_data() == expected
     os.remove('hwsurvey-weekly.json')
+
+
+def test_report_missing_data():
+    test_data = {
+        20170701: {
+            "change": 0.5,
+        },
+        20170702: {}
+    }
+
+    changes = check_most_recent_change(test_data, min_change=0.1, min_value=0.0, missing_val=1.0)
+    assert make_report(changes) == "change: Last week = 50.00%, This week = 100.00%"

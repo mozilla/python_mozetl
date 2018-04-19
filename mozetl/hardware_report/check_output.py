@@ -40,24 +40,27 @@ def _check_most_recent_change(values, min_change=.05, min_value=0.01, missing_va
 
     return {
         k: {'change': c,
-            'old_value': base.get(k),
-            'new_value': compare.get(k)}
+            'old_value': base.get(k, missing_val),
+            'new_value': compare.get(k, missing_val)}
         for k, c in changes
         if abs(c) > min_change
         and base.get(k, missing_val) >= min_value
     }
 
 
-def _report_changes(changes):
+def _make_report(changes):
     def mk_line(k, v1, v2):
         return "{}: Last week = {:.2f}%, This week = {:.2f}%".format(k, v1, v2)
 
     change_strings = [(v['change'], mk_line(k, v['old_value']*100, v['new_value']*100))
                       for k, v in changes.iteritems()]
-    report = '\n'.join([x[1] for x in sorted(change_strings, key=lambda x: x[0])])
+    return '\n'.join([x[1] for x in sorted(change_strings, key=lambda x: x[0])])
+
+
+def _report_changes(changes):
     send_ses(
         'telemetry-alerts@mozilla.com',
         'Hardware Report Validation Checks',
-        report,
+        _make_report(changes),
         'firefox-hardware-report-feedback@mozilla.com'
     )
