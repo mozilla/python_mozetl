@@ -104,7 +104,7 @@ class AMODatabase:
 
         urls = []
         for i in range(1, self._page_count+1):
-            url = "%s%s%s" % (DEFAULT_AMO_REQUEST_URI, QUERY_PARAMS, ("&page=%d" % i))
+            url = "{0}{1}&page={2}".format(DEFAULT_AMO_REQUEST_URI, QUERY_PARAMS, i)
             urls.append(url)
         logger.info("Processing AMO urls")
         p = pool.Pool.from_urls(urls, num_processes=self._max_processes)
@@ -292,7 +292,9 @@ def main(date, workers, s3_prefix, s3_bucket):
                          date,
                          s3_prefix,
                          s3_bucket)
-        logger.info("Completed uploading s3://%s/%s%s.json" % (s3_bucket, s3_prefix, AMO_DUMP_FILENAME))
+        logger.info("Completed uploading s3://%s/%s%s.json" % (s3_bucket,
+                                                               s3_prefix,
+                                                               AMO_DUMP_FILENAME))
     except Exception as e:
         logger.error("Error uploading data to S3", e)
 
