@@ -53,6 +53,7 @@ class AMOTransformer:
         * At least 3.0 average rating or higher
         * At least 60 days old as computed using the
           'first_create_date' field in the addon JSON
+        * Not the Firefox Pioneer addon
 
         Criteria are discussed over at :
           https://github.com/mozilla/taar-lite/issues/1
@@ -62,12 +63,15 @@ class AMOTransformer:
         latest_create_date = latest_create_date.replace(tzinfo=None)
 
         new_data = {}
-        for k in json_data.keys():
-            rating = json_data[k]['ratings']['average']
-            create_date = parse(json_data[k]['first_create_date']).replace(tzinfo=None)
+        for guid in json_data.keys():
+            rating = json_data[guid]['ratings']['average']
+            create_date = parse(json_data[guid]['first_create_date']).replace(tzinfo=None)
+            if guid == 'pioneer-opt-in@mozilla.org':
+                # Firefox Pioneer is explicitly excluded
+                continue
 
             if rating >= self._min_rating and create_date <= latest_create_date:
-                new_data[k] = json_data[k]
+                new_data[guid] = json_data[guid]
 
         return new_data
 
