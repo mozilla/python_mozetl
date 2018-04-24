@@ -68,7 +68,11 @@ def extract_telemetry(spark):
                 addon.user_disabled or
                 addon.foreign_install or
                 # make sure the amo_whitelist has been broadcast to worker nodes.
-                guid not in broadcast_amo_whitelist.value
+                guid not in broadcast_amo_whitelist.value or
+
+                # Make sure that the Pioneer addon is explicitly
+                # excluded
+                guid != "pioneer-opt-in@mozilla.org"
             )
 
         # TODO: may need additional whitelisting to remove shield addons
