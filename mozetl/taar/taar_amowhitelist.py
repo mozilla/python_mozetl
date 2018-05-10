@@ -75,7 +75,7 @@ class AMOTransformer:
                 # Only allow webextensions
                 continue
             else:
-                if False == current_version_files[0].get('is_webextension', False):
+                if current_version_files[0].get('is_webextension', False) is False:
                     # Only allow webextensions
                     continue
 
