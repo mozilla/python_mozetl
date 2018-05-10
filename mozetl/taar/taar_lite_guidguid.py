@@ -72,7 +72,7 @@ def extract_telemetry(spark):
 
                 # Make sure that the Pioneer addon is explicitly
                 # excluded
-                guid != "pioneer-opt-in@mozilla.org"
+                guid == "pioneer-opt-in@mozilla.org"
             )
 
         # TODO: may need additional whitelisting to remove shield addons
