@@ -33,15 +33,13 @@ def extract_telemetry(spark):
 
     # Define the set of feature names to be used in the donor computations.
 
-    def get_initial_sample(pct_sample=10):
+    def get_initial_sample():
         """ Takes an initial sample from the longitudinal dataset
         (randomly sampled from main summary). Coarse filtering on:
         - number of installed addons (greater than 1)
         - corrupt and generally wierd telemetry entries
         - isolating release channel
         - column selection
-        -
-        - pct_sample is an integer [1, 100] indicating sample size
         """
         # Could scale this up to grab more than what is in
         # longitudinal and see how long it takes to run.
