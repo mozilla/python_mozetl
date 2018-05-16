@@ -7,6 +7,8 @@ from moto import mock_s3
 from dateutil.parser import parse
 import datetime
 
+# This SAMPLE_DATA blob is a copy of some sample data that was
+# extracted from the AMO JSON API.
 SAMPLE_DATA = {
     "gnome-download-notify@ion201": {
         "categories": {
