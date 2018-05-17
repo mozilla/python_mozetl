@@ -48,6 +48,7 @@ def get_addons(spark):
           AND value['user_disabled'] = FALSE -- active addons only get counted
           AND value['app_disabled'] = FALSE -- exclude compatibility disabled addons
           AND value['is_system'] = FALSE -- exclude system addons
+          AND value['foreign_install'] = FALSE -- exclude side loaded addons
           AND locality <> 'null'
           AND key is not null
         ),
