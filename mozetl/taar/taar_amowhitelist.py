@@ -63,12 +63,22 @@ class AMOTransformer:
         latest_create_date = latest_create_date.replace(tzinfo=None)
 
         new_data = {}
-        for guid in json_data.keys():
-            rating = json_data[guid]['ratings']['average']
-            create_date = parse(json_data[guid]['first_create_date']).replace(tzinfo=None)
+        for guid, addon_data in json_data.items():
             if guid == 'pioneer-opt-in@mozilla.org':
                 # Firefox Pioneer is explicitly excluded
                 continue
+
+            current_version_files = addon_data.get('current_version', {}).get('files', [])
+            if len(current_version_files) == 0:
+                # Only allow webextensions
+                continue
+
+            if current_version_files[0].get('is_webextension', False) is False:
+                # Only allow webextensions
+                continue
+
+            rating = addon_data.get('ratings', {}).get('average', 0)
+            create_date = parse(addon_data.get('first_create_date', None)).replace(tzinfo=None)
 
             if rating >= self._min_rating and create_date <= latest_create_date:
                 new_data[guid] = json_data[guid]

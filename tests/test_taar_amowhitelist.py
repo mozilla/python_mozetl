@@ -7,6 +7,8 @@ from moto import mock_s3
 from dateutil.parser import parse
 import datetime
 
+# This SAMPLE_DATA blob is a copy of some sample data that was
+# extracted from the AMO JSON API.
 SAMPLE_DATA = {
     "gnome-download-notify@ion201": {
         "categories": {
@@ -317,10 +319,11 @@ def test_transform(s3_fixture):
                                            taar_amowhitelist.MIN_RATING,
                                            taar_amowhitelist.MIN_AGE)
     final_jdata = etl.transform(data)
-    assert len(final_jdata) == 2
+    assert len(final_jdata) == 1
 
     today = datetime.datetime.today().replace(tzinfo=None)
     for client_data in final_jdata.values():
+        assert client_data['current_version']['files'][0]['is_webextension']
         assert client_data['ratings']['average'] >= taar_amowhitelist.MIN_RATING
         create_datetime = parse(client_data['first_create_date']).replace(tzinfo=None)
         assert create_datetime + datetime.timedelta(days=taar_amowhitelist.MIN_AGE) < today
