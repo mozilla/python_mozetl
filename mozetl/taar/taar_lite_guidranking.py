@@ -9,7 +9,6 @@ import click
 import json
 import logging
 from pyspark.sql import SparkSession
-from pyspark.sql import SQLContext
 import mozetl.taar.taar_utils as taar_utils
 
 
@@ -18,31 +17,34 @@ OUTPUT_PREFIX = 'taar/lite/'
 OUTPUT_BASE_FILENAME = 'guid_install_ranking'
 
 
-def extract_telemetry(spark):
-    """ load some training data from telemetry given a sparkContext
+def extract_telemetry(sparkSession):
+    """ Load some training data from telemetry given a sparkContext
     """
-    sc = spark.sparkContext
-
-    sqlContext = SQLContext.getOrCreate(sc)
-    frame = sqlContext.sql("""select addon_guid, count(*) as install_count from
-    (select client_id, explode(active_addons[0]) as (addon_guid, addon_row)
-    from longitudinal
-    WHERE normalized_channel='release' AND
-    build IS NOT NULL AND
-    build[0].application_name='Firefox') group by addon_guid
+    frame = sparkSession.sql("""
+    SELECT
+        addon_guid,
+        count(*) as install_count
+    FROM
+        (SELECT
+            EXPLODE(active_addons[0]) as (addon_guid, addon_row)
+        FROM
+            longitudinal
+        WHERE
+            normalized_channel='release' AND
+            build IS NOT NULL AND
+            build[0].application_name='Firefox'
+        )
+    GROUP BY addon_guid
     """)
     return frame
 
 
 def transform(frame):
-    json_frame = frame.toJSON()
-    result_list = json_frame.collect()
-    json_data = {}
-    for row in result_list:
-        jdata = json.loads(row)
-        json_data[jdata['addon_guid']] = jdata['install_count']
-
-    return json_data
+    """ Convert the dataframe to JSON and augment each record to
+    include the install count for each addon.
+    """
+    lambda_func = lambda x: (x.addon_guid, x.install_count)
+    return dict(frame.rdd.map(lambda_func).collect())
 
 
 def load_s3(result_data, date, prefix, bucket):
@@ -60,7 +62,7 @@ def load_s3(result_data, date, prefix, bucket):
 def main(date, bucket, prefix):
     spark = (SparkSession
              .builder
-             .appName("taar_lite=")
+             .appName("taar_lite_ranking")
              .enableHiveSupport()
              .getOrCreate())
 
