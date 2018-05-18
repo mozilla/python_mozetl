@@ -14,6 +14,32 @@ Expected schema of co-installation counts dict.
 | | | -- n: long(nullable=true)
 """
 
+MOCK_LONGITUDINAL_SAMPLE = [   # noqa
+        Row(active_addons=[{
+            'test-guid-1': {'addon_data_row': 'blah'},
+            'test-guid-2': {'addon_data_row': 'blah'},
+            'test-guid-3': {'addon_data_row': 'blah'},
+            'test-guid-5': {'addon_data_row': 'blah'},
+            }],
+            normalized_channel='release',
+            build=[{'application_name': 'Firefox'}]),
+        Row(active_addons=[{
+            'test-guid-5': {'addon_data_row': 'blah'},
+            'test-guid-2': {'addon_data_row': 'blah'},
+            'test-guid-3': {'addon_data_row': 'blah'},
+            'test-guid-4': {'addon_data_row': 'blah'},
+            }],
+            normalized_channel='release',
+            build=[{'application_name': 'Firefox'}]),
+        Row(active_addons=[{
+            'test-guid-6': {'addon_data_row': 'blah'},
+            'test-guid-2': {'addon_data_row': 'blah'},
+            'test-guid-3': {'addon_data_row': 'blah'},
+            'test-guid-4': {'addon_data_row': 'blah'},
+            }],
+            normalized_channel='release',
+            build=[{'application_name': 'Firefox'}]),
+]
 
 MOCK_TELEMETRY_SAMPLE = [
     Row(addon_guid="test-guid-1", install_count=100),
@@ -26,6 +52,23 @@ EXPECTED_ADDON_INSTALLATIONS = {u'test-guid-1': 100,
                                 u'test-guid-2': 200,
                                 u'test-guid-3': 300,
                                 u'test-guid-4': 400}
+
+
+def test_extract_phase(spark):
+
+    # Mock out the longitudinal view
+    df = spark.sparkContext.parallelize(MOCK_LONGITUDINAL_SAMPLE).toDF()
+    df.createOrReplaceTempView("longitudinal")
+    extract_df = taar_lite_guidranking.extract_telemetry(spark)
+    lambda_func = lambda x: (x.addon_guid, x.install_count)
+    output = dict(extract_df.rdd.map(lambda_func).collect())
+    EXPECTED = {u'test-guid-1': 1,
+                u'test-guid-2': 3,
+                u'test-guid-3': 3,
+                u'test-guid-4': 2,
+                u'test-guid-5': 2,
+                u'test-guid-6': 1}
+    assert EXPECTED == output
 
 
 @mock_s3
