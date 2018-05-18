@@ -43,7 +43,8 @@ def transform(frame):
     """ Convert the dataframe to JSON and augment each record to
     include the install count for each addon.
     """
-    lambda_func = lambda x: (x.addon_guid, x.install_count)
+    def lambda_func(x):
+        return (x.addon_guid, x.install_count)
     return dict(frame.rdd.map(lambda_func).collect())
 
 

@@ -60,7 +60,9 @@ def test_extract_phase(spark):
     df = spark.sparkContext.parallelize(MOCK_LONGITUDINAL_SAMPLE).toDF()
     df.createOrReplaceTempView("longitudinal")
     extract_df = taar_lite_guidranking.extract_telemetry(spark)
-    lambda_func = lambda x: (x.addon_guid, x.install_count)
+
+    def lambda_func(x):
+        return (x.addon_guid, x.install_count)
     output = dict(extract_df.rdd.map(lambda_func).collect())
     EXPECTED = {u'test-guid-1': 1,
                 u'test-guid-2': 3,
