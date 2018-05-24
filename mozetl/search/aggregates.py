@@ -98,6 +98,7 @@ def search_aggregates(main_summary):
             'search_cohort',
             'source',
             'submission_date',
+            'default_search_engine',
         ],
         []
     ).where(col('engine').isNotNull())
