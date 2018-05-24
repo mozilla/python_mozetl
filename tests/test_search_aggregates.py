@@ -252,6 +252,7 @@ def expected_search_dashboard_data(define_dataframe_factory):
         ('app_version', '54.0.1', StringType(), True),
         ('distribution_id', None, StringType(), True),
         ('addon_version', '0.9.5', StringType(), False),
+        ('default_search_engine', 'google', StringType(), False),
         ('engine', 'google', StringType(), False),
         ('source', 'urlbar', StringType(), False),
         ('tagged-sap', None, LongType(), True),
