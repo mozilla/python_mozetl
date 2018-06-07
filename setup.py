@@ -31,7 +31,7 @@ setup(
         'numpy==1.13.3',
         'pyspark==2.3.1',
         'pyspark_hyperloglog==2.1.1',
-        'python_moztelemetry==0.8.9',
+        'python_moztelemetry==0.10.2',
         'requests-toolbelt==0.8.0',
         'requests==2.18.4',
         'scipy==1.0.0rc1',
