@@ -42,6 +42,18 @@ class AbstractAccumulator:
         return self._results
 
 
+class FeaturedAccumulator(AbstractAccumulator):
+    def __init__(self):
+        AbstractAccumulator.__init__(self)
+
+    def process_record(self, guid, addon_data):
+
+        featured = addon_data.get('is_featured', False)
+
+        if featured:
+            self._results[guid] = addon_data
+
+
 class WhitelistAccumulator(AbstractAccumulator):
     def __init__(self, min_age, min_rating):
         AbstractAccumulator.__init__(self)
@@ -87,6 +99,9 @@ class AMOTransformer:
         self._min_rating = min_rating
         self._min_age = min_age
 
+        self._accumulators = {'whitelist': WhitelistAccumulator(self._min_age, self._min_rating),
+                              'featured': FeaturedAccumulator()}
+
     def extract(self):
         return read_from_s3(self._s3_fname, self._s3_prefix, self._s3_bucket)
 
@@ -104,13 +119,14 @@ class AMOTransformer:
           https://github.com/mozilla/taar-lite/issues/1
         """
 
-        accumulators = [WhitelistAccumulator(self._min_age, self._min_rating)]
-
         for guid, addon_data in json_data.items():
-            for acc in accumulators:
+            for acc in self._accumulators.values():
                 acc.process_record(guid, addon_data)
 
-        return accumulators[0].get_results()
+        return self.get_whitelist()
+
+    def get_whitelist(self):
+        return self._accumulators['whitelist'].get_results()
 
     def load(self, jdata):
         date = datetime.date.today().strftime("%Y%m%d")
