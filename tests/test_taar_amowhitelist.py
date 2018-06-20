@@ -11,6 +11,7 @@ import datetime
 # extracted from the AMO JSON API.
 SAMPLE_DATA = {
     "gnome-download-notify@ion201": {
+        "is_featured": True,
         "categories": {
             "firefox": [
                 "alerts-updates"
@@ -61,6 +62,7 @@ SAMPLE_DATA = {
         "weekly_downloads": 105
     },
     "jid0-ujiop74nNc447DlWVPSGIlzMRqY@jetpack": {
+        "is_featured": True,
         "categories": {},
         "current_version": {
             "files": [
@@ -92,6 +94,7 @@ SAMPLE_DATA = {
         "weekly_downloads": 0
     },
     "jid1-tpeRu7ABM810Fw@jetpack": {
+        "is_featured": True,
         "categories": {
             "firefox": [
                 "photos-music-videos"
@@ -132,6 +135,7 @@ SAMPLE_DATA = {
         "weekly_downloads": 1
     },
     "nellyfurtado@browsernation.com": {
+        "is_featured": False,
         "categories": {
             "firefox": [
                 "feeds-news-blogging"
@@ -305,7 +309,7 @@ def test_extract(s3_fixture):
     assert jdata == SAMPLE_DATA
 
 
-def test_transform(s3_fixture):
+def test_transform_whitelist(s3_fixture):
     '''
     The transform for the AMOTransformer is just filtering by
     age using `first_create_date` and using the ratings.average
@@ -318,7 +322,9 @@ def test_transform(s3_fixture):
                                            taar_amowhitelist.AMO_DUMP_FILENAME,
                                            taar_amowhitelist.MIN_RATING,
                                            taar_amowhitelist.MIN_AGE)
-    final_jdata = etl.transform(data)
+    etl.transform(data)
+
+    final_jdata = etl.get_whitelist()
     assert len(final_jdata) == 1
 
     today = datetime.datetime.today().replace(tzinfo=None)
@@ -327,6 +333,28 @@ def test_transform(s3_fixture):
         assert client_data['ratings']['average'] >= taar_amowhitelist.MIN_RATING
         create_datetime = parse(client_data['first_create_date']).replace(tzinfo=None)
         assert create_datetime + datetime.timedelta(days=taar_amowhitelist.MIN_AGE) < today
+
+
+def test_transform_featured_list(s3_fixture):
+    '''
+    The transform for the AMOTransformer is just filtering by
+    age using `first_create_date` and using the ratings.average
+    with a minimum of 3.0
+    '''
+
+    conn, data = s3_fixture
+    etl = taar_amowhitelist.AMOTransformer(taar_amowhitelist.AMO_DUMP_BUCKET,
+                                           taar_amowhitelist.AMO_DUMP_PREFIX,
+                                           taar_amowhitelist.AMO_DUMP_FILENAME,
+                                           taar_amowhitelist.MIN_RATING,
+                                           taar_amowhitelist.MIN_AGE)
+    etl.transform(data)
+
+    final_jdata = etl.get_featuredlist()
+    assert len(final_jdata) == 3
+
+    for rec in final_jdata.values():
+        assert rec['is_featured']
 
 
 def test_load(s3_fixture):

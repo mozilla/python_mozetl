@@ -125,6 +125,9 @@ class AMOTransformer:
 
         return self.get_whitelist()
 
+    def get_featuredlist(self):
+        return self._accumulators['featured'].get_results()
+
     def get_whitelist(self):
         return self._accumulators['whitelist'].get_results()
 
