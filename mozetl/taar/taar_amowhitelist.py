@@ -1,12 +1,14 @@
 #!/bin/env python
 
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import click
 import json
 import logging
 import logging.config
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+from abc import abstractmethod
 
 from dateutil.parser import parse
 import datetime
@@ -26,6 +28,49 @@ MIN_RATING = 3.0
 MIN_AGE = 60
 
 logger = logging.getLogger('amo_whitelist')
+
+
+class AbstractAccumulator:
+    def __init__(self):
+        self._results = {}
+
+    @abstractmethod
+    def process_record(self, guid, addon_data):
+        pass
+
+    def get_results(self):
+        return self._results
+
+
+class WhitelistAccumulator(AbstractAccumulator):
+    def __init__(self, min_age, min_rating):
+        AbstractAccumulator.__init__(self)
+
+        self._min_age = min_age
+        self._min_rating = min_rating
+
+        self._latest_create_date = datetime.datetime.today() - datetime.timedelta(days=self._min_age)
+        self._latest_create_date = self._latest_create_date.replace(tzinfo=None)
+
+    def process_record(self, guid, addon_data):
+        if guid == 'pioneer-opt-in@mozilla.org':
+            # Firefox Pioneer is explicitly excluded
+            return
+
+        current_version_files = addon_data.get('current_version', {}).get('files', [])
+        if len(current_version_files) == 0:
+            # Only allow webextensions
+            return
+
+        if current_version_files[0].get('is_webextension', False) is False:
+            # Only allow webextensions
+            return
+
+        rating = addon_data.get('ratings', {}).get('average', 0)
+        create_date = parse(addon_data.get('first_create_date', None)).replace(tzinfo=None)
+
+        if rating >= self._min_rating and create_date <= self._latest_create_date:
+            self._results[guid] = addon_data
 
 
 class AMOTransformer:
@@ -59,31 +104,13 @@ class AMOTransformer:
           https://github.com/mozilla/taar-lite/issues/1
         """
 
-        latest_create_date = datetime.datetime.today() - datetime.timedelta(days=self._min_age)
-        latest_create_date = latest_create_date.replace(tzinfo=None)
+        accumulators = [WhitelistAccumulator(self._min_age, self._min_rating)]
 
-        new_data = {}
         for guid, addon_data in json_data.items():
-            if guid == 'pioneer-opt-in@mozilla.org':
-                # Firefox Pioneer is explicitly excluded
-                continue
+            for acc in accumulators:
+                acc.process_record(guid, addon_data)
 
-            current_version_files = addon_data.get('current_version', {}).get('files', [])
-            if len(current_version_files) == 0:
-                # Only allow webextensions
-                continue
-
-            if current_version_files[0].get('is_webextension', False) is False:
-                # Only allow webextensions
-                continue
-
-            rating = addon_data.get('ratings', {}).get('average', 0)
-            create_date = parse(addon_data.get('first_create_date', None)).replace(tzinfo=None)
-
-            if rating >= self._min_rating and create_date <= latest_create_date:
-                new_data[guid] = json_data[guid]
-
-        return new_data
+        return accumulators[0].get_results()
 
     def load(self, jdata):
         date = datetime.date.today().strftime("%Y%m%d")
