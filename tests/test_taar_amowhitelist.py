@@ -7,6 +7,10 @@ from moto import mock_s3
 from dateutil.parser import parse
 import datetime
 
+# These were extracted from the unique list of all platforms
+# on AMO
+VALID_PLATFORMS = ["all", "android", "linux", "mac", "windows", None]
+
 # This SAMPLE_DATA blob is a copy of some sample data that was
 # extracted from the AMO JSON API.
 SAMPLE_DATA = {
@@ -333,9 +337,12 @@ def test_transform_whitelist(s3_fixture):
         assert client_data['ratings']['average'] >= taar_amowhitelist.MIN_RATING
         create_datetime = parse(client_data['first_create_date']).replace(tzinfo=None)
         assert create_datetime + datetime.timedelta(days=taar_amowhitelist.MIN_AGE) < today
+        assert 'is_featured' in client_data
+        # Verify that the platform data is in the transform output
+        assert client_data['current_version']['files'][0]['platform'] in VALID_PLATFORMS
 
 
-def test_transform_featured_list(s3_fixture):
+def test_transform_featuredlist(s3_fixture):
     '''
     The transform for the AMOTransformer is just filtering by
     age using `first_create_date` and using the ratings.average
@@ -351,6 +358,9 @@ def test_transform_featured_list(s3_fixture):
     etl.transform(data)
 
     final_jdata = etl.get_featuredlist()
+
+    # There's 4 records in SAMPLE_DATA - only one is marked is not
+    # featured
     assert len(final_jdata) == 3
 
     for rec in final_jdata.values():
