@@ -25,9 +25,11 @@ AMO_DUMP_FILENAME = AMO_DUMP_BASE_FILENAME + '.json'
 # Output files
 FILTERED_AMO_BASE_FILENAME = 'whitelist_addons_database'
 FEATURED_BASE_FILENAME = 'featured_addons_database'
+FEATURED_WHITELIST_BASE_FILENAME = 'featured_whitelist_addons'
 
 FILTERED_AMO_FILENAME = FILTERED_AMO_BASE_FILENAME + '.json'
 FEATURED_FILENAME = FEATURED_BASE_FILENAME + '.json'
+FEATURED_WHITELIST_FILENAME = FEATURED_WHITELIST_BASE_FILENAME + '.json'
 
 MIN_RATING = 3.0
 MIN_AGE = 60
@@ -90,6 +92,37 @@ class WhitelistAccumulator(AbstractAccumulator):
             self._results[guid] = addon_data
 
 
+class WhitelistFeaturedAccumulator(WhitelistAccumulator):
+    def __init__(self, min_age, min_rating):
+        WhitelistAccumulator.__init__(self, min_age, min_rating)
+
+    def process_record(self, guid, addon_data):
+        if guid == 'pioneer-opt-in@mozilla.org':
+            # Firefox Pioneer is explicitly excluded
+            return
+
+        current_version_files = addon_data.get('current_version', {}).get('files', [])
+        if len(current_version_files) == 0:
+            # Only allow webextensions
+            return
+
+        if current_version_files[0].get('is_webextension', False) is False:
+            # Only allow webextensions
+            return
+
+        if not addon_data.get('is_featured', False):
+            return
+
+        rating = addon_data.get('ratings', {}).get('average', 0)
+        create_date = parse(addon_data.get('first_create_date', None)).replace(tzinfo=None)
+
+        if rating >= self._min_rating and create_date <= self._latest_create_date:
+            self._results[guid] = addon_data
+
+    def get_results(self):
+        return WhitelistAccumulator.get_results(self)
+
+
 class AMOTransformer:
     """
     This class transforms the raw AMO addon JSON dump
@@ -105,7 +138,8 @@ class AMOTransformer:
         self._min_age = min_age
 
         self._accumulators = {'whitelist': WhitelistAccumulator(self._min_age, self._min_rating),
-                              'featured': FeaturedAccumulator()}
+                              'featured': FeaturedAccumulator(),
+                              'featured_whitelist': WhitelistFeaturedAccumulator(self._min_age, self._min_rating)}
 
     def extract(self):
         return read_from_s3(self._s3_fname, self._s3_prefix, self._s3_bucket)
@@ -133,6 +167,9 @@ class AMOTransformer:
     def get_featuredlist(self):
         return self._accumulators['featured'].get_results()
 
+    def get_featuredwhitelist(self):
+        return self._accumulators['featured_whitelist'].get_results()
+
     def get_whitelist(self):
         return self._accumulators['whitelist'].get_results()
 
@@ -150,9 +187,13 @@ class AMOTransformer:
     def load_featuredlist(self, jdata):
         self._load_s3_data(jdata, FEATURED_BASE_FILENAME)
 
+    def load_featuredwhitelist(self, jdata):
+        self._load_s3_data(jdata, FEATURED_WHITELIST_BASE_FILENAME)
+
     def load(self):
         self.load_whitelist(self.get_whitelist())
         self.load_featuredlist(self.get_featuredlist())
+        self.load_featuredwhitelist(self.get_featuredwhitelist())
 
 
 @click.command()
