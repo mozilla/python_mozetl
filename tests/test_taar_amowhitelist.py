@@ -367,7 +367,7 @@ def test_transform_featuredlist(s3_fixture):
         assert rec['is_featured']
 
 
-def test_load(s3_fixture):
+def test_load_whitelist(s3_fixture):
     conn, data = s3_fixture
 
     etl = taar_amowhitelist.AMOTransformer(taar_amowhitelist.AMO_DUMP_BUCKET,
@@ -375,14 +375,23 @@ def test_load(s3_fixture):
                                            taar_amowhitelist.AMO_DUMP_FILENAME,
                                            taar_amowhitelist.MIN_RATING,
                                            taar_amowhitelist.MIN_AGE)
-    etl.load(EXPECTED_FINAL_JDATA)
+    etl.transform(data)
+
+    etl.load()
 
     s3 = boto3.resource('s3', region_name='us-west-2')
     bucket_obj = s3.Bucket(taar_amowhitelist.AMO_DUMP_BUCKET)
 
     available_objects = list(bucket_obj.objects.filter(Prefix=taar_amowhitelist.AMO_DUMP_PREFIX))
-    # Check that our file is there.
+
+    # Check that whitelist file exists
     full_s3_name = '{}{}'.format(taar_amowhitelist.AMO_DUMP_PREFIX,
                                  taar_amowhitelist.FILTERED_AMO_FILENAME)
+    keys = [o.key for o in available_objects]
+    assert full_s3_name in keys
+
+    # Check that featured addon file exists
+    full_s3_name = '{}{}'.format(taar_amowhitelist.AMO_DUMP_PREFIX,
+                                 taar_amowhitelist.FEATURED_FILENAME)
     keys = [o.key for o in available_objects]
     assert full_s3_name in keys

@@ -18,11 +18,16 @@ from taar_utils import read_from_s3, store_json_to_s3
 AMO_DUMP_BUCKET = 'telemetry-parquet'
 AMO_DUMP_PREFIX = 'telemetry-ml/addon_recommender/'
 
+# Input file
 AMO_DUMP_BASE_FILENAME = 'extended_addons_database'
-FILTERED_AMO_BASE_FILENAME = 'whitelist_addons_database'
-
 AMO_DUMP_FILENAME = AMO_DUMP_BASE_FILENAME + '.json'
+
+# Output files
+FILTERED_AMO_BASE_FILENAME = 'whitelist_addons_database'
+FEATURED_BASE_FILENAME = 'featured_addons_database'
+
 FILTERED_AMO_FILENAME = FILTERED_AMO_BASE_FILENAME + '.json'
+FEATURED_FILENAME = FEATURED_BASE_FILENAME + '.json'
 
 MIN_RATING = 3.0
 MIN_AGE = 60
@@ -131,13 +136,23 @@ class AMOTransformer:
     def get_whitelist(self):
         return self._accumulators['whitelist'].get_results()
 
-    def load(self, jdata):
+    def _load_s3_data(self, jdata, fname):
         date = datetime.date.today().strftime("%Y%m%d")
         store_json_to_s3(json.dumps(jdata),
-                         FILTERED_AMO_BASE_FILENAME,
+                         fname,
                          date,
                          AMO_DUMP_PREFIX,
                          AMO_DUMP_BUCKET)
+
+    def load_whitelist(self, jdata):
+        self._load_s3_data(jdata, FILTERED_AMO_BASE_FILENAME)
+
+    def load_featuredlist(self, jdata):
+        self._load_s3_data(jdata, FEATURED_BASE_FILENAME)
+
+    def load(self):
+        self.load_whitelist(self.get_whitelist())
+        self.load_featuredlist(self.get_featuredlist())
 
 
 @click.command()
@@ -153,8 +168,8 @@ def main(s3_prefix, s3_bucket, input_filename, min_rating, min_age):
                          float(min_rating),
                          int(min_age))
     jdata = etl.extract()
-    final_jdata = etl.transform(jdata)
-    etl.load(final_jdata)
+    etl.transform(jdata)
+    etl.load()
 
 
 if __name__ == '__main__':
