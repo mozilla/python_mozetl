@@ -20,6 +20,8 @@ AMO_DUMP_KEY = 'telemetry-ml/addon_recommender/addons_database.json'
 
 AMO_WHITELIST_KEY = 'telemetry-ml/addon_recommender/whitelist_addons_database.json'
 
+AMO_TAAR_WHITELIST_KEY = 'telemetry-ml/addon_recommender/featured_addons_database.json'
+
 
 @contextlib.contextmanager
 def selfdestructing_path(dirname):
@@ -108,7 +110,7 @@ def load_amo_external_whitelist():
             "bucket": AMO_DUMP_BUCKET,
             "key": AMO_DUMP_KEY})
 
-    # If the load fails, we will have an empty whitelist, this may be problematic.
+    # If the load fails, we will have an empty whitelist
     for key, value in amo_dump.items():
         addon_files = value.get('current_version', {}).get('files', {})
         # If any of the addon files are web_extensions compatible, it can be recommended.
@@ -118,4 +120,32 @@ def load_amo_external_whitelist():
     if len(final_whitelist) == 0:
         raise RuntimeError("Empty AMO whitelist detected")
 
+    return final_whitelist
+
+
+def load_amo_taarlite_whitelist():
+    """ Download and parse the TAARlite specific AMO add-on whitelist.
+
+    :raises RuntimeError: the AMO whitelist file cannot be downloaded
+    """
+    final_whitelist = []
+    amo_dump = {}
+    try:
+        # Load the most current AMO dump JSON resource.
+        s3 = boto3.client('s3')
+        s3_contents = s3.get_object(Bucket=AMO_DUMP_BUCKET, Key=AMO_TAAR_WHITELIST_KEY)
+        amo_dump = json.loads(s3_contents['Body'].read())
+    except ClientError:
+        logger.exception("Failed to download from S3", extra={
+            "bucket": AMO_DUMP_BUCKET,
+            "key": AMO_DUMP_KEY})
+
+    # If the load fails, we will have an empty whitelist
+    for key, value in amo_dump.items():
+        final_whitelist.append(value['guid'])
+
+    """
+    An empty taarlite whitelist is acceptable as it indicates that
+    there are no special conditions that we need to be concerned with.
+    """
     return final_whitelist

@@ -67,6 +67,7 @@ def extract_telemetry(spark):
                 addon.foreign_install or
                 # make sure the amo_whitelist has been broadcast to worker nodes.
                 guid not in broadcast_amo_whitelist.value or
+                guid not in broadcast_amo_taarlite_whitelist.value or
 
                 # Make sure that the Pioneer addon is explicitly
                 # excluded
@@ -93,8 +94,14 @@ def extract_telemetry(spark):
     amo_white_list = taar_utils.load_amo_external_whitelist()
     logging.info("AMO White list loaded")
 
+    amo_taarlite_white_list = taar_utils.load_amo_taarlite_whitelist()
+    logging.info("AMO TAARlite White list loaded")
+
     broadcast_amo_whitelist = sc.broadcast(amo_white_list)
     logging.info("Broadcast AMO whitelist success")
+
+    broadcast_amo_taarlite_whitelist = sc.broadcast(amo_taarlite_white_list)
+    logging.info("Broadcast AMO TAARlite whitelist success")
 
     addons_info_frame = get_addons_per_client(client_features_frame)
     logging.info("Filtered for valid addons only.")
