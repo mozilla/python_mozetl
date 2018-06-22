@@ -68,7 +68,8 @@ class WhitelistAccumulator(AbstractAccumulator):
         self._min_age = min_age
         self._min_rating = min_rating
 
-        self._latest_create_date = datetime.datetime.today() - datetime.timedelta(days=self._min_age)
+        self._latest_create_date = datetime.datetime.today() - \
+                                   datetime.timedelta(days=self._min_age)  # noqa
         self._latest_create_date = self._latest_create_date.replace(tzinfo=None)
 
     def process_record(self, guid, addon_data):
