@@ -21,6 +21,7 @@ from pyspark.ml import Pipeline
 from pyspark.mllib.stat import KernelDensity
 from scipy.spatial import distance
 from taar_utils import store_json_to_s3, load_amo_external_whitelist
+from taar_utils import WHITELIST
 
 # Define the set of feature names to be used in the donor computations.
 CATEGORICAL_FEATURES = ["geo_city", "locale", "os"]
@@ -298,13 +299,15 @@ def get_lr_curves(spark, features_df, cluster_ids, kernel_bandwidth,
 
 @click.command()
 @click.option('--date', required=True)
-@click.option('--bucket', default='telemetry-parquet')
-@click.option('--prefix', default='taar/similarity/')
-@click.option('--num_clusters', default=20)
-@click.option('--num_donors', default=1000)
-@click.option('--kernel_bandwidth', default=0.35)
-@click.option('--num_pdf_points', default=1000)
-def main(date, bucket, prefix, num_clusters, num_donors, kernel_bandwidth, num_pdf_points):
+@click.option('--bucket', default='telemetry-parquet', show_default=True)
+@click.option('--prefix', default='taar/similarity/', show_default=True)
+@click.option('--num_clusters', default=20, show_default=True)
+@click.option('--num_donors', default=1000, show_default=True)
+@click.option('--kernel_bandwidth', default=0.35, show_default=True)
+@click.option('--num_pdf_points', default=1000, show_default=True)
+@click.option('--whitelist', default=WHITELIST.BASIC, show_default=True)
+def main(date, bucket, prefix, num_clusters, num_donors,
+         kernel_bandwidth, num_pdf_points, whitelist):
     spark = (SparkSession
              .builder
              .appName("taar_similarity")
@@ -316,7 +319,7 @@ def main(date, bucket, prefix, num_clusters, num_donors, kernel_bandwidth, num_p
         num_donors = 100
 
     logger.info("Loading the AMO whitelist...")
-    whitelist = load_amo_external_whitelist()
+    whitelist = load_amo_external_whitelist(whitelist)
 
     logger.info("Computing the list of donors...")
 
