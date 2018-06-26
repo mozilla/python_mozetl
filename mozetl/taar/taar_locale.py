@@ -14,6 +14,7 @@ import logging
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col
 from taar_utils import store_json_to_s3, load_amo_external_whitelist
+from taar_utils import WHITELIST
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -143,10 +144,18 @@ def generate_dictionary(spark, num_addons):
 
 @click.command()
 @click.option('--date', required=True)
-@click.option('--bucket', default='telemetry-private-analysis-2')
-@click.option('--prefix', default='taar/locale/')
-@click.option('--num_addons', default=10)
-def main(date, bucket, prefix, num_addons):
+@click.option('--bucket',
+              default='telemetry-private-analysis-2',
+              show_default=True)
+@click.option('--prefix', default='taar/locale/',
+              show_default=True)
+@click.option('--num_addons',
+              default=10,
+              show_default=True)
+@click.option('--whitelist',
+              default=WHITELIST.BASIC,
+              show_default=True)
+def main(date, bucket, prefix, num_addons, whitelist):
     spark = (SparkSession
              .builder
              .appName("taar_locale")
