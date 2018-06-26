@@ -140,7 +140,8 @@ class AMOTransformer:
 
         self._accumulators = {'whitelist': WhitelistAccumulator(self._min_age, self._min_rating),
                               'featured': FeaturedAccumulator(),
-                              'featured_whitelist': WhitelistFeaturedAccumulator(self._min_age, self._min_rating)}
+                              'featured_whitelist': WhitelistFeaturedAccumulator(self._min_age,
+                                                                                 self._min_rating)}
 
     def extract(self):
         return read_from_s3(self._s3_fname, self._s3_prefix, self._s3_bucket)
