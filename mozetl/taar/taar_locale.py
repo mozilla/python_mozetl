@@ -124,7 +124,7 @@ def transform(addon_df, threshold, num_addons):
     return top10_per
 
 
-def generate_dictionary(spark, num_addons):
+def generate_dictionary(spark, num_addons, whitelist_key):
     """ Wrap the dictionary generation functions in an
     easily testable way.
     """
@@ -132,7 +132,7 @@ def generate_dictionary(spark, num_addons):
     addon_df = get_addons(spark)
 
     # Load external whitelist based on AMO data.
-    amo_whitelist = load_amo_external_whitelist()
+    amo_whitelist = load_amo_external_whitelist(whitelist_key)
 
     # Filter to include only addons present in AMO whitelist.
     addon_df_filtered = addon_df.where(col("addon_key").isin(amo_whitelist))
@@ -163,7 +163,7 @@ def main(date, bucket, prefix, num_addons, whitelist):
              .getOrCreate())
 
     logger.info("Processing top N addons per locale")
-    locale_dict = generate_dictionary(spark, num_addons)
+    locale_dict = generate_dictionary(spark, num_addons, whitelist)
     store_json_to_s3(json.dumps(locale_dict, indent=2), LOCALE_FILE_NAME,
                      date, prefix, bucket)
 
