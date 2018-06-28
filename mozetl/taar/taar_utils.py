@@ -114,7 +114,7 @@ def load_amo_external_whitelist(whitelist_key=WHITELIST.BASIC):
     try:
         # Load the most current AMO dump JSON resource.
         s3 = boto3.client('s3')
-        s3_contents = s3.get_object(Bucket=AMO_DUMP_BUCKET, Key=WHITELIST[whitelist_key])
+        s3_contents = s3.get_object(Bucket=AMO_DUMP_BUCKET, Key=WHITELIST()[whitelist_key])
         amo_dump = json.loads(s3_contents['Body'].read())
     except ClientError:
         logger.exception("Failed to download from S3", extra={
