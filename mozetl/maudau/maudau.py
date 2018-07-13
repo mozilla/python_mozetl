@@ -185,6 +185,8 @@ def publish_to_s3(s3client, bucket, prefix, basename):
               default=STORAGE_SUB_DIR,
               help='Prefix of the output dataset')
 def main(input_bucket, input_prefix, output_bucket, output_prefix):
+    """Calculate Firefox monthly- and daily-active users."""
+
     s3client = boto3.client('s3', 'us-west-2')
     transferer = S3Transfer(s3client)
     last_rollup_basename = get_last_rollup(transferer)
