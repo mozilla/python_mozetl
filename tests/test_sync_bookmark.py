@@ -246,14 +246,47 @@ def test_validation_problems(test_transform):
                 }
             ]
         },
+        # new bookmarks engine with problems
+        {
+            'failure_reason': None,
+            'engines': [{
+                'name': 'bookmarks-buffered',
+                'validation': {
+                    'problems': [{
+                        'name': 'new problem',
+                        'count': 50,
+                    }, {
+                        'name': 'another problem',
+                        'count': 4,
+                    }],
+                },
+            }],
+        },
+        # new bookmarks engine without problems
+        {
+            'failure_reason': None,
+            'engines': [{
+                'name': 'bookmarks-buffered',
+                'validation': {'problems': None},
+            }],
+        },
     ])
 
-    assert df.count() == 4
-
-    # one hot encode the cases
+    assert df.count() == 6
     assert df.select(
         F.sum('engine_validation_problem_count').alias('pcount')
+    ).first().pcount == 1165
+
+    assert df.where(
+        F.col('engine_name') == 'bookmarks'
+    ).select(
+        F.sum('engine_validation_problem_count').alias('pcount')
     ).first().pcount == 1111
+    assert df.where(
+        F.col('engine_name') == 'bookmarks-buffered'
+    ).select(
+        F.sum('engine_validation_problem_count').alias('pcount')
+    ).first().pcount == 54
 
 
 def test_total_bookmarks_checked(test_transform):

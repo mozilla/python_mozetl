@@ -60,7 +60,7 @@ def transform(spark):
 
     bookmark_validations = (
         engine_validations
-        .where(F.col("engine_name") == "bookmarks")
+        .where(F.col("engine_name").isin("bookmarks", "bookmarks-buffered"))
     )
 
     bookmark_validation_problems = (
