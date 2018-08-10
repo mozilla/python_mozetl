@@ -20,6 +20,8 @@ from pyspark.sql.functions import (
 from pyspark.sql.types import StringType
 from pyspark.sql import SparkSession
 
+from mozetl.constants import SEARCH_SOURCE_WHITELIST
+
 
 DEFAULT_INPUT_BUCKET = 'telemetry-parquet'
 DEFAULT_INPUT_PREFIX = 'main_summary/v4'
@@ -137,7 +139,7 @@ def agg_search_data(main_summary, grouping_cols, agg_functions):
                   if column not in ['type', 'count']])
         .pivot(
             'type',
-            ['tagged-sap', 'tagged-follow-on', 'sap']
+            ['organic', 'tagged-sap', 'tagged-follow-on', 'sap', 'unknown']
         )
         .sum('count')
         # Add convenience columns with underscores instead of hyphens.
@@ -192,16 +194,28 @@ def add_derived_columns(exploded_search_counts):
     '''
     udf_get_search_addon_version = udf(get_search_addon_version, StringType())
 
-    return (
-        exploded_search_counts
-        .withColumn(
-            'type',
-            when(col('source').startswith('sap:'), 'tagged-sap')
+    def _generate_when_expr(sources):
+        if not sources:
+            return 'unknown'
+        return when(col('source').endswith(sources[0]), 'sap').otherwise(
+            _generate_when_expr(sources[1:])
+        )
+    when_expr = when(col('source').startswith('sap:'), 'tagged-sap') \
+        .otherwise(
+            when(col('source').startswith('follow-on:'), 'tagged-follow-on')
             .otherwise(
-                when(col('source').startswith('follow-on:'), 'tagged-follow-on')
-                .otherwise('sap')
+                when(col('source').startswith('sap-follow-on:'), 'tagged-follow-on')
+                .otherwise(
+                    when(col('source').startswith('organic:'), 'organic')
+                    .otherwise(
+                        _generate_when_expr(SEARCH_SOURCE_WHITELIST)
+                    )
+                )
             )
         )
+
+    return (
+        exploded_search_counts.withColumn('type', when_expr)
         .withColumn('addon_version', udf_get_search_addon_version('active_addons'))
     )
 
