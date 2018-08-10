@@ -222,6 +222,10 @@ def exploded_data_for_derived_cols(generate_exploded_data):
     return generate_exploded_data([
         {'source': 'sap:urlbar:SomeCodeHere'},
         {'source': 'follow-on:urlbar:SomeCodeHere'},
+        {'source': 'in-content:sap:SomeCodeHere'},
+        {'source': 'in-content:sap-follow-on:SomeCodeHere'},
+        {'source': 'in-content:organic:something'},
+        {'source': 'unknowngarbagestring'},
         {'source': 'urlbar'},
     ])
 
@@ -236,6 +240,14 @@ def derived_columns(define_dataframe_factory):
          'type': 'tagged-sap'},
         {'source': 'follow-on:urlbar:SomeCodeHere',
          'type': 'tagged-follow-on'},
+        {'source': 'in-content:sap:SomeCodeHere',
+         'type': 'tagged-sap'},
+        {'source': 'in-content:sap-follow-on:SomeCodeHere',
+         'type': 'tagged-follow-on'},
+        {'source': 'in-content:organic:something',
+         'type': 'organic'},
+        {'source': 'unknowngarbagestring',
+         'type': 'unknown'},
         {'source': 'urlbar',
          'type': 'sap'},
     ])
@@ -260,6 +272,8 @@ def expected_search_dashboard_data(define_dataframe_factory):
         ('tagged_sap', None, LongType(), True),
         ('tagged_follow_on', None, LongType(), True),
         ('sap', 4, LongType(), True),
+        ('organic', None, LongType(), True),
+        ('unknown', None, LongType(), True),
     ]))
 
     return factory([
@@ -294,6 +308,8 @@ def expected_search_clients_daily_data(define_dataframe_factory):
         ('tagged_sap', None, LongType(), True),
         ('tagged_follow_on', None, LongType(), True),
         ('sap', 4, LongType(), True),
+        ('organic', None, LongType(), True),
+        ('unknown', None, LongType(), True),
         # Roughly 2016-01-01
         ('profile_creation_date', 16801, LongType(), False),
         ('default_search_engine', 'google', StringType(), False),
@@ -338,7 +354,8 @@ def expected_search_clients_daily_data(define_dataframe_factory):
         {'engine': 'yahoo'},
         {
             'client_id': 'c',
-            'sap': 0,
+            'unknown': 0,
+            'sap': None,
             'tagged-sap': None,
             'tagged-follow-on': None,
             'tagged_sap': None,
