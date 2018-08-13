@@ -64,6 +64,7 @@ jobs:
 
   test:
     <<: *common_settings
+    parallelism: 8
     steps:
       - checkout
       - run: *early_return_for_skip_tests
@@ -72,8 +73,21 @@ jobs:
       - run: apt update && apt install -y libsnappy-dev default-jre
       - run: pip install tox
       - run:
-          name: tox
-          command: tox
+          name: run tests
+          command: |
+            circleci tests glob "tests/**/test*.py" > tests.txt
+            tox -- \
+              $(circleci tests split --split-by=timings tests.txt | tr -d '\r') \
+              --junitxml=test-reports/junit.xml
+      - store_test_results:
+          path: test-reports
+      - store_artifacts:
+          path: test-reports
+      - run:
+          name: Submit code coverage data
+          command: |
+            bash <(curl -s https://codecov.io/bash)
+      - save_cache: *save_cache_settings
 
   lint:
     <<: *common_settings
