@@ -1,0 +1,101 @@
+####################
+# CircleCI configuration reference:
+#   https://circleci.com/docs/2.0/configuration-reference
+####################
+# CircleCI built-in environment variables:
+#   https://circleci.com/docs/2.0/env-vars/#built-in-environment-variables
+####################
+
+
+####################
+# Templates: see "anchors" in https://learnxinyminutes.com/docs/yaml/
+####################
+
+save_cache_settings: &save_cache_settings
+  key: python_mozetl-{{ .Branch }}-{{ .Environment.CIRCLE_WORKFLOW_ID }}
+  paths:
+    - ~/python_mozetl/.tox
+
+prep_cache_settings: &prep_cache_settings
+  name: Clean directories to restore
+  command: |
+    : # no-op
+
+restore_cache_settings: &restore_cache_settings
+  keys:
+    - python_mozetl-{{ .Branch }}-{{ .Environment.CIRCLE_WORKFLOW_ID }}
+    - python_mozetl-{{ .Branch }}
+    - python_mozetl-
+
+common_settings: &common_settings
+  docker:
+    - image: python:2.7
+  working_directory: ~/python_mozetl
+
+# CircleCI generally only triggers builds on commits to the main repository,
+# so PRs coming from branches of the main repo simply reference builds for existing commits
+# (CIRCLE_BRANCH=branchname and CIRCLE_PR_NUMBER is unset);
+# The only time PRs will trigger a build is when the PR is referencing a fork
+# (CIRCLE_BRANCH=pull/XXX and CIRCLE_PR_NUMBER=XXX).
+early_return_for_forked_pull_requests: &early_return_for_forked_pull_requests
+  name: Early return if this build is from a forked PR
+  command: |
+    if [ -n "$CIRCLE_PR_NUMBER" ]; then
+      echo "Nothing to upload for forked PRs, so marking this step successful"
+      circleci step halt
+    fi
+
+early_return_for_skip_tests: &early_return_for_skip_tests
+  name: Early return if the latest non-merge commit message contains "[skip-tests]"
+  command: |
+    COMMIT_MESSAGE=$(git log --format=%B --no-merges -n 1)
+    if [[ "$COMMIT_MESSAGE" =~ "[skip-tests]" ]]; then
+      echo "Skipping tests due to [skip-tests] flag, so marking this step successful"
+      circleci step halt
+    fi
+
+
+####################
+# Jobs: see https://circleci.com/docs/2.0/jobs-steps/
+####################
+
+version: 2
+jobs:
+
+  test:
+    <<: *common_settings
+    steps:
+      - checkout
+      - run: *early_return_for_skip_tests
+      - run: *prep_cache_settings
+      - restore_cache: *restore_cache_settings
+      - run: apt update && apt install -y libsnappy-dev default-jre
+      - run: pip install tox
+      - run:
+          name: tox
+          command: tox
+
+  lint:
+    <<: *common_settings
+    steps:
+      - checkout
+      - run: *early_return_for_skip_tests
+      - run: *prep_cache_settings
+      - restore_cache: *restore_cache_settings
+      - run: apt update && apt install -y libsnappy-dev default-jre
+      - run: pip install tox
+      - run:
+          name: tox
+          command: TOXENV=flake8 tox
+
+
+####################
+# Workflows: see https://circleci.com/docs/2.0/workflows/
+####################
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - test
+      - lint
