@@ -20,6 +20,8 @@ from pyspark.sql.functions import (
 from pyspark.sql.types import StringType
 from pyspark.sql import SparkSession
 
+from mozetl.constants import SEARCH_SOURCE_WHITELIST
+
 
 DEFAULT_INPUT_BUCKET = 'telemetry-parquet'
 DEFAULT_INPUT_PREFIX = 'main_summary/v4'
@@ -137,7 +139,7 @@ def agg_search_data(main_summary, grouping_cols, agg_functions):
                   if column not in ['type', 'count']])
         .pivot(
             'type',
-            ['tagged-sap', 'tagged-follow-on', 'sap']
+            ['organic', 'tagged-sap', 'tagged-follow-on', 'sap', 'unknown']
         )
         .sum('count')
         # Add convenience columns with underscores instead of hyphens.
@@ -192,16 +194,26 @@ def add_derived_columns(exploded_search_counts):
     '''
     udf_get_search_addon_version = udf(get_search_addon_version, StringType())
 
-    return (
-        exploded_search_counts
-        .withColumn(
-            'type',
-            when(col('source').startswith('sap:'), 'tagged-sap')
-            .otherwise(
-                when(col('source').startswith('follow-on:'), 'tagged-follow-on')
-                .otherwise('sap')
-            )
+    def _generate_when_expr(source_mappings):
+        if not source_mappings:
+            return 'unknown'
+        source_mapping = source_mappings[0]
+        return when(col('source').startswith(source_mapping[0]), source_mapping[1]).otherwise(
+            _generate_when_expr(source_mappings[1:])
         )
+    when_expr = (
+        when(col('source').isin(SEARCH_SOURCE_WHITELIST), 'sap')
+        .otherwise(
+            _generate_when_expr([('in-content:sap:', 'tagged-sap'),
+                                 ('in-content:sap-follow-on:', 'tagged-follow-on'),
+                                 ('in-content:organic:', 'organic'),
+                                 ('sap:', 'tagged-sap'),
+                                 ('follow-on:', 'tagged-follow-on')])
+        )
+    )
+
+    return (
+        exploded_search_counts.withColumn('type', when_expr)
         .withColumn('addon_version', udf_get_search_addon_version('active_addons'))
     )
 
