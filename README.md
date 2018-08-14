@@ -25,7 +25,7 @@ For more on this see the writeup at
 First install the necessary runtime dependencies -- snappy and the java runtime
 environment. These are used for the `pyspark` package. In ubuntu:
 ```bash
-$ sudo apt-get install libsnappy-dev default-jre
+$ sudo apt-get install libsnappy-dev openjdk-8-jre-headless
 ```
 
 ## Calling the test runner
