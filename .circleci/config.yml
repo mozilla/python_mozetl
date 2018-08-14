@@ -71,7 +71,7 @@ jobs:
       - run: *prep_cache_settings
       - restore_cache: *restore_cache_settings
       - run: apt update && apt install -y libsnappy-dev default-jre
-      - run: pip install tox
+      - run: pip install tox coverage
       - run:
           name: run tests
           command: |
@@ -86,6 +86,7 @@ jobs:
       - run:
           name: Submit code coverage data
           command: |
+            coverage xml -i  # convert `.coverage` to `coverage.xml`
             bash <(curl -s https://codecov.io/bash)
       - save_cache: *save_cache_settings
 
