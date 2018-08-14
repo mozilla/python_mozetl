@@ -1,6 +1,6 @@
 # Firefox Telemetry Python ETL
 
-[![Build Status](https://travis-ci.org/mozilla/python_mozetl.svg?branch=master)](https://travis-ci.org/mozilla/python_mozetl)
+[![CircleCI](https://circleci.com/gh/mozilla/python_mozetl.svg?style=svg)](https://circleci.com/gh/mozilla/python_mozetl)
 [![codecov](https://codecov.io/gh/mozilla/python_mozetl/branch/master/graph/badge.svg)](https://codecov.io/gh/mozilla/python_mozetl)
 
 This repository is a collection of ETL jobs for Firefox Telemetry.
