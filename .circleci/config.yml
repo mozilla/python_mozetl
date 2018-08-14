@@ -20,7 +20,7 @@ install_dependencies: &install_dependencies
   name: install dependencies
   command: |
     apt update
-    apt install -y libsnappy-dev default-jre
+    apt install -y libsnappy-dev openjdk-8-jre-headless
     pip install tox coverage
 
 save_cache_settings: &save_cache_settings
