@@ -194,25 +194,23 @@ def add_derived_columns(exploded_search_counts):
     '''
     udf_get_search_addon_version = udf(get_search_addon_version, StringType())
 
-    def _generate_when_expr(sources):
-        if not sources:
+    def _generate_when_expr(source_mappings):
+        if not source_mappings:
             return 'unknown'
-        return when(col('source').endswith(sources[0]), 'sap').otherwise(
-            _generate_when_expr(sources[1:])
+        source_mapping = source_mappings[0]
+        return when(col('source').startswith(source_mapping[0]), source_mapping[1]).otherwise(
+            _generate_when_expr(source_mappings[1:])
         )
-    when_expr = when(col('source').startswith('sap:'), 'tagged-sap') \
+    when_expr = (
+        when(col('source').isin(SEARCH_SOURCE_WHITELIST), 'sap')
         .otherwise(
-            when(col('source').startswith('follow-on:'), 'tagged-follow-on')
-            .otherwise(
-                when(col('source').startswith('sap-follow-on:'), 'tagged-follow-on')
-                .otherwise(
-                    when(col('source').startswith('organic:'), 'organic')
-                    .otherwise(
-                        _generate_when_expr(SEARCH_SOURCE_WHITELIST)
-                    )
-                )
-            )
+            _generate_when_expr([('in-content:sap:', 'tagged-sap'),
+                                 ('in-content:sap-follow-on:', 'tagged-follow-on'),
+                                 ('in-content:organic:', 'organic'),
+                                 ('sap:', 'tagged-sap'),
+                                 ('follow-on:', 'tagged-follow-on')])
         )
+    )
 
     return (
         exploded_search_counts.withColumn('type', when_expr)
