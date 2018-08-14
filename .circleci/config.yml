@@ -11,39 +11,28 @@
 # Templates: see "anchors" in https://learnxinyminutes.com/docs/yaml/
 ####################
 
+common_settings: &common_settings
+  docker:
+    - image: python:2.7
+  working_directory: ~/python_mozetl
+
+install_dependencies: &install_dependencies
+  name: install dependencies
+  command: |
+    apt update
+    apt install -y libsnappy-dev default-jre
+    pip install tox coverage
+
 save_cache_settings: &save_cache_settings
   key: python_mozetl-{{ .Branch }}-{{ .Environment.CIRCLE_WORKFLOW_ID }}
   paths:
     - ~/python_mozetl/.tox
-
-prep_cache_settings: &prep_cache_settings
-  name: Clean directories to restore
-  command: |
-    : # no-op
 
 restore_cache_settings: &restore_cache_settings
   keys:
     - python_mozetl-{{ .Branch }}-{{ .Environment.CIRCLE_WORKFLOW_ID }}
     - python_mozetl-{{ .Branch }}
     - python_mozetl-
-
-common_settings: &common_settings
-  docker:
-    - image: python:2.7
-  working_directory: ~/python_mozetl
-
-# CircleCI generally only triggers builds on commits to the main repository,
-# so PRs coming from branches of the main repo simply reference builds for existing commits
-# (CIRCLE_BRANCH=branchname and CIRCLE_PR_NUMBER is unset);
-# The only time PRs will trigger a build is when the PR is referencing a fork
-# (CIRCLE_BRANCH=pull/XXX and CIRCLE_PR_NUMBER=XXX).
-early_return_for_forked_pull_requests: &early_return_for_forked_pull_requests
-  name: Early return if this build is from a forked PR
-  command: |
-    if [ -n "$CIRCLE_PR_NUMBER" ]; then
-      echo "Nothing to upload for forked PRs, so marking this step successful"
-      circleci step halt
-    fi
 
 early_return_for_skip_tests: &early_return_for_skip_tests
   name: Early return if the latest non-merge commit message contains "[skip-tests]"
@@ -68,10 +57,8 @@ jobs:
     steps:
       - checkout
       - run: *early_return_for_skip_tests
-      - run: *prep_cache_settings
       - restore_cache: *restore_cache_settings
-      - run: apt update && apt install -y libsnappy-dev default-jre
-      - run: pip install tox coverage
+      - run: *install_dependencies
       - run:
           name: run tests
           command: |
@@ -79,29 +66,28 @@ jobs:
             tox -- \
               $(circleci tests split --split-by=timings tests.txt | tr -d '\r') \
               --junitxml=test-reports/junit.xml
+      - run:
+          name: submit code coverage data
+          command: |
+            # convert `.coverage` to `coverage.xml`
+            coverage xml -i
+            bash <(curl -s https://codecov.io/bash)
       - store_test_results:
           path: test-reports
       - store_artifacts:
           path: test-reports
-      - run:
-          name: Submit code coverage data
-          command: |
-            coverage xml -i  # convert `.coverage` to `coverage.xml`
-            bash <(curl -s https://codecov.io/bash)
-      - save_cache: *save_cache_settings
 
   lint:
     <<: *common_settings
     steps:
       - checkout
       - run: *early_return_for_skip_tests
-      - run: *prep_cache_settings
       - restore_cache: *restore_cache_settings
-      - run: apt update && apt install -y libsnappy-dev default-jre
-      - run: pip install tox
+      - run: *install_dependencies
       - run:
-          name: tox
+          name: run linter
           command: TOXENV=flake8 tox
+      - save_cache: *save_cache_settings
 
 
 ####################
