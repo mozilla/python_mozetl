@@ -29,6 +29,9 @@ DEFAULT_INPUT_PREFIX = 'main_summary/v4'
 DEFAULT_SAVE_MODE = 'error'
 MAX_CLIENT_SEARCH_COUNT = 10000
 
+SEARCH_AGGREGATES_VERSION = 4
+SEARCH_CLIENTS_DAILY_VERSION = 3
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -272,13 +275,14 @@ def generate_rollups(submission_date, output_bucket, output_prefix,
 def search_aggregates_etl(submission_date, bucket, prefix,
                           **kwargs):
     generate_rollups(submission_date, bucket, prefix,
-                     3, search_aggregates, **kwargs)
+                     SEARCH_AGGREGATES_VERSION, search_aggregates, **kwargs)
 
 
 def search_clients_daily_etl(submission_date, bucket, prefix,
                              **kwargs):
     generate_rollups(submission_date, bucket, prefix,
-                     2, search_clients_daily, orderBy=['sample_id'], **kwargs)
+                     SEARCH_CLIENTS_DAILY_VERSION, search_clients_daily,
+                     orderBy=['sample_id'], **kwargs)
 
 
 # Generate click commands - wrap ETL jobs to accept click arguements
