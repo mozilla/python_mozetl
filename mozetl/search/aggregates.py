@@ -13,9 +13,10 @@ This allows for deeper analysis into user level search behavior.
 import click
 import logging
 import datetime
+from pyspark_hyperloglog import hll
 from pyspark.sql.functions import (
-    explode, col, when, udf, sum, first, count, datediff, from_unixtime, mean,
-    size, max, lit
+    expr, explode, col, when, udf, sum, first, count, datediff, from_unixtime,
+    mean, size, max, lit
 )
 from pyspark.sql.types import StringType
 from pyspark.sql import SparkSession
@@ -100,7 +101,7 @@ def search_aggregates(main_summary):
             'submission_date',
             'default_search_engine',
         ],
-        []
+        [expr("hll_cardinality(hll_merge(hll)) as client_count")]
     ).where(col('engine').isNotNull())
 
 
@@ -126,8 +127,10 @@ def agg_search_data(main_summary, grouping_cols, agg_functions):
     # Do all aggregations
     aggregated = (
         augmented
+        .withColumn('hll', expr('hll_create(client_id, 12)'))
         .groupBy(grouping_cols + ['type'])
         .agg(*(agg_functions + [sum('count').alias('count')]))
+        .drop('hll')
     )
 
     # Pivot on search type
@@ -191,6 +194,7 @@ def add_derived_columns(exploded_search_counts):
     addon_version:  The version of the followon-search@mozilla addon, or None
     '''
     udf_get_search_addon_version = udf(get_search_addon_version, StringType())
+    hll.register()
 
     return (
         exploded_search_counts
