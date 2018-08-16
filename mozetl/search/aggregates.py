@@ -87,8 +87,9 @@ def search_clients_daily(main_summary):
 
 
 def search_aggregates(main_summary):
+    hll.register()
     return agg_search_data(
-        main_summary,
+        main_summary.withColumn('hll', expr('hll_create(client_id, 12)')),
         [
             'addon_version',
             'app_version',
@@ -127,7 +128,6 @@ def agg_search_data(main_summary, grouping_cols, agg_functions):
     # Do all aggregations
     aggregated = (
         augmented
-        .withColumn('hll', expr('hll_create(client_id, 12)'))
         .groupBy(grouping_cols + ['type'])
         .agg(*(agg_functions + [sum('count').alias('count')]))
         .drop('hll')
@@ -194,7 +194,6 @@ def add_derived_columns(exploded_search_counts):
     addon_version:  The version of the followon-search@mozilla addon, or None
     '''
     udf_get_search_addon_version = udf(get_search_addon_version, StringType())
-    hll.register()
 
     return (
         exploded_search_counts
