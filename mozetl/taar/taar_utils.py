@@ -119,3 +119,13 @@ def load_amo_external_whitelist():
         raise RuntimeError("Empty AMO whitelist detected")
 
     return final_whitelist
+
+
+def load_amo_curated_whitelist():
+    """
+    Return the curated whitelist of addon GUIDs
+    """
+    whitelist = read_from_s3('only_guids_top_200.json',
+                             'telemetry-ml/addon_recommender/', 
+                             'telemetry-parquet')
+    return list(whitelist)
