@@ -260,6 +260,7 @@ def expected_search_dashboard_data(define_dataframe_factory):
         ('tagged_sap', None, LongType(), True),
         ('tagged_follow_on', None, LongType(), True),
         ('sap', 4, LongType(), True),
+        ('client_count', 1, LongType(), True),
     ]))
 
     return factory([
