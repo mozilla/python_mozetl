@@ -13,7 +13,8 @@ import logging
 
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col
-from taar_utils import store_json_to_s3, load_amo_external_whitelist
+from taar_utils import store_json_to_s3
+from taar_utils import load_amo_curated_whitelist
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -131,7 +132,7 @@ def generate_dictionary(spark, num_addons):
     addon_df = get_addons(spark)
 
     # Load external whitelist based on AMO data.
-    amo_whitelist = load_amo_external_whitelist()
+    amo_whitelist = load_amo_curated_whitelist()
 
     # Filter to include only addons present in AMO whitelist.
     addon_df_filtered = addon_df.where(col("addon_key").isin(amo_whitelist))

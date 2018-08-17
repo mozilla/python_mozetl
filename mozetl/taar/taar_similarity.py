@@ -20,7 +20,9 @@ from pyspark.ml.clustering import BisectingKMeans
 from pyspark.ml import Pipeline
 from pyspark.mllib.stat import KernelDensity
 from scipy.spatial import distance
-from taar_utils import store_json_to_s3, load_amo_external_whitelist
+from taar_utils import store_json_to_s3
+from taar_utils import load_amo_curated_whitelist
+from taar_utils import read_from_s3
 
 # Define the set of feature names to be used in the donor computations.
 CATEGORICAL_FEATURES = ["geo_city", "locale", "os"]
@@ -61,6 +63,7 @@ def get_addons_per_client(users_df, addon_whitelist, minimum_addons_count):
     """ Extracts a DataFrame that contains one row
     for each client along with the list of active add-on GUIDs.
     """
+
     def is_valid_addon(guid, addon):
         return not (
             addon.is_system or
@@ -316,7 +319,7 @@ def main(date, bucket, prefix, num_clusters, num_donors, kernel_bandwidth, num_p
         num_donors = 100
 
     logger.info("Loading the AMO whitelist...")
-    whitelist = load_amo_external_whitelist()
+    whitelist = load_amo_curated_whitelist()
 
     logger.info("Computing the list of donors...")
 
