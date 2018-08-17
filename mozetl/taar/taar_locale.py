@@ -14,6 +14,7 @@ import logging
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col
 from taar_utils import store_json_to_s3, load_amo_external_whitelist
+from taar_utils import WHITELIST
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -123,7 +124,7 @@ def transform(addon_df, threshold, num_addons):
     return top10_per
 
 
-def generate_dictionary(spark, num_addons):
+def generate_dictionary(spark, num_addons, whitelist_key):
     """ Wrap the dictionary generation functions in an
     easily testable way.
     """
@@ -131,7 +132,7 @@ def generate_dictionary(spark, num_addons):
     addon_df = get_addons(spark)
 
     # Load external whitelist based on AMO data.
-    amo_whitelist = load_amo_external_whitelist()
+    amo_whitelist = load_amo_external_whitelist(whitelist_key)
 
     # Filter to include only addons present in AMO whitelist.
     addon_df_filtered = addon_df.where(col("addon_key").isin(amo_whitelist))
@@ -143,10 +144,18 @@ def generate_dictionary(spark, num_addons):
 
 @click.command()
 @click.option('--date', required=True)
-@click.option('--bucket', default='telemetry-private-analysis-2')
-@click.option('--prefix', default='taar/locale/')
-@click.option('--num_addons', default=10)
-def main(date, bucket, prefix, num_addons):
+@click.option('--bucket',
+              default='telemetry-private-analysis-2',
+              show_default=True)
+@click.option('--prefix', default='taar/locale/',
+              show_default=True)
+@click.option('--num_addons',
+              default=10,
+              show_default=True)
+@click.option('--whitelist',
+              default=WHITELIST.BASIC,
+              show_default=True)
+def main(date, bucket, prefix, num_addons, whitelist):
     spark = (SparkSession
              .builder
              .appName("taar_locale")
@@ -154,7 +163,7 @@ def main(date, bucket, prefix, num_addons):
              .getOrCreate())
 
     logger.info("Processing top N addons per locale")
-    locale_dict = generate_dictionary(spark, num_addons)
+    locale_dict = generate_dictionary(spark, num_addons, whitelist)
     store_json_to_s3(json.dumps(locale_dict, indent=2), LOCALE_FILE_NAME,
                      date, prefix, bucket)
 

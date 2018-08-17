@@ -21,6 +21,7 @@ from pyspark.ml import Pipeline
 from pyspark.mllib.stat import KernelDensity
 from scipy.spatial import distance
 from taar_utils import store_json_to_s3, load_amo_external_whitelist
+from taar_utils import WHITELIST
 
 # Define the set of feature names to be used in the donor computations.
 CATEGORICAL_FEATURES = ["geo_city", "locale", "os"]
@@ -31,11 +32,12 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def get_samples(spark):
+
+def get_samples(spark, whitelist):
     """ Get a DataFrame with a valid set of sample to base the next
     processing on.
     """
-    return (
+    samples_df = (
         spark.sql("SELECT * FROM longitudinal")
         .where("active_addons IS NOT null")
         .where("size(active_addons[0]) > 2")
@@ -55,6 +57,48 @@ def get_samples(spark):
             "scalar_parent_browser_engagement_unique_domains_count[0].value AS unique_tlds"
         )
     )
+
+    def is_user_addon(guid, addon):
+        # Note that the whitelist check on the last line has been removed
+        return not (
+            addon.is_system or
+            addon.app_disabled or
+            addon.type != "extension" or
+            addon.user_disabled or
+            addon.foreign_install
+        )
+
+    def is_whitelisted(guid, addon):
+        return not (
+            addon.is_system or
+            addon.app_disabled or
+            addon.type != "extension" or
+            addon.user_disabled or
+            addon.foreign_install or
+            guid not in whitelist
+        )
+
+    # vng: This adds 3 columns to maniuplate the sample to get just
+    # the client we are interested in.
+    # - active_user_addons: the list of all user addons
+    #   (non-system addons) that the user has installed
+    # - featured_addons: the list of featured addons installed
+    # - whitelisted: addons that are whitelisted
+    #
+    # Note that the filter here is what finally computes which clients
+    # meet our criteria
+    return samples_df.rdd
+            .withColumn('active_user_addons',
+                lambda p: [unicode(guid) for (guid, data) in p['active_addons'].items() if is_user_addon(guid, data)])
+            .withColumn('featured_addons',
+                lambda p: [unicode(guid) for (guid, data) in p['active_addons'].items() if data.is_featured])
+            .withColumn('whitelisted_addons',
+                lambda p: [unicode(guid) for (guid, data) in p['active_addons'].items() if is_whitelisted(guid, data))
+            .filter(lambda p: len(p['active_user_addons']) == len(p['active_featured_addons']))
+            .toDF(['client_id', 'active_addons', 'geo_city',
+                'subsession_length', 'locale', 'os', 'bookmark_count',
+                'tab_open_count', 'total_uri', 'unique_tlds',
+                'active_user_addons', 'featured_addons', 'whitelisted_adodns'])
 
 
 def get_addons_per_client(users_df, addon_whitelist, minimum_addons_count):
@@ -134,16 +178,28 @@ def get_donor_pools(users_df, clusters_df, num_donors, random_seed=None):
     # Get the specific number of donors for each cluster and drop the
     # predicted cluster number information.
     current_sample_size = donor_df.count()
+
+    sample_pcnt = float(num_donors) / current_sample_size
+    # TODO: Adjust the sample_size computation so that the 
+    # value of num_donors is scaled such that the sample percentage
+    # approaches 0.12 so that we get ~1000 rows in donor_pool_df
+
+    print ("==" * 20)
+    print ("Num donors: %d" % num_donors)
+    print ("Current sampling size: %d" % current_sample_size)
+    print ("Sample percent: %0.2f" % sample_pcnt)
+    print ("==" * 20)
+
     donor_pool_df = (
         donor_df
-        .sample(False, float(num_donors) / current_sample_size, **sampling_kwargs)
+        .sample(False, sample_pcnt, **sampling_kwargs)
     )
     return clusters, donor_pool_df
 
 
 def get_donors(spark, num_clusters, num_donors, addon_whitelist, random_seed=None):
     # Get the data for the potential add-on donors.
-    users_sample = get_samples(spark)
+    users_sample = get_samples(spark, addon_whitelist)
     # Get add-ons from selected users and make sure they are
     # useful for making a recommendation.
     addons_df = get_addons_per_client(users_sample, addon_whitelist, 2)
@@ -298,13 +354,15 @@ def get_lr_curves(spark, features_df, cluster_ids, kernel_bandwidth,
 
 @click.command()
 @click.option('--date', required=True)
-@click.option('--bucket', default='telemetry-parquet')
-@click.option('--prefix', default='taar/similarity/')
-@click.option('--num_clusters', default=20)
-@click.option('--num_donors', default=1000)
-@click.option('--kernel_bandwidth', default=0.35)
-@click.option('--num_pdf_points', default=1000)
-def main(date, bucket, prefix, num_clusters, num_donors, kernel_bandwidth, num_pdf_points):
+@click.option('--bucket', default='telemetry-parquet', show_default=True)
+@click.option('--prefix', default='taar/similarity/', show_default=True)
+@click.option('--num_clusters', default=20, show_default=True)
+@click.option('--num_donors', default=1000, show_default=True)
+@click.option('--kernel_bandwidth', default=0.35, show_default=True)
+@click.option('--num_pdf_points', default=1000, show_default=True)
+@click.option('--whitelist', default=WHITELIST.BASIC, show_default=True)
+def main(date, bucket, prefix, num_clusters, num_donors,
+         kernel_bandwidth, num_pdf_points, whitelist):
     spark = (SparkSession
              .builder
              .appName("taar_similarity")
@@ -316,7 +374,7 @@ def main(date, bucket, prefix, num_clusters, num_donors, kernel_bandwidth, num_p
         num_donors = 100
 
     logger.info("Loading the AMO whitelist...")
-    whitelist = load_amo_external_whitelist()
+    whitelist = load_amo_external_whitelist(whitelist)
 
     logger.info("Computing the list of donors...")
 

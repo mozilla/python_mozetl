@@ -18,7 +18,20 @@ logger = logging.getLogger(__name__)
 AMO_DUMP_BUCKET = 'telemetry-parquet'
 AMO_DUMP_KEY = 'telemetry-ml/addon_recommender/addons_database.json'
 
-AMO_WHITELIST_KEY = 'telemetry-ml/addon_recommender/whitelist_addons_database.json'
+
+##################
+# Multiple valid whitelists that are available
+class WHITELIST:
+    BASIC = 'basic'
+    FEATURED = 'featured'
+    FEATURED_BASIC = 'featured_basic'
+
+    def __getitem__(self, key):
+        key_map = {
+            self.BASIC: 'telemetry-ml/addon_recommender/whitelist_addons_database.json',
+            self.FEATURED: 'telemetry-ml/addon_recommender/featured_addons_database.json',
+            self.FEATURED_BASIC: 'telemetry-ml/addon_recommender/featured_whitelist_addons_database.json'}
+        return key_map[key]
 
 
 @contextlib.contextmanager
@@ -90,7 +103,7 @@ def store_json_to_s3(json_data, base_filename, date, prefix, bucket):
         write_to_s3(FULL_FILENAME, JSON_FILENAME, prefix, bucket)
 
 
-def load_amo_external_whitelist():
+def load_amo_external_whitelist(whitelist_key=WHITELIST.BASIC):
     """ Download and parse the AMO add-on whitelist.
 
     :raises RuntimeError: the AMO whitelist file cannot be downloaded or contains
@@ -101,7 +114,7 @@ def load_amo_external_whitelist():
     try:
         # Load the most current AMO dump JSON resource.
         s3 = boto3.client('s3')
-        s3_contents = s3.get_object(Bucket=AMO_DUMP_BUCKET, Key=AMO_WHITELIST_KEY)
+        s3_contents = s3.get_object(Bucket=AMO_DUMP_BUCKET, Key=WHITELIST()[whitelist_key])
         amo_dump = json.loads(s3_contents['Body'].read())
     except ClientError:
         logger.exception("Failed to download from S3", extra={
