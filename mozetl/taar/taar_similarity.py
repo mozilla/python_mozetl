@@ -40,13 +40,10 @@ def get_samples(spark, longitudinal_override):
 
     if longitudinal_override:
         df = spark.read.parquet(longitudinal_override)
-        df.registerDataFrameAsTable(df, "taar_longitudinal")
-    else:
-        df = spark.sql("SELECT * FROM longitudinal")
-        df.registerDataFrameAsTable(df, "taar_longitudinal")
+        df.createOrReplaceTempView("longitudinal")
 
     return (
-        spark.sql("SELECT * FROM taar_longitudinal")
+        spark.sql("SELECT * FROM longitudinal")
         .where("active_addons IS NOT null")
         .where("size(active_addons[0]) > 2")
         .where("size(active_addons[0]) < 100")
@@ -154,7 +151,7 @@ def get_donor_pools(users_df, clusters_df, num_donors, random_seed=None):
 
 def get_donors(spark, num_clusters, num_donors, addon_whitelist, longitudinal_override, random_seed=None):
     # Get the data for the potential add-on donors.
-    users_sample = get_samples(spark, longitudinal_override)
+    users_sample = get_samples(spark, longitudinal_override).persist()
     # Get add-ons from selected users and make sure they are
     # useful for making a recommendation.
     addons_df = get_addons_per_client(users_sample, addon_whitelist, 2)
