@@ -32,17 +32,17 @@ def get_addons(spark, longitudinal_override):
     """
     if longitudinal_override:
         df = spark.read.parquet(longitudinal_override)
-        df.registerDataFrameAsTable(df, "taar_longitudinal")
-    else:
-        df = spark.sql("SELECT * FROM longitudinal")
-        df.registerDataFrameAsTable(df, "taar_longitudinal")
+        df.createOrReplaceTempView("longitudinal")
+
+    count = spark.sql("SELECT client_id from longitudinal").count()
+    print("Longitudinal dataset has {} rows".format(count))
 
     return spark.sql("""
         WITH sample AS (
         SELECT client_id,
         settings[0].locale AS locality,
         EXPLODE(active_addons[0])
-        FROM taar_longitudinal
+        FROM longitudinal
         WHERE normalized_channel='release'
           AND build IS NOT NULL
           AND build[0].application_name='Firefox'
