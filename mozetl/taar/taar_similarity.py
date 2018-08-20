@@ -33,12 +33,20 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def get_samples(spark):
+def get_samples(spark, longitudinal_override):
     """ Get a DataFrame with a valid set of sample to base the next
     processing on.
     """
+
+    if longitudinal_override:
+        df = spark.read.parquet(longitudinal_override)
+        df.registerDataFrameAsTable(df, "taar_longitudinal")
+    else:
+        df = spark.sql("SELECT * FROM longitudinal")
+        df.registerDataFrameAsTable(df, "taar_longitudinal")
+
     return (
-        spark.sql("SELECT * FROM longitudinal")
+        spark.sql("SELECT * FROM taar_longitudinal")
         .where("active_addons IS NOT null")
         .where("size(active_addons[0]) > 2")
         .where("size(active_addons[0]) < 100")
@@ -144,9 +152,9 @@ def get_donor_pools(users_df, clusters_df, num_donors, random_seed=None):
     return clusters, donor_pool_df
 
 
-def get_donors(spark, num_clusters, num_donors, addon_whitelist, random_seed=None):
+def get_donors(spark, num_clusters, num_donors, addon_whitelist, longitudinal_override, random_seed=None):
     # Get the data for the potential add-on donors.
-    users_sample = get_samples(spark)
+    users_sample = get_samples(spark, longitudinal_override)
     # Get add-ons from selected users and make sure they are
     # useful for making a recommendation.
     addons_df = get_addons_per_client(users_sample, addon_whitelist, 2)
@@ -307,7 +315,8 @@ def get_lr_curves(spark, features_df, cluster_ids, kernel_bandwidth,
 @click.option('--num_donors', default=1000)
 @click.option('--kernel_bandwidth', default=0.35)
 @click.option('--num_pdf_points', default=1000)
-def main(date, bucket, prefix, num_clusters, num_donors, kernel_bandwidth, num_pdf_points):
+@click.option('--longitudinal_override', default=None)
+def main(date, bucket, prefix, num_clusters, num_donors, kernel_bandwidth, num_pdf_points, longitudinal_override):
     spark = (SparkSession
              .builder
              .appName("taar_similarity")
@@ -324,7 +333,7 @@ def main(date, bucket, prefix, num_clusters, num_donors, kernel_bandwidth, num_p
     logger.info("Computing the list of donors...")
 
     # Compute the donors clusters and the LR curves.
-    cluster_ids, donors_df = get_donors(spark, num_clusters, num_donors, whitelist)
+    cluster_ids, donors_df = get_donors(spark, num_clusters, num_donors, whitelist, longitudinal_override)
     lr_curves = get_lr_curves(spark, donors_df, cluster_ids, kernel_bandwidth,
                               num_pdf_points)
 
