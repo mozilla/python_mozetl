@@ -142,7 +142,7 @@ def generate_dictionary(spark, num_addons, longitudinal_override):
     amo_whitelist = load_amo_curated_whitelist()
 
     # Filter to include only addons present in AMO whitelist.
-    addon_df_filtered = addon_df.where(col("addon_key").isin(amo_whitelist))
+    addon_df_filtered = addon_df.where(col("addon_key").isin(amo_whitelist)).persist()
 
     # Make sure not to include addons from very small locales.
     locale_pop_threshold = compute_threshold(addon_df_filtered)
