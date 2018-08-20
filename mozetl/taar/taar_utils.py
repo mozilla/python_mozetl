@@ -126,6 +126,6 @@ def load_amo_curated_whitelist():
     Return the curated whitelist of addon GUIDs
     """
     whitelist = read_from_s3('only_guids_top_200.json',
-                             'telemetry-ml/addon_recommender/', 
+                             'telemetry-ml/addon_recommender/',
                              'telemetry-parquet')
     return list(whitelist)

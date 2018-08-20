@@ -22,7 +22,6 @@ from pyspark.mllib.stat import KernelDensity
 from scipy.spatial import distance
 from taar_utils import store_json_to_s3
 from taar_utils import load_amo_curated_whitelist
-from taar_utils import read_from_s3
 
 # Define the set of feature names to be used in the donor computations.
 CATEGORICAL_FEATURES = ["geo_city", "locale", "os"]
