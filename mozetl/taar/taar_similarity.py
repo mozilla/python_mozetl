@@ -154,9 +154,9 @@ def get_donors(spark, num_clusters, num_donors, addon_whitelist, longitudinal_ov
     users_sample = get_samples(spark, longitudinal_override).persist()
     # Get add-ons from selected users and make sure they are
     # useful for making a recommendation.
-    addons_df = get_addons_per_client(users_sample, addon_whitelist, 2)
+    addons_df = get_addons_per_client(users_sample, addon_whitelist, 2).persist()
     # Perform clustering by using the add-on info.
-    clusters = compute_clusters(addons_df, num_clusters, random_seed)
+    clusters = compute_clusters(addons_df, num_clusters, random_seed).persist()
     # Sample representative ("donors") users from each cluster.
     cluster_ids, donors_df =\
         get_donor_pools(users_sample, clusters, num_donors, random_seed)
