@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 LOCALE_FILE_NAME = 'top10_dict'
 
 
-def get_addons(spark):
+def get_addons(spark, longitudinal_override):
     """ Longitudinal sample is selected and freshest ping chosen per client.
     Only Firefox release clients are considered.
     Columns are exploded (over addon keys)  to include locale of each addon
@@ -30,12 +30,19 @@ def get_addons(spark):
     are filtered out.
     Sorting by addon-installations and grouped by locale.
     """
+    if longitudinal_override:
+        df = spark.read.parquet(longitudinal_override)
+        df.registerDataFrameAsTable(df, "taar_longitudinal")
+    else:
+        df = spark.sql("SELECT * FROM longitudinal")
+        df.registerDataFrameAsTable(df, "taar_longitudinal")
+
     return spark.sql("""
         WITH sample AS (
         SELECT client_id,
         settings[0].locale AS locality,
         EXPLODE(active_addons[0])
-        FROM longitudinal
+        FROM taar_longitudinal
         WHERE normalized_channel='release'
           AND build IS NOT NULL
           AND build[0].application_name='Firefox'
@@ -124,12 +131,12 @@ def transform(addon_df, threshold, num_addons):
     return top10_per
 
 
-def generate_dictionary(spark, num_addons):
+def generate_dictionary(spark, num_addons, longitudinal_override):
     """ Wrap the dictionary generation functions in an
     easily testable way.
     """
     # Execute spark.SQL query to get fresh addons from longitudinal telemetry data.
-    addon_df = get_addons(spark)
+    addon_df = get_addons(spark, longitudinal_override)
 
     # Load external whitelist based on AMO data.
     amo_whitelist = load_amo_curated_whitelist()
@@ -147,7 +154,8 @@ def generate_dictionary(spark, num_addons):
 @click.option('--bucket', default='telemetry-private-analysis-2')
 @click.option('--prefix', default='taar/locale/')
 @click.option('--num_addons', default=10)
-def main(date, bucket, prefix, num_addons):
+@click.option('--longitudinal_override', default=None)
+def main(date, bucket, prefix, num_addons, longitudinal_override):
     spark = (SparkSession
              .builder
              .appName("taar_locale")
@@ -155,7 +163,7 @@ def main(date, bucket, prefix, num_addons):
              .getOrCreate())
 
     logger.info("Processing top N addons per locale")
-    locale_dict = generate_dictionary(spark, num_addons)
+    locale_dict = generate_dictionary(spark, num_addons, longitudinal_override)
     store_json_to_s3(json.dumps(locale_dict, indent=2), LOCALE_FILE_NAME,
                      date, prefix, bucket)
 
