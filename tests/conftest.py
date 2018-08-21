@@ -14,7 +14,6 @@ def spark():
     # Set server timezone at UTC+0
     spark.conf.set("spark.sql.session.timeZone", "UTC")
     yield spark
-    spark.stop()
 
 
 @pytest.fixture
