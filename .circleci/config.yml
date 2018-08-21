@@ -24,15 +24,12 @@ install_dependencies: &install_dependencies
     pip install tox coverage
 
 save_cache_settings: &save_cache_settings
-  key: python_mozetl-{{ .Branch }}-{{ .Environment.CIRCLE_WORKFLOW_ID }}
+  key: v1-python_mozetl-{{ checksum "setup.py" }}
   paths:
     - ~/python_mozetl/.tox
 
 restore_cache_settings: &restore_cache_settings
-  keys:
-    - python_mozetl-{{ .Branch }}-{{ .Environment.CIRCLE_WORKFLOW_ID }}
-    - python_mozetl-{{ .Branch }}
-    - python_mozetl-
+  key: v1-python_mozetl-{{ checksum "setup.py" }}
 
 early_return_for_skip_tests: &early_return_for_skip_tests
   name: Early return if the latest non-merge commit message contains "[skip-tests]"
