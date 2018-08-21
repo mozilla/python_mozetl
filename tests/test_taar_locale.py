@@ -142,7 +142,7 @@ def test_generate_dictionary(spark, multi_locales_df):
     conn.create_bucket(Bucket=taar_utils.AMO_DUMP_BUCKET)
 
     # Store the data in the mocked bucket.
-    conn.Object(taar_utils.AMO_DUMP_BUCKET, key=taar_utils.AMO_WHITELIST_KEY)\
+    conn.Object(taar_utils.AMO_DUMP_BUCKET, key=taar_utils.AMO_CURATED_WHITELIST_KEY)\
         .put(Body=json.dumps(FAKE_AMO_DUMP))
 
     multi_locales_df.createOrReplaceTempView("longitudinal")
