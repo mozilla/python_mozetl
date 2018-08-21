@@ -19,6 +19,7 @@ AMO_DUMP_BUCKET = 'telemetry-parquet'
 AMO_DUMP_KEY = 'telemetry-ml/addon_recommender/addons_database.json'
 
 AMO_WHITELIST_KEY = 'telemetry-ml/addon_recommender/whitelist_addons_database.json'
+AMO_CURATED_WHITELIST_KEY = 'telemetry-ml/addon_recommender/only_guids_top_200.json'
 
 
 @contextlib.contextmanager
