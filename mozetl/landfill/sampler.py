@@ -16,6 +16,7 @@ v3 - Retain whitelisted metadata fields and simplify schema
 
 import re
 
+import click
 from moztelemetry.dataset import Dataset
 from pyspark.sql import Window, SparkSession
 from pyspark.sql.functions import col, row_number
@@ -69,7 +70,7 @@ def _process(message):
     else:
         doc_type = path[GENERIC_DOC_TYPE]
         doc_version = path[GENERIC_DOC_VER]
-        doc_id = path[GENERIC_DOC_ID],
+        doc_id = path[GENERIC_DOC_ID]
 
     return namespace, doc_type, doc_version, doc_id, meta, message.get('content')
 
@@ -122,12 +123,7 @@ def save(submission_date, bucket, prefix, df):
 @click.option('--sample', type=float, default=0.01)
 def main(bucket, prefix, submission_date, sample):
     """Sample documents from landfill."""
-    spark = (
-        SparkSession
-        .builder
-        .appName("churn")
-        .getOrCreate()
-    )
+    spark = SparkSession.builder.getOrCreate()
     rdd = extract(spark.sparkContext, submission_date, sample=sample)
     df = transform(rdd)
     save(submission_date, bucket, prefix, df)
