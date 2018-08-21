@@ -103,4 +103,30 @@ class DataFrameFactory:
 
 @pytest.fixture()
 def dataframe_factory(spark):
+    """A factory object for generating test datasets.
+
+    This fixture provides methods for generating data from a base document
+    and a list of columns to modify.
+
+    Example usage:
+
+        from functools import partial
+        import pytest
+
+        @pytest.fixture
+        def base_document():
+            return {"uid": 1}
+
+        @pytest.fixture
+        def generate_data(dataframe_factory, base_document):
+            return partial(dataframe_factory.create_dataframe, base=base_document)
+
+        def test_3_unique_uids(generate_data):
+            data = generate_data([
+                {"uid": 1},
+                {"uid": 2},
+                {"uid": 3}
+            ])
+            assert data.count() == 3
+    """
     return DataFrameFactory(spark)
