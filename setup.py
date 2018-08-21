@@ -29,7 +29,7 @@ setup(
         'click==6.7',
         'click_datetime==0.2',
         'numpy==1.13.3',
-        'pyspark==2.2.0.post0',
+        'pyspark==2.3.1',
         'pyspark_hyperloglog==2.1.1',
         'python_moztelemetry==0.8.9',
         'requests-toolbelt==0.8.0',
