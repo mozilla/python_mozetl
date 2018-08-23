@@ -181,6 +181,10 @@ def get_donors(spark,
     cluster_ids, donors_df =\
         get_donor_pools(users_sample, clusters, num_donors, random_seed)
 
+    logger.info("donors_df count: %d" % donors_df.count())
+    for obj in donors_df.take(5):
+        logger.debug(str(obj))
+
     # Finally, get the feature vectors for users that represent
     # each cluster. Since the "active_addons" in "users_sample"
     # are in a |MapType| and contain system add-ons as well, just
