@@ -148,14 +148,35 @@ def get_donor_pools(users_df, clusters_df, num_donors, random_seed=None):
     return clusters, donor_pool_df
 
 
-def get_donors(spark, num_clusters, num_donors, addon_whitelist, longitudinal_override, random_seed=None):
+def get_donors(spark,
+               num_clusters,
+               num_donors,
+               addon_whitelist,
+               min_addons,
+               longitudinal_override,
+               random_seed=None):
     # Get the data for the potential add-on donors.
     users_sample = get_samples(spark, longitudinal_override).persist()
+
+    logger.info("users_sample df count: %d" % users_sample.count())
+    for obj in users_sample.take(5):
+        logger.debug(str(obj))
+
     # Get add-ons from selected users and make sure they are
     # useful for making a recommendation.
-    addons_df = get_addons_per_client(users_sample, addon_whitelist, 2).persist()
+    addons_df = get_addons_per_client(users_sample, addon_whitelist, min_addons).persist()
+
+    logger.info("addons_df count: %d" % addons_df.count())
+    for obj in addons_df.take(5):
+        logger.debug(str(obj))
+
     # Perform clustering by using the add-on info.
     clusters = compute_clusters(addons_df, num_clusters, random_seed).persist()
+
+    logger.info("clusters count: %d" % clusters.count())
+    for obj in clusters.take(5):
+        logger.debug(str(obj))
+
     # Sample representative ("donors") users from each cluster.
     cluster_ids, donors_df =\
         get_donor_pools(users_sample, clusters, num_donors, random_seed)
@@ -309,10 +330,19 @@ def get_lr_curves(spark, features_df, cluster_ids, kernel_bandwidth,
 @click.option('--prefix', default='taar/similarity/')
 @click.option('--num_clusters', default=20)
 @click.option('--num_donors', default=1000)
+@click.option('--min_addons', default=4)
 @click.option('--kernel_bandwidth', default=0.35)
 @click.option('--num_pdf_points', default=1000)
 @click.option('--longitudinal_override', default=None)
-def main(date, bucket, prefix, num_clusters, num_donors, kernel_bandwidth, num_pdf_points, longitudinal_override):
+def main(date,
+         bucket,
+         prefix,
+         num_clusters,
+         num_donors,
+         min_addons,
+         kernel_bandwidth,
+         num_pdf_points,
+         longitudinal_override):
     spark = (SparkSession
              .builder
              .appName("taar_similarity")
@@ -329,7 +359,12 @@ def main(date, bucket, prefix, num_clusters, num_donors, kernel_bandwidth, num_p
     logger.info("Computing the list of donors...")
 
     # Compute the donors clusters and the LR curves.
-    cluster_ids, donors_df = get_donors(spark, num_clusters, num_donors, whitelist, longitudinal_override)
+    cluster_ids, donors_df = get_donors(spark,
+                                        num_clusters,
+                                        num_donors,
+                                        whitelist,
+                                        min_addons,
+                                        longitudinal_override)
     lr_curves = get_lr_curves(spark, donors_df, cluster_ids, kernel_bandwidth,
                               num_pdf_points)
 
