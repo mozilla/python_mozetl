@@ -6,6 +6,7 @@ from mozetl.engagement.churn import job as churn_job
 from mozetl.engagement.churn_to_csv import job as churn_to_csv_job
 from mozetl.engagement.retention import job as retention_job
 from mozetl.experimentsdaily import rollup as experimentsdaily
+from mozetl.landfill import sampler as landfill_sampler
 from mozetl.maudau import maudau
 from mozetl.search import search_rollups
 from mozetl.search.aggregates import (
@@ -43,6 +44,7 @@ entry_point.add_command(taar_lite_guidranking.main, "taar_lite_guidranking")
 entry_point.add_command(taar_amowhitelist.main, "taar_amowhitelist")
 entry_point.add_command(addon_aggregates.main, "addon_aggregates")
 entry_point.add_command(maudau.main, "engagement_ratio")
+entry_point.add_command(landfill_sampler.main, "landfill_sampler")
 
 # Kept for backwards compatibility
 entry_point.add_command(search_aggregates_click, "search_dashboard")
