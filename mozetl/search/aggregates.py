@@ -209,11 +209,13 @@ def add_derived_columns(exploded_search_counts):
     when_expr = (
         when(col('source').isin(SEARCH_SOURCE_WHITELIST), 'sap')
         .otherwise(
-            _generate_when_expr([('in-content:sap:', 'tagged-sap'),
-                                 ('in-content:sap-follow-on:', 'tagged-follow-on'),
-                                 ('in-content:organic:', 'organic'),
-                                 ('sap:', 'tagged-sap'),
-                                 ('follow-on:', 'tagged-follow-on')])
+            when(col('source').isNull(), 'sap').otherwise(
+                _generate_when_expr([('in-content:sap:', 'tagged-sap'),
+                                     ('in-content:sap-follow-on:', 'tagged-follow-on'),
+                                     ('in-content:organic:', 'organic'),
+                                     ('sap:', 'tagged-sap'),
+                                     ('follow-on:', 'tagged-follow-on')])
+            )
         )
     )
 

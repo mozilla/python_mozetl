@@ -355,8 +355,8 @@ def expected_search_clients_daily_data(define_dataframe_factory):
         {'engine': 'yahoo'},
         {
             'client_id': 'c',
-            'unknown': 0,
-            'sap': None,
+            'unknown': None,
+            'sap': 0,
             'tagged-sap': None,
             'tagged-follow-on': None,
             'tagged_sap': None,
