@@ -30,7 +30,7 @@ DEFAULT_SAVE_MODE = 'error'
 MAX_CLIENT_SEARCH_COUNT = 10000
 
 SEARCH_AGGREGATES_VERSION = 4
-SEARCH_CLIENTS_DAILY_VERSION = 3
+SEARCH_CLIENTS_DAILY_VERSION = 4
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
