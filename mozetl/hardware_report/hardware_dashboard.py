@@ -50,16 +50,22 @@ def main(start_date, end_date, bucket):
     # Concat the json files into the output.
     print "Joining JSON files..."
 
-    read_files = glob.glob("*.json")
+    new_files = set(report.keys())
+    read_files = set(glob.glob("*.json"))
     consolidated_json = []
 
     with open("hwsurvey-weekly.json", "w+") as report_json:
         # If we attempt to load invalid JSON from the assembled file,
-        # the next function throws
-        for f in read_files:
+        # the next function throws. We process new files first, which
+        # in effect overwrites data on reruns.
+        for f in list(new_files) + list(read_files - new_files):
             with open(f, 'r+') as in_file:
-                consolidated_json += json.load(in_file)
+                for data in json.load(in_file):
+                    if data['date'] not in [j['date'] for j in consolidated_json]:
+                        consolidated_json.append(data)
+
         report_json.write(json.dumps(consolidated_json, indent=2))
+
     # Store the new state to S3. Since S3 doesn't support symlinks, make
     # two copies of the file: one will always contain the latest data,
     # the other for archiving.
