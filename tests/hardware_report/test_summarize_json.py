@@ -296,6 +296,21 @@ def test_validate_finalized_data():
            "The validator must not fail when the reported data is correct")
 
 
+def test_get_longitudinal_version_weekday():
+    date = datetime.strptime("20180913", "%Y%m%d")
+    assert summarize_json.get_longitudinal_version(date) == "longitudinal_v20180915"
+
+
+def test_get_longitudinal_version_sunday():
+    date = datetime.strptime("20180909", "%Y%m%d")
+    assert summarize_json.get_longitudinal_version(date) == "longitudinal_v20180915"
+
+
+def test_get_longitudinal_version_saturday():
+    date = datetime.strptime("20180908", "%Y%m%d")
+    assert summarize_json.get_longitudinal_version(date) == "longitudinal_v20180908"
+
+
 def test_generate_report():
     """Test generate_report function on sample data."""
     spark = (SparkSession
@@ -304,7 +319,7 @@ def test_generate_report():
              .getOrCreate())
 
     df = spark.read.json('tests/longitudinal_schema.json')
-    df.createOrReplaceTempView('longitudinal')
+    df.createOrReplaceTempView('longitudinal_v20160709')
 
     expected = {
         "cpuCores_4": 1.0,

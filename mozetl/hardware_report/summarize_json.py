@@ -577,6 +577,12 @@ def store_new_state(source_file_name, s3_dest_file_name, bucket):
     transfer.upload_file(source_file_name, bucket, key_path)
 
 
+def get_longitudinal_version(date):
+    start_of_week = moz_std.snap_to_beginning_of_week(date, "Sunday")
+    next_week = start_of_week + dt.timedelta(days=6)
+    return "longitudinal_v" + next_week.strftime("%Y%m%d")
+
+
 def generate_report(start_date, end_date, spark):
     """Generate the hardware survey dataset for the reference timeframe.
 
@@ -603,32 +609,6 @@ def generate_report(start_date, end_date, spark):
             end_date is not None and start_date is not None) else last_week[1]
     )
 
-    # Connect to the longitudinal dataset.
-    sqlQuery = """
-               SELECT
-                  build,
-                  client_id,
-                  active_plugins,
-                  system_os,
-                  submission_date,
-                  system,
-                  system_gfx,
-                  system_cpu,
-                  normalized_channel
-               FROM
-                  longitudinal
-               WHERE
-                  normalized_channel = 'release'
-               AND
-                  build is not null and build[0].application_name = 'Firefox'
-               """
-
-    frame = spark.sql(sqlQuery)
-
-    # The number of all the fetched records (including inactive and broken).
-    records_count = frame.count()
-    logger.info("Total record count: {}".format(records_count))
-
     # Split the submission period in chunks, so we don't run out of resources while aggregating if
     # we want to backfill.
     chunk_start = date_range[0]
@@ -638,6 +618,33 @@ def generate_report(start_date, end_date, spark):
 
     while chunk_start < date_range[1]:
         chunk_end = chunk_start + dt.timedelta(days=6)
+        longitudinal_version = get_longitudinal_version(chunk_end)
+
+        sqlQuery = """
+                   SELECT
+                      build,
+                      client_id,
+                      active_plugins,
+                      system_os,
+                      submission_date,
+                      system,
+                      system_gfx,
+                      system_cpu,
+                      normalized_channel
+                   FROM
+                      {}
+                   WHERE
+                      normalized_channel = 'release'
+                   AND
+                      build is not null and build[0].application_name = 'Firefox'
+                   """.format(longitudinal_version)
+
+        frame = spark.sql(sqlQuery)
+
+        # The number of all the fetched records (including inactive and broken).
+        records_count = frame.count()
+        logger.info("Total record count for {}: {}".format(
+          chunk_start.strftime("%Y%m%d"), records_count))
 
         # Fetch the data we need.
         data = frame.rdd.map(
