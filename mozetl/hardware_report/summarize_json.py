@@ -240,8 +240,12 @@ def get_latest_valid_per_client(entry, time_start, time_end):
     """
     latest_entry = None
     for index, pkt_date in enumerate(entry["submission_date"]):
-        sub_date = dt.datetime.strptime(
-            pkt_date, "%Y-%m-%dT%H:%M:%S.%fZ").date()
+        try:
+            sub_date = dt.datetime.strptime(
+                pkt_date, "%Y-%m-%dT%H:%M:%S.%fZ").date()
+        except ValueError:
+            sub_date = dt.datetime.strptime(
+                pkt_date, "%Y-%m-%dT%H:%M:%SZ").date()
 
         # The data is in descending order, the most recent ping comes first.
         # The first item less or equal than the time_end date is our thing.
