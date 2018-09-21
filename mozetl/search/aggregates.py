@@ -104,7 +104,7 @@ def search_aggregates(main_summary):
             'submission_date',
             'default_search_engine',
         ],
-        [expr("hll_cardinality(hll_merge(hll)) as client_count")]
+        [expr("hll_merge(hll) as client_count_hll")]
     ).where(col('engine').isNotNull())
 
 

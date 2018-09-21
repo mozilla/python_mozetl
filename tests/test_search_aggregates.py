@@ -274,7 +274,6 @@ def expected_search_dashboard_data(define_dataframe_factory):
         ('sap', 4, LongType(), True),
         ('organic', None, LongType(), True),
         ('unknown', None, LongType(), True),
-        ('client_count', 1, LongType(), True),
     ]))
 
     return factory([
@@ -410,6 +409,11 @@ def test_basic_aggregation(main_summary,
                            expected_search_dashboard_data,
                            df_equals):
     actual = search_aggregates(main_summary)
+    # it is too complicated to test the contents of the client count hll
+    # (it's essentially an inscrutable binary blob), so just verify it's there
+    # and of the appropriate type, then drop it to do the actual comparison
+    assert ('client_count_hll', 'binary') in actual.dtypes
+    actual = actual.drop('client_count_hll')
     assert df_equals(actual, expected_search_dashboard_data)
 
 
