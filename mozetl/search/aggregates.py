@@ -32,9 +32,6 @@ MAX_CLIENT_SEARCH_COUNT = 10000
 SEARCH_AGGREGATES_VERSION = 4
 SEARCH_CLIENTS_DAILY_VERSION = 4
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
 
 def agg_first(col):
     return first(col).alias(col)
@@ -231,6 +228,9 @@ def generate_rollups(submission_date, output_bucket, output_prefix,
                      input_prefix=DEFAULT_INPUT_PREFIX,
                      save_mode=DEFAULT_SAVE_MODE, orderBy=[]):
     """Load main_summary, apply transform_func, and write to S3"""
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger(__name__)
+
     logger.info('Running the {0} ETL job...'.format(transform_func.__name__))
     start = datetime.datetime.now()
     spark = (
