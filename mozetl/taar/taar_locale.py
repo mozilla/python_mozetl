@@ -45,6 +45,7 @@ def get_addons(spark):
         SELECT locality, key AS addon_key FROM sample
         WHERE value['blocklisted'] = FALSE -- not blocklisted
           AND value['type'] = 'extension' -- nice webextensions only
+          AND value['foreign_install'] = FALSE  -- not sideloaded
           AND value['signed_state'] = 2 -- fully reviewed addons only
           AND value['user_disabled'] = FALSE -- active addons only get counted
           AND value['app_disabled'] = FALSE -- exclude compatibility disabled addons
