@@ -25,7 +25,6 @@ LOCALE_FILE_NAME = 'top10_dict'
 
 def get_addons(spark):
     """
-    Longitudinal sample is selected and freshest ping chosen per client.
     Only Firefox release clients are considered.
     Columns are exploded (over addon keys)  to include locale of each addon
     installation instance system addons, disabled addons, unsigned addons
@@ -37,26 +36,33 @@ def get_addons(spark):
     get_addons function.
     """
     return spark.sql("""
-        WITH sample AS (
-        SELECT client_id,
-        settings[0].locale AS locality,
-        EXPLODE(active_addons[0])
-        FROM longitudinal
-        WHERE normalized_channel='release'
-          AND build IS NOT NULL
-          AND build[0].application_name='Firefox'
+        WITH sample AS
+       (
+          SELECT
+            client_id,
+            locale AS locality,
+            EXPLODE(active_addons)
+          FROM
+            clients_daily
+          WHERE
+            channel='release' AND
+            app_name='Firefox'
         ),
-
         filtered_sample AS (
-        SELECT locality, key AS addon_key FROM sample
-        WHERE value['blocklisted'] = FALSE -- not blocklisted
-          AND value['type'] = 'extension' -- nice webextensions only
-          AND value['signed_state'] = 2 -- fully reviewed addons only
-          AND value['user_disabled'] = FALSE -- active addons only get counted
-          AND value['app_disabled'] = FALSE -- exclude compatibility disabled addons
-          AND value['is_system'] = FALSE -- exclude system addons
-          AND locality <> 'null'
-          AND key is not null
+          SELECT
+            locality,
+            col.addon_id as addon_key
+          FROM
+            sample
+          WHERE
+            col.blocklisted = FALSE -- not blocklisted
+            AND col.type = 'extension' -- nice webextensions only
+            AND col.signed_state = 2 -- fully reviewed addons only
+            AND col.user_disabled = FALSE -- active addons only get counted
+            AND col.app_disabled = FALSE -- exclude compatibility disabled addons
+            AND col.is_system = FALSE -- exclude system addons
+            AND locality <> 'null'
+            AND col.addon_id is not null
         ),
 
         country_addon_pairs AS (
@@ -66,7 +72,12 @@ def get_addons(spark):
         GROUP BY locality, addon_key
         )
 
-        SELECT * FROM country_addon_pairs
+        SELECT
+            pair_cnts,
+            addon_key,
+            locality
+        FROM
+            country_addon_pairs
         ORDER BY locality, pair_cnts DESC
     """)
 
