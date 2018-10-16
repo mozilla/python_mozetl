@@ -5,6 +5,7 @@ locale after filtering for good candidates (e.g. no unsigned, no disabled,
 ...) [1].
 
 [1] https://gist.github.com/mlopatka/46dddac9d063589275f06b0443fcc69d
+
 """
 
 import click
@@ -23,12 +24,17 @@ LOCALE_FILE_NAME = 'top10_dict'
 
 
 def get_addons(spark):
-    """ Longitudinal sample is selected and freshest ping chosen per client.
+    """
+    Longitudinal sample is selected and freshest ping chosen per client.
     Only Firefox release clients are considered.
     Columns are exploded (over addon keys)  to include locale of each addon
     installation instance system addons, disabled addons, unsigned addons
     are filtered out.
     Sorting by addon-installations and grouped by locale.
+
+    Note that the final result of this job does not include firefox
+    telemetry client ID so we do not need to post-process the data in the
+    get_addons function.
     """
     return spark.sql("""
         WITH sample AS (

@@ -33,6 +33,7 @@ import boto3
 from boto3.dynamodb.types import Binary as DynamoBinary
 import time
 import zlib
+from .taar_utils import hash_telemetry_id
 
 # We use the os and threading modules to generate a spark worker
 # specific identity:w
@@ -182,6 +183,17 @@ class DynamoReducer(object):
         self._table_name = table_name
         self._prod_iam_role = prod_iam_role
 
+    def hash_client_ids(self, data_tuple):
+        '''
+        # Clobber the client_id by using sha256 hashes encoded as hex
+        # Based on the js code in Fx
+
+        '''
+
+        for item in data_tuple[2]:
+            client_id = item['client_id']
+            item['client_id'] = hash_telemetry_id(client_id)
+
     def push_to_dynamo(self, data_tuple):
         """
         This connects to DynamoDB and pushes records in `item_list` into
@@ -190,10 +202,13 @@ class DynamoReducer(object):
         We accumulate a list of up to 50 elements long to allow debugging
         of write errors.
         """
-        # Transformt the data into something that DynamoDB will always
+        # Transform the data into something that DynamoDB will always
         # accept
         # Set TTL to 60 days from now
         ttl = int(time.time()) + 60*60*24*60
+
+        self.hash_client_ids(data_tuple)
+
         item_list = [{'client_id': item['client_id'],
                       'TTL': ttl,
                       'json_payload': DynamoBinary(
