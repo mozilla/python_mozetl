@@ -3,6 +3,7 @@
 # You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import contextlib
+import hashlib
 import json
 import logging
 import os.path
@@ -130,3 +131,12 @@ def load_amo_curated_whitelist():
                              'telemetry-ml/addon_recommender/',
                              'telemetry-parquet')
     return list(whitelist)
+
+
+def hash_telemetry_id(telemetry_id):
+    """
+        This hashing function is a reference implementation based on :
+            https://phabricator.services.mozilla.com/D8311
+
+    """
+    return hashlib.sha256(telemetry_id.encode('utf8')).hexdigest()
