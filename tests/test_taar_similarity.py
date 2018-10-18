@@ -13,68 +13,58 @@ from pyspark.sql.types import (
     LongType,
     BooleanType,
     ArrayType,
-    MapType,
     Row,
 )
 
-longitudinal_schema = StructType(
+clientsdaily_schema = StructType(
     [
         StructField("client_id", StringType(), True),
-        StructField("normalized_channel", StringType(), True),
-        StructField("geo_city", ArrayType(StringType(), True)),
-        StructField("subsession_length", ArrayType(LongType(), True)),
+        StructField("channel", StringType(), True),
+        StructField("city", StringType(), True),
+        StructField("subsession_hours_sum", LongType(), True),
         StructField("os", StringType(), True),
-        StructField(
-            "build",
-            ArrayType(
-                StructType([StructField("application_name", StringType(), True)]), True
-            ),
-            True,
-        ),
-        StructField(
-            "settings",
-            ArrayType(StructType([StructField("locale", StringType(), True)]), True),
-            True,
-        ),
+        StructField("app_name", StringType(), True),
+        StructField("locale", StringType(), True),
         StructField(
             "active_addons",
+            # active_addons is a list of dictionaries holding all
+            # metadata related to an addon
             ArrayType(
-                MapType(
-                    StringType(),
-                    StructType(
-                        [
-                            StructField("blocklisted", BooleanType(), True),
-                            StructField("type", StringType(), True),
-                            StructField("signed_state", LongType(), True),
-                            StructField("user_disabled", BooleanType(), True),
-                            StructField("app_disabled", BooleanType(), True),
-                            StructField("is_system", BooleanType(), True),
-                            StructField("foreign_install", BooleanType(), True),
-                        ]
-                    ),
-                    True,
+                StructType(
+                    [
+                        StructField("addon_id", StringType(), True),
+                        StructField("app_disabled", BooleanType(), True),
+                        StructField("blocklisted", BooleanType(), True),
+                        StructField("foreign_install", BooleanType(), True),
+                        StructField("has_binary_components", BooleanType(), True),
+                        StructField("install_day", LongType(), True),
+                        StructField("is_system", BooleanType(), True),
+                        StructField("is_web_extension", BooleanType(), True),
+                        StructField("multiprocess_compatible", BooleanType(), True),
+                        StructField("name", StringType(), True),
+                        StructField("scope", LongType(), True),
+                        StructField("signed_state", LongType(), True),
+                        StructField("type", StringType(), True),
+                        StructField("update_day", LongType(), True),
+                        StructField("user_disabled", BooleanType(), True),
+                        StructField("version", StringType(), True),
+                    ]
                 ),
                 True,
             ),
         ),
+        StructField("places_bookmarks_count_mean", LongType(), True),
         StructField(
-            "places_bookmarks_count",
-            ArrayType(StructType([StructField("sum", LongType(), True)]), True),
+            "scalar_parent_browser_engagement_tab_open_event_count_sum",
+            LongType(),
             True,
         ),
         StructField(
-            "scalar_parent_browser_engagement_tab_open_event_count",
-            ArrayType(StructType([StructField("value", LongType(), True)]), True),
-            True,
+            "scalar_parent_browser_engagement_total_uri_count_sum", LongType(), True
         ),
         StructField(
-            "scalar_parent_browser_engagement_total_uri_count",
-            ArrayType(StructType([StructField("value", LongType(), True)]), True),
-            True,
-        ),
-        StructField(
-            "scalar_parent_browser_engagement_unique_domains_count",
-            ArrayType(StructType([StructField("value", LongType(), True)]), True),
+            "scalar_parent_browser_engagement_unique_domains_count_mean",
+            LongType(),
             True,
         ),
     ]
@@ -82,17 +72,17 @@ longitudinal_schema = StructType(
 
 default_sample = {
     "client_id": "client-id",
-    "normalized_channel": "release",
-    "geo_city": ["Boston"],
-    "subsession_length": [10],
+    "channel": "release",
+    "city": "Boston",
+    "subsession_hours_sum": 10,
     "os": "Windows",
-    "build": [{"application_name": "Firefox"}],
-    "settings": [{"locale": "en-US"}],
+    "app_name": "Firefox",
+    "locale": "en-US",
     "active_addons": [],
-    "places_bookmarks_count": [{"sum": 1}],
-    "scalar_parent_browser_engagement_tab_open_event_count": [{"value": 2}],
-    "scalar_parent_browser_engagement_total_uri_count": [{"value": 3}],
-    "scalar_parent_browser_engagement_unique_domains_count": [{"value": 4}],
+    "places_bookmarks_count_mean": 1,
+    "scalar_parent_browser_engagement_tab_open_event_count_sum": 2,
+    "scalar_parent_browser_engagement_total_uri_count_sum": 3,
+    "scalar_parent_browser_engagement_unique_domains_count_mean": 4,
 }
 
 
@@ -101,7 +91,7 @@ def generate_data(dataframe_factory):
     return functools.partial(
         dataframe_factory.create_dataframe,
         base=default_sample,
-        schema=longitudinal_schema,
+        schema=clientsdaily_schema,
     )
 
 
@@ -113,28 +103,28 @@ def multi_clusters_df(generate_data):
         {
             "count": 50,
             "variation": {
-                "geo_city": ["Rome"],
-                "subsession_length": [3785],
+                "city": "Rome",
+                "subsession_hours_sum": 3785,
                 "os": "Linux",
-                "settings": [{"locale": "it-IT"}],
+                "locale": "it-IT",
             },
         },
         {
             "count": 50,
             "variation": {
-                "geo_city": ["London"],
-                "subsession_length": [1107],
+                "city": "London",
+                "subsession_hours_sum": 1107,
                 "os": "MacOS",
-                "settings": [{"locale": "en-UK"}],
+                "locale": "en-UK",
             },
         },
         {
             "count": 50,
             "variation": {
-                "geo_city": ["Boston"],
-                "subsession_length": [201507],
+                "city": "Boston",
+                "subsession_hours_sum": 201507,
                 "os": "Windows",
-                "settings": [{"locale": "en-US"}],
+                "locale": "en-US",
             },
         },
     ]
@@ -149,10 +139,40 @@ def multi_clusters_df(generate_data):
             # Generate some valid addons for each client. Each stub
             # addon as a specific GUID that contains both the variation
             # id and the addon id for simplified debugging.
-            variation["active_addons"] = [{}]
-            for addon_id in range(0, 3):
-                addon_name = "var-{}-guid-{}".format(variation_id, addon_id)
-                variation["active_addons"][0][addon_name] = {
+            variation["active_addons"] = []
+            for addon_num in range(0, 3):
+                addon_guid = "var-{}-guid-{}".format(variation_id, addon_num)
+                variation["active_addons"].append(
+                    {
+                        "addon_id": addon_guid,
+                        "blocklisted": False,
+                        "user_disabled": False,
+                        "app_disabled": False,
+                        "signed_state": 2,
+                        "type": "extension",
+                        "foreign_install": False,
+                        "is_system": False,
+                    }
+                )
+
+            # Additionally add a system addon.
+            variation["active_addons"].append(
+                {
+                    "addon_id": "system-addon-guid",
+                    "blocklisted": False,
+                    "user_disabled": False,
+                    "app_disabled": False,
+                    "signed_state": 2,
+                    "type": "extension",
+                    "foreign_install": False,
+                    "is_system": True,
+                }
+            )
+
+            # Additionally add an AMO unlisted addon.
+            variation["active_addons"].append(
+                {
+                    "addon_id": "unlisted-addon-guid",
                     "blocklisted": False,
                     "user_disabled": False,
                     "app_disabled": False,
@@ -161,28 +181,7 @@ def multi_clusters_df(generate_data):
                     "foreign_install": False,
                     "is_system": False,
                 }
-
-            # Additionally add a system addon.
-            variation["active_addons"][0]["system-addon-guid"] = {
-                "blocklisted": False,
-                "user_disabled": False,
-                "app_disabled": False,
-                "signed_state": 2,
-                "type": "extension",
-                "foreign_install": False,
-                "is_system": True,
-            }
-
-            # Additionally add an AMO unlisted addon.
-            variation["active_addons"][0]["unlisted-addon-guid"] = {
-                "blocklisted": False,
-                "user_disabled": False,
-                "app_disabled": False,
-                "signed_state": 2,
-                "type": "extension",
-                "foreign_install": False,
-                "is_system": False,
-            }
+            )
 
             sample_snippets.append(variation)
             counter = counter + 1
@@ -216,9 +215,9 @@ def test_non_cartesian_pairs(spark):
 
 def test_similarity():
     UserDataRow = Row(
-        "normalized_channel",
-        "geo_city",
-        "subsession_length",
+        "channel",
+        "city",
+        "subsession_hours_sum",
         "os",
         "locale",
         "active_addons",
@@ -240,7 +239,7 @@ def test_similarity():
     test_user_4 = UserDataRow(
         "release", "notsoB", 0, "swodniW", "SU-ne", [], 0, 0, 0, 0
     )
-    # The following user contains a None value for "total_uri" and geo_city
+    # The following user contains a None value for "total_uri" and city
     # (categorical feature). The latter should never be possible, but let's be cautious.
     test_user_5 = UserDataRow(
         "release", None, 10, "swodniW", "SU-ne", [], 1, None, 3, 4
@@ -267,11 +266,14 @@ def test_similarity():
     assert taar_similarity.similarity_function(test_user_1, test_user_5)
 
 
-@pytest.mark.skip(reason="test intermittently fails")
 def test_get_addons(spark, addon_whitelist, multi_clusters_df):
-    multi_clusters_df.createOrReplaceTempView("longitudinal")
+    multi_clusters_df.createOrReplaceTempView("clients_daily")
 
     samples_df = taar_similarity.get_samples(spark)
+
+    # Force caching in the test case
+    samples_df.cache()
+
     addons_df = taar_similarity.get_addons_per_client(samples_df, addon_whitelist, 2)
 
     # We should have one row per client and that row should contain
@@ -280,9 +282,8 @@ def test_get_addons(spark, addon_whitelist, multi_clusters_df):
     assert isinstance(addons_df.schema.fields[1].dataType, ArrayType)
 
 
-@pytest.mark.skip(reason="test intermittently fails")
 def test_compute_donors(spark, addon_whitelist, multi_clusters_df):
-    multi_clusters_df.createOrReplaceTempView("longitudinal")
+    multi_clusters_df.createOrReplaceTempView("clients_daily")
 
     # Perform the clustering on our test data. We expect
     # 3 clusters out of this and 10 donors.
@@ -300,13 +301,13 @@ def test_compute_donors(spark, addon_whitelist, multi_clusters_df):
     # Our artificial clusters should report different cities.
     for cluster_id, city in enumerate(["Rome", "London", "Boston"]):
         # We should see at least one item for the "Rome" cluster.
-        cluster_donors = [d for d in donors if d["geo_city"] == city]
+        cluster_donors = [d for d in donors if d["city"] == city]
         assert len(cluster_donors) >= 1
 
         # The generated data must have all the required fields.
         REQUIRED_FIELDS = [
-            "geo_city",
-            "subsession_length",
+            "city",
+            "subsession_hours_sum",
             "locale",
             "os",
             "bookmark_count",
