@@ -24,9 +24,9 @@ from taar_utils import store_json_to_s3
 from taar_utils import load_amo_curated_whitelist
 
 # Define the set of feature names to be used in the donor computations.
-CATEGORICAL_FEATURES = ["geo_city", "locale", "os"]
+CATEGORICAL_FEATURES = ["city", "locale", "os"]
 CONTINUOUS_FEATURES = [
-    "subsession_length",
+    "subsession_hours_sum",
     "bookmark_count",
     "tab_open_count",
     "total_uri",
@@ -38,31 +38,41 @@ logger = logging.getLogger(__name__)
 
 
 def get_samples(spark):
-    """ Get a DataFrame with a valid set of sample to base the next
-    processing on.
     """
-    return (
-        spark.sql("SELECT * FROM longitudinal")
+    Get a DataFrame with a valid set of sample to base the next
+    processing on.
+
+    Reference documentation is found here:
+
+    Firefox Clients Daily telemetry table
+    https://docs.telemetry.mozilla.org/datasets/batch_view/clients_daily/reference.html
+
+    BUG 1485152: PR include active_addons to clients_daily table:
+    https://github.com/mozilla/telemetry-batch-view/pull/490
+    """
+    df = (
+        spark.sql("SELECT * FROM clients_daily")
+        .where("client_id IS NOT null")
         .where("active_addons IS NOT null")
-        .where("size(active_addons[0]) > 2")
-        .where("size(active_addons[0]) < 100")
-        .where("normalized_channel = 'release'")
-        .where("build IS NOT NULL AND build[0].application_name = 'Firefox'")
+        .where("size(active_addons) > 2")
+        .where("size(active_addons) < 100")
+        .where("channel = 'release'")
+        .where("app_name = 'Firefox'")
         .selectExpr(
             "client_id as client_id",
-            "active_addons[0] as active_addons",
-            "geo_city[0] as geo_city",
-            "subsession_length[0] as subsession_length",
-            "settings[0].locale as locale",
+            "active_addons as active_addons",
+            "city as city",
+            "subsession_hours_sum",
+            "locale as locale",
             "os as os",
-            "places_bookmarks_count[0].sum AS bookmark_count",
-            "scalar_parent_browser_engagement_tab_open_event_count[0].value "
+            "places_bookmarks_count_mean AS bookmark_count",
+            "scalar_parent_browser_engagement_tab_open_event_count_sum "
             "AS tab_open_count",
-            "scalar_parent_browser_engagement_total_uri_count[0].value AS total_uri",
-            "scalar_parent_browser_engagement_unique_domains_count[0].value "
-            "AS unique_tlds",
+            "scalar_parent_browser_engagement_total_uri_count_sum AS total_uri",
+            "scalar_parent_browser_engagement_unique_domains_count_mean AS unique_tlds",
         )
     )
+    return df
 
 
 def get_addons_per_client(users_df, addon_whitelist, minimum_addons_count):
@@ -82,16 +92,22 @@ def get_addons_per_client(users_df, addon_whitelist, minimum_addons_count):
 
     # Create an add-ons dataset un-nesting the add-on map from each
     # user to a list of add-on GUIDs. Also filter undesired add-ons.
+
+    # Note that this list comprehension was restructured
+    # from the original longitudinal query.  In particular, note that
+    # each client's 'active_addons' entry is a list containing the
+    # a dictionary of {addon_guid: {addon_metadata_dict}}
+
+    def flatten_valid_guid_generator(p):
+        for data in p["active_addons"]:
+            addon_guid = data["addon_id"]
+            if not is_valid_addon(addon_guid, data):
+                continue
+            yield addon_guid
+
     return (
         users_df.rdd.map(
-            lambda p: (
-                p["client_id"],
-                [
-                    guid
-                    for guid, data in p["active_addons"].items()
-                    if is_valid_addon(guid, data)
-                ],
-            )
+            lambda p: (p["client_id"], list(flatten_valid_guid_generator(p)))
         )
         .filter(lambda p: len(p[1]) > minimum_addons_count)
         .toDF(["client_id", "addon_ids"])
