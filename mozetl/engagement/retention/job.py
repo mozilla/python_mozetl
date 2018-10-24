@@ -94,7 +94,7 @@ def transform(main_summary, start_ds):
         'app_version': (
             # Support before Firefox 55 is limited due to high submission latency
             F.when(F.col('app_version').isNull() |
-                   (F.split('app_version', '\.')[0] >= '55'), F.col('app_version'))
+                   (F.split('app_version', '\\.')[0] >= '55'), F.col('app_version'))
             .otherwise(F.lit("older"))
         ),
         'geo': churn_job.in_top_countries('country'),

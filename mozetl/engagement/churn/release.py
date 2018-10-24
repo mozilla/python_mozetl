@@ -171,7 +171,7 @@ def with_effective_version(dataframe, effective_version, join_key):
         # Rename the date field to join against the left table
         .join(effective_version.toDF(join_key, ev_version), join_key, "left")
         # Major version number e.g. "57"
-        .withColumn("_major", F.split(version, "\.").getItem(0).cast("int"))
+        .withColumn("_major", F.split(version, "\\.").getItem(0).cast("int"))
         # Offset into the release train
         .withColumn("_offset", version_offset)
     )
