@@ -1,6 +1,7 @@
 import functools
 import pytest
 from collections import namedtuple
+from pyspark.sql.functions import expr
 from pyspark.sql.types import (
     StructField, ArrayType, BooleanType, StringType, LongType, StructType, DoubleType
 )
@@ -408,11 +409,20 @@ def test_add_derived_columns(exploded_data_for_derived_cols,
 def test_basic_aggregation(main_summary,
                            expected_search_dashboard_data,
                            df_equals):
-    actual = search_aggregates(main_summary)
     # it is too complicated to test the contents of the client count hll
-    # (it's essentially an inscrutable binary blob), so just verify it's there
-    # and of the appropriate type, then drop it to do the actual comparison
+    # (it's essentially an inscrutable binary blob), so we'll do a basic
+    # aggregation to test its contents, then drop it from the table for
+    # the purposes of comparison
+
+    actual = search_aggregates(main_summary)
+
+    # hll validation
     assert ('client_count_hll', 'binary') in actual.dtypes
+    hll_count = actual.groupBy('client_count_hll').agg(
+        expr('hll_cardinality(client_count_hll) as client_count')).drop('client_count_hll')
+    assert sum([r['client_count'] for r in hll_count.collect()]) == 2
+
+    # validating the rest of the contents
     actual = actual.drop('client_count_hll')
     assert df_equals(actual, expected_search_dashboard_data)
 
