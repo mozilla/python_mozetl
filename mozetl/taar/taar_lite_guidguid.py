@@ -73,9 +73,6 @@ def extract_telemetry(spark):
                 guid == "pioneer-opt-in@mozilla.org"
             )
 
-        # TODO: may need additional whitelisting to remove shield addons
-        # it should be populated from the current list of shield studies.
-
         # Create an add-ons dataset un-nesting the add-on map from each
         # user to a list of add-on GUIDs. Also filter undesired add-ons.
         return (
