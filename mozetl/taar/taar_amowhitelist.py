@@ -79,7 +79,9 @@ class WhitelistAccumulator(AbstractAccumulator):
 
         current_version_files = addon_data.get('current_version', {}).get('files', [])
         if len(current_version_files) == 0:
-            # Only allow webextensions
+            # Only allow addons that files in the latest version. 
+            # Yes - that's as weird as it sounds.  Sometimes addons
+            # have no files.
             return
 
         if current_version_files[0].get('is_webextension', False) is False:
