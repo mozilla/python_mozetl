@@ -98,27 +98,9 @@ class WhitelistFeaturedAccumulator(WhitelistAccumulator):
         WhitelistAccumulator.__init__(self, min_age, min_rating)
 
     def process_record(self, guid, addon_data):
-        if guid == 'pioneer-opt-in@mozilla.org':
-            # Firefox Pioneer is explicitly excluded
-            return
-
-        current_version_files = addon_data.get('current_version', {}).get('files', [])
-        if len(current_version_files) == 0:
-            # Only allow webextensions
-            return
-
-        if current_version_files[0].get('is_webextension', False) is False:
-            # Only allow webextensions
-            return
-
         if not addon_data.get('is_featured', False):
             return
-
-        rating = addon_data.get('ratings', {}).get('average', 0)
-        create_date = parse(addon_data.get('first_create_date', None)).replace(tzinfo=None)
-
-        if rating >= self._min_rating and create_date <= self._latest_create_date:
-            self._results[guid] = addon_data
+        return WhitelistAccumulator.process_record(self, guid, addon_data)
 
     def get_results(self):
         return WhitelistAccumulator.get_results(self)
