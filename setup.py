@@ -2,13 +2,13 @@
 from setuptools import setup, find_packages
 
 test_deps = [
-    'coverage',
+    'coverage==4.5.2',
     'pytest-cov==2.6.0',
     'pytest-timeout==1.3.3',
     'moto==1.3.6',
-    'mock',
+    'mock==2.0.0',
     'pytest==3.10.1',
-    'flake8'
+    'flake8==3.6.0'
 ]
 
 extras = {
