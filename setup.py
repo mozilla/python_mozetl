@@ -6,7 +6,7 @@ test_deps = [
     'pytest-cov',
     'pytest-timeout',
     'moto',
-    'mock',
+    'mock==1.3.6',
     'pytest',
     'flake8'
 ]
