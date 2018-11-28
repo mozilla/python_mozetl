@@ -3,11 +3,11 @@ from setuptools import setup, find_packages
 
 test_deps = [
     'coverage',
-    'pytest-cov',
-    'pytest-timeout',
+    'pytest-cov==2.6.0',
+    'pytest-timeout==1.3.3',
     'moto==1.3.6',
     'mock',
-    'pytest',
+    'pytest==3.10.1',
     'flake8'
 ]
 
