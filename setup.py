@@ -33,7 +33,7 @@ setup(
         'pyspark_hyperloglog==2.1.1',
         'python_moztelemetry==0.10.2',
         'requests-toolbelt==0.8.0',
-        'requests==2.18.4',
+        'requests==2.20.1',
         'scipy==1.0.0rc1',
         'typing==3.6.4'
     ],
