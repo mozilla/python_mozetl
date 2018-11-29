@@ -36,7 +36,7 @@ def get_addons(spark):
     get_addons function.
     """
     return spark.sql("""
-        WITH sample AS
+       WITH sample AS
        (
           SELECT
             client_id,
@@ -64,7 +64,6 @@ def get_addons(spark):
             AND locality <> 'null'
             AND col.addon_id is not null
         ),
-
         country_addon_pairs AS (
         SELECT
         COUNT(*) AS pair_cnts, addon_key, locality
