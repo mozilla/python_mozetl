@@ -33,7 +33,7 @@ Run tests by calling `tox` in the root directory.
 
 Arguments to `pytest` can be passed through tox using `--`.
 ```
-tox -- -k tests/test_main.py # runs tests only in the test_main module
+tox -- -k test_main.py # runs tests only in the test_main module
 ```
 
 Tests are configured in [tox.ini](tox.ini)
