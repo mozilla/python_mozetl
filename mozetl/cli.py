@@ -8,7 +8,6 @@ from mozetl.engagement.retention import job as retention_job
 from mozetl.experimentsdaily import rollup as experimentsdaily
 from mozetl.landfill import sampler as landfill_sampler
 from mozetl.maudau import maudau
-from mozetl.search import search_rollups
 from mozetl.search.aggregates import (
     search_aggregates_click, search_clients_daily_click
 )
@@ -32,7 +31,6 @@ entry_point.add_command(experimentsdaily.main, "experiments_daily")
 entry_point.add_command(retention_job.main, "retention")
 entry_point.add_command(search_aggregates_click, "search_aggregates")
 entry_point.add_command(search_clients_daily_click, "search_clients_daily")
-entry_point.add_command(search_rollups.main, "search_rollup")
 entry_point.add_command(bookmark_validation.main, "sync_bookmark_validation")
 entry_point.add_command(taar_locale.main, "taar_locale")
 entry_point.add_command(taar_similarity.main, "taar_similarity")
