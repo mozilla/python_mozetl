@@ -19,6 +19,7 @@ from pyspark.ml.feature import HashingTF, IDF
 from pyspark.ml.clustering import BisectingKMeans
 from pyspark.ml import Pipeline
 from pyspark.mllib.stat import KernelDensity
+from pyspark.statcounter import StatCounter
 from scipy.spatial import distance
 from taar_utils import store_json_to_s3
 from taar_utils import load_amo_curated_whitelist
@@ -306,8 +307,9 @@ def get_lr_curves(
 
     # Determine a range of observed similarity values linearly spaced.
     all_scores_rdd = same_cluster_scores_rdd.union(different_clusters_scores_rdd)
-    min_similarity = all_scores_rdd.min()
-    max_similarity = all_scores_rdd.max()
+    stats = all_scores_rdd.aggregate(StatCounter(), StatCounter.merge, StatCounter.mergeStats)
+    min_similarity = stats.minValue
+    max_similarity = stats.maxValue
     lr_index = np.arange(
         min_similarity,
         max_similarity,
