@@ -148,7 +148,7 @@ def transform(addon_df, addon_locale_counts_df, num_addons):
         lambda p: Row(
             addon_key=p['addon_key'],
             locality=p['locality'],
-            loc_normclear=normalize_cnts(p))
+            loc_norm=normalize_cnts(p))
         ).toDF()
 
     # Groupby locale and sort by normalized install rate
