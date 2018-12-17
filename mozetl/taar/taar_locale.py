@@ -199,7 +199,7 @@ def generate_dictionary(spark, num_addons):
 
     # Make sure not to include addons from very small locales.
     addon_locale_counts_df = compute_threshold(addon_df_filtered)
-    return transform(addon_df_filtered, locale_pop_threshold, num_addons)
+     return transform(addon_df_filtered, addons_local_counts_df, num_addons)
 
 
 @click.command()
