@@ -166,11 +166,16 @@ def transform(addon_df, addon_locale_counts_df, num_addons):
         .drop(col('rank'))
 
     list_of_locales =\
-        [x[0] for x in truncated_df.select(truncated_df.locality).distinct().collect()]
+        [x[0] for x in truncated_df\
+            .select(truncated_df.locality)\
+            .distinct()\
+            .collect()]
         
-    # There is probably a *much* smarter way fo doing this, but I am le tired.
+    # There is probably a *much* smarter way fo doing this...
+    # but alas, I am le tired.
     for specific_locale in list_of_locales:
-        # Most popular addons per locale sorted by normalized number of installs.
+        # Most popular addons per locale sorted by normalized 
+        # number of installs.
         top10_per[specific_locale] = (
             [[x['addon_key'], x['loc_norm']] for x in truncated_df
             .filter(truncated_df.locality == specific_locale)
@@ -183,7 +188,7 @@ def generate_dictionary(spark, num_addons):
     """ Wrap the dictionary generation functions in an
     easily testable way.
     """
-    # Execute spark.SQL query to get fresh addons from longitudinal telemetry data.
+    # Execute spark.SQL query to get fresh addons from clients_daily.
     addon_df = get_addons(spark)
 
     # Load external whitelist based on AMO data.
