@@ -62,7 +62,7 @@ def get_samples(spark):
             "client_id as client_id",
             "active_addons as active_addons",
             "city as city",
-            "subsession_hours_sum",
+            "cast(subsession_hours_sum as double)",
             "locale as locale",
             "os as os",
             "places_bookmarks_count_mean AS bookmark_count",
