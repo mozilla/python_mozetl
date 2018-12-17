@@ -34,6 +34,7 @@ CONTINUOUS_FEATURES = [
 ]
 
 logging.basicConfig(level=logging.INFO)
+logging.getLogger("py4j").setLevel(logging.ERROR)
 logger = logging.getLogger(__name__)
 
 
