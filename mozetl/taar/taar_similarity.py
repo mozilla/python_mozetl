@@ -174,6 +174,7 @@ def get_donors(spark, num_clusters, num_donors, addon_whitelist, random_seed=Non
     # Get add-ons from selected users and make sure they are
     # useful for making a recommendation.
     addons_df = get_addons_per_client(users_sample, addon_whitelist, 2)
+    addons_df.cache()
     # Perform clustering by using the add-on info.
     clusters = compute_clusters(addons_df, num_clusters, random_seed)
     # Sample representative ("donors") users from each cluster.
@@ -359,6 +360,7 @@ def main(
 
     # Compute the donors clusters and the LR curves.
     cluster_ids, donors_df = get_donors(spark, num_clusters, num_donors, whitelist)
+    donors_df.cache()
     lr_curves = get_lr_curves(
         spark, donors_df, cluster_ids, kernel_bandwidth, num_pdf_points
     )
