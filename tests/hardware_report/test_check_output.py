@@ -22,11 +22,11 @@ def test_check_most_recent_change_min_change():
         }
     }
 
-    assert check_most_recent_change(test_data, min_change=0.5).keys()\
+    assert set(check_most_recent_change(test_data, min_change=0.5).keys())\
         == set()
-    assert check_most_recent_change(test_data, min_change=0.3).keys()\
+    assert set(check_most_recent_change(test_data, min_change=0.3).keys())\
         == {"bigchange"}
-    assert check_most_recent_change(test_data, min_change=0.05).keys()\
+    assert set(check_most_recent_change(test_data, min_change=0.05).keys())\
         == {"bigchange", "somechange"}
 
 
@@ -42,11 +42,11 @@ def test_check_most_recent_change_min_value():
         }
     }
 
-    assert check_most_recent_change(test_data, min_change=0.1, min_value=2.0).keys()\
+    assert set(check_most_recent_change(test_data, min_change=0.1, min_value=2.0).keys())\
         == set()
-    assert check_most_recent_change(test_data, min_change=0.1, min_value=1.0).keys()\
+    assert set(check_most_recent_change(test_data, min_change=0.1, min_value=1.0).keys())\
         == {"somechange1"}
-    assert check_most_recent_change(test_data, min_change=0.1, min_value=0.0).keys()\
+    assert set(check_most_recent_change(test_data, min_change=0.1, min_value=0.0).keys())\
         == {"somechange1", "somechange2"}
 
 
@@ -58,9 +58,9 @@ def test_check_most_recent_change_missing_val():
         20170702: {}
     }
 
-    assert check_most_recent_change(test_data, min_change=0.1, min_value=0.0, missing_val=0.5).keys() == set()
-    assert check_most_recent_change(test_data, min_change=0.1, min_value=0.0, missing_val=0.01).keys() == {"change"}
-    assert check_most_recent_change(test_data, min_change=0.1, min_value=0.0, missing_val=1.0).keys() == {"change"}
+    assert set(check_most_recent_change(test_data, min_change=0.1, min_value=0.0, missing_val=0.5).keys())== set()
+    assert set(check_most_recent_change(test_data, min_change=0.1, min_value=0.0, missing_val=0.01).keys()) == {"change"}
+    assert set(check_most_recent_change(test_data, min_change=0.1, min_value=0.0, missing_val=1.0).keys()) == {"change"}
 
 
 def test_get_data():
