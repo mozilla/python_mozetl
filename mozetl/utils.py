@@ -1,5 +1,5 @@
-import csv
 import datetime as DT
+import glob
 import logging
 import os
 import shutil
@@ -48,20 +48,15 @@ def write_csv(dataframe, path, header=True):
     is ~15GB for ec2 c3.xlarge (due to caching overhead).
     """
 
-    # NOTE: Before spark 2.1, toLocalIterator will timeout on some dataframes
-    # because rdd materialization can take a long time. Instead of using
-    # an iterator over all partitions, collect everything into driver memory.
-    logger.info("Writing {} rows to {}".format(dataframe.count(), path))
+    folder = "{}.temp".format(path)
+    logger.info("Writing single partition to {}".format(folder))
+    dataframe.repartition(1).write.csv("file://" + folder, header=header)
 
-    with open(path, "wb") as fout:
-        writer = csv.writer(fout)
-
-        if header:
-            writer.writerow(dataframe.columns)
-
-        for row in dataframe.collect():
-            row = [str(s).encode("utf-8") for s in row]
-            writer.writerow(row)
+    # there be a single `part-*`` file in the folder ending with csv
+    csv_file = glob.glob("{}/*.csv".format(folder))[0]
+    logger.info("Moving {} to {}".format(csv_file, path))
+    shutil.copy(csv_file, path)
+    shutil.rmtree(folder)
 
 
 def write_csv_to_s3(dataframe, bucket, key, header=True):
