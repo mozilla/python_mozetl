@@ -11,7 +11,6 @@ locale after filtering for good candidates (e.g. no unsigned, no disabled,
 import click
 import json
 import logging
-import pyspark.sql.functions as f
 
 from pyspark.sql import SparkSession, Row
 from pyspark.sql.functions import col, rank, desc
