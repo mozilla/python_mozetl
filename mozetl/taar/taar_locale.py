@@ -120,7 +120,7 @@ def transform(addon_df, addon_locale_counts_df, num_addons):
     :param addon_df: the locale-specific addon dataframe;
     :param addon_locale_counts_df: total addon-installs per locale;
     :param num_addons: requested number of recommendations.
-    :return: a dictionary {<locale>: ['GUID1', 'GUID2', ...]}
+     :return: a dictionary {<locale>: [['GUID1', 1.0], ['GUID2', 0.9], ...]}
     """
 
     # Helper function to normalize addon installations in a lambda.
