@@ -31,14 +31,13 @@ class Request(object):
         "time": int_type,
     }
 
-    StructType = StructType(
-        [
-            # For some reason, field_types needs to be sorted. Use
-            # PYTHONHASHSEED = 3201792604 to reproduce failure
-            StructField(key, field_types[key][1], True)
-            for key in sorted(field_types)
-        ]
-    )
+    # python3 work-around to keep field_types in scope since class variables
+    # are not in the local scope of list comprehensions.
+    _create_struct = lambda x: StructField(x[0], x[1][1], True)  # noqa
+    _keys = sorted(field_types.keys())
+    _dtypes = map(field_types.get, _keys)
+
+    StructType = StructType(list(map(_create_struct, zip(_keys, _dtypes))))
 
     def __init__(self, request_dict):
         args = {
