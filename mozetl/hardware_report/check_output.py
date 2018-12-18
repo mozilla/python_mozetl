@@ -30,12 +30,12 @@ def _check_most_recent_change(values, min_change=.05, min_value=0.01, missing_va
     assert missing_val > 0
 
     recent_week = max(values.keys())
-    second_recent_week = max(values.keys() - {recent_week})
+    second_recent_week = max(set(values.keys()) - {recent_week})
 
     base, compare = values[second_recent_week], values[recent_week]
     changes = [
         (k, (compare.get(k, missing_val) / base.get(k, missing_val)) - 1)
-        for k in base.keys() | compare.keys()
+        for k in set(base.keys()) | set(compare.keys())
     ]
 
     return {
