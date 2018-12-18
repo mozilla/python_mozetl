@@ -15,11 +15,11 @@ def test_check_most_recent_change_min_change():
         20170702: {"nochange": 1.0, "somechange": 1.1, "bigchange": 1.4},
     }
 
-    assert list(check_most_recent_change(test_data, min_change=0.5).keys()) == set()
-    assert list(check_most_recent_change(test_data, min_change=0.3).keys()) == {
+    assert set(check_most_recent_change(test_data, min_change=0.5).keys()) == set()
+    assert set(check_most_recent_change(test_data, min_change=0.3).keys()) == {
         "bigchange"
     }
-    assert list(check_most_recent_change(test_data, min_change=0.05).keys()) == {
+    assert set(check_most_recent_change(test_data, min_change=0.05).keys()) == {
         "bigchange",
         "somechange",
     }
@@ -32,13 +32,13 @@ def test_check_most_recent_change_min_value():
     }
 
     assert (
-        list(check_most_recent_change(test_data, min_change=0.1, min_value=2.0).keys())
+        set(check_most_recent_change(test_data, min_change=0.1, min_value=2.0).keys())
         == set()
     )
-    assert list(
+    assert set(
         check_most_recent_change(test_data, min_change=0.1, min_value=1.0).keys()
     ) == {"somechange1"}
-    assert list(
+    assert set(
         check_most_recent_change(test_data, min_change=0.1, min_value=0.0).keys()
     ) == {"somechange1", "somechange2"}
 
@@ -47,19 +47,19 @@ def test_check_most_recent_change_missing_val():
     test_data = {20170701: {"change": 0.5}, 20170702: {}}
 
     assert (
-        list(
+        set(
             check_most_recent_change(
                 test_data, min_change=0.1, min_value=0.0, missing_val=0.5
             ).keys()
         )
         == set()
     )
-    assert list(
+    assert set(
         check_most_recent_change(
             test_data, min_change=0.1, min_value=0.0, missing_val=0.01
         ).keys()
     ) == {"change"}
-    assert list(
+    assert set(
         check_most_recent_change(
             test_data, min_change=0.1, min_value=0.0, missing_val=1.0
         ).keys()
