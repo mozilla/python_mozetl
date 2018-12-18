@@ -108,7 +108,7 @@ def compute_threshold(addon_df):
     # that satisfy the threshold condition.
     addon_locale_counts = (
         addon_install_counts
-        .filter((f.col('sum(pair_cnts)') >= locale_pop_threshold))
+        .filter((col('sum(pair_cnts)') >= locale_pop_threshold))
         )
 
     return addon_locale_counts
