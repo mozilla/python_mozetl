@@ -35,7 +35,8 @@ setup(
         'requests-toolbelt==0.8.0',
         'requests==2.20.1',
         'scipy==1.0.0rc1',
-        'typing==3.6.4'
+        'typing==3.6.4',
+        'six',
     ],
     tests_require=test_deps,
     extras_require=extras,

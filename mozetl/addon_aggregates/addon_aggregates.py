@@ -3,7 +3,7 @@
 from pyspark.sql import SparkSession
 import pyspark.sql.functions as fun
 import json
-import urllib.request, urllib.parse, urllib.error
+from six.moves import urllib
 import click
 
 MS_FIELDS = ['client_id',
