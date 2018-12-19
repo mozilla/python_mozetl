@@ -96,19 +96,19 @@ def get_release_info():
                    'major' - contains major releases (i.e. 41.0)
                    'minor' - contains stability releases (i.e. 41.0.1)
     """
-    major_info = fetch_json("https://product-details.mozilla.org/1.0/"
-                            "firefox_history_major_releases.json")
+    major_info = fetch_json(
+        "https://product-details.mozilla.org/1.0/" "firefox_history_major_releases.json"
+    )
     if major_info is None:
         raise Exception("Failed to fetch major version info")
-    minor_info = fetch_json("https://product-details.mozilla.org/1.0/"
-                            "firefox_history_stability_releases.json")
+    minor_info = fetch_json(
+        "https://product-details.mozilla.org/1.0/"
+        "firefox_history_stability_releases.json"
+    )
     if minor_info is None:
         raise Exception("Failed to fetch minor version info")
 
-    return {
-        "major": major_info,
-        "minor": minor_info
-    }
+    return {"major": major_info, "minor": minor_info}
 
 
 def create_effective_version_table(spark):
@@ -151,13 +151,11 @@ def with_effective_version(dataframe, effective_version, join_key):
     # the release channel is "55", then beta will be "56".
     #
     # This logic will be affected by the decommissioning of aurora.
-    version_offset = (
-        F.when(F.col("channel").startswith("beta"), F.lit(1))
-        .otherwise(
-            F.when(F.col("channel").startswith("aurora"), F.lit(2))
-            .otherwise(
-                F.when(F.col("channel").startswith("nightly"), F.lit(3))
-                .otherwise(F.lit(0)))))
+    version_offset = F.when(F.col("channel").startswith("beta"), F.lit(1)).otherwise(
+        F.when(F.col("channel").startswith("aurora"), F.lit(2)).otherwise(
+            F.when(F.col("channel").startswith("nightly"), F.lit(3)).otherwise(F.lit(0))
+        )
+    )
 
     # Original effective version column name
     ev_version = effective_version.columns[1]
@@ -181,24 +179,20 @@ def with_effective_version(dataframe, effective_version, join_key):
 
     # There will be null values for the version if the date is not in
     # the right table. This sets the start_version to one of two values.
-    fill_outer_range = (
-        F.when(date.isNull() | (date < "2015-01-01"), F.lit("older"))
-        .otherwise(F.lit("newer"))
-    )
+    fill_outer_range = F.when(
+        date.isNull() | (date < "2015-01-01"), F.lit("older")
+    ).otherwise(F.lit("newer"))
 
-    calculate_channel_version = (
-        F.when(F.col("channel").startswith("release"), version)
-        .otherwise(F.concat(F.col("_major") + F.col("_offset"), F.lit(".0")))
-    )
+    calculate_channel_version = F.when(
+        F.col("channel").startswith("release"), version
+    ).otherwise(F.concat(F.col("_major") + F.col("_offset"), F.lit(".0")))
 
-    start_version = (
-        F.when(version.isNull(), fill_outer_range)
-        .otherwise(calculate_channel_version)
+    start_version = F.when(version.isNull(), fill_outer_range).otherwise(
+        calculate_channel_version
     )
 
     return (
-        joined_df
-        .withColumn("start_version", start_version)
+        joined_df.withColumn("start_version", start_version)
         .fillna("unknown", ["start_version"])
         .select(*out_columns)
     )

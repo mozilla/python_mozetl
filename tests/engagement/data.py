@@ -1,8 +1,12 @@
 import arrow
 
 from pyspark.sql.types import (
-    StructField, StructType, StringType,
-    LongType, IntegerType, BooleanType
+    StructField,
+    StructType,
+    StringType,
+    LongType,
+    IntegerType,
+    BooleanType,
 )
 
 """
@@ -24,67 +28,114 @@ SECONDS_PER_DAY = 60 * 60 * 24
 
 # Generate the datasets
 # Sunday, also the first day in this collection period.
-SUBSESSION_START = arrow.get(2017, 1, 15).replace(tzinfo='utc')
+SUBSESSION_START = arrow.get(2017, 1, 15).replace(tzinfo="utc")
 WEEK_START_DS = SUBSESSION_START.format("YYYYMMDD")
 
 
-main_summary_schema = StructType([
-    StructField("app_version", StringType(), True),
-    StructField("attribution", StructType([
-        StructField("source", StringType(), True),
-        StructField("medium", StringType(), True),
-        StructField("campaign", StringType(), True),
-        StructField("content", StringType(), True)]), True),
-    StructField("channel", StringType(), True),
-    StructField("client_id", StringType(), True),
-    StructField("country", StringType(), True),
-    StructField("default_search_engine", StringType(), True),
-    StructField("distribution_id", StringType(), True),
-    StructField("locale", StringType(), True),
-    StructField("normalized_channel", StringType(), True),
-    StructField("profile_creation_date", LongType(), True),
-    StructField("submission_date_s3", StringType(), False),
-    StructField("subsession_length", LongType(), True),
-    StructField("subsession_start_date", StringType(), True),
-    StructField("sync_configured", BooleanType(), True),
-    StructField("sync_count_desktop", IntegerType(), True),
-    StructField("sync_count_mobile", IntegerType(), True),
-    StructField("timestamp", LongType(), True),
-    StructField(SPBE + "total_uri_count", IntegerType(), True),
-    StructField(SPBE + "unique_domains_count", IntegerType(), True)])
-
-
-new_profile_schema = StructType([
-    StructField("submission", StringType(), True),
-    StructField("environment", StructType([
-        StructField("profile", StructType([
-            StructField("creation_date", LongType(), True),
-        ]), True),
-        StructField("build", StructType([
-            StructField("version", StringType(), True),
-        ]), True),
-        StructField("partner", StructType([
-            StructField("distribution_id", StringType(), True),
-        ]), True),
-        StructField("settings", StructType([
-            StructField("locale", StringType(), True),
-            StructField("is_default_browser", StringType(), True),
-            StructField("default_search_engine", StringType(), True),
-            StructField("attribution", StructType([
-                StructField("source", StringType(), True),
-                StructField("medium", StringType(), True),
-                StructField("campaign", StringType(), True),
-                StructField("content", StringType(), True)]), True),
-        ]), True),
-    ]), True),
-    StructField("client_id", StringType(), True),
-    StructField("metadata", StructType([
-        StructField("geo_country", StringType(), True),
-        StructField("timestamp", LongType(), True),
+main_summary_schema = StructType(
+    [
+        StructField("app_version", StringType(), True),
+        StructField(
+            "attribution",
+            StructType(
+                [
+                    StructField("source", StringType(), True),
+                    StructField("medium", StringType(), True),
+                    StructField("campaign", StringType(), True),
+                    StructField("content", StringType(), True),
+                ]
+            ),
+            True,
+        ),
+        StructField("channel", StringType(), True),
+        StructField("client_id", StringType(), True),
+        StructField("country", StringType(), True),
+        StructField("default_search_engine", StringType(), True),
+        StructField("distribution_id", StringType(), True),
+        StructField("locale", StringType(), True),
         StructField("normalized_channel", StringType(), True),
-        StructField("creation_timestamp", LongType(), True),
-    ]), True)
-])
+        StructField("profile_creation_date", LongType(), True),
+        StructField("submission_date_s3", StringType(), False),
+        StructField("subsession_length", LongType(), True),
+        StructField("subsession_start_date", StringType(), True),
+        StructField("sync_configured", BooleanType(), True),
+        StructField("sync_count_desktop", IntegerType(), True),
+        StructField("sync_count_mobile", IntegerType(), True),
+        StructField("timestamp", LongType(), True),
+        StructField(SPBE + "total_uri_count", IntegerType(), True),
+        StructField(SPBE + "unique_domains_count", IntegerType(), True),
+    ]
+)
+
+
+new_profile_schema = StructType(
+    [
+        StructField("submission", StringType(), True),
+        StructField(
+            "environment",
+            StructType(
+                [
+                    StructField(
+                        "profile",
+                        StructType([StructField("creation_date", LongType(), True)]),
+                        True,
+                    ),
+                    StructField(
+                        "build",
+                        StructType([StructField("version", StringType(), True)]),
+                        True,
+                    ),
+                    StructField(
+                        "partner",
+                        StructType(
+                            [StructField("distribution_id", StringType(), True)]
+                        ),
+                        True,
+                    ),
+                    StructField(
+                        "settings",
+                        StructType(
+                            [
+                                StructField("locale", StringType(), True),
+                                StructField("is_default_browser", StringType(), True),
+                                StructField(
+                                    "default_search_engine", StringType(), True
+                                ),
+                                StructField(
+                                    "attribution",
+                                    StructType(
+                                        [
+                                            StructField("source", StringType(), True),
+                                            StructField("medium", StringType(), True),
+                                            StructField("campaign", StringType(), True),
+                                            StructField("content", StringType(), True),
+                                        ]
+                                    ),
+                                    True,
+                                ),
+                            ]
+                        ),
+                        True,
+                    ),
+                ]
+            ),
+            True,
+        ),
+        StructField("client_id", StringType(), True),
+        StructField(
+            "metadata",
+            StructType(
+                [
+                    StructField("geo_country", StringType(), True),
+                    StructField("timestamp", LongType(), True),
+                    StructField("normalized_channel", StringType(), True),
+                    StructField("creation_timestamp", LongType(), True),
+                ]
+            ),
+            True,
+        ),
+    ]
+)
 
 main_summary_sample = {
     "app_version": "57.0.0",
@@ -92,7 +143,7 @@ main_summary_sample = {
         "source": "source-value",
         "medium": "medium-value",
         "campaign": "campaign-value",
-        "content": "content-value"
+        "content": "content-value",
     },
     "channel": "release",
     "client_id": "client-id",
@@ -110,7 +161,7 @@ main_summary_sample = {
     "sync_count_mobile": 1,
     "timestamp": SUBSESSION_START.timestamp * 10 ** 9,  # nanoseconds
     SPBE + "total_uri_count": 20,
-    SPBE + "unique_domains_count": 3
+    SPBE + "unique_domains_count": 3,
 }
 
 
@@ -120,12 +171,8 @@ new_profile_sample = {
         "profile": {
             "creation_date": long(SUBSESSION_START.timestamp / SECONDS_PER_DAY)
         },
-        "build": {
-            "version": "57.0.0",
-        },
-        "partner": {
-            "distribution_id": "mozilla57"
-        },
+        "build": {"version": "57.0.0"},
+        "partner": {"distribution_id": "mozilla57"},
         "settings": {
             "locale": "en-US",
             "is_default_browser": True,
@@ -134,23 +181,23 @@ new_profile_sample = {
                 "source": "source-value",
                 "medium": "medium-value",
                 "campaign": "campaign-value",
-                "content": "content-value"
+                "content": "content-value",
             },
-        }
+        },
     },
     "client_id": "new-profile",
     "metadata": {
         "geo_country": "US",
         "timestamp": (SUBSESSION_START.timestamp + 3600) * 10 ** 9,
         "normalized_channel": "release",
-        "creation_timestamp": SUBSESSION_START.timestamp * 10 ** 9
-    }
+        "creation_timestamp": SUBSESSION_START.timestamp * 10 ** 9,
+    },
 }
 
 
 def format_ssd(arrow_date):
     """Format an arrow date into the submission_start_date"""
-    return str(arrow_date.replace(tzinfo='utc'))
+    return str(arrow_date.replace(tzinfo="utc"))
 
 
 def format_pcd(arrow_date):
@@ -174,7 +221,7 @@ def generate_dates(subsession_date, submission_offset=0, creation_offset=0):
         "subsession_start_date": format_ssd(subsession_date),
         "submission_date_s3": submission_date.format("YYYYMMDD"),
         "profile_creation_date": format_pcd(profile_creation_date),
-        "timestamp": submission_date.timestamp * 10 ** 9
+        "timestamp": submission_date.timestamp * 10 ** 9,
     }
 
     return date_snippet

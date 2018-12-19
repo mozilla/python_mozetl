@@ -58,27 +58,24 @@ def transform(spark):
     """
     engine_validations = spark.sql(query)
 
-    bookmark_validations = (
-        engine_validations
-        .where(F.col("engine_name").isin("bookmarks", "bookmarks-buffered"))
+    bookmark_validations = engine_validations.where(
+        F.col("engine_name").isin("bookmarks", "bookmarks-buffered")
     )
 
-    bookmark_validation_problems = (
-        bookmark_validations
-        .where(F.col("engine_has_problems"))
+    bookmark_validation_problems = bookmark_validations.where(
+        F.col("engine_has_problems")
     )
 
     # Generate aggregates over all bookmarks
     bookmark_aggregates = (
-        bookmark_validations
-        .where(F.col("engine_validation_checked").isNotNull())
+        bookmark_validations.where(F.col("engine_validation_checked").isNotNull())
         # see bug 1410963 for submission date vs sync date
-        .groupBy("submission_day")
-        .agg(
-            F.countDistinct("uid", "device_id", "when")
-            .alias("total_bookmark_validations"),
+        .groupBy("submission_day").agg(
+            F.countDistinct("uid", "device_id", "when").alias(
+                "total_bookmark_validations"
+            ),
             F.countDistinct("uid").alias("total_validated_users"),
-            F.sum("engine_validation_checked").alias("total_bookmarks_checked")
+            F.sum("engine_validation_checked").alias("total_bookmarks_checked"),
         )
     )
 
@@ -90,30 +87,29 @@ def load(spark, bucket, prefix, version, start_date):
     """Save tables to disk."""
 
     for table_name in ["bmk_validation_problems", "bmk_total_per_day"]:
-        path = (
-            "s3://{}/{}/{}/v{}/start_date={}"
-            .format(bucket, prefix, table_name, version, start_date)
+        path = "s3://{}/{}/{}/v{}/start_date={}".format(
+            bucket, prefix, table_name, version, start_date
         )
 
-        logger.info("Saving table {} on start_date {} to {}"
-                    .format(table_name, start_date, path))
+        logger.info(
+            "Saving table {} on start_date {} to {}".format(
+                table_name, start_date, path
+            )
+        )
 
         df = spark.sql("SELECT * FROM {}".format(table_name))
         df.repartition(1).write.parquet(path, mode="overwrite")
 
 
 @click.command()
-@click.option('--start_date', required=True, help="Date to process")
-@click.option('--end_date', help="Optional end date to run until")
-@click.option('--bucket', default='telemetry-parquet')
-@click.option('--prefix', default='sync')
-@click.option('--input_bucket', default='telemetry-parquet')
-@click.option('--input_prefix', default='sync_summary/v2')
+@click.option("--start_date", required=True, help="Date to process")
+@click.option("--end_date", help="Optional end date to run until")
+@click.option("--bucket", default="telemetry-parquet")
+@click.option("--prefix", default="sync")
+@click.option("--input_bucket", default="telemetry-parquet")
+@click.option("--input_prefix", default="sync_summary/v2")
 def main(start_date, end_date, bucket, prefix, input_bucket, input_prefix):
-    spark = (SparkSession
-             .builder
-             .appName("sync_bookmark")
-             .getOrCreate())
+    spark = SparkSession.builder.appName("sync_bookmark").getOrCreate()
 
     version = 1
     input_path = "s3://{}/{}".format(input_bucket, input_prefix)
@@ -123,10 +119,9 @@ def main(start_date, end_date, bucket, prefix, input_bucket, input_prefix):
     start = arrow.get(start_date, ds_format)
     end = arrow.get(end_date if end_date else start_date, ds_format)
 
-    for date in arrow.Arrow.range('day', start, end):
+    for date in arrow.Arrow.range("day", start, end):
         current_date = date.format(ds_format)
-        logger.info("Processing sync bookmark validation for {}"
-                    .format(current_date))
+        logger.info("Processing sync bookmark validation for {}".format(current_date))
         extract(spark, input_path, current_date)
         transform(spark)
         load(spark, bucket, prefix, version, current_date)
