@@ -48,7 +48,7 @@ def main(start_date, end_date, bucket):
     summarize_json.fetch_previous_state("hwsurvey-weekly.json", "hwsurvey-weekly-prev.json",
                                         bucket)
     # Concat the json files into the output.
-    print "Joining JSON files..."
+    print("Joining JSON files...")
 
     new_files = set(report.keys())
     read_files = set(glob.glob("*.json"))
