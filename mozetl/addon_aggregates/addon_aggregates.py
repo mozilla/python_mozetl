@@ -65,7 +65,7 @@ def load_main_summary(spark, input_bucket, input_prefix, input_version):
     :return SparkDF
     '''
     dest = get_dest(input_bucket, input_prefix, input_version)
-    print "loading...", dest
+    print("loading...", dest)
     return (spark
             .read
             .option("mergeSchema", True)

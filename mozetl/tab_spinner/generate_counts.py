@@ -21,7 +21,7 @@ def run_spinner_etl(sc):
             (b.startswith(end_date) or b < end_date)
         )
 
-    print "Start Date: {}, End Date: {}".format(start_date, end_date)
+    print("Start Date: {}, End Date: {}".format(start_date, end_date))
 
     build_results = {}
 

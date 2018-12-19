@@ -49,9 +49,9 @@ def etl_job(sc, sqlContext):
         reverse=True,
     )
     for pair in sorted_results:
-        print(
+        print((
             "OS: {:<10} Percent: {:0.2f}%".format(
                 pair[0],
                 float(pair[1]) / total * 100
             )
-        )
+        ))

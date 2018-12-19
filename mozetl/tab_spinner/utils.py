@@ -153,9 +153,9 @@ def get_short_and_long_spinners(pings):
     )
 
     if round(final_result_short[0][1][2:].sum(), 3) == round(final_result_long[0][1][1], 3):
-        print "Short and long counts match"
+        print("Short and long counts match")
     else:
-        print "Error: Short and long counts do not match"
+        print("Error: Short and long counts do not match")
 
     return {
         'long': final_result_long,

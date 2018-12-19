@@ -301,14 +301,14 @@ def etl(spark, run_date, region_name, table_name, prod_iam_role, sample_rate):
 def extract_transform(spark, run_date, sample_rate=0):
     currentDate = run_date
     currentDateString = currentDate.strftime("%Y%m%d")
-    print("Processing %s" % currentDateString)
+    print(("Processing %s" % currentDateString))
 
     # Get the data for the desired date out of parquet
     template = "s3://telemetry-parquet/main_summary/v4/submission_date_s3=%s"
     datasetForDate = spark.read.parquet(template % currentDateString)
 
     if sample_rate is not None and sample_rate != 0:
-        print("Sample rate set to %0.9f" % sample_rate)
+        print(("Sample rate set to %0.9f" % sample_rate))
         datasetForDate = datasetForDate.sample(False, sample_rate)
     else:
         print("No sampling on dataset")
@@ -408,9 +408,9 @@ def run_etljob(spark, run_date, region_name, table_name, prod_iam_role, sample_r
                            prod_iam_role,
                            sample_rate)
     report_data = (reduction_output[0], reduction_output[1])
-    print("=" * 40)
-    print("%d records inserted to DynamoDB.\n%d records remaining in queue." % report_data)
-    print("=" * 40)
+    print(("=" * 40))
+    print(("%d records inserted to DynamoDB.\n%d records remaining in queue." % report_data))
+    print(("=" * 40))
     return reduction_output
 
 

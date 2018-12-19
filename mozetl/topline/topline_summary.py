@@ -214,7 +214,7 @@ def transform(dataframe, start, mode):
         .join(searches, attributes, "outer")
         .join(hours, attributes, "outer")
         .withColumnRenamed('country', 'geo')
-        .withColumn('crashes', F.lit(0L))
+        .withColumn('crashes', F.lit(0))
         .na.fill(0)
     )
 

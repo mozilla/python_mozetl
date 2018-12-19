@@ -22,34 +22,34 @@ def collect_and_upload_csv(df, filename, upload_config):
     client = boto3.client('s3', 'us-west-2')
     transfer = S3Transfer(client)
 
-    print("{}: Writing output to {}".format(datetime.utcnow(), filename))
+    print(("{}: Writing output to {}".format(datetime.utcnow(), filename)))
 
     # Write the file out as gzipped csv
     with gzip.open(filename, 'wb') as fout:
         fout.write(",".join(df.columns) + "\n")
-        print("{}: Wrote header to {}".format(datetime.utcnow(), filename))
+        print(("{}: Wrote header to {}".format(datetime.utcnow(), filename)))
         records = df.rdd.collect()
         for r in records:
             try:
                 fout.write(csv(r))
                 fout.write("\n")
             except UnicodeEncodeError as e:
-                print("{}: Error writing line: {} // {}".format(datetime.utcnow(), e, r))
-        print("{}: finished writing lines".format(datetime.utcnow()))
+                print(("{}: Error writing line: {} // {}".format(datetime.utcnow(), e, r)))
+        print(("{}: finished writing lines".format(datetime.utcnow())))
 
     # upload files to s3
     try:
         for config in upload_config:
-            print("{}: Uploading to {} at s3://{}/{}/{}".format(
+            print(("{}: Uploading to {} at s3://{}/{}/{}".format(
                 datetime.utcnow(), config["name"], config["bucket"],
-                config["prefix"], filename))
+                config["prefix"], filename)))
 
             s3_path = "{}/{}".format(config["prefix"], filename)
             transfer.upload_file(filename, config["bucket"], s3_path,
                                  extra_args={
                                      'ACL': 'bucket-owner-full-control'})
     except botocore.exceptions.ClientError as e:
-        print("File for {} already exists, skipping upload: {}".format(filename, e))
+        print(("File for {} already exists, skipping upload: {}".format(filename, e)))
 
 
 def marginalize_dataframe(df, attributes, aggregates):
@@ -71,7 +71,7 @@ def convert_week(spark, config, week_start=None):
     # find the week end for the filename
     week_end = fmt(datetime.strptime(week_start, "%Y%m%d") + timedelta(6))
 
-    print("Running for the week of {} to {}".format(week_start, week_end))
+    print(("Running for the week of {} to {}".format(week_start, week_end)))
 
     # find the target subset of data
     df = df.where(df.week_start == week_start)
@@ -96,7 +96,7 @@ def convert_week(spark, config, week_start=None):
     prefix = config['search_cohort']['prefix']
     location = "s3://{}/{}/week_start={}".format(bucket, prefix, week_start)
 
-    print("Saving additional search cohort churn data to {}".format(location))
+    print(("Saving additional search cohort churn data to {}".format(location)))
 
     search_attributes = [
         'source', 'medium', 'campaign', 'content',

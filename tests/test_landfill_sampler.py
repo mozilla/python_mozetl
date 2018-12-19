@@ -15,7 +15,7 @@ def sample_document():
             u'Date': u'Sun, 19 Aug 2018 15:08:00 GMT',
             u'Host': u'incoming.telemetry.mozilla.org',
             'Hostname': u'ip-1.1.1.1',
-            'Timestamp': 1534691279765301222L,
+            'Timestamp': 1534691279765301222,
             'Type': u'telemetry-raw',
             u'User-Agent': u'pingsender/1.0',
             u'X-Forwarded-For': u'127.0.0.1',
