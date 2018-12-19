@@ -188,7 +188,11 @@ def multi_clusters_df(generate_data):
             sample_snippets.append(variation)
             counter = counter + 1
 
-    return generate_data(sample_snippets)
+    dataframe = generate_data(sample_snippets)
+    dataframe.createOrReplaceTempView("clients_daily")
+    dataframe.cache()
+    yield dataframe
+    dataframe.unpersist()
 
 
 @pytest.fixture
@@ -306,7 +310,6 @@ def test_get_samples(spark, dataframe_factory):
 
 
 def test_get_addons(spark, addon_whitelist, multi_clusters_df):
-    multi_clusters_df.createOrReplaceTempView("clients_daily")
 
     samples_df = taar_similarity.get_samples(spark, date_from='20180101')
 
@@ -323,7 +326,6 @@ def test_get_addons(spark, addon_whitelist, multi_clusters_df):
 
 @pytest.mark.timeout(600)
 def test_compute_donors(spark, addon_whitelist, multi_clusters_df):
-    multi_clusters_df.createOrReplaceTempView("clients_daily")
 
     # Perform the clustering on our test data. We expect
     # 3 clusters out of this and 10 donors.
