@@ -1,16 +1,38 @@
 import pytest
 from pyspark.sql import SparkSession
 import json
+from six.moves import input
+
+
+# https://docs.pytest.org/en/latest/example/simple.html
+def pytest_addoption(parser):
+    parser.addoption(
+        "--debug-spark",
+        action="store_true",
+        help="Keep the Spark UI alive after testing",
+    )
 
 
 @pytest.fixture(scope="session")
-def spark():
+def debug_spark(request):
+    return request.config.getoption("--debug-spark")
+
+
+@pytest.fixture(scope="session")
+def spark(pytestconfig, debug_spark):
     spark = (
         SparkSession.builder.master("local").appName("python_mozetl_test").getOrCreate()
     )
     # Set server timezone at UTC+0
     spark.conf.set("spark.sql.session.timeZone", "UTC")
     yield spark
+
+    if debug_spark:
+        capmanager = pytestconfig.pluginmanager.getplugin("capturemanager")
+        capmanager.suspend_global_capture(in_=True)
+        input("\nLeaving Spark UI open on localhost:4040. Press enter to continue.")
+        capmanager.resume_global_capture()
+
     spark.stop()
 
 
