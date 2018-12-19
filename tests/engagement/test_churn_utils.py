@@ -5,10 +5,10 @@ from mozetl.engagement.churn import utils
 
 
 def test_to_datetime(spark):
-    df = spark.createDataFrame([{'date': '20000101'}])
-    expect = '2000-01-01 00:00:00'
+    df = spark.createDataFrame([{"date": "20000101"}])
+    expect = "2000-01-01 00:00:00"
 
-    expr = utils.to_datetime('date', 'yyyyMMdd')
+    expr = utils.to_datetime("date", "yyyyMMdd")
     actual = df.select(expr).collect()[0][0]
 
     assert actual == expect
@@ -17,45 +17,33 @@ def test_to_datetime(spark):
 @pytest.fixture()
 def test_df(dataframe_factory):
     return dataframe_factory.create_dataframe(
-        [None] * 2,
-        {"alpha": "hello", "omega": "world", "delta": "!"}
+        [None] * 2, {"alpha": "hello", "omega": "world", "delta": "!"}
     )
 
 
 @pytest.fixture()
 def select_expr_dict():
     return {
-        "alpha": None,            # key is the column name
-        "beta":  "omega",         # reference to another column
+        "alpha": None,  # key is the column name
+        "beta": "omega",  # reference to another column
         "gamma": "upper(alpha)",  # string expression
-        "delta": F.col("delta")   # column expression
+        "delta": F.col("delta"),  # column expression
     }
 
 
 def test_preprocess_col_expr(select_expr_dict, test_df, row_to_dict):
-    expect = {
-        "alpha": "hello",
-        "beta": "world",
-        "gamma": "HELLO",
-        "delta": "!",
-    }
+    expect = {"alpha": "hello", "beta": "world", "gamma": "HELLO", "delta": "!"}
 
     actual = utils.preprocess_col_expr(select_expr_dict)
 
-    assert row_to_dict(
-        test_df
-        .select([v.alias(k) for k, v in actual.items()])
-        .first()
-    ) == expect
+    assert (
+        row_to_dict(test_df.select([v.alias(k) for k, v in actual.items()]).first())
+        == expect
+    )
 
 
 def test_build_col_expr(select_expr_dict, test_df, row_to_dict):
-    expect = {
-        "alpha": "hello",
-        "beta": "world",
-        "gamma": "HELLO",
-        "delta": "!",
-    }
+    expect = {"alpha": "hello", "beta": "world", "gamma": "HELLO", "delta": "!"}
 
     actual = utils.build_col_expr(select_expr_dict)
 

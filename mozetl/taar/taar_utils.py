@@ -16,11 +16,11 @@ from botocore.exceptions import ClientError
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-AMO_DUMP_BUCKET = 'telemetry-parquet'
-AMO_DUMP_KEY = 'telemetry-ml/addon_recommender/addons_database.json'
+AMO_DUMP_BUCKET = "telemetry-parquet"
+AMO_DUMP_KEY = "telemetry-ml/addon_recommender/addons_database.json"
 
-AMO_WHITELIST_KEY = 'telemetry-ml/addon_recommender/whitelist_addons_database.json'
-AMO_CURATED_WHITELIST_KEY = 'telemetry-ml/addon_recommender/only_guids_top_200.json'
+AMO_WHITELIST_KEY = "telemetry-ml/addon_recommender/whitelist_addons_database.json"
+AMO_CURATED_WHITELIST_KEY = "telemetry-ml/addon_recommender/only_guids_top_200.json"
 
 
 @contextlib.contextmanager
@@ -34,14 +34,10 @@ def read_from_s3(s3_dest_file_name, s3_prefix, bucket):
     Read JSON from an S3 bucket and return the decoded JSON blob
     """
 
-    full_s3_name = '{}{}'.format(s3_prefix, s3_dest_file_name)
-    conn = boto3.resource('s3', region_name='us-west-2')
+    full_s3_name = "{}{}".format(s3_prefix, s3_dest_file_name)
+    conn = boto3.resource("s3", region_name="us-west-2")
     stored_data = json.loads(
-        conn
-        .Object(bucket, full_s3_name)
-        .get()['Body']
-        .read()
-        .decode('utf-8')
+        conn.Object(bucket, full_s3_name).get()["Body"].read().decode("utf-8")
     )
     return stored_data
 
@@ -54,7 +50,7 @@ def write_to_s3(source_file_name, s3_dest_file_name, s3_prefix, bucket):
     :param s3_prefix: The S3 prefix in the bucket.
     :param bucket: The S3 bucket.
     """
-    client = boto3.client('s3', 'us-west-2')
+    client = boto3.client("s3", "us-west-2")
     transfer = boto3.s3.transfer.S3Transfer(client)
 
     # Update the state in the analysis bucket.
@@ -84,8 +80,7 @@ def store_json_to_s3(json_data, base_filename, date, prefix, bucket):
         with open(FULL_FILENAME, "w+") as json_file:
             json_file.write(json_data)
 
-        archived_file_copy =\
-            "{}{}.json".format(base_filename, date)
+        archived_file_copy = "{}{}.json".format(base_filename, date)
 
         # Store a copy of the current JSON with datestamp.
         write_to_s3(FULL_FILENAME, archived_file_copy, prefix, bucket)
@@ -102,20 +97,21 @@ def load_amo_external_whitelist():
     amo_dump = {}
     try:
         # Load the most current AMO dump JSON resource.
-        s3 = boto3.client('s3')
+        s3 = boto3.client("s3")
         s3_contents = s3.get_object(Bucket=AMO_DUMP_BUCKET, Key=AMO_WHITELIST_KEY)
-        amo_dump = json.loads(s3_contents['Body'].read())
+        amo_dump = json.loads(s3_contents["Body"].read())
     except ClientError:
-        logger.exception("Failed to download from S3", extra={
-            "bucket": AMO_DUMP_BUCKET,
-            "key": AMO_DUMP_KEY})
+        logger.exception(
+            "Failed to download from S3",
+            extra={"bucket": AMO_DUMP_BUCKET, "key": AMO_DUMP_KEY},
+        )
 
     # If the load fails, we will have an empty whitelist, this may be problematic.
     for key, value in amo_dump.items():
-        addon_files = value.get('current_version', {}).get('files', {})
+        addon_files = value.get("current_version", {}).get("files", {})
         # If any of the addon files are web_extensions compatible, it can be recommended.
         if any([f.get("is_webextension", False) for f in addon_files]):
-            final_whitelist.append(value['guid'])
+            final_whitelist.append(value["guid"])
 
     if len(final_whitelist) == 0:
         raise RuntimeError("Empty AMO whitelist detected")
@@ -127,9 +123,11 @@ def load_amo_curated_whitelist():
     """
     Return the curated whitelist of addon GUIDs
     """
-    whitelist = read_from_s3('only_guids_top_200.json',
-                             'telemetry-ml/addon_recommender/',
-                             'telemetry-parquet')
+    whitelist = read_from_s3(
+        "only_guids_top_200.json",
+        "telemetry-ml/addon_recommender/",
+        "telemetry-parquet",
+    )
     return list(whitelist)
 
 
@@ -139,4 +137,4 @@ def hash_telemetry_id(telemetry_id):
             https://phabricator.services.mozilla.com/D8311
 
     """
-    return hashlib.sha256(telemetry_id.encode('utf8')).hexdigest()
+    return hashlib.sha256(telemetry_id.encode("utf8")).hexdigest()

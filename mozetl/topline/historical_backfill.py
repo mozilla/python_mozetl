@@ -45,18 +45,14 @@ def backfill_topline_summary(historical_df, path, batch=False, overwrite=False):
     :overwrite bool: specifies whether to overwrite existing data.
     """
 
-    df = (
-        historical_df
-        .where(
-              (F.col('geo') != 'all') &
-              (F.col('os') != 'all') &
-              (F.col('channel') != 'all'))
-        .withColumn('report_start', F.date_format('date', 'yyyyMMdd'))
-    )
+    df = historical_df.where(
+        (F.col("geo") != "all") & (F.col("os") != "all") & (F.col("channel") != "all")
+    ).withColumn("report_start", F.date_format("date", "yyyyMMdd"))
 
     # Cast all elements from the csv file. Assume both schemas are flat.
-    df = df.select(*[F.col(f.name).cast(f.dataType).alias(f.name)
-                     for f in topline_schema.fields])
+    df = df.select(
+        *[F.col(f.name).cast(f.dataType).alias(f.name) for f in topline_schema.fields]
+    )
 
     logging.info("Saving historical data to {}.".format(path))
 
@@ -68,52 +64,57 @@ def backfill_topline_summary(historical_df, path, batch=False, overwrite=False):
     # `telemetry-private-analysis-2/executive-report-<mode>/data/`
     if batch:
         # The csv file is read from a file named `v4-<mode>.csv`
-        writer = writer.partitionBy('report_start')
+        writer = writer.partitionBy("report_start")
     else:
         # This folder contains csv files that should contain only a single
         # date. Assert that property here.
         path = "{}/report_start={}".format(path, df.head().report_start)
-        if df.select('report_start').distinct().count() != 1:
+        if df.select("report_start").distinct().count() != 1:
             raise RuntimeError("There should only be a single reporting date")
 
     writer.parquet(path)
 
 
 @click.command()
-@click.argument('source_s3_path')
-@click.argument('mode', type=click.Choice(['weekly', 'monthly']))
-@click.argument('bucket')
-@click.option('--prefix', default='topline_summary/v1')
-@click.option('--batch/--no-batch', default=False,
-              help='Used when the csv file contains multiple reporting '
-              'periods')
-@click.option('--overwrite/--no-overwrite', default=False,
-              help='Overwrite existing data. Caution when applying '
-              'this batch mode, since it will overwrite all data in '
-              'the specified source S3 path.')
+@click.argument("source_s3_path")
+@click.argument("mode", type=click.Choice(["weekly", "monthly"]))
+@click.argument("bucket")
+@click.option("--prefix", default="topline_summary/v1")
+@click.option(
+    "--batch/--no-batch",
+    default=False,
+    help="Used when the csv file contains multiple reporting " "periods",
+)
+@click.option(
+    "--overwrite/--no-overwrite",
+    default=False,
+    help="Overwrite existing data. Caution when applying "
+    "this batch mode, since it will overwrite all data in "
+    "the specified source S3 path.",
+)
 def main(source_s3_path, mode, bucket, prefix, batch, overwrite):
 
     if batch and overwrite:
         warning_text = (
-            'CAUTION: Using --batch and --overwrite will completely '
-            'overwrite the prefix with input data located in '
-            '`s3://{}/{}/mode={}`. Do you want to continue?'
+            "CAUTION: Using --batch and --overwrite will completely "
+            "overwrite the prefix with input data located in "
+            "`s3://{}/{}/mode={}`. Do you want to continue?"
         ).format(bucket, prefix, mode)
 
         click.confirm(warning_text, abort=True)
 
-    spark = (SparkSession
-             .builder
-             .appName('topline_historical_backfill')
-             .getOrCreate())
+    spark = SparkSession.builder.appName("topline_historical_backfill").getOrCreate()
 
-    logging.info("Running historical backfill for {} executive report at {}."
-                 .format(mode, source_s3_path))
+    logging.info(
+        "Running historical backfill for {} executive report at {}.".format(
+            mode, source_s3_path
+        )
+    )
 
-    historical_df = spark.read.csv(source_s3_path,
-                                   schema=historical_schema,
-                                   header=True)
-    output_path = format_output_path(bucket, '{}/mode={}'.format(prefix, mode))
+    historical_df = spark.read.csv(
+        source_s3_path, schema=historical_schema, header=True
+    )
+    output_path = format_output_path(bucket, "{}/mode={}".format(prefix, mode))
     try:
         backfill_topline_summary(historical_df, output_path, batch, overwrite)
     finally:
@@ -121,5 +122,5 @@ def main(source_s3_path, mode, bucket, prefix, batch, overwrite):
     logging.info("Finished historical backfill job.")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

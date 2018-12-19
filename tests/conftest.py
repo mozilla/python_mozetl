@@ -5,11 +5,7 @@ from pyspark.sql import SparkSession
 @pytest.fixture(scope="session")
 def spark():
     spark = (
-        SparkSession
-        .builder
-        .master("local")
-        .appName("python_mozetl_test")
-        .getOrCreate()
+        SparkSession.builder.master("local").appName("python_mozetl_test").getOrCreate()
     )
     # Set server timezone at UTC+0
     spark.conf.set("spark.sql.session.timeZone", "UTC")
@@ -25,8 +21,10 @@ def spark_context(spark):
 @pytest.fixture(autouse=True)
 def no_spark_stop(monkeypatch):
     """ Disable stopping the shared spark session during tests """
+
     def nop(*args, **kwargs):
         print("Disabled spark.stop for testing")
+
     monkeypatch.setattr("pyspark.sql.SparkSession.stop", nop)
 
 
@@ -44,8 +42,10 @@ def df_equals(row_to_dict):
 @pytest.fixture(scope="session")
 def row_to_dict():
     """Convert pyspark.Row to dict for easier unordered comparison"""
+
     def func(row):
         return {key: row[key] for key in row.__fields__}
+
     return func
 
 
@@ -78,8 +78,11 @@ class DataFrameFactory:
         # if no schema is provided, the schema will be inferred
         return self.spark.createDataFrame(samples, schema)
 
-    def create_dataframe_with_key(self, snippets, base, key, key_func=None, schema=None):
+    def create_dataframe_with_key(
+        self, snippets, base, key, key_func=None, schema=None
+    ):
         """Generate dataframe with autoincrementing key function"""
+
         def generate_keys():
             num = 0
             while True:

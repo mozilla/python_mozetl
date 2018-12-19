@@ -16,18 +16,14 @@ VALID_PLATFORMS = ["all", "android", "linux", "mac", "windows", None]
 SAMPLE_DATA = {
     "gnome-download-notify@ion201": {
         "is_featured": True,
-        "categories": {
-            "firefox": [
-                "alerts-updates"
-            ]
-        },
+        "categories": {"firefox": ["alerts-updates"]},
         "current_version": {
             "files": [
                 {
                     "id": 844358,
                     "is_webextension": True,
                     "platform": "all",
-                    "status": "public"
+                    "status": "public",
                 }
             ]
         },
@@ -37,14 +33,12 @@ SAMPLE_DATA = {
         },
         "first_create_date": "2015-06-20T11:21:58Z",
         "guid": "gnome-download-notify@ion201",
-        "name": {
-            "en-US": "Download Notifications"
-        },
+        "name": {"en-US": "Download Notifications"},
         "ratings": {
             "average": 5.0,
             "bayesian_average": 4.58373,
             "count": 11.0,
-            "text_count": 6.0
+            "text_count": 6.0,
         },
         "summary": {
             "en-US": "Native notification integration for completed downloads."
@@ -61,9 +55,9 @@ SAMPLE_DATA = {
             "notification",
             "notify-send",
             "unity",
-            "xfce"
+            "xfce",
         ],
-        "weekly_downloads": 105
+        "weekly_downloads": 105,
     },
     "jid0-ujiop74nNc447DlWVPSGIlzMRqY@jetpack": {
         "is_featured": True,
@@ -74,7 +68,7 @@ SAMPLE_DATA = {
                     "id": 149005,
                     "is_webextension": False,
                     "platform": "all",
-                    "status": "public"
+                    "status": "public",
                 }
             ]
         },
@@ -82,35 +76,27 @@ SAMPLE_DATA = {
         "description": None,
         "first_create_date": "2012-04-13T08:55:39Z",
         "guid": "jid0-ujiop74nNc447DlWVPSGIlzMRqY@jetpack",
-        "name": {
-            "en-US": "Luffi"
-        },
+        "name": {"en-US": "Luffi"},
         "ratings": {
             "average": 1.0,
             "bayesian_average": 0.698215,
             "count": 1.0,
-            "text_count": 1.0
+            "text_count": 1.0,
         },
-        "summary": {
-            "en-US": "Luffi - Let\u00b4s use freeware! fun included:)"
-        },
+        "summary": {"en-US": "Luffi - Let\u00b4s use freeware! fun included:)"},
         "tags": [],
-        "weekly_downloads": 0
+        "weekly_downloads": 0,
     },
     "jid1-tpeRu7ABM810Fw@jetpack": {
         "is_featured": True,
-        "categories": {
-            "firefox": [
-                "photos-music-videos"
-            ]
-        },
+        "categories": {"firefox": ["photos-music-videos"]},
         "current_version": {
             "files": [
                 {
                     "id": 216360,
                     "is_webextension": False,
                     "platform": "all",
-                    "status": "public"
+                    "status": "public",
                 }
             ]
         },
@@ -118,40 +104,29 @@ SAMPLE_DATA = {
         "description": None,
         "first_create_date": "2011-10-13T04:55:06Z",
         "guid": "jid1-tpeRu7ABM810Fw@jetpack",
-        "name": {
-            "zh-CN": "\u8c46\u74e3\u7535\u53f0OSD Lyrics\u63d2\u4ef6"
-        },
+        "name": {"zh-CN": "\u8c46\u74e3\u7535\u53f0OSD Lyrics\u63d2\u4ef6"},
         "ratings": {
             "average": 3.0,
             "bayesian_average": 2.38892,
             "count": 3.0,
-            "text_count": 0.0
+            "text_count": 0.0,
         },
         "summary": {
             "zh-CN": "\u4f7f\u7528OSD Lyrics\u663e\u793a\u8c46\u74e3\u7535\u53f0\u6b4c\u8bcd"
         },
-        "tags": [
-            "douban",
-            "osd-lyrics",
-            "osdlyrics",
-            "\u8c46\u74e3"
-        ],
-        "weekly_downloads": 1
+        "tags": ["douban", "osd-lyrics", "osdlyrics", "\u8c46\u74e3"],
+        "weekly_downloads": 1,
     },
     "nellyfurtado@browsernation.com": {
         "is_featured": False,
-        "categories": {
-            "firefox": [
-                "feeds-news-blogging"
-            ]
-        },
+        "categories": {"firefox": ["feeds-news-blogging"]},
         "current_version": {
             "files": [
                 {
                     "id": 114512,
                     "is_webextension": False,
                     "platform": "all",
-                    "status": "public"
+                    "status": "public",
                 }
             ]
         },
@@ -161,14 +136,12 @@ SAMPLE_DATA = {
         },
         "first_create_date": "2010-11-03T09:38:20Z",
         "guid": "nellyfurtado@browsernation.com",
-        "name": {
-            "en-US": "The Official Nelly Furtado Add-on for Firefox"
-        },
+        "name": {"en-US": "The Official Nelly Furtado Add-on for Firefox"},
         "ratings": {
             "average": 0.0,
             "bayesian_average": 0.0,
             "count": 0.0,
-            "text_count": 0.0
+            "text_count": 0.0,
         },
         "summary": {
             "en-US": "Stay connected to Nelly Furtado and download her new browser application."
@@ -181,26 +154,22 @@ SAMPLE_DATA = {
             "pop",
             "rss reader",
             "theme",
-            "toolbar"
+            "toolbar",
         ],
-        "weekly_downloads": 0
-    }
+        "weekly_downloads": 0,
+    },
 }
 
 EXPECTED_FINAL_JDATA = {
     "gnome-download-notify@ion201": {
-        "categories": {
-            "firefox": [
-                "alerts-updates"
-            ]
-        },
+        "categories": {"firefox": ["alerts-updates"]},
         "current_version": {
             "files": [
                 {
                     "id": 844358,
                     "is_webextension": True,
                     "platform": "all",
-                    "status": "public"
+                    "status": "public",
                 }
             ]
         },
@@ -210,14 +179,12 @@ EXPECTED_FINAL_JDATA = {
         },
         "first_create_date": "2015-06-20T11:21:58Z",
         "guid": "gnome-download-notify@ion201",
-        "name": {
-            "en-US": "Download Notifications"
-        },
+        "name": {"en-US": "Download Notifications"},
         "ratings": {
             "average": 5.0,
             "bayesian_average": 4.58373,
             "count": 11.0,
-            "text_count": 6.0
+            "text_count": 6.0,
         },
         "summary": {
             "en-US": "Native notification integration for completed downloads."
@@ -234,23 +201,19 @@ EXPECTED_FINAL_JDATA = {
             "notification",
             "notify-send",
             "unity",
-            "xfce"
+            "xfce",
         ],
-        "weekly_downloads": 105
+        "weekly_downloads": 105,
     },
     "jid1-tpeRu7ABM810Fw@jetpack": {
-        "categories": {
-            "firefox": [
-                "photos-music-videos"
-            ]
-        },
+        "categories": {"firefox": ["photos-music-videos"]},
         "current_version": {
             "files": [
                 {
                     "id": 216360,
                     "is_webextension": False,
                     "platform": "all",
-                    "status": "public"
+                    "status": "public",
                 }
             ]
         },
@@ -258,27 +221,19 @@ EXPECTED_FINAL_JDATA = {
         "description": None,
         "first_create_date": "2011-10-13T04:55:06Z",
         "guid": "jid1-tpeRu7ABM810Fw@jetpack",
-        "name": {
-            "zh-CN": "\\u8c46\\u74e3\\u7535\\u53f0OSD Lyrics\\u63d2\\u4ef6"
-        },
+        "name": {"zh-CN": "\\u8c46\\u74e3\\u7535\\u53f0OSD Lyrics\\u63d2\\u4ef6"},
         "ratings": {
             "average": 3.0,
             "bayesian_average": 2.38892,
             "count": 3.0,
-            "text_count": 0.0
+            "text_count": 0.0,
         },
         "summary": {
-            "zh-CN":
-                "\\u4f7f\\u7528OSD Lyrics\\u663e\\u793a\\u8c46\\u74e3\\u7535\\u53f0\\u6b4c\\u8bcd"
+            "zh-CN": "\\u4f7f\\u7528OSD Lyrics\\u663e\\u793a\\u8c46\\u74e3\\u7535\\u53f0\\u6b4c\\u8bcd"
         },
-        "tags": [
-            "douban",
-            "osd-lyrics",
-            "osdlyrics",
-            "\\u8c46\\u74e3"
-        ],
-        "weekly_downloads": 1
-    }
+        "tags": ["douban", "osd-lyrics", "osdlyrics", "\\u8c46\\u74e3"],
+        "weekly_downloads": 1,
+    },
 }
 
 
@@ -286,46 +241,52 @@ EXPECTED_FINAL_JDATA = {
 def s3_fixture():
     mock_s3().start()
 
-    conn = boto3.resource('s3', region_name='us-west-2')
+    conn = boto3.resource("s3", region_name="us-west-2")
     conn.create_bucket(Bucket=taar_amowhitelist.AMO_DUMP_BUCKET)
-    taar_utils.store_json_to_s3(json.dumps(SAMPLE_DATA),
-                                taar_amowhitelist.AMO_DUMP_BASE_FILENAME,
-                                '20171106',
-                                taar_amowhitelist.AMO_DUMP_PREFIX,
-                                taar_amowhitelist.AMO_DUMP_BUCKET)
+    taar_utils.store_json_to_s3(
+        json.dumps(SAMPLE_DATA),
+        taar_amowhitelist.AMO_DUMP_BASE_FILENAME,
+        "20171106",
+        taar_amowhitelist.AMO_DUMP_PREFIX,
+        taar_amowhitelist.AMO_DUMP_BUCKET,
+    )
     yield conn, SAMPLE_DATA
     mock_s3().stop()
 
 
 def test_extract(s3_fixture):
-    '''
+    """
     The transform for the AMOTransformer is just filtering by
     age using `first_create_date` and using the ratings.average
     with a minimum of 3.0
-    '''
+    """
 
-    etl = taar_amowhitelist.AMOTransformer(taar_amowhitelist.AMO_DUMP_BUCKET,
-                                           taar_amowhitelist.AMO_DUMP_PREFIX,
-                                           taar_amowhitelist.AMO_DUMP_FILENAME,
-                                           taar_amowhitelist.MIN_RATING,
-                                           taar_amowhitelist.MIN_AGE)
+    etl = taar_amowhitelist.AMOTransformer(
+        taar_amowhitelist.AMO_DUMP_BUCKET,
+        taar_amowhitelist.AMO_DUMP_PREFIX,
+        taar_amowhitelist.AMO_DUMP_FILENAME,
+        taar_amowhitelist.MIN_RATING,
+        taar_amowhitelist.MIN_AGE,
+    )
     jdata = etl.extract()
     assert jdata == SAMPLE_DATA
 
 
 def test_transform_whitelist(s3_fixture):
-    '''
+    """
     The transform for the AMOTransformer is just filtering by
     age using `first_create_date` and using the ratings.average
     with a minimum of 3.0
-    '''
+    """
 
     conn, data = s3_fixture
-    etl = taar_amowhitelist.AMOTransformer(taar_amowhitelist.AMO_DUMP_BUCKET,
-                                           taar_amowhitelist.AMO_DUMP_PREFIX,
-                                           taar_amowhitelist.AMO_DUMP_FILENAME,
-                                           taar_amowhitelist.MIN_RATING,
-                                           taar_amowhitelist.MIN_AGE)
+    etl = taar_amowhitelist.AMOTransformer(
+        taar_amowhitelist.AMO_DUMP_BUCKET,
+        taar_amowhitelist.AMO_DUMP_PREFIX,
+        taar_amowhitelist.AMO_DUMP_FILENAME,
+        taar_amowhitelist.MIN_RATING,
+        taar_amowhitelist.MIN_AGE,
+    )
     etl.transform(data)
 
     final_jdata = etl.get_whitelist()
@@ -333,28 +294,32 @@ def test_transform_whitelist(s3_fixture):
 
     today = datetime.datetime.today().replace(tzinfo=None)
     for client_data in final_jdata.values():
-        assert client_data['current_version']['files'][0]['is_webextension']
-        assert client_data['ratings']['average'] >= taar_amowhitelist.MIN_RATING
-        create_datetime = parse(client_data['first_create_date']).replace(tzinfo=None)
-        assert create_datetime + datetime.timedelta(days=taar_amowhitelist.MIN_AGE) < today
-        assert 'is_featured' in client_data
+        assert client_data["current_version"]["files"][0]["is_webextension"]
+        assert client_data["ratings"]["average"] >= taar_amowhitelist.MIN_RATING
+        create_datetime = parse(client_data["first_create_date"]).replace(tzinfo=None)
+        assert (
+            create_datetime + datetime.timedelta(days=taar_amowhitelist.MIN_AGE) < today
+        )
+        assert "is_featured" in client_data
         # Verify that the platform data is in the transform output
-        assert client_data['current_version']['files'][0]['platform'] in VALID_PLATFORMS
+        assert client_data["current_version"]["files"][0]["platform"] in VALID_PLATFORMS
 
 
 def test_transform_featuredlist(s3_fixture):
-    '''
+    """
     The transform for the AMOTransformer is just filtering by
     age using `first_create_date` and using the ratings.average
     with a minimum of 3.0
-    '''
+    """
 
     conn, data = s3_fixture
-    etl = taar_amowhitelist.AMOTransformer(taar_amowhitelist.AMO_DUMP_BUCKET,
-                                           taar_amowhitelist.AMO_DUMP_PREFIX,
-                                           taar_amowhitelist.AMO_DUMP_FILENAME,
-                                           taar_amowhitelist.MIN_RATING,
-                                           taar_amowhitelist.MIN_AGE)
+    etl = taar_amowhitelist.AMOTransformer(
+        taar_amowhitelist.AMO_DUMP_BUCKET,
+        taar_amowhitelist.AMO_DUMP_PREFIX,
+        taar_amowhitelist.AMO_DUMP_FILENAME,
+        taar_amowhitelist.MIN_RATING,
+        taar_amowhitelist.MIN_AGE,
+    )
     etl.transform(data)
 
     final_jdata = etl.get_featuredlist()
@@ -364,34 +329,40 @@ def test_transform_featuredlist(s3_fixture):
     assert len(final_jdata) == 3
 
     for rec in final_jdata.values():
-        assert rec['is_featured']
+        assert rec["is_featured"]
 
 
 def test_load_whitelist(s3_fixture):
     conn, data = s3_fixture
 
-    etl = taar_amowhitelist.AMOTransformer(taar_amowhitelist.AMO_DUMP_BUCKET,
-                                           taar_amowhitelist.AMO_DUMP_PREFIX,
-                                           taar_amowhitelist.AMO_DUMP_FILENAME,
-                                           taar_amowhitelist.MIN_RATING,
-                                           taar_amowhitelist.MIN_AGE)
+    etl = taar_amowhitelist.AMOTransformer(
+        taar_amowhitelist.AMO_DUMP_BUCKET,
+        taar_amowhitelist.AMO_DUMP_PREFIX,
+        taar_amowhitelist.AMO_DUMP_FILENAME,
+        taar_amowhitelist.MIN_RATING,
+        taar_amowhitelist.MIN_AGE,
+    )
     etl.transform(data)
 
     etl.load()
 
-    s3 = boto3.resource('s3', region_name='us-west-2')
+    s3 = boto3.resource("s3", region_name="us-west-2")
     bucket_obj = s3.Bucket(taar_amowhitelist.AMO_DUMP_BUCKET)
 
-    available_objects = list(bucket_obj.objects.filter(Prefix=taar_amowhitelist.AMO_DUMP_PREFIX))
+    available_objects = list(
+        bucket_obj.objects.filter(Prefix=taar_amowhitelist.AMO_DUMP_PREFIX)
+    )
 
     # Check that whitelist file exists
-    full_s3_name = '{}{}'.format(taar_amowhitelist.AMO_DUMP_PREFIX,
-                                 taar_amowhitelist.FILTERED_AMO_FILENAME)
+    full_s3_name = "{}{}".format(
+        taar_amowhitelist.AMO_DUMP_PREFIX, taar_amowhitelist.FILTERED_AMO_FILENAME
+    )
     keys = [o.key for o in available_objects]
     assert full_s3_name in keys
 
     # Check that featured addon file exists
-    full_s3_name = '{}{}'.format(taar_amowhitelist.AMO_DUMP_PREFIX,
-                                 taar_amowhitelist.FEATURED_FILENAME)
+    full_s3_name = "{}{}".format(
+        taar_amowhitelist.AMO_DUMP_PREFIX, taar_amowhitelist.FEATURED_FILENAME
+    )
     keys = [o.key for o in available_objects]
     assert full_s3_name in keys
