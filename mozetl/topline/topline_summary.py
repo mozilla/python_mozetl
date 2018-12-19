@@ -13,6 +13,7 @@ from mozetl.constants import SEARCH_SOURCE_WHITELIST
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# fmt: off
 countries = {
     "AD", "AE", "AF", "AG", "AI", "AL", "AM", "AO", "AQ", "AR", "AS",
     "AT", "AU", "AW", "AX", "AZ", "BA", "BB", "BD", "BE", "BF", "BG",
@@ -38,6 +39,7 @@ countries = {
     "UM", "US", "UY", "UZ", "VA", "VC", "VE", "VG", "VI", "VN", "VU",
     "WF", "WS", "YE", "YT", "ZA", "ZM", "ZW"
 }
+# fmt: on
 
 seconds_per_hour = 60 * 60
 seconds_per_day = seconds_per_hour * 24
