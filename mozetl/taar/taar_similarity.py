@@ -13,6 +13,7 @@ import json
 import logging
 import numpy as np
 
+from datetime import date, timedelta
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col
 from pyspark.ml.feature import HashingTF, IDF
@@ -39,10 +40,12 @@ logging.getLogger("py4j").setLevel(logging.ERROR)
 logger = logging.getLogger(__name__)
 
 
-def get_samples(spark):
+def get_samples(spark, date_from):
     """
     Get a DataFrame with a valid set of sample to base the next
     processing on.
+
+    Sample is limited to submissions received since `date_from` and latest row per each client.
 
     Reference documentation is found here:
 
@@ -60,6 +63,7 @@ def get_samples(spark):
         .where("size(active_addons) < 100")
         .where("channel = 'release'")
         .where("app_name = 'Firefox'")
+        .where("submission_date_s3 >= {}".format(date_from))
         .selectExpr(
             "client_id as client_id",
             "active_addons as active_addons",
@@ -72,7 +76,10 @@ def get_samples(spark):
             "AS tab_open_count",
             "scalar_parent_browser_engagement_total_uri_count_sum AS total_uri",
             "scalar_parent_browser_engagement_unique_domains_count_mean AS unique_tlds",
+            "row_number() OVER (PARTITION BY client_id ORDER BY submission_date_s3 desc) as rn",
         )
+        .where("rn = 1")
+        .drop("rn")
     )
     return df
 
@@ -169,9 +176,9 @@ def get_donor_pools(users_df, clusters_df, num_donors, random_seed=None):
     return clusters, donor_pool_df
 
 
-def get_donors(spark, num_clusters, num_donors, addon_whitelist, random_seed=None):
+def get_donors(spark, num_clusters, num_donors, addon_whitelist, date_from, random_seed=None):
     # Get the data for the potential add-on donors.
-    users_sample = get_samples(spark)
+    users_sample = get_samples(spark, date_from)
     # Get add-ons from selected users and make sure they are
     # useful for making a recommendation.
     addons_df = get_addons_per_client(users_sample, addon_whitelist, 2)
@@ -332,6 +339,10 @@ def get_lr_curves(
     return zip(lr_index, zip(numerator_density, denominator_density))
 
 
+def today_minus_90_days():
+    return (date.today() + timedelta(days=-90)).strftime("%Y%m%d")
+
+
 @click.command()
 @click.option("--date", required=True)
 @click.option("--bucket", default="telemetry-parquet")
@@ -340,9 +351,11 @@ def get_lr_curves(
 @click.option("--num_donors", default=1000)
 @click.option("--kernel_bandwidth", default=0.35)
 @click.option("--num_pdf_points", default=1000)
-def main(
-    date, bucket, prefix, num_clusters, num_donors, kernel_bandwidth, num_pdf_points
-):
+@click.option("--clients_sample_date_from", default=today_minus_90_days())
+def main(date, bucket, prefix, num_clusters, num_donors, kernel_bandwidth, num_pdf_points,
+         clients_sample_date_from):
+    logger.info("Sampling clients since {}".format(clients_sample_date_from))
+
     spark = (
         SparkSession.builder.appName("taar_similarity")
         .enableHiveSupport()
@@ -361,7 +374,8 @@ def main(
     logger.info("Computing the list of donors...")
 
     # Compute the donors clusters and the LR curves.
-    cluster_ids, donors_df = get_donors(spark, num_clusters, num_donors, whitelist)
+    cluster_ids, donors_df = get_donors(spark, num_clusters, num_donors, whitelist,
+                                        clients_sample_date_from)
     donors_df.cache()
     lr_curves = get_lr_curves(
         spark, donors_df, cluster_ids, kernel_bandwidth, num_pdf_points
