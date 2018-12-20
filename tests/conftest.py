@@ -1,5 +1,6 @@
 import pytest
 from pyspark.sql import SparkSession
+import json
 
 
 @pytest.fixture(scope="session")
@@ -31,7 +32,10 @@ def no_spark_stop(monkeypatch):
 @pytest.fixture
 def df_equals(row_to_dict):
     def to_comparable(df):
-        return sorted(map(row_to_dict, df.collect()))
+        # choose a unique ordering; lexographic ordering of dictionaries
+        return sorted(
+            map(row_to_dict, df.collect()), key=lambda x: json.dumps(x, sort_keys=True)
+        )
 
     def func(this, that):
         return to_comparable(this) == to_comparable(that)
@@ -43,8 +47,8 @@ def df_equals(row_to_dict):
 def row_to_dict():
     """Convert pyspark.Row to dict for easier unordered comparison"""
 
-    def func(row):
-        return {key: row[key] for key in row.__fields__}
+    def func(row, recursive=True):
+        return row.asDict(recursive=recursive)
 
     return func
 
