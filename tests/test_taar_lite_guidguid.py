@@ -104,7 +104,7 @@ def test_addon_keying():
 
 
 @mock_s3
-def test_transform_is_valid(spark):
+def test_transform_is_valid(spark, df_equals):
     """
     Check that the contents of a sample transformation of extracted
     data
@@ -113,13 +113,8 @@ def test_transform_is_valid(spark):
     df = spark.createDataFrame(MOCK_TELEMETRY_SAMPLE)
 
     result_data = taar_lite_guidguid.transform(df)
-
-    # Convert the dataframe into a plain list of dictionaries
-    result_data = sorted([r.asDict() for r in result_data.collect()])
-
-    # Convert the expected data into a plain list of dictionaries
-    expected = sorted([r.asDict() for r in EXPECTED_GUID_GUID_DATA])
-    assert expected == result_data
+    expected_data = spark.createDataFrame(EXPECTED_GUID_GUID_DATA)
+    assert df_equals(result_data, expected_data)
 
 
 @mock_s3
