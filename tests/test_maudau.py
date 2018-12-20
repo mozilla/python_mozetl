@@ -50,7 +50,7 @@ def test_parse_last_rollup():
     cwd = os.getcwd()
     basename = "engagement_ratio.csv"
     # Block1: test that we keep data > 10 days but regenerate newer data.
-    data = "\r\n".join(
+    data = "\n".join(
         [
             "day,dau,mau,generated_on",
             "20170503,1,3,20170620",
@@ -72,7 +72,7 @@ def test_parse_last_rollup():
         os.chdir(cwd)
     # Block2: test that we regenerate old data if we hit a gap.
     # Here, 2017-05-02 is missing.
-    data2 = "\r\n".join(
+    data2 = "\n".join(
         [
             "day,dau,mau,generated_on",
             "20170501,1,3,20170620",
@@ -102,7 +102,7 @@ def test_write_locally():
         {"day": "20170503", "dau": 1, "mau": 3, "generated_on": generated},
         {"day": "20170504", "dau": 1, "mau": 3, "generated_on": generated},
     ]
-    expected = "\r\n".join(
+    expected = "\n".join(
         [
             "day,dau,mau,generated_on",
             "20170503,1,3,{}".format(generated),
