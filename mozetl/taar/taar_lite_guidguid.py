@@ -84,7 +84,7 @@ def extract_telemetry(spark):
                     p["client_id"],
                     [
                         guid
-                        for guid, data in p["active_addons"].items()
+                        for guid, data in list(p["active_addons"].items())
                         if is_valid_addon(guid, data)
                     ],
                 )

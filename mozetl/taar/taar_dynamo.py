@@ -160,7 +160,7 @@ def list_transformer(row_jsonstr):
     jdata["start_date"] = start_date
 
     # Filter out keys with an empty value
-    jdata = {key: value for key, value in jdata.items() if value}
+    jdata = {key: value for key, value in list(jdata.items()) if value}
 
     # We need to return a 4-tuple of values
     # (numrec_dynamodb_pushed, json_list_length, json_list, error_json)

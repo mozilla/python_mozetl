@@ -100,22 +100,22 @@ def extract_search_counts(frame):
 
 
 def to_profile_day_aggregates(frame_with_extracts):
-    from fields import MAIN_SUMMARY_FIELD_AGGREGATORS
+    from .fields import MAIN_SUMMARY_FIELD_AGGREGATORS
 
     if "activity_date" not in frame_with_extracts.columns:
-        from fields import ACTIVITY_DATE_COLUMN
+        from .fields import ACTIVITY_DATE_COLUMN
 
         with_activity_date = frame_with_extracts.select("*", ACTIVITY_DATE_COLUMN)
     else:
         with_activity_date = frame_with_extracts
     if "geo_subdivision1" not in with_activity_date.columns:
-        from fields import NULL_STRING_COLUMN
+        from .fields import NULL_STRING_COLUMN
 
         with_activity_date = with_activity_date.withColumn(
             "geo_subdivision1", NULL_STRING_COLUMN
         )
     if "geo_subdivision2" not in with_activity_date.columns:
-        from fields import NULL_STRING_COLUMN
+        from .fields import NULL_STRING_COLUMN
 
         with_activity_date = with_activity_date.withColumn(
             "geo_subdivision2", NULL_STRING_COLUMN

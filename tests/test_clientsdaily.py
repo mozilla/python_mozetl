@@ -37,14 +37,14 @@ def clients_daily(main_summary_with_search):
 
 def test_extract_search_counts(main_summary_with_search):
     row = main_summary_with_search.agg({"search_count_all": "sum"}).collect()[0]
-    total = row.asDict().values()[0]
+    total = list(row.asDict().values())[0]
     assert total == EXPECTED_INTEGER_VALUES["search_count_all_sum"]
 
 
 def test_domains_count(main_summary_with_search):
     unique_domains = "scalar_parent_browser_engagement_unique_domains_count"
     row = main_summary_with_search.agg({unique_domains: "sum"}).collect()[0]
-    total = row.asDict().values()[0]
+    total = list(row.asDict().values())[0]
     assert total == 4402
 
 
@@ -54,7 +54,7 @@ def test_to_profile_day_aggregates(clients_daily):
     aggd = dict([(k, "sum") for k in EXPECTED_INTEGER_VALUES])
     result = clients_daily.agg(aggd).collect()[0]
 
-    for k, expected in EXPECTED_INTEGER_VALUES.items():
+    for k, expected in list(EXPECTED_INTEGER_VALUES.items()):
         actual = int(result["sum({})".format(k)])
         assert actual == expected
 
@@ -66,62 +66,62 @@ def test_profile_creation_date_fields(clients_daily):
     # the TZ setting of the system on which the tests run.
     expected_back = set(
         [
-            u"2014-12-16",
-            u"2016-09-07",
-            u"2016-05-12",
-            u"2017-02-16",
-            u"2012-11-17",
-            u"2013-09-08",
-            u"2017-02-12",
-            u"2016-04-04",
-            u"2017-04-25",
-            u"2015-06-17",
+            "2014-12-16",
+            "2016-09-07",
+            "2016-05-12",
+            "2017-02-16",
+            "2012-11-17",
+            "2013-09-08",
+            "2017-02-12",
+            "2016-04-04",
+            "2017-04-25",
+            "2015-06-17",
         ]
     )
     expected_utc = set(
         [
-            u"2014-12-17",
-            u"2016-09-08",
-            u"2016-05-13",
-            u"2017-02-17",
-            u"2012-11-18",
-            u"2013-09-09",
-            u"2017-02-13",
-            u"2016-04-05",
-            u"2017-04-26",
-            u"2015-06-18",
+            "2014-12-17",
+            "2016-09-08",
+            "2016-05-13",
+            "2017-02-17",
+            "2012-11-18",
+            "2013-09-09",
+            "2017-02-13",
+            "2016-04-05",
+            "2017-04-26",
+            "2015-06-18",
         ]
     )
     expected_forward = set(
         [
-            u"2014-12-18",
-            u"2016-09-09",
-            u"2016-05-14",
-            u"2017-02-18",
-            u"2012-11-19",
-            u"2013-09-10",
-            u"2017-02-14",
-            u"2016-04-06",
-            u"2017-04-27",
-            u"2015-06-19",
+            "2014-12-18",
+            "2016-09-09",
+            "2016-05-14",
+            "2017-02-18",
+            "2012-11-19",
+            "2013-09-10",
+            "2017-02-14",
+            "2016-04-06",
+            "2017-04-27",
+            "2015-06-19",
         ]
     )
     ten_pcds = clients_daily.select("profile_creation_date").take(10)
-    actual1 = set([r.asDict().values()[0][:10] for r in ten_pcds])
+    actual1 = set([list(r.asDict().values())[0][:10] for r in ten_pcds])
     assert actual1 in (expected_back, expected_utc, expected_forward)
 
     expected2_back = [378, 894, 261, 1361, 101, 1656, 415, 29, 703, 102]
     expected2_utc = [377, 893, 260, 1360, 100, 1655, 414, 28, 702, 101]
     expected2_forward = [376, 892, 259, 1359, 99, 1654, 413, 27, 701, 100]
     ten_pdas = clients_daily.select("profile_age_in_days").take(10)
-    actual2 = [r.asDict().values()[0] for r in ten_pdas]
+    actual2 = [list(r.asDict().values())[0] for r in ten_pdas]
     assert actual2 in (expected2_back, expected2_utc, expected2_forward)
 
 
 def test_sessions_started_on_this_day(clients_daily):
     expected = [2, 0, 3, 2, 1, 0, 1, 0, 0, 3]
     ten_ssotds = clients_daily.select("sessions_started_on_this_day").take(10)
-    actual = [r.asDict().values()[0] for r in ten_ssotds]
+    actual = [list(r.asDict().values())[0] for r in ten_ssotds]
     assert actual == expected
 
 
@@ -131,7 +131,7 @@ def test_sessions_started_on_this_day_sorted(clients_daily):
     expected = [1, 5, 1, 1, 1, 0, 0, 0, 0, 0]
     one_day = clients_daily.where("activity_date == '2017-05-25'").orderBy("client_id")
     ten_ssotds = one_day.select("sessions_started_on_this_day").take(10)
-    actual = [r.asDict().values()[0] for r in ten_ssotds]
+    actual = [list(r.asDict().values())[0] for r in ten_ssotds]
     assert actual == expected
 
 

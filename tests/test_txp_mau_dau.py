@@ -1,5 +1,5 @@
 from mozetl.testpilot.txp_mau_dau import get_experiments
-from utils import get_resource
+from .utils import get_resource
 import requests
 import json
 

@@ -98,7 +98,7 @@ def reformat_data(df):
     # attributes. Instead, ignore rows where the date field is empty,
     # which equates to ignoring aggregates over multiple dates.
     cubed_df = (
-        df.select(*topline_columns.values())
+        df.select(*list(topline_columns.values()))
         .cube(*attributes)
         .agg(*[F.sum(F.col(x)).alias(x) for x in aggregates])
         .where(F.col("date").isNotNull())

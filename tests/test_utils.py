@@ -57,7 +57,7 @@ def test_generate_filter_parameters():
 
 
 def test_write_csv_valid_unicode(generate_data, tmpdir):
-    test_data = [u"∆", u"∫", u"∬"]
+    test_data = ["∆", "∫", "∬"]
     df = generate_data(test_data)
 
     path = str(tmpdir.join("test_data.csv"))

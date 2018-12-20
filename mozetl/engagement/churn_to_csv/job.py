@@ -10,7 +10,7 @@ from pyspark.sql import SparkSession, functions as F
 
 
 def csv(f):
-    return ",".join([unicode(a) for a in f])
+    return ",".join([str(a) for a in f])
 
 
 def fmt(d, date_format="%Y%m%d"):
@@ -136,10 +136,10 @@ def convert_week(spark, config, week_start=None):
 def assert_valid_config(config):
     """ Assert that the configuration looks correct. """
     # This could be replaced with python schema's
-    assert set(["source", "uploads", "search_cohort"]).issubset(config.keys())
-    assert set(["bucket", "prefix"]).issubset(config["search_cohort"].keys())
+    assert set(["source", "uploads", "search_cohort"]).issubset(list(config.keys()))
+    assert set(["bucket", "prefix"]).issubset(list(config["search_cohort"].keys()))
     for entry in config["uploads"]:
-        assert set(["name", "bucket", "prefix"]).issubset(entry.keys())
+        assert set(["name", "bucket", "prefix"]).issubset(list(entry.keys()))
 
 
 @click.command()

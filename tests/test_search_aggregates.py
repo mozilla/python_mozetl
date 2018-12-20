@@ -142,7 +142,7 @@ main_summary_schema = [
     ),
 ]
 
-exploded_schema = filter(lambda x: x[0] != "search_counts", main_summary_schema) + [
+exploded_schema = [x for x in main_summary_schema if x[0] != "search_counts"] + [
     ("engine", "google", StringType(), False),
     ("source", "urlbar", StringType(), False),
     ("count", 4, LongType(), False),
@@ -156,7 +156,7 @@ derived_schema = exploded_schema + [
 
 @pytest.fixture()
 def generate_main_summary_data(define_dataframe_factory):
-    return define_dataframe_factory(map(to_field, main_summary_schema))
+    return define_dataframe_factory(list(map(to_field, main_summary_schema)))
 
 
 @pytest.fixture
@@ -198,7 +198,7 @@ def simple_main_summary(generate_main_summary_data):
 
 @pytest.fixture()
 def generate_exploded_data(define_dataframe_factory):
-    return define_dataframe_factory(map(to_field, exploded_schema))
+    return define_dataframe_factory(list(map(to_field, exploded_schema)))
 
 
 @pytest.fixture()
@@ -224,7 +224,7 @@ def exploded_data_for_derived_cols(generate_exploded_data):
 @pytest.fixture()
 def derived_columns(define_dataframe_factory):
     # template for the expected results
-    factory = define_dataframe_factory(map(to_field, derived_schema))
+    factory = define_dataframe_factory(list(map(to_field, derived_schema)))
 
     return factory(
         [
@@ -246,28 +246,30 @@ def derived_columns(define_dataframe_factory):
 def expected_search_dashboard_data(define_dataframe_factory):
     # template for the expected results
     factory = define_dataframe_factory(
-        map(
-            to_field,
-            [
-                ("submission_date", "20170101", StringType(), False),
-                ("country", "DE", StringType(), True),
-                ("locale", "de", StringType(), True),
-                ("search_cohort", None, StringType(), True),
-                ("app_version", "54.0.1", StringType(), True),
-                ("distribution_id", None, StringType(), True),
-                ("addon_version", "0.9.5", StringType(), False),
-                ("default_search_engine", "google", StringType(), False),
-                ("engine", "google", StringType(), False),
-                ("source", "urlbar", StringType(), False),
-                ("tagged-sap", None, LongType(), True),
-                ("tagged-follow-on", None, LongType(), True),
-                ("tagged_sap", None, LongType(), True),
-                ("tagged_follow_on", None, LongType(), True),
-                ("sap", 4, LongType(), True),
-                ("organic", None, LongType(), True),
-                ("unknown", None, LongType(), True),
-                ("client_count", 1, LongType(), True),
-            ],
+        list(
+            map(
+                to_field,
+                [
+                    ("submission_date", "20170101", StringType(), False),
+                    ("country", "DE", StringType(), True),
+                    ("locale", "de", StringType(), True),
+                    ("search_cohort", None, StringType(), True),
+                    ("app_version", "54.0.1", StringType(), True),
+                    ("distribution_id", None, StringType(), True),
+                    ("addon_version", "0.9.5", StringType(), False),
+                    ("default_search_engine", "google", StringType(), False),
+                    ("engine", "google", StringType(), False),
+                    ("source", "urlbar", StringType(), False),
+                    ("tagged-sap", None, LongType(), True),
+                    ("tagged-follow-on", None, LongType(), True),
+                    ("tagged_sap", None, LongType(), True),
+                    ("tagged_follow_on", None, LongType(), True),
+                    ("sap", 4, LongType(), True),
+                    ("organic", None, LongType(), True),
+                    ("unknown", None, LongType(), True),
+                    ("client_count", 1, LongType(), True),
+                ],
+            )
         )
     )
 
@@ -287,52 +289,54 @@ def expected_search_dashboard_data(define_dataframe_factory):
 def expected_search_clients_daily_data(define_dataframe_factory):
     # template for the expected results
     factory = define_dataframe_factory(
-        map(
-            to_field,
-            [
-                ("client_id", "a", StringType(), False),
-                ("sample_id", "42", StringType(), False),
-                ("submission_date", "20170101", StringType(), False),
-                ("os", "windows", StringType(), True),
-                ("channel", "release", StringType(), True),
-                ("country", "DE", StringType(), True),
-                ("locale", "de", StringType(), True),
-                ("search_cohort", None, StringType(), True),
-                ("app_version", "54.0.1", StringType(), True),
-                ("distribution_id", None, StringType(), True),
-                ("addon_version", "0.9.5", StringType(), False),
-                ("engine", "google", StringType(), True),
-                ("source", "urlbar", StringType(), True),
-                ("tagged-sap", None, LongType(), True),
-                ("tagged-follow-on", None, LongType(), True),
-                ("tagged_sap", None, LongType(), True),
-                ("tagged_follow_on", None, LongType(), True),
-                ("sap", 4, LongType(), True),
-                ("organic", None, LongType(), True),
-                ("unknown", None, LongType(), True),
-                # Roughly 2016-01-01
-                ("profile_creation_date", 16801, LongType(), False),
-                ("default_search_engine", "google", StringType(), False),
-                (
-                    "default_search_engine_data_load_path",
-                    "jar:[app]/omni.ja!browser/google.xml",
-                    StringType(),
-                    False,
-                ),
-                (
-                    "default_search_engine_data_submission_url",
-                    "https://www.google.com/search?q=&ie=utf-8&oe=utf-8&client=firefox-b",
-                    StringType(),
-                    False,
-                ),
-                ("sessions_started_on_this_day", 1, LongType(), True),
-                ("profile_age_in_days", 366, LongType(), True),
-                ("subsession_hours_sum", 1.0, DoubleType(), True),
-                ("active_addons_count_mean", 2.0, DoubleType(), True),
-                ("max_concurrent_tab_count_max", 10, LongType(), True),
-                ("tab_open_event_count_sum", 5, LongType(), True),
-                ("active_hours_sum", 0.5, DoubleType(), True),
-            ],
+        list(
+            map(
+                to_field,
+                [
+                    ("client_id", "a", StringType(), False),
+                    ("sample_id", "42", StringType(), False),
+                    ("submission_date", "20170101", StringType(), False),
+                    ("os", "windows", StringType(), True),
+                    ("channel", "release", StringType(), True),
+                    ("country", "DE", StringType(), True),
+                    ("locale", "de", StringType(), True),
+                    ("search_cohort", None, StringType(), True),
+                    ("app_version", "54.0.1", StringType(), True),
+                    ("distribution_id", None, StringType(), True),
+                    ("addon_version", "0.9.5", StringType(), False),
+                    ("engine", "google", StringType(), True),
+                    ("source", "urlbar", StringType(), True),
+                    ("tagged-sap", None, LongType(), True),
+                    ("tagged-follow-on", None, LongType(), True),
+                    ("tagged_sap", None, LongType(), True),
+                    ("tagged_follow_on", None, LongType(), True),
+                    ("sap", 4, LongType(), True),
+                    ("organic", None, LongType(), True),
+                    ("unknown", None, LongType(), True),
+                    # Roughly 2016-01-01
+                    ("profile_creation_date", 16801, LongType(), False),
+                    ("default_search_engine", "google", StringType(), False),
+                    (
+                        "default_search_engine_data_load_path",
+                        "jar:[app]/omni.ja!browser/google.xml",
+                        StringType(),
+                        False,
+                    ),
+                    (
+                        "default_search_engine_data_submission_url",
+                        "https://www.google.com/search?q=&ie=utf-8&oe=utf-8&client=firefox-b",
+                        StringType(),
+                        False,
+                    ),
+                    ("sessions_started_on_this_day", 1, LongType(), True),
+                    ("profile_age_in_days", 366, LongType(), True),
+                    ("subsession_hours_sum", 1.0, DoubleType(), True),
+                    ("active_addons_count_mean", 2.0, DoubleType(), True),
+                    ("max_concurrent_tab_count_max", 10, LongType(), True),
+                    ("tab_open_event_count_sum", 5, LongType(), True),
+                    ("active_hours_sum", 0.5, DoubleType(), True),
+                ],
+            )
         )
     )
 

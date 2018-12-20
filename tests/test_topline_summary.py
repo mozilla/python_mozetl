@@ -31,10 +31,10 @@ def generate_dates(submission_date_s3, ts_offset=0, creation_offset=0):
     date_snippet = {
         "submission_date_s3": submission_date_s3,
         "profile_creation_date": (
-            long((creation - epoch).total_seconds() / seconds_per_day)
+            int((creation - epoch).total_seconds() / seconds_per_day)
         ),
         "timestamp": (
-            long((timestamp - epoch).total_seconds() * nanoseconds_per_second)
+            int((timestamp - epoch).total_seconds() * nanoseconds_per_second)
         ),
     }
 
@@ -42,7 +42,7 @@ def generate_dates(submission_date_s3, ts_offset=0, creation_offset=0):
 
 
 def search_row(engine="hooli", count=1, source="searchbar"):
-    return Row(engine=unicode(engine), source=unicode(source), count=count)
+    return Row(engine=str(engine), source=str(source), count=count)
 
 
 schema = StructType(
@@ -81,7 +81,7 @@ end_ds = "20170608"
 default_sample = {
     "document_id": "document-id",
     "client_id": "client-id",
-    "timestamp": long(1.4962752e18),
+    "timestamp": int(1.4962752e18),
     "is_default_browser": True,
     "search_counts": [search_row()],
     "country": "US",

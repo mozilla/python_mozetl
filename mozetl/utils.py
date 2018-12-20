@@ -60,7 +60,7 @@ def write_csv(dataframe, path, header=True):
             writer.writerow(dataframe.columns)
 
         for row in dataframe.collect():
-            row = [unicode(s).encode("utf-8") for s in row]
+            row = [str(s).encode("utf-8") for s in row]
             writer.writerow(row)
 
 
@@ -141,7 +141,7 @@ def extract_submission_window_for_activity_day(frame, date, lag_days):
     submission dates including the activity day itself plus 5 days of lag for
     a total of 6 days).
     """
-    from clientsdaily.fields import ACTIVITY_DATE_COLUMN
+    from .clientsdaily.fields import ACTIVITY_DATE_COLUMN
 
     end_date = DT.datetime.strptime(date, "%Y-%m-%d").date()
     # Rewind by `lag_days` to the desired activity date.

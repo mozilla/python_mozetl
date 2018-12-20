@@ -346,27 +346,29 @@ def test_sync_usage(test_transform):
         test_func = functools.partial(test_case, uid=uid, expect=expect)
         return snippet, test_func
 
-    snippets, test_func = zip(
-        *[
-            # unobservable
-            case("1", "unknown", None, None, None),
-            # no reported devices, and not configured
-            case("2", "no", 0, 0, False),
-            # no reported devices, but sync is configured
-            case("3", "single", 0, 0, True),
-            # has a single device, and is configured
-            case("4", "single", 1, 0, True),
-            # a single device is reported, but everything else is unobserved
-            case("5", "single", 1, None, None),
-            # sync is somehow disabled, but reporting a single device
-            case("6", "single", None, 1, False),
-            # same as case #5, but with multiple devices
-            case("7", "multiple", 2, None, None),
-            # multiple desktop devices, but sync is not configured
-            case("8", "multiple", 0, 2, False),
-            # a mobile and desktop device, but not configured
-            case("9", "multiple", 1, 1, False),
-        ]
+    snippets, test_func = list(
+        zip(
+            *[
+                # unobservable
+                case("1", "unknown", None, None, None),
+                # no reported devices, and not configured
+                case("2", "no", 0, 0, False),
+                # no reported devices, but sync is configured
+                case("3", "single", 0, 0, True),
+                # has a single device, and is configured
+                case("4", "single", 1, 0, True),
+                # a single device is reported, but everything else is unobserved
+                case("5", "single", 1, None, None),
+                # sync is somehow disabled, but reporting a single device
+                case("6", "single", None, 1, False),
+                # same as case #5, but with multiple devices
+                case("7", "multiple", 2, None, None),
+                # multiple desktop devices, but sync is not configured
+                case("8", "multiple", 0, 2, False),
+                # a mobile and desktop device, but not configured
+                case("9", "multiple", 1, 1, False),
+            ]
+        )
     )
 
     df = test_transform(list(snippets))

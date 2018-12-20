@@ -35,10 +35,10 @@ def etl_job(sc, sqlContext):
     results = transform_pings(get_data(sc))
 
     # Display results:
-    total = sum(map(operator.itemgetter(1), results.iteritems()))
+    total = sum(map(operator.itemgetter(1), iter(list(results.items()))))
     # Print the OS and client_id counts in descending order:
     sorted_results = sorted(
-        results.iteritems(), key=operator.itemgetter(1), reverse=True
+        iter(list(results.items())), key=operator.itemgetter(1), reverse=True
     )
     for pair in sorted_results:
         print(

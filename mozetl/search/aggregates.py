@@ -53,23 +53,25 @@ def search_clients_daily(main_summary):
     return agg_search_data(
         main_summary,
         ["client_id", "submission_date", "engine", "source"],
-        map(
-            agg_first,
-            [
-                "country",
-                "app_version",
-                "distribution_id",
-                "locale",
-                "search_cohort",
-                "addon_version",
-                "os",
-                "channel",
-                "profile_creation_date",
-                "default_search_engine",
-                "default_search_engine_data_load_path",
-                "default_search_engine_data_submission_url",
-                "sample_id",
-            ],
+        list(
+            map(
+                agg_first,
+                [
+                    "country",
+                    "app_version",
+                    "distribution_id",
+                    "locale",
+                    "search_cohort",
+                    "addon_version",
+                    "os",
+                    "channel",
+                    "profile_creation_date",
+                    "default_search_engine",
+                    "default_search_engine_data_load_path",
+                    "default_search_engine_data_submission_url",
+                    "sample_id",
+                ],
+            )
         )
         + [
             # Count of 'first' subsessions seen for this client_day

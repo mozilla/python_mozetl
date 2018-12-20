@@ -20,7 +20,7 @@ def create_date_to_version(release_info):
     d2v = {}
     # Start with all the available version release days:
     for t in ["major", "minor"]:
-        for m, d in release_info[t].iteritems():
+        for m, d in list(release_info[t].items()):
             if d < start_date_str:
                 continue
             if d not in d2v or compare_ver(m, d2v[d]) > 0:
@@ -121,7 +121,7 @@ def create_effective_version_table(spark):
     :returns:       DataFrame containing the effective version information
     """
     d2v = create_date_to_version(get_release_info())
-    rows = [Row(date, version) for date, version in d2v.iteritems()]
+    rows = [Row(date, version) for date, version in list(d2v.items())]
     df = spark.createDataFrame(rows, ["date", "effective_version"])
     return df
 

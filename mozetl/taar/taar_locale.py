@@ -15,8 +15,8 @@ import logging
 from pyspark.sql import SparkSession, Row
 from pyspark.sql.functions import col, rank, desc
 from pyspark.sql.window import Window
-from taar_utils import store_json_to_s3
-from taar_utils import load_amo_curated_whitelist
+from .taar_utils import store_json_to_s3
+from .taar_utils import load_amo_curated_whitelist
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

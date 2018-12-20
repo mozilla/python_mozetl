@@ -58,9 +58,9 @@ def preprocess_col_expr(mapping):
      """
     select_expr = {}
 
-    for name, expr in mapping.iteritems():
+    for name, expr in list(mapping.items()):
         column_expr = expr if expr is not None else name
-        if isinstance(column_expr, basestring):
+        if isinstance(column_expr, str):
             column_expr = F.expr(column_expr)
         select_expr[name] = column_expr.alias(name)
 
@@ -80,6 +80,6 @@ def build_col_expr(mapping):
     select_expr = []
 
     preprocessed = preprocess_col_expr(mapping)
-    for name, expr in preprocessed.iteritems():
+    for name, expr in list(preprocessed.items()):
         select_expr.append(expr.alias(name))
     return select_expr

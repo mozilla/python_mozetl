@@ -20,7 +20,7 @@ def run_spinner_etl(sc):
             b.startswith(end_date) or b < end_date
         )
 
-    print("Start Date: {}, End Date: {}".format(start_date, end_date))
+    print(("Start Date: {}, End Date: {}".format(start_date, end_date)))
 
     build_results = {}
 
@@ -51,7 +51,7 @@ def run_spinner_etl(sc):
         build_results[build_type] = get_short_and_long_spinners(pings)
 
     s3_client = boto3.client("s3")
-    for result_key, results in build_results.iteritems():
+    for result_key, results in list(build_results.items()):
         filename = "severities_by_build_id_%s.json" % result_key
         results_json = json.dumps(results, ensure_ascii=False)
 

@@ -107,7 +107,7 @@ def load_amo_external_whitelist():
         )
 
     # If the load fails, we will have an empty whitelist, this may be problematic.
-    for key, value in amo_dump.items():
+    for key, value in list(amo_dump.items()):
         addon_files = value.get("current_version", {}).get("files", {})
         # If any of the addon files are web_extensions compatible, it can be recommended.
         if any([f.get("is_webextension", False) for f in addon_files]):

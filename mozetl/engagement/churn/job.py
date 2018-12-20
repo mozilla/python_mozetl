@@ -36,6 +36,7 @@ from pyspark.sql.window import Window
 from . import release, utils
 from .schema import churn_schema
 from .utils import DS, DS_NODASH
+from functools import reduce
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -402,7 +403,7 @@ def clean_columns(prepared_clients, effective_version, start_ds):
     select_attr = utils.build_col_expr(
         {
             attr: F.when(F.col(is_valid), expr).otherwise(F.lit(None))
-            for attr, expr in utils.preprocess_col_expr(attr_mapping).iteritems()
+            for attr, expr in list(utils.preprocess_col_expr(attr_mapping).items())
         }
     )
     select_metrics = utils.build_col_expr(metric_mapping)
@@ -484,7 +485,7 @@ def transform(main_summary, effective_version, start_ds):
     agg_expr[udcpp] = (agg_expr[udcpp] / agg_expr["n_profiles"]).alias(udcpp)
 
     # final aggregated data
-    records = cleaned_data.groupBy(*attributes).agg(*agg_expr.values())
+    records = cleaned_data.groupBy(*attributes).agg(*list(agg_expr.values()))
 
     return records.select(columns)
 
