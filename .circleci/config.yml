@@ -11,11 +11,6 @@
 # Templates: see "anchors" in https://learnxinyminutes.com/docs/yaml/
 ####################
 
-common_settings: &common_settings
-  docker:
-    - image: python:2.7
-  working_directory: ~/python_mozetl
-
 install_dependencies: &install_dependencies
   name: install dependencies
   command: |
@@ -40,6 +35,30 @@ early_return_for_skip_tests: &early_return_for_skip_tests
       circleci step halt
     fi
 
+test_settings: &test_settings
+  working_directory: ~/python_mozetl
+  steps:
+    - checkout
+    - run: *early_return_for_skip_tests
+    - restore_cache: *restore_cache_settings
+    - run: *install_dependencies
+    - run:
+        name: run tests
+        command: |
+          circleci tests glob "tests/**/test*.py" > tests.txt
+          tox -e $CIRCLE_JOB -- \
+            $(circleci tests split --split-by=timings tests.txt | tr -d '\r') \
+            --junitxml=test-reports/junit.xml
+    - run:
+        name: submit code coverage data
+        command: |
+          # convert `.coverage` to `coverage.xml`
+          coverage xml -i
+          bash <(curl -s https://codecov.io/bash)
+    - store_test_results:
+        path: test-reports
+    - store_artifacts:
+        path: test-reports
 
 ####################
 # Jobs: see https://circleci.com/docs/2.0/jobs-steps/
@@ -47,35 +66,21 @@ early_return_for_skip_tests: &early_return_for_skip_tests
 
 version: 2
 jobs:
-
-  test:
-    <<: *common_settings
-    parallelism: 8
-    steps:
-      - checkout
-      - run: *early_return_for_skip_tests
-      - restore_cache: *restore_cache_settings
-      - run: *install_dependencies
-      - run:
-          name: run tests
-          command: |
-            circleci tests glob "tests/**/test*.py" > tests.txt
-            tox -- \
-              $(circleci tests split --split-by=timings tests.txt | tr -d '\r') \
-              --junitxml=test-reports/junit.xml
-      - run:
-          name: submit code coverage data
-          command: |
-            # convert `.coverage` to `coverage.xml`
-            coverage xml -i
-            bash <(curl -s https://codecov.io/bash)
-      - store_test_results:
-          path: test-reports
-      - store_artifacts:
-          path: test-reports
+  py27:
+    <<: *test_settings
+    parallelism: 4
+    docker:
+      - image: python:2.7
+  py36:
+    <<: *test_settings
+    parallelism: 4
+    docker:
+      - image: python:3.6
 
   lint:
-    <<: *common_settings
+    docker:
+      - image: python:3.6
+    working_directory: ~/python_mozetl
     steps:
       - checkout
       - run: *early_return_for_skip_tests
@@ -83,7 +88,7 @@ jobs:
       - run: *install_dependencies
       - run:
           name: run linter
-          command: TOXENV=flake8 tox
+          command: tox -e flake8,black
       - save_cache: *save_cache_settings
 
 
@@ -95,5 +100,6 @@ workflows:
   version: 2
   build:
     jobs:
-      - test
+      - py27
+      - py36
       - lint
