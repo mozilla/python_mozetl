@@ -5,10 +5,10 @@ import json
 import logging
 import logging.config
 import typing
-import urllib
-import Queue as queue
+import urllib.request, urllib.parse, urllib.error
+import queue as queue
 
-from taar_utils import store_json_to_s3
+from .taar_utils import store_json_to_s3
 
 import requests
 from requests_toolbelt.threaded import pool
@@ -92,7 +92,7 @@ class AMODatabase:
         addon_map = self._fetch_pages()
         self._fetch_versions(addon_map)
         final_result = {}
-        for k, v in addon_map.items():
+        for k, v in list(addon_map.items()):
             if "first_create_date" in v:
                 final_result[k] = v
         logger.info("Final addon set includes %d addons." % len(final_result))
@@ -126,7 +126,7 @@ class AMODatabase:
         logger.info("Filling initial verson page queue")
 
         def iterFactory(guid_map):
-            for guid in guid_map.keys():
+            for guid in list(guid_map.keys()):
                 yield "https://addons.mozilla.org/api/v3/addons/addon/%s/versions/" % guid
 
         def chunker(seq, size):
@@ -188,7 +188,7 @@ class AMODatabase:
                     results = jdata["results"]
 
                     raw_guid = resp.url.split("addon/")[1].split("/versions")[0]
-                    guid = urllib.unquote(raw_guid)
+                    guid = urllib.parse.unquote(raw_guid)
                     create_date = results[-1]["files"][0]["created"]
 
                     record = addon_map.get(guid, None)
@@ -247,8 +247,8 @@ def marshal(value, name, type_def):
     serializers = {
         typing.List: list,
         typing.Dict: dict,
-        str: unicode,
-        unicode: unicode,
+        str: str,
+        str: str,
         int: int,
         float: float,
         bool: bool,
@@ -256,7 +256,7 @@ def marshal(value, name, type_def):
 
     if issubclass(type_def, JSONSchema):
         obj = {}
-        for attr_name, attr_type_def in type_def.meta.items():
+        for attr_name, attr_type_def in list(type_def.meta.items()):
             attr_value = value.get(attr_name, Undefined)
             if attr_value is not Undefined:
                 # Try marshalling the value
@@ -272,7 +272,7 @@ def marshal(value, name, type_def):
             k_cast, v_cast = type_def.__args__
             dict_vals = [
                 (marshal(k, name, k_cast), marshal(v, name, v_cast))
-                for k, v in value.items()
+                for k, v in list(value.items())
             ]
             return dict(dict_vals)
     else:

@@ -9,6 +9,7 @@ from pyspark.sql.window import Window
 
 from mozetl.topline.schema import topline_schema
 from mozetl.constants import SEARCH_SOURCE_WHITELIST
+from functools import reduce
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -114,7 +115,7 @@ def clean_input(dataframe, start, end):
     clean = (
         dataframe.where(F.col("submission_date_s3") >= start)
         .where(F.col("submission_date_s3") < end)
-        .select([expr.alias(name) for name, expr in columns.iteritems()])
+        .select([expr.alias(name) for name, expr in list(columns.items())])
     )
 
     return clean
@@ -178,7 +179,7 @@ def client_aggregates(dataframe, timestamp, attributes):
     )
 
     clients = (
-        dataframe.select([expr.alias(name) for name, expr in select_expr.iteritems()])
+        dataframe.select([expr.alias(name) for name, expr in list(select_expr.items())])
         .where("clientid_rank = 1")
         .groupBy(attributes)
         .agg(

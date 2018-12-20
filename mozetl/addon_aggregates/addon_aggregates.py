@@ -3,7 +3,7 @@
 from pyspark.sql import SparkSession
 import pyspark.sql.functions as fun
 import json
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import click
 
 MS_FIELDS = [
@@ -31,7 +31,7 @@ def get_test_pilot_addons():
     :return a list of addon_ids
     """
     url = "https://testpilot.firefox.com/api/experiments.json"
-    response = urllib.urlopen(url)
+    response = urllib.request.urlopen(url)
     data = json.loads(response.read())
     all_tp_addons = ["@testpilot-addon"] + [
         i.get("addon_id") for i in data["results"] if i.get("addon_id")
@@ -74,7 +74,7 @@ def load_main_summary(spark, input_bucket, input_prefix, input_version):
     :return SparkDF
     """
     dest = get_dest(input_bucket, input_prefix, input_version)
-    print("loading...", dest)
+    print(("loading...", dest))
     return spark.read.option("mergeSchema", True).parquet(dest)
 
 

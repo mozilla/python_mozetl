@@ -109,7 +109,7 @@ def build_sync_summary_snippet(snippet, sample=sync_summary_sample):
     """
 
     result = {}
-    result.update({k: v for k, v in snippet.iteritems() if k != "engines"})
+    result.update({k: v for k, v in list(snippet.items()) if k != "engines"})
 
     if "engines" not in snippet or snippet["engines"] is None:
         return result
@@ -131,7 +131,7 @@ def build_sync_summary_snippet(snippet, sample=sync_summary_sample):
         engine.update(
             {
                 k: v
-                for k, v in engine_snippet.iteritems()
+                for k, v in list(engine_snippet.items())
                 if k not in ["failure_reason", "validation"]
             }
         )
@@ -158,7 +158,7 @@ def build_sync_summary_snippet(snippet, sample=sync_summary_sample):
 def generate_data(dataframe_factory, sync_summary_schema):
     def _generate_data(snippets):
         return dataframe_factory.create_dataframe(
-            map(build_sync_summary_snippet, snippets),
+            list(map(build_sync_summary_snippet, snippets)),
             sync_summary_sample,
             sync_summary_schema,
         )
@@ -336,6 +336,6 @@ def test_total_users_per_day(test_transform, row_to_dict):
 
     assert df.count() == 1
     rows = df.select("submission_day", "total_validated_users").collect()
-    assert map(row_to_dict, rows) == [
+    assert list(map(row_to_dict, rows)) == [
         {"submission_day": to_submission_date(day_1), "total_validated_users": 3}
     ]

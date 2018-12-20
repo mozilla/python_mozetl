@@ -39,7 +39,7 @@ def test_run_tests():
         "0xfeee" in inverted_device_data
     ), "The vendor id must be prefixed with '0x' and be at the root of the map."
     assert (
-        len(inverted_device_data["0xfeee"].keys()) == 2
+        len(list(inverted_device_data["0xfeee"].keys())) == 2
     ), "There must be two devices for the '0xfeee' vendor."
     assert all(
         device_id in inverted_device_data["0xfeee"]
@@ -286,7 +286,9 @@ def test_finalize_data():
 
     # Make sure that all the reported numbers are ratios.
     all_ratios = [
-        (v >= 0.0 and v <= 1.0) for (k, v) in finalized_data.iteritems() if k != "date"
+        (v >= 0.0 and v <= 1.0)
+        for (k, v) in list(finalized_data.items())
+        if k != "date"
     ]
     assert all(all_ratios), "All the reported entries must be ratios."
 

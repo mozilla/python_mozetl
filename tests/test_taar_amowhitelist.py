@@ -83,7 +83,7 @@ SAMPLE_DATA = {
             "count": 1.0,
             "text_count": 1.0,
         },
-        "summary": {"en-US": "Luffi - Let\u00b4s use freeware! fun included:)"},
+        "summary": {"en-US": "Luffi - Let\\u00b4s use freeware! fun included:)"},
         "tags": [],
         "weekly_downloads": 0,
     },
@@ -104,7 +104,7 @@ SAMPLE_DATA = {
         "description": None,
         "first_create_date": "2011-10-13T04:55:06Z",
         "guid": "jid1-tpeRu7ABM810Fw@jetpack",
-        "name": {"zh-CN": "\u8c46\u74e3\u7535\u53f0OSD Lyrics\u63d2\u4ef6"},
+        "name": {"zh-CN": "\\u8c46\\u74e3\\u7535\\u53f0OSD Lyrics\\u63d2\\u4ef6"},
         "ratings": {
             "average": 3.0,
             "bayesian_average": 2.38892,
@@ -112,9 +112,9 @@ SAMPLE_DATA = {
             "text_count": 0.0,
         },
         "summary": {
-            "zh-CN": "\u4f7f\u7528OSD Lyrics\u663e\u793a\u8c46\u74e3\u7535\u53f0\u6b4c\u8bcd"
+            "zh-CN": "\\u4f7f\\u7528OSD Lyrics\\u663e\\u793a\\u8c46\\u74e3\\u7535\\u53f0\\u6b4c\\u8bcd"
         },
-        "tags": ["douban", "osd-lyrics", "osdlyrics", "\u8c46\u74e3"],
+        "tags": ["douban", "osd-lyrics", "osdlyrics", "\\u8c46\\u74e3"],
         "weekly_downloads": 1,
     },
     "nellyfurtado@browsernation.com": {
@@ -293,7 +293,7 @@ def test_transform_whitelist(s3_fixture):
     assert len(final_jdata) == 1
 
     today = datetime.datetime.today().replace(tzinfo=None)
-    for client_data in final_jdata.values():
+    for client_data in list(final_jdata.values()):
         assert client_data["current_version"]["files"][0]["is_webextension"]
         assert client_data["ratings"]["average"] >= taar_amowhitelist.MIN_RATING
         create_datetime = parse(client_data["first_create_date"]).replace(tzinfo=None)
@@ -328,7 +328,7 @@ def test_transform_featuredlist(s3_fixture):
     # featured
     assert len(final_jdata) == 3
 
-    for rec in final_jdata.values():
+    for rec in list(final_jdata.values()):
         assert rec["is_featured"]
 
 

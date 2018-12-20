@@ -35,12 +35,12 @@ def _check_most_recent_change(
     assert missing_val > 0
 
     recent_week = max(values.keys())
-    second_recent_week = max(values.viewkeys() - {recent_week})
+    second_recent_week = max(list(values.keys()) - {recent_week})
 
     base, compare = values[second_recent_week], values[recent_week]
     changes = [
         (k, (compare.get(k, missing_val) / base.get(k, missing_val)) - 1)
-        for k in base.viewkeys() | compare.viewkeys()
+        for k in list(base.keys()) | list(compare.keys())
     ]
 
     return {
@@ -60,7 +60,7 @@ def _make_report(changes):
 
     change_strings = [
         (v["change"], mk_line(k, v["old_value"] * 100, v["new_value"] * 100))
-        for k, v in changes.iteritems()
+        for k, v in list(changes.items())
     ]
     return "\n".join([x[1] for x in sorted(change_strings, key=lambda x: x[0])])
 

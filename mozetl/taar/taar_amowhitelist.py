@@ -13,7 +13,7 @@ from abc import abstractmethod
 from dateutil.parser import parse
 import datetime
 
-from taar_utils import read_from_s3, store_json_to_s3
+from .taar_utils import read_from_s3, store_json_to_s3
 
 AMO_DUMP_BUCKET = "telemetry-parquet"
 AMO_DUMP_PREFIX = "telemetry-ml/addon_recommender/"
@@ -151,8 +151,8 @@ class AMOTransformer:
           https://github.com/mozilla/taar-lite/issues/1
         """
 
-        for guid, addon_data in json_data.items():
-            for acc in self._accumulators.values():
+        for guid, addon_data in list(json_data.items()):
+            for acc in list(self._accumulators.values()):
                 acc.process_record(guid, addon_data)
 
         return self.get_whitelist()

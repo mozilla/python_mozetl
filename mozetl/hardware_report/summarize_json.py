@@ -129,10 +129,10 @@ def invert_device_map(m):
 
     """
     device_id_map = {}
-    for vendor, u in m.iteritems():
+    for vendor, u in list(m.items()):
         device_id_map["0x" + vendor] = {}
-        for family, v in u.iteritems():
-            for chipset, ids in v.iteritems():
+        for family, v in list(u.items()):
+            for chipset, ids in list(v.items()):
                 device_id_map["0x" + vendor].update(
                     {("0x" + gfx_id): [family, chipset] for gfx_id in ids}
                 )
@@ -210,7 +210,7 @@ def get_valid_client_record(r, data_index):
             [True for p in plugins if p["name"] == "Shockwave Flash"]
         )
 
-    return REASON_BROKEN_DATA if None in data.values() else data
+    return REASON_BROKEN_DATA if None in list(data.values()) else data
 
 
 def get_latest_valid_per_client(entry, time_start, time_end):
@@ -360,7 +360,7 @@ def collapse_buckets(aggregated_data, count_threshold):
 
     """
     collapsed_groups = {}
-    for k, v in aggregated_data.iteritems():
+    for k, v in list(aggregated_data.items()):
         key_type = k[0]
 
         # If the resolution is 0x0 (see bug 1324014), put that into the "Other"
@@ -401,7 +401,7 @@ def collapse_buckets(aggregated_data, count_threshold):
     # The previous grouping might have created additional groups. Let's check
     # again.
     final_groups = {}
-    for k, v in collapsed_groups.iteritems():
+    for k, v in list(collapsed_groups.items()):
         # Don't clump this group into the "Other" bucket if it has enough
         # users it in.
         if (v > count_threshold and k[1] != "Other") or k[0] in EXCLUSION_LIST:
@@ -459,10 +459,10 @@ def finalize_data(data, sample_count, broken_ratio, inactive_ratio, report_date)
     }
 
     # Compute the percentages from the raw numbers.
-    for k, v in data.iteritems():
+    for k, v in list(data.items()):
         # The old key is a tuple (key, value). We translate the key part and concatenate the
         # value as a string.
-        new_key = keys_translation[k[0]] + unicode(k[1])
+        new_key = keys_translation[k[0]] + str(k[1])
         aggregated_percentages[new_key] = v / denom
 
     return aggregated_percentages
@@ -501,7 +501,7 @@ def validate_finalized_data(data):
     # We expect to have at least a key in |data| whose name begins with one
     # of the keys in |keys_accumulator|. Iterate through the keys in |data|
     # and accumulate their values in the accumulator.
-    for key, value in data.iteritems():
+    for key, value in list(data.items()):
         if key in ["inactive", "broken", "date"]:
             continue
 
@@ -514,7 +514,7 @@ def validate_finalized_data(data):
         keys_accumulator[property_name] += value
 
     # Make sure all the properties add up to 1.0 (or close enough).
-    for key, value in keys_accumulator.iteritems():
+    for key, value in list(keys_accumulator.items()):
         if abs(1.0 - value) > 0.05:
             logger.warning(
                 "{} values do not add up to 1.0. Their sum is {}.".format(key, value)
@@ -532,7 +532,7 @@ def get_file_name(suffix=""):
 def serialize_results(date_to_json):
     """Save each aggregated data item as an entry in the JSON."""
     logger.info("Serializing results locally...")
-    for file_name, aggregated_data in date_to_json.items():
+    for file_name, aggregated_data in list(date_to_json.items()):
         # This either appends to an existing file, or creates a new one.
         if os.path.exists(file_name):
             logger.info("{} exists, we will overwrite it.".format(file_name))

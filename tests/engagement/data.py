@@ -168,9 +168,7 @@ main_summary_sample = {
 new_profile_sample = {
     "submission": SUBSESSION_START.format("YYYYMMDD"),
     "environment": {
-        "profile": {
-            "creation_date": long(SUBSESSION_START.timestamp / SECONDS_PER_DAY)
-        },
+        "profile": {"creation_date": int(SUBSESSION_START.timestamp / SECONDS_PER_DAY)},
         "build": {"version": "57.0.0"},
         "partner": {"distribution_id": "mozilla57"},
         "settings": {

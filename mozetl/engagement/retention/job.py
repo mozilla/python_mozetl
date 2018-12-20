@@ -45,6 +45,7 @@ from mozetl.engagement.churn.job import (
     MAX_SUBSESSION_LENGTH,
 )
 from .schema import retention_schema
+from functools import reduce
 
 
 def valid_pcd(pcd, client_date):

@@ -128,7 +128,7 @@ def test_addon_counts(aggregate_data):
 
     for client_id in true_client_counts:
         data = aggregate_data.filter(aggregate_data.client_id == client_id).collect()[0]
-        for key, value in true_client_counts[client_id].iteritems():
+        for key, value in list(true_client_counts[client_id].items()):
             assert data[key] == value
 
 
@@ -148,11 +148,11 @@ def test_unix_dates(aggregate_data):
         4: {"min_install_day": None},
     }
 
-    for client_id, value in true_client_days_to_install.iteritems():
+    for client_id, value in list(true_client_days_to_install.items()):
         data = aggregate_data.filter(aggregate_data.client_id == client_id).collect()[0]
         first_install = data.first_addon_install_date
         pcd = data.profile_creation_date
-        print(first_install, pcd)
+        print((first_install, pcd))
         fmt = "%Y%m%d"
         days_to_install = (
             (

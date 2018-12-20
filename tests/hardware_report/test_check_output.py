@@ -15,11 +15,11 @@ def test_check_most_recent_change_min_change():
         20170702: {"nochange": 1.0, "somechange": 1.1, "bigchange": 1.4},
     }
 
-    assert check_most_recent_change(test_data, min_change=0.5).viewkeys() == set()
-    assert check_most_recent_change(test_data, min_change=0.3).viewkeys() == {
+    assert list(check_most_recent_change(test_data, min_change=0.5).keys()) == set()
+    assert list(check_most_recent_change(test_data, min_change=0.3).keys()) == {
         "bigchange"
     }
-    assert check_most_recent_change(test_data, min_change=0.05).viewkeys() == {
+    assert list(check_most_recent_change(test_data, min_change=0.05).keys()) == {
         "bigchange",
         "somechange",
     }
@@ -32,32 +32,38 @@ def test_check_most_recent_change_min_value():
     }
 
     assert (
-        check_most_recent_change(test_data, min_change=0.1, min_value=2.0).viewkeys()
+        list(check_most_recent_change(test_data, min_change=0.1, min_value=2.0).keys())
         == set()
     )
-    assert check_most_recent_change(
-        test_data, min_change=0.1, min_value=1.0
-    ).viewkeys() == {"somechange1"}
-    assert check_most_recent_change(
-        test_data, min_change=0.1, min_value=0.0
-    ).viewkeys() == {"somechange1", "somechange2"}
+    assert list(
+        check_most_recent_change(test_data, min_change=0.1, min_value=1.0).keys()
+    ) == {"somechange1"}
+    assert list(
+        check_most_recent_change(test_data, min_change=0.1, min_value=0.0).keys()
+    ) == {"somechange1", "somechange2"}
 
 
 def test_check_most_recent_change_missing_val():
     test_data = {20170701: {"change": 0.5}, 20170702: {}}
 
     assert (
-        check_most_recent_change(
-            test_data, min_change=0.1, min_value=0.0, missing_val=0.5
-        ).viewkeys()
+        list(
+            check_most_recent_change(
+                test_data, min_change=0.1, min_value=0.0, missing_val=0.5
+            ).keys()
+        )
         == set()
     )
-    assert check_most_recent_change(
-        test_data, min_change=0.1, min_value=0.0, missing_val=0.01
-    ).viewkeys() == {"change"}
-    assert check_most_recent_change(
-        test_data, min_change=0.1, min_value=0.0, missing_val=1.0
-    ).viewkeys() == {"change"}
+    assert list(
+        check_most_recent_change(
+            test_data, min_change=0.1, min_value=0.0, missing_val=0.01
+        ).keys()
+    ) == {"change"}
+    assert list(
+        check_most_recent_change(
+            test_data, min_change=0.1, min_value=0.0, missing_val=1.0
+        ).keys()
+    ) == {"change"}
 
 
 def test_get_data():

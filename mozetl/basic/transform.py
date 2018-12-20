@@ -21,11 +21,11 @@ class DataFrameConfig(object):
 
     def toStructType(self):
         return StructType(
-            map(lambda col: StructField(col.name, col.struct_type, True), self.columns)
+            [StructField(col.name, col.struct_type, True) for col in self.columns]
         )
 
     def get_paths(self):
-        return map(lambda col: col.path, self.columns)
+        return [col.path for col in self.columns]
 
 
 def convert_pings(sqlContext, pings, data_frame_config):

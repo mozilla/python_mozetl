@@ -107,44 +107,35 @@ MOCK_KEYED_ADDONS = [
 
 EXPECTED_GUID_GUID_DATA = [
     Row(
-        key_addon=u"test-guid-2",
+        key_addon="test-guid-2",
         coinstallation_counts=[
-            Row(id=u"test-guid-6", n=1),
-            Row(id=u"test-guid-5", n=1),
-            Row(id=u"test-guid-3", n=1),
-            Row(id=u"test-guid-1", n=1),
+            Row(id="test-guid-6", n=1),
+            Row(id="test-guid-5", n=1),
+            Row(id="test-guid-3", n=1),
+            Row(id="test-guid-1", n=1),
         ],
     ),
-    Row(key_addon=u"test-guid-4", coinstallation_counts=[Row(id=u"test-guid-1", n=1)]),
+    Row(key_addon="test-guid-4", coinstallation_counts=[Row(id="test-guid-1", n=1)]),
     Row(
-        key_addon=u"test-guid-3",
-        coinstallation_counts=[
-            Row(id=u"test-guid-2", n=1),
-            Row(id=u"test-guid-1", n=2),
-        ],
+        key_addon="test-guid-3",
+        coinstallation_counts=[Row(id="test-guid-2", n=1), Row(id="test-guid-1", n=2)],
     ),
     Row(
-        key_addon=u"test-guid-5",
-        coinstallation_counts=[
-            Row(id=u"test-guid-6", n=1),
-            Row(id=u"test-guid-2", n=1),
-        ],
+        key_addon="test-guid-5",
+        coinstallation_counts=[Row(id="test-guid-6", n=1), Row(id="test-guid-2", n=1)],
     ),
     Row(
-        key_addon=u"test-guid-1",
+        key_addon="test-guid-1",
         coinstallation_counts=[
-            Row(id=u"test-guid-2", n=1),
-            Row(id=u"test-guid-1", n=2),
-            Row(id=u"test-guid-3", n=2),
-            Row(id=u"test-guid-4", n=1),
+            Row(id="test-guid-2", n=1),
+            Row(id="test-guid-1", n=2),
+            Row(id="test-guid-3", n=2),
+            Row(id="test-guid-4", n=1),
         ],
     ),
     Row(
-        key_addon=u"test-guid-6",
-        coinstallation_counts=[
-            Row(id=u"test-guid-2", n=1),
-            Row(id=u"test-guid-5", n=1),
-        ],
+        key_addon="test-guid-6",
+        coinstallation_counts=[Row(id="test-guid-2", n=1), Row(id="test-guid-5", n=1)],
     ),
 ]
 

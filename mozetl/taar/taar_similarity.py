@@ -20,8 +20,8 @@ from pyspark.ml.clustering import BisectingKMeans
 from pyspark.ml import Pipeline
 from pyspark.mllib.stat import KernelDensity
 from scipy.spatial import distance
-from taar_utils import store_json_to_s3
-from taar_utils import load_amo_curated_whitelist
+from .taar_utils import store_json_to_s3
+from .taar_utils import load_amo_curated_whitelist
 
 # Define the set of feature names to be used in the donor computations.
 CATEGORICAL_FEATURES = ["city", "locale", "os"]
@@ -150,7 +150,7 @@ def get_donor_pools(users_df, clusters_df, num_donors, random_seed=None):
     # Compute the proportion of user in each cluster.
     total_donors_in_clusters = sum(counts)
     clust_sample = [float(t) / total_donors_in_clusters for t in counts]
-    sampling_proportions = dict(zip(clusters, clust_sample))
+    sampling_proportions = dict(list(zip(clusters, clust_sample)))
 
     # Sample the users in each cluster according to the proportions
     # and pass along the random seed if needed for tests.
@@ -325,7 +325,7 @@ def get_lr_curves(
     numerator_density = kd_sc.estimate(lr_index)
 
     # Structure this in the correct output format.
-    return zip(lr_index, zip(numerator_density, denominator_density))
+    return list(zip(lr_index, list(zip(numerator_density, denominator_density))))
 
 
 @click.command()

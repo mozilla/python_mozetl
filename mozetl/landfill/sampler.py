@@ -64,7 +64,7 @@ def _process(message):
     Generic Ingestion URI Specification:
         /submit/<namespace>/<doc_type>/<doc_version>/<doc_id>
     """
-    meta = {k: v for k, v in message["meta"].items() if k in META_WHITELIST}
+    meta = {k: v for k, v in list(message["meta"].items()) if k in META_WHITELIST}
 
     # Parse the uri, start by setting the path relative to `/submit`
     # Some paths do not adhere to the spec, so append empty values to avoid index errors.

@@ -7,8 +7,8 @@ https://hardware.metrics.mozilla.com/
 import click
 import json
 import glob
-import summarize_json
-from check_output import check_output
+from . import summarize_json
+from .check_output import check_output
 from click_datetime import Datetime
 from datetime import datetime, timedelta
 from pyspark.sql import SparkSession
