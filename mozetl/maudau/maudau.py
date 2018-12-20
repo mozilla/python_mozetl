@@ -149,7 +149,7 @@ def write_locally(results):
     basename = MAUDAU_SNAPSHOT_TEMPLATE.format(publication_date)
     cols = ["day", "dau", "mau", "generated_on"]
     with open(basename, "w") as f:
-        writer = csv.DictWriter(f, cols)
+        writer = csv.DictWriter(f, cols, lineterminator="\n")
         writer.writeheader()
         writer.writerows(results)
     return basename
