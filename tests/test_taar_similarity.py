@@ -18,6 +18,7 @@ from pyspark.sql.types import (
 
 clientsdaily_schema = StructType(
     [
+        StructField("submission_date_s3", StringType(), True),
         StructField("client_id", StringType(), True),
         StructField("channel", StringType(), True),
         StructField("city", StringType(), True),
@@ -71,6 +72,7 @@ clientsdaily_schema = StructType(
 )
 
 default_sample = {
+    "submission_date_s3": "20181220",
     "client_id": "client-id",
     "channel": "release",
     "city": "Boston",
@@ -266,10 +268,47 @@ def test_similarity():
     assert taar_similarity.similarity_function(test_user_1, test_user_5)
 
 
+def test_get_samples(spark, dataframe_factory):
+    def column_to_set(df, col):
+        return set([r[0] for r in df.select(col).collect()])
+
+    def client_row(client_id, submission_date, hours=10):
+        return {
+            "submission_date_s3": submission_date,
+            "client_id": client_id,
+            "subsession_hours_sum": hours,
+            "active_addons": [
+                {"addon_id": "addon1"},
+                {"addon_id": "addon2"},
+                {"addon_id": "addon3"},
+            ],
+        }
+
+    data = [
+        client_row("c-1", "20181219", 5), client_row("c-1", "20181220", 20),
+        client_row("c-2", "20181220"),
+        client_row("c-3", "20181001"),
+    ]
+
+    clients_sample = dataframe_factory.create_dataframe(snippets=data, base=default_sample,
+                                                        schema=clientsdaily_schema)
+    clients_sample.createOrReplaceTempView("clients_daily")
+
+    samples_df = taar_similarity.get_samples(spark, date_from='20181201')
+    samples_df.cache()
+
+    # There should be two entries since `c-1` occurred twice in original dataset
+    # and `c-3` is below date threshold
+    assert samples_df.count() == 2
+    assert column_to_set(samples_df, "client_id") == {"c-1", "c-2"}
+    # 10 is default value, 20 if from `c-1`'s latest entry
+    assert column_to_set(samples_df, "subsession_hours_sum") == {10, 20}
+
+
 def test_get_addons(spark, addon_whitelist, multi_clusters_df):
     multi_clusters_df.createOrReplaceTempView("clients_daily")
 
-    samples_df = taar_similarity.get_samples(spark)
+    samples_df = taar_similarity.get_samples(spark, date_from='20180101')
 
     # Force caching in the test case
     samples_df.cache()
@@ -288,15 +327,15 @@ def test_compute_donors(spark, addon_whitelist, multi_clusters_df):
     # Perform the clustering on our test data. We expect
     # 3 clusters out of this and 10 donors.
     _, donors_df = taar_similarity.get_donors(
-        spark, 3, 10, addon_whitelist, random_seed=42
+        spark, 3, 10, addon_whitelist, date_from='20180101', random_seed=42
     )
     donors = taar_similarity.format_donors_dictionary(donors_df)
 
     # Even if we requested 10 donors, it doesn't mean we will receive
     # precisely that number. All we can do is check that the number of
     # donors should always be >= 2 * num_clusters. Since we're fixing
-    # the seed for this test, we can just assert that we receive 14 donors.
-    assert len(donors) == 14
+    # the seed for this test, we can just assert that we receive 25 donors.
+    assert len(donors) == 25
 
     # Our artificial clusters should report different cities.
     for cluster_id, city in enumerate(["Rome", "London", "Boston"]):
