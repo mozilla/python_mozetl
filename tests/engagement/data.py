@@ -101,7 +101,7 @@ main_summary_sample = {
     "distribution_id": "mozilla42",
     "locale": "en-US",
     "normalized_channel": "release",
-    "profile_creation_date": SUBSESSION_START.timestamp / SECONDS_PER_DAY,
+    "profile_creation_date": int(SUBSESSION_START.timestamp / SECONDS_PER_DAY),
     "submission_date_s3": SUBSESSION_START.format("YYYYMMDD"),
     "subsession_length": 3600,
     "subsession_start_date": str(SUBSESSION_START),
@@ -155,7 +155,7 @@ def format_ssd(arrow_date):
 
 def format_pcd(arrow_date):
     """Format an arrow date into the profile_creation_date"""
-    return arrow_date.timestamp / SECONDS_PER_DAY
+    return int(arrow_date.timestamp / SECONDS_PER_DAY)
 
 
 def generate_dates(subsession_date, submission_offset=0, creation_offset=0):
