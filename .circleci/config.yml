@@ -88,7 +88,7 @@ jobs:
       - run: *install_dependencies
       - run:
           name: run linter
-          command: TOXENV=flake8 tox
+          command: tox -e flake8,black
       - save_cache: *save_cache_settings
 
 
