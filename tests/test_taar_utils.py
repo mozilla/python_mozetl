@@ -52,8 +52,8 @@ def test_read_from_s3():
     conn = boto3.resource("s3", region_name="us-west-2")
     conn.create_bucket(Bucket=bucket)
 
-    with NamedTemporaryFile() as json_file:
-        json_file.write(json.dumps(SAMPLE_DATA))
+    with NamedTemporaryFile("w") as json_file:
+        json.dump(SAMPLE_DATA, json_file)
         # Seek to the beginning of the file to allow the tested
         # function to find the file content.
         json_file.seek(0)
@@ -73,8 +73,8 @@ def test_write_to_s3():
     conn = boto3.resource("s3", region_name="us-west-2")
     bucket_obj = conn.create_bucket(Bucket=bucket)
 
-    with NamedTemporaryFile() as json_file:
-        json_file.write(json.dumps(SAMPLE_DATA))
+    with NamedTemporaryFile("w") as json_file:
+        json.dump(SAMPLE_DATA, json_file)
         # Seek to the beginning of the file to allow the tested
         # function to find the file content.
         json_file.seek(0)
