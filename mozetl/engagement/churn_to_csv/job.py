@@ -7,10 +7,11 @@ import click
 from boto3.s3.transfer import S3Transfer
 from moztelemetry.standards import snap_to_beginning_of_week
 from pyspark.sql import SparkSession, functions as F
+from six import text_type
 
 
 def csv(f):
-    return ",".join([unicode(a) for a in f])
+    return ",".join([text_type(a) for a in f])
 
 
 def fmt(d, date_format="%Y%m%d"):

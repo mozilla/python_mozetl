@@ -6,6 +6,7 @@ from click.testing import CliRunner
 
 from mozetl.topline import historical_backfill as backfill
 from mozetl.topline.schema import historical_schema
+from six import text_type
 
 
 @pytest.fixture(autouse=True)
@@ -107,7 +108,7 @@ def test_cli_monthly(generate_data, tmpdir, monkeypatch):
 
     csv_data = ','.join(input_df.columns) + '\n'
     for row in input_df.collect():
-        csv_data += ','.join([unicode(x) for x in row]) + '\n'
+        csv_data += ','.join([text_type(x) for x in row]) + '\n'
 
     input_csv.write(csv_data)
 

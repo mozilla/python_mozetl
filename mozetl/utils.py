@@ -10,6 +10,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 import boto3
+from six import text_type
 
 ACTIVITY_SUBMISSION_LAG = DT.timedelta(10)
 
@@ -60,7 +61,7 @@ def write_csv(dataframe, path, header=True):
             writer.writerow(dataframe.columns)
 
         for row in dataframe.collect():
-            row = [unicode(s).encode('utf-8') for s in row]
+            row = [text_type(s).encode('utf-8') for s in row]
             writer.writerow(row)
 
 
