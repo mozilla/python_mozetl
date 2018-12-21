@@ -3,7 +3,7 @@
 from pyspark.sql import SparkSession
 import pyspark.sql.functions as fun
 import json
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import click
 
 MS_FIELDS = ['client_id',
@@ -27,7 +27,7 @@ def get_test_pilot_addons():
     :return a list of addon_ids
     '''
     url = "https://testpilot.firefox.com/api/experiments.json"
-    response = urllib.urlopen(url)
+    response = urllib.request.urlopen(url)
     data = json.loads(response.read())
     all_tp_addons = (
         ["@testpilot-addon"] + [i.get("addon_id") for i in data['results'] if i.get("addon_id")]

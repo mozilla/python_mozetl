@@ -13,7 +13,7 @@ def simple_data():
                 ('c', 'linux'),
                 ('d', 'windows')]
 
-    return map(lambda raw: create_row(*raw), raw_data)
+    return [create_row(*raw) for raw in raw_data]
 
 
 def duplicate_data():

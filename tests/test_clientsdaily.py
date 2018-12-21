@@ -36,14 +36,14 @@ def clients_daily(main_summary_with_search):
 
 def test_extract_search_counts(main_summary_with_search):
     row = main_summary_with_search.agg({'search_count_all': 'sum'}).collect()[0]
-    total = row.asDict().values()[0]
+    total = list(row.asDict().values())[0]
     assert total == EXPECTED_INTEGER_VALUES['search_count_all_sum']
 
 
 def test_domains_count(main_summary_with_search):
     unique_domains = 'scalar_parent_browser_engagement_unique_domains_count'
     row = main_summary_with_search.agg({unique_domains: 'sum'}).collect()[0]
-    total = row.asDict().values()[0]
+    total = list(row.asDict().values())[0]
     assert total == 4402
 
 
@@ -53,7 +53,7 @@ def test_to_profile_day_aggregates(clients_daily):
     aggd = dict([(k, 'sum') for k in EXPECTED_INTEGER_VALUES])
     result = clients_daily.agg(aggd).collect()[0]
 
-    for k, expected in EXPECTED_INTEGER_VALUES.items():
+    for k, expected in list(EXPECTED_INTEGER_VALUES.items()):
         actual = int(result['sum({})'.format(k)])
         assert actual == expected
 
@@ -85,7 +85,7 @@ def test_profile_creation_date_fields(clients_daily):
         u'2017-04-27', u'2015-06-19'
     ])
     ten_pcds = clients_daily.select("profile_creation_date").take(10)
-    actual1 = set([r.asDict().values()[0][:10] for r in ten_pcds])
+    actual1 = set([list(r.asDict().values())[0][:10] for r in ten_pcds])
     assert actual1 in (expected_back, expected_utc, expected_forward)
 
     expected2_back = [
@@ -98,14 +98,14 @@ def test_profile_creation_date_fields(clients_daily):
         376, 892, 259, 1359, 99, 1654, 413, 27, 701, 100
     ]
     ten_pdas = clients_daily.select("profile_age_in_days").take(10)
-    actual2 = [r.asDict().values()[0] for r in ten_pdas]
+    actual2 = [list(r.asDict().values())[0] for r in ten_pdas]
     assert actual2 in (expected2_back, expected2_utc, expected2_forward)
 
 
 def test_sessions_started_on_this_day(clients_daily):
     expected = [2, 0, 3, 2, 1, 0, 1, 0, 0, 3]
     ten_ssotds = clients_daily.select("sessions_started_on_this_day").take(10)
-    actual = [r.asDict().values()[0] for r in ten_ssotds]
+    actual = [list(r.asDict().values())[0] for r in ten_ssotds]
     assert actual == expected
 
 
@@ -115,7 +115,7 @@ def test_sessions_started_on_this_day_sorted(clients_daily):
     expected = [1, 5, 1, 1, 1, 0, 0, 0, 0, 0]
     one_day = clients_daily.where("activity_date == '2017-05-25'").orderBy("client_id")
     ten_ssotds = one_day.select("sessions_started_on_this_day").take(10)
-    actual = [r.asDict().values()[0] for r in ten_ssotds]
+    actual = [list(r.asDict().values())[0] for r in ten_ssotds]
     assert actual == expected
 
 

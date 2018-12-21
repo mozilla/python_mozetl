@@ -26,10 +26,10 @@ def generate_dates(submission_date_s3, ts_offset=0, creation_offset=0):
     date_snippet = {
         "submission_date_s3": submission_date_s3,
         "profile_creation_date": (
-            long((creation - epoch).total_seconds() / seconds_per_day)
+            int((creation - epoch).total_seconds() / seconds_per_day)
         ),
         "timestamp": (
-            long((timestamp - epoch).total_seconds() * nanoseconds_per_second)
+            int((timestamp - epoch).total_seconds() * nanoseconds_per_second)
         )
     }
 
@@ -72,7 +72,7 @@ end_ds = "20170608"
 default_sample = {
     "document_id": "document-id",
     "client_id": "client-id",
-    "timestamp": long(1.4962752e+18),
+    "timestamp": int(1.4962752e+18),
     "is_default_browser": True,
     "search_counts": [search_row()],
     "country": "US",

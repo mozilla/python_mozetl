@@ -36,13 +36,13 @@ class Request(object):
     def __init__(self, request_dict):
         args = {
             field: conversion(request_dict.get(field))
-            for field, (conversion, sql_type) in Request.field_types.iteritems()
+            for field, (conversion, sql_type) in Request.field_types.items()
         }
         self.row = Row(**args)
 
 
 def _requests_to_rows(requests):
-    out = {k: Request(v).row for k, v in requests.iteritems()}
+    out = {k: Request(v).row for k, v in requests.items()}
     return out
 
 

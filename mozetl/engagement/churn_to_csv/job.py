@@ -113,10 +113,10 @@ def convert_week(spark, config, week_start=None):
 def assert_valid_config(config):
     """ Assert that the configuration looks correct. """
     # This could be replaced with python schema's
-    assert set(["source", "uploads", "search_cohort"]).issubset(config.keys())
-    assert set(["bucket", "prefix"]).issubset(config['search_cohort'].keys())
+    assert set(["source", "uploads", "search_cohort"]).issubset(list(config.keys()))
+    assert set(["bucket", "prefix"]).issubset(list(config['search_cohort'].keys()))
     for entry in config["uploads"]:
-        assert set(["name", "bucket", "prefix"]).issubset(entry.keys())
+        assert set(["name", "bucket", "prefix"]).issubset(list(entry.keys()))
 
 
 @click.command()

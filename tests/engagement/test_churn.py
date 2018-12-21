@@ -359,7 +359,7 @@ def test_sync_usage(test_transform):
         test_func = functools.partial(test_case, uid=uid, expect=expect)
         return snippet, test_func
 
-    snippets, test_func = zip(*[
+    snippets, test_func = list(zip(*[
         # unobservable
         case("1", "unknown", None, None, None),
         # no reported devices, and not configured
@@ -378,7 +378,7 @@ def test_sync_usage(test_transform):
         case("8", "multiple", 0, 2, False),
         # a mobile and desktop device, but not configured
         case("9", "multiple", 1, 1, False),
-    ])
+    ]))
 
     df = test_transform(list(snippets))
 

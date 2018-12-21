@@ -146,7 +146,7 @@ def multi_locales_df(generate_data):
 
     sample_snippets = []
     counter = 0
-    for locale, count in LOCALE_COUNTS.iteritems():
+    for locale, count in LOCALE_COUNTS.items():
         for i in range(count):
             variation = {"locale": locale, "client_id": "client-{}".format(counter)}
             sample_snippets.append(variation)

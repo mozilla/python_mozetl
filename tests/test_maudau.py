@@ -27,7 +27,7 @@ def make_frame(spark):
         ('a', '2017-05-05', '20170507'),
     ]
     return spark.createDataFrame(
-        [dict(zip(cols, tup)) for tup in values],
+        [dict(list(zip(cols, tup))) for tup in values],
         schema=NARROW_SCHEMA)
 
 
