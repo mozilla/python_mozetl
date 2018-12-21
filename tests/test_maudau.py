@@ -111,7 +111,7 @@ def test_write_locally():
     try:
         os.chdir(tempdir)
         M.write_locally(results)
-        output = open(basename).read()
+        output = open(basename, "rb").read().decode()
         assert output == expected
     finally:
         os.chdir(cwd)
