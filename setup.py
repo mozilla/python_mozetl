@@ -36,7 +36,7 @@ setup(
         'requests==2.20.1',
         'scipy==1.0.0rc1',
         'typing==3.6.4',
-        'six',
+        'six==1.11.0',
     ],
     tests_require=test_deps,
     extras_require=extras,
