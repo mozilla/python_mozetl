@@ -25,11 +25,10 @@ class Request(object):
 
     # python3 work-around to keep field_types in scope since class variables
     # are not in the local scope of list comprehensions.
-    _create_struct = lambda x: StructField(x[0], x[1][1], True)  # noqa
     _keys = sorted(field_types.keys())
     _dtypes = map(field_types.get, _keys)
 
-    StructType = StructType(list(map(_create_struct, zip(_keys, _dtypes))))
+    StructType = StructType([StructField(x[0], x[1][1], True) for x in zip(_keys, _dtypes)])
 
     def __init__(self, request_dict):
         args = {
