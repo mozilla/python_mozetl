@@ -88,7 +88,7 @@ jobs:
       - run: *install_dependencies
       - run:
           name: run linter
-          command: tox -e flake8,black
+          command: tox -e flake8
       - save_cache: *save_cache_settings
 
 
@@ -101,5 +101,4 @@ workflows:
   build:
     jobs:
       - py27
-      - py36
       - lint
