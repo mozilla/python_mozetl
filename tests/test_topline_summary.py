@@ -8,6 +8,7 @@ from pyspark.sql import functions as F, Row
 from pyspark.sql.types import (
     StructField, StructType, StringType, BooleanType, ArrayType, LongType
 )
+from six import text_type
 
 from mozetl.topline import topline_summary as topline
 
@@ -38,8 +39,8 @@ def generate_dates(submission_date_s3, ts_offset=0, creation_offset=0):
 
 def search_row(engine='hooli', count=1, source='searchbar'):
     return Row(
-        engine=unicode(engine),
-        source=unicode(source),
+        engine=text_type(engine),
+        source=text_type(source),
         count=count
     )
 

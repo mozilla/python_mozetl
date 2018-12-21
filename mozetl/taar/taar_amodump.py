@@ -6,6 +6,7 @@ import logging
 import logging.config
 import typing
 from six.moves import urllib
+from six import text_type
 import queue as queue
 
 from .taar_utils import store_json_to_s3
@@ -244,8 +245,8 @@ class Undefined:
 def marshal(value, name, type_def):
     serializers = {typing.List: list,
                    typing.Dict: dict,
-                   str: unicode,
-                   unicode: unicode,
+                   str: text_type,
+                   text_type: text_type,
                    int: int,
                    float: float,
                    bool: bool}

@@ -11,6 +11,7 @@ import botocore
 import requests
 import logging
 import moztelemetry.standards as moz_std
+from six import text_type
 
 # Reasons why the data for a client can be discarded.
 REASON_INACTIVE = "inactive"
@@ -462,7 +463,7 @@ def finalize_data(data, sample_count, broken_ratio,
     for k, v in data.items():
         # The old key is a tuple (key, value). We translate the key part and concatenate the
         # value as a string.
-        new_key = keys_translation[k[0]] + unicode(k[1])
+        new_key = keys_translation[k[0]] + text_type(k[1])
         aggregated_percentages[new_key] = v / denom
 
     return aggregated_percentages
