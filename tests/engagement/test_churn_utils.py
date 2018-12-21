@@ -44,7 +44,7 @@ def test_preprocess_col_expr(select_expr_dict, test_df, row_to_dict):
 
     assert row_to_dict(
         test_df
-        .select([v.alias(k) for k, v in actual.items()])
+        .select([v.alias(k) for k, v in list(actual.items())])
         .first()
     ) == expect
 

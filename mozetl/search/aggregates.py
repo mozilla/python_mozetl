@@ -46,7 +46,7 @@ def search_clients_daily(main_summary):
             'engine',
             'source',
         ],
-        map(agg_first, [
+        list(map(agg_first, [
             'country',
             'app_version',
             'distribution_id',
@@ -60,7 +60,7 @@ def search_clients_daily(main_summary):
             'default_search_engine_data_load_path',
             'default_search_engine_data_submission_url',
             'sample_id',
-        ]) + [
+        ])) + [
             # Count of 'first' subsessions seen for this client_day
             (
                 count(when(col('subsession_counter') == 1, 1))

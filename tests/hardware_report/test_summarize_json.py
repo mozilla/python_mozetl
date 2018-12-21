@@ -30,7 +30,7 @@ def test_run_tests():
     inverted_device_data = summarize_json.invert_device_map(device_data)
     assert "0xfeee" in inverted_device_data, (
            "The vendor id must be prefixed with '0x' and be at the root of the map.")
-    assert len(inverted_device_data["0xfeee"].keys()) == 2, (
+    assert len(list(inverted_device_data["0xfeee"].keys())) == 2, (
            "There must be two devices for the '0xfeee' vendor.")
     assert all(device_id in inverted_device_data["0xfeee"] for device_id in ("0xd1d1", "0xd2d2")), (
            "The '0xfeee' vendor must contain the expected devices.")
@@ -234,7 +234,7 @@ def test_finalize_data():
            "The first day of the reporting period must be reported.")
 
     # Make sure that all the reported numbers are ratios.
-    all_ratios = [(v >= 0.0 and v <= 1.0) for (k, v) in finalized_data.iteritems() if k != 'date']
+    all_ratios = [(v >= 0.0 and v <= 1.0) for (k, v) in finalized_data.items() if k != 'date']
     assert all(all_ratios), "All the reported entries must be ratios."
 
 

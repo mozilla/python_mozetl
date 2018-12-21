@@ -79,7 +79,7 @@ def extract_telemetry(spark):
             users_df.rdd
                     .map(lambda p: (p["client_id"],
                                     [guid
-                                     for guid, data in p["active_addons"].items()
+                                     for guid, data in list(p["active_addons"].items())
                                      if is_valid_addon(guid, data)]))
                     .filter(lambda p: len(p[1]) > 1)
                     .toDF(["client_id", "addon_ids"])

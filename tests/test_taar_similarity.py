@@ -358,7 +358,7 @@ def test_compute_donors(spark, addon_whitelist, multi_clusters_df):
         ]
         donor = cluster_donors[0]
         for f in REQUIRED_FIELDS:
-            assert f in donor.keys()
+            assert f in list(donor.keys())
 
         # Verify that no system addon or unlisted addons are reported.
         assert "system-addon-guid" not in donor["active_addons"]

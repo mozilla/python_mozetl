@@ -118,7 +118,7 @@ new_profile_sample = {
     "submission": SUBSESSION_START.format("YYYYMMDD"),
     "environment": {
         "profile": {
-            "creation_date": long(SUBSESSION_START.timestamp / SECONDS_PER_DAY)
+            "creation_date": int(SUBSESSION_START.timestamp / SECONDS_PER_DAY)
         },
         "build": {
             "version": "57.0.0",

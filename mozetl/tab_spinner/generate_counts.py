@@ -46,7 +46,7 @@ def run_spinner_etl(sc):
         build_results[build_type] = get_short_and_long_spinners(pings)
 
     s3_client = boto3.client('s3')
-    for result_key, results in build_results.iteritems():
+    for result_key, results in build_results.items():
         filename = "severities_by_build_id_%s.json" % result_key
         results_json = json.dumps(results, ensure_ascii=False)
 

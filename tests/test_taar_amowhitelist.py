@@ -332,7 +332,7 @@ def test_transform_whitelist(s3_fixture):
     assert len(final_jdata) == 1
 
     today = datetime.datetime.today().replace(tzinfo=None)
-    for client_data in final_jdata.values():
+    for client_data in list(final_jdata.values()):
         assert client_data['current_version']['files'][0]['is_webextension']
         assert client_data['ratings']['average'] >= taar_amowhitelist.MIN_RATING
         create_datetime = parse(client_data['first_create_date']).replace(tzinfo=None)
@@ -363,7 +363,7 @@ def test_transform_featuredlist(s3_fixture):
     # featured
     assert len(final_jdata) == 3
 
-    for rec in final_jdata.values():
+    for rec in list(final_jdata.values()):
         assert rec['is_featured']
 
 
