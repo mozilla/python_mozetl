@@ -148,7 +148,7 @@ def test_unix_dates(aggregate_data):
         data = aggregate_data.filter(aggregate_data.client_id == client_id).collect()[0]
         first_install = data.first_addon_install_date
         pcd = data.profile_creation_date
-        print first_install, pcd
+        print(first_install, pcd)
         fmt = '%Y%m%d'
         days_to_install = (
             dt.datetime.strptime(first_install, fmt) - dt.datetime.strptime(pcd, fmt)
