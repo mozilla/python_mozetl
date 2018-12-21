@@ -79,7 +79,7 @@ jobs:
 
   lint:
     docker:
-      - image: python:3.6
+      - image: python:2.7
     working_directory: ~/python_mozetl
     steps:
       - checkout
