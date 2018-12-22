@@ -51,16 +51,26 @@ def test_check_most_recent_change_min_value():
 
 
 def test_check_most_recent_change_missing_val():
-    test_data = {
-        20170701: {
-            "change": 0.5,
-        },
-        20170702: {}
-    }
+    test_data = {20170701: {"change": 0.5}, 20170702: {}}
 
-    assert set(check_most_recent_change(test_data, min_change=0.1, min_value=0.0, missing_val=0.5).keys())== set()
-    assert set(check_most_recent_change(test_data, min_change=0.1, min_value=0.0, missing_val=0.01).keys()) == {"change"}
-    assert set(check_most_recent_change(test_data, min_change=0.1, min_value=0.0, missing_val=1.0).keys()) == {"change"}
+    assert (
+        set(
+            check_most_recent_change(
+                test_data, min_change=0.1, min_value=0.0, missing_val=0.5
+            ).keys()
+        )
+        == set()
+    )
+    assert set(
+        check_most_recent_change(
+            test_data, min_change=0.1, min_value=0.0, missing_val=0.01
+        ).keys()
+    ) == {"change"}
+    assert set(
+        check_most_recent_change(
+            test_data, min_change=0.1, min_value=0.0, missing_val=1.0
+        ).keys()
+    ) == {"change"}
 
 
 def test_get_data():
