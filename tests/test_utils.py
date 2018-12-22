@@ -33,7 +33,7 @@ def test_write_csv_ascii(generate_data, tmpdir):
     with open(path, 'rb') as f:
         data = f.read()
 
-    assert data.rstrip().split('\r\n')[1:] == test_data
+    assert [l.decode('utf-8') for l in data.rstrip().split(b'\r\n')[1:]] == test_data
 
 
 def test_generate_filter_parameters():
@@ -67,9 +67,9 @@ def test_write_csv_valid_unicode(generate_data, tmpdir):
     utils.write_csv(df, path)
 
     with open(path, 'rb') as f:
-        data = f.read().decode('utf-8')
+        data = f.read()
 
-    assert data.rstrip().split('\r\n')[1:] == test_data
+    assert [l.decode('utf-8') for l in data.rstrip().split(b'\r\n')[1:]] == test_data
 
 
 @mock_s3
