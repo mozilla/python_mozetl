@@ -10,6 +10,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 import boto3
+import six
 from six import text_type
 
 ACTIVITY_SUBMISSION_LAG = DT.timedelta(10)
@@ -54,14 +55,14 @@ def write_csv(dataframe, path, header=True):
     # an iterator over all partitions, collect everything into driver memory.
     logger.info("Writing {} rows to {}".format(dataframe.count(), path))
 
-    with open(path, 'wb') as fout:
+    with open(path, "wb") if six.PY2 else open(path, "w", newline="") as fout:
         writer = csv.writer(fout)
 
         if header:
             writer.writerow(dataframe.columns)
 
         for row in dataframe.collect():
-            row = [text_type(s).encode('utf-8') for s in row]
+            row = [text_type(s).encode('utf-8') for s in row] if six.PY2 else row
             writer.writerow(row)
 
 
