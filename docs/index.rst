@@ -3,14 +3,14 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to python_mozetl's documentation!
-=========================================
+.. https://samnicholls.net/2016/06/15/how-to-sphinx-readthedocs/
+
+Firefox Telemetry Python ETL
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
 
-
+   readme
 
 Indices and tables
 ==================
