@@ -91,6 +91,43 @@ jobs:
           command: tox -e flake8
       - save_cache: *save_cache_settings
 
+  docs:
+    docker:
+      - image: python:2.7
+    working_directory: ~/python_mozetl
+    steps:
+      - checkout
+      - run: *early_return_for_skip_tests
+      - restore_cache: *restore_cache_settings
+      - run: *install_dependencies
+      - run:
+          name: generate docs
+          command: tox -e docs
+      - persist_to_workspace:
+          root: .tox
+          paths: docs_out
+
+  # https://github.com/mozilla/python_moztelemetry/blob/master/.circleci/config.yml#L90
+  docs-deploy:
+    docker:
+      - image: node:8.10.0
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .tox
+      # Needed for write access to the GitHub repository;
+      # see https://circleci.com/docs/2.0/gh-bb-integration/#deployment-keys-and-user-keys
+      - add_ssh_keys:
+          fingerprints:
+            - "45:38:d8:55:c2:ff:b6:1f:b0:de:65:a1:ea:e0:68:84"
+      - run:
+          name: Deploy docs to gh-pages branch
+          command: |
+            git config user.email "fx-data-platform@mozilla.com"
+            git config user.name "CircleCI docs-deploy job"
+            npm install -g --silent gh-pages@2.0.1
+            gh-pages --dotfiles --message "[skip ci] Updates" --dist .tox/docs_out
+
 
 ####################
 # Workflows: see https://circleci.com/docs/2.0/workflows/
@@ -102,3 +139,10 @@ workflows:
     jobs:
       - py27
       - lint
+      - docs
+      - docs-deploy:
+          requires:
+            - docs
+          filters:
+            branches:
+              only: master
