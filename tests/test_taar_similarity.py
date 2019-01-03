@@ -321,6 +321,7 @@ def test_get_addons(spark, addon_whitelist, multi_clusters_df):
     assert isinstance(addons_df.schema.fields[1].dataType, ArrayType)
 
 
+@pytest.mark.timeout(600)
 def test_compute_donors(spark, addon_whitelist, multi_clusters_df):
     multi_clusters_df.createOrReplaceTempView("clients_daily")
 
