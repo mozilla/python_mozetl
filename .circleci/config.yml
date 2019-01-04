@@ -119,7 +119,7 @@ jobs:
       # see https://circleci.com/docs/2.0/gh-bb-integration/#deployment-keys-and-user-keys
       - add_ssh_keys:
           fingerprints:
-            - "45:38:d8:55:c2:ff:b6:1f:b0:de:65:a1:ea:e0:68:84"
+            - "89:00:8c:0c:b4:28:30:69:76:a7:6f:63:cf:5d:ea:f2"
       - run:
           name: Deploy docs to gh-pages branch
           command: |
