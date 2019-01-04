@@ -1,0 +1,144 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>mozetl.sync package &#8212; python_mozetl 0.1 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="mozetl-sync-package">
+<h1>mozetl.sync package<a class="headerlink" href="#mozetl-sync-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-mozetl.sync.bookmark_validation">
+<span id="mozetl-sync-bookmark-validation-module"></span><h2>mozetl.sync.bookmark_validation module<a class="headerlink" href="#module-mozetl.sync.bookmark_validation" title="Permalink to this headline">¶</a></h2>
+<p># Sync Bookmark Validation Dataset</p>
+<p>This notebook is adapted from a gist that transforms the <cite>sync_summary</cite> into a
+flat table to avoid straining the resources on the Presto cluster.[1] The
+bookmark totals table generates statistics relative to the server clock.</p>
+<p>See bugs 1349065, 1374831, 1410963</p>
+<p>[1] <a class="reference external" href="https://gist.github.com/kitcambridge/364f56182f3e96fb3131bf38ff648609">https://gist.github.com/kitcambridge/364f56182f3e96fb3131bf38ff648609</a></p>
+<dl class="function">
+<dt id="mozetl.sync.bookmark_validation.extract">
+<code class="descclassname">mozetl.sync.bookmark_validation.</code><code class="descname">extract</code><span class="sig-paren">(</span><em>spark</em>, <em>path</em>, <em>start_date</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/sync/bookmark_validation.html#extract"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.sync.bookmark_validation.extract" title="Permalink to this definition">¶</a></dt>
+<dd><p>Register a temporary <cite>sync_summary</cite> view on the start date.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mozetl.sync.bookmark_validation.load">
+<code class="descclassname">mozetl.sync.bookmark_validation.</code><code class="descname">load</code><span class="sig-paren">(</span><em>spark</em>, <em>bucket</em>, <em>prefix</em>, <em>version</em>, <em>start_date</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/sync/bookmark_validation.html#load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.sync.bookmark_validation.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save tables to disk.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mozetl.sync.bookmark_validation.transform">
+<code class="descclassname">mozetl.sync.bookmark_validation.</code><code class="descname">transform</code><span class="sig-paren">(</span><em>spark</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/sync/bookmark_validation.html#transform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.sync.bookmark_validation.transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create the bookmark problem and summary tables.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-mozetl.sync">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-mozetl.sync" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">python_mozetl</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../readme.html">Firefox Telemetry Python ETL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../readme.html#benefits">Benefits</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../readme.html#tests">Tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../readme.html#scheduling">Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../readme.html#early-stage-etl-jobs">Early Stage ETL Jobs</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Ryan Harter.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/source/mozetl.sync.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

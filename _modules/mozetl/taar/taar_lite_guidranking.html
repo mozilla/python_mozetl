@@ -1,0 +1,186 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>mozetl.taar.taar_lite_guidranking &#8212; python_mozetl 0.1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for mozetl.taar.taar_lite_guidranking</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This ETL job computes the installation rate of all addons and then</span>
+<span class="sd">cross references against the whitelist to compute the total install</span>
+<span class="sd">rate for all whitelisted addons.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">import</span> <span class="nn">click</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="k">import</span> <span class="n">SparkSession</span>
+<span class="kn">import</span> <span class="nn">mozetl.taar.taar_utils</span> <span class="k">as</span> <span class="nn">taar_utils</span>
+
+
+<span class="n">OUTPUT_BUCKET</span> <span class="o">=</span> <span class="s1">&#39;telemetry-parquet&#39;</span>
+<span class="n">OUTPUT_PREFIX</span> <span class="o">=</span> <span class="s1">&#39;taar/lite/&#39;</span>
+<span class="n">OUTPUT_BASE_FILENAME</span> <span class="o">=</span> <span class="s1">&#39;guid_install_ranking&#39;</span>
+
+
+<div class="viewcode-block" id="extract_telemetry"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_lite_guidranking.extract_telemetry">[docs]</a><span class="k">def</span> <span class="nf">extract_telemetry</span><span class="p">(</span><span class="n">sparkSession</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Load some training data from telemetry given a sparkContext</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">frame</span> <span class="o">=</span> <span class="n">sparkSession</span><span class="o">.</span><span class="n">sql</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    SELECT</span>
+<span class="s2">        addon_guid,</span>
+<span class="s2">        count(*) as install_count</span>
+<span class="s2">    FROM</span>
+<span class="s2">        (SELECT</span>
+<span class="s2">            EXPLODE(active_addons[0]) as (addon_guid, addon_row)</span>
+<span class="s2">        FROM</span>
+<span class="s2">            longitudinal</span>
+<span class="s2">        WHERE</span>
+<span class="s2">            normalized_channel=&#39;release&#39; AND</span>
+<span class="s2">            build IS NOT NULL AND</span>
+<span class="s2">            build[0].application_name=&#39;Firefox&#39;</span>
+<span class="s2">        )</span>
+<span class="s2">    GROUP BY addon_guid</span>
+<span class="s2">    &quot;&quot;&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">frame</span></div>
+
+
+<div class="viewcode-block" id="transform"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_lite_guidranking.transform">[docs]</a><span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="n">frame</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Convert the dataframe to JSON and augment each record to</span>
+<span class="sd">    include the install count for each addon.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">lambda_func</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">addon_guid</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">install_count</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">rdd</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">lambda_func</span><span class="p">)</span><span class="o">.</span><span class="n">collect</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="load_s3"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_lite_guidranking.load_s3">[docs]</a><span class="k">def</span> <span class="nf">load_s3</span><span class="p">(</span><span class="n">result_data</span><span class="p">,</span> <span class="n">date</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">bucket</span><span class="p">):</span>
+    <span class="n">taar_utils</span><span class="o">.</span><span class="n">store_json_to_s3</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">result_data</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span>
+                                <span class="n">OUTPUT_BASE_FILENAME</span><span class="p">,</span>
+                                <span class="n">date</span><span class="p">,</span>
+                                <span class="n">prefix</span><span class="p">,</span>
+                                <span class="n">bucket</span><span class="p">)</span></div>
+
+
+<span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">()</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--date&#39;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--bucket&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">OUTPUT_BUCKET</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--prefix&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">OUTPUT_PREFIX</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="n">bucket</span><span class="p">,</span> <span class="n">prefix</span><span class="p">):</span>
+    <span class="n">spark</span> <span class="o">=</span> <span class="p">(</span><span class="n">SparkSession</span>
+             <span class="o">.</span><span class="n">builder</span>
+             <span class="o">.</span><span class="n">appName</span><span class="p">(</span><span class="s2">&quot;taar_lite_ranking&quot;</span><span class="p">)</span>
+             <span class="o">.</span><span class="n">enableHiveSupport</span><span class="p">()</span>
+             <span class="o">.</span><span class="n">getOrCreate</span><span class="p">())</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Processing GUID install rankings&quot;</span><span class="p">)</span>
+
+    <span class="n">data_frame</span> <span class="o">=</span> <span class="n">extract_telemetry</span><span class="p">(</span><span class="n">spark</span><span class="p">)</span>
+    <span class="n">result_data</span> <span class="o">=</span> <span class="n">transform</span><span class="p">(</span><span class="n">data_frame</span><span class="p">)</span>
+    <span class="n">load_s3</span><span class="p">(</span><span class="n">result_data</span><span class="p">,</span> <span class="n">date</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">bucket</span><span class="p">)</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">python_mozetl</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Firefox Telemetry Python ETL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#benefits">Benefits</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#tests">Tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#scheduling">Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#early-stage-etl-jobs">Early Stage ETL Jobs</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Ryan Harter.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

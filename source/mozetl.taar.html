@@ -1,0 +1,738 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>mozetl.taar package &#8212; python_mozetl 0.1 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="mozetl-taar-package">
+<h1>mozetl.taar package<a class="headerlink" href="#mozetl-taar-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-mozetl.taar.taar_amodump">
+<span id="mozetl-taar-taar-amodump-module"></span><h2>mozetl.taar.taar_amodump module<a class="headerlink" href="#module-mozetl.taar.taar_amodump" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="mozetl.taar.taar_amodump.AMOAddonFile">
+<em class="property">class </em><code class="descclassname">mozetl.taar.taar_amodump.</code><code class="descname">AMOAddonFile</code><a class="reference internal" href="../_modules/mozetl/taar/taar_amodump.html#AMOAddonFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_amodump.AMOAddonFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mozetl.taar.taar_amodump.JSONSchema" title="mozetl.taar.taar_amodump.JSONSchema"><code class="xref py py-class docutils literal notranslate"><span class="pre">mozetl.taar.taar_amodump.JSONSchema</span></code></a></p>
+<dl class="attribute">
+<dt id="mozetl.taar.taar_amodump.AMOAddonFile.meta">
+<code class="descname">meta</code><em class="property"> = {'id': &lt;type 'int'&gt;, 'is_webextension': &lt;type 'bool'&gt;, 'platform': &lt;type 'str'&gt;, 'status': &lt;type 'str'&gt;}</em><a class="headerlink" href="#mozetl.taar.taar_amodump.AMOAddonFile.meta" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="mozetl.taar.taar_amodump.AMOAddonInfo">
+<em class="property">class </em><code class="descclassname">mozetl.taar.taar_amodump.</code><code class="descname">AMOAddonInfo</code><a class="reference internal" href="../_modules/mozetl/taar/taar_amodump.html#AMOAddonInfo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_amodump.AMOAddonInfo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mozetl.taar.taar_amodump.JSONSchema" title="mozetl.taar.taar_amodump.JSONSchema"><code class="xref py py-class docutils literal notranslate"><span class="pre">mozetl.taar.taar_amodump.JSONSchema</span></code></a></p>
+<dl class="attribute">
+<dt id="mozetl.taar.taar_amodump.AMOAddonInfo.meta">
+<code class="descname">meta</code><em class="property"> = {'categories': typing.Dict[str, typing.List[str]], 'current_version': &lt;class mozetl.taar.taar_amodump.AMOAddonVersion&gt;, 'default_locale': &lt;type 'str'&gt;, 'description': typing.Dict[str, str], 'guid': &lt;type 'str'&gt;, 'name': typing.Dict[str, str], 'ratings': typing.Dict[str, float], 'summary': typing.Dict[str, str], 'tags': typing.List[str], 'weekly_downloads': &lt;type 'int'&gt;}</em><a class="headerlink" href="#mozetl.taar.taar_amodump.AMOAddonInfo.meta" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="mozetl.taar.taar_amodump.AMOAddonVersion">
+<em class="property">class </em><code class="descclassname">mozetl.taar.taar_amodump.</code><code class="descname">AMOAddonVersion</code><a class="reference internal" href="../_modules/mozetl/taar/taar_amodump.html#AMOAddonVersion"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_amodump.AMOAddonVersion" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mozetl.taar.taar_amodump.JSONSchema" title="mozetl.taar.taar_amodump.JSONSchema"><code class="xref py py-class docutils literal notranslate"><span class="pre">mozetl.taar.taar_amodump.JSONSchema</span></code></a></p>
+<dl class="attribute">
+<dt id="mozetl.taar.taar_amodump.AMOAddonVersion.meta">
+<code class="descname">meta</code><em class="property"> = {'files': typing.List[&lt;class mozetl.taar.taar_amodump.AMOAddonFile&gt;]}</em><a class="headerlink" href="#mozetl.taar.taar_amodump.AMOAddonVersion.meta" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="mozetl.taar.taar_amodump.AMODatabase">
+<em class="property">class </em><code class="descclassname">mozetl.taar.taar_amodump.</code><code class="descname">AMODatabase</code><span class="sig-paren">(</span><em>worker_count</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_amodump.html#AMODatabase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_amodump.AMODatabase" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="mozetl.taar.taar_amodump.AMODatabase.fetch_addons">
+<code class="descname">fetch_addons</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_amodump.html#AMODatabase.fetch_addons"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_amodump.AMODatabase.fetch_addons" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="mozetl.taar.taar_amodump.JSONSchema">
+<em class="property">class </em><code class="descclassname">mozetl.taar.taar_amodump.</code><code class="descname">JSONSchema</code><a class="reference internal" href="../_modules/mozetl/taar/taar_amodump.html#JSONSchema"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_amodump.JSONSchema" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="mozetl.taar.taar_amodump.Undefined">
+<em class="property">class </em><code class="descclassname">mozetl.taar.taar_amodump.</code><code class="descname">Undefined</code><a class="reference internal" href="../_modules/mozetl/taar/taar_amodump.html#Undefined"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_amodump.Undefined" title="Permalink to this definition">¶</a></dt>
+<dd><p>This value is used to disambiguate None vs a non-existant value on
+dict.get() lookups</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="mozetl.taar.taar_amodump.logger">
+<code class="descclassname">mozetl.taar.taar_amodump.</code><code class="descname">logger</code><em class="property"> = &lt;logging.Logger object&gt;</em><a class="headerlink" href="#mozetl.taar.taar_amodump.logger" title="Permalink to this definition">¶</a></dt>
+<dd><p>JSON from addons.mozilla.org server are parsed using subclasses of
+JSONSchema to declare the types that we want to extract.</p>
+<p>The top level object that we are parsing is <cite>AMOAddonInfo</cite>.</p>
+<p>All classes of type JSONSchema have a <cite>meta</cite> dictionary attribute
+which define keys which we are interested in extracting.</p>
+<p>The key is the name of the attribute which we are interested in
+retrieving.</p>
+<p>The value defines how we want to coerce the inbound data.  There are 3
+general cases:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li>subclasses of JSONSchema are nested objects which are
+represented as dictionaries</li>
+<li>List&lt;T&gt; or Dict&lt;T,T&gt; types where values are coerced
+recursively using the marshal function.</li>
+<li>Everything else. These are callable type defintions. Usually
+Python built-ins like str or bool. It is possible to define
+custom callables if you want to do custom data conversion.</li>
+</ol>
+</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="mozetl.taar.taar_amodump.marshal">
+<code class="descclassname">mozetl.taar.taar_amodump.</code><code class="descname">marshal</code><span class="sig-paren">(</span><em>value</em>, <em>name</em>, <em>type_def</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_amodump.html#marshal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_amodump.marshal" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-mozetl.taar.taar_amowhitelist">
+<span id="mozetl-taar-taar-amowhitelist-module"></span><h2>mozetl.taar.taar_amowhitelist module<a class="headerlink" href="#module-mozetl.taar.taar_amowhitelist" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="mozetl.taar.taar_amowhitelist.AMOTransformer">
+<em class="property">class </em><code class="descclassname">mozetl.taar.taar_amowhitelist.</code><code class="descname">AMOTransformer</code><span class="sig-paren">(</span><em>bucket</em>, <em>prefix</em>, <em>fname</em>, <em>min_rating</em>, <em>min_age</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_amowhitelist.html#AMOTransformer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_amowhitelist.AMOTransformer" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class transforms the raw AMO addon JSON dump
+by filtering out addons that do not meet the minimum requirements
+for ‘whitelisted’ addons.  See the documentation in the transform
+method for details.</p>
+<dl class="method">
+<dt id="mozetl.taar.taar_amowhitelist.AMOTransformer.extract">
+<code class="descname">extract</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_amowhitelist.html#AMOTransformer.extract"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_amowhitelist.AMOTransformer.extract" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mozetl.taar.taar_amowhitelist.AMOTransformer.get_featuredlist">
+<code class="descname">get_featuredlist</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_amowhitelist.html#AMOTransformer.get_featuredlist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_amowhitelist.AMOTransformer.get_featuredlist" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mozetl.taar.taar_amowhitelist.AMOTransformer.get_featuredwhitelist">
+<code class="descname">get_featuredwhitelist</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_amowhitelist.html#AMOTransformer.get_featuredwhitelist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_amowhitelist.AMOTransformer.get_featuredwhitelist" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mozetl.taar.taar_amowhitelist.AMOTransformer.get_whitelist">
+<code class="descname">get_whitelist</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_amowhitelist.html#AMOTransformer.get_whitelist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_amowhitelist.AMOTransformer.get_whitelist" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mozetl.taar.taar_amowhitelist.AMOTransformer.load">
+<code class="descname">load</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_amowhitelist.html#AMOTransformer.load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_amowhitelist.AMOTransformer.load" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mozetl.taar.taar_amowhitelist.AMOTransformer.load_featuredlist">
+<code class="descname">load_featuredlist</code><span class="sig-paren">(</span><em>jdata</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_amowhitelist.html#AMOTransformer.load_featuredlist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_amowhitelist.AMOTransformer.load_featuredlist" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mozetl.taar.taar_amowhitelist.AMOTransformer.load_featuredwhitelist">
+<code class="descname">load_featuredwhitelist</code><span class="sig-paren">(</span><em>jdata</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_amowhitelist.html#AMOTransformer.load_featuredwhitelist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_amowhitelist.AMOTransformer.load_featuredwhitelist" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mozetl.taar.taar_amowhitelist.AMOTransformer.load_whitelist">
+<code class="descname">load_whitelist</code><span class="sig-paren">(</span><em>jdata</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_amowhitelist.html#AMOTransformer.load_whitelist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_amowhitelist.AMOTransformer.load_whitelist" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mozetl.taar.taar_amowhitelist.AMOTransformer.transform">
+<code class="descname">transform</code><span class="sig-paren">(</span><em>json_data</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_amowhitelist.html#AMOTransformer.transform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_amowhitelist.AMOTransformer.transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>We currently whitelist addons which meet a minimum critieria
+of:</p>
+<ul class="simple">
+<li>At least 3.0 average rating or higher</li>
+<li>At least 60 days old as computed using the
+‘first_create_date’ field in the addon JSON</li>
+<li>Not the Firefox Pioneer addon</li>
+</ul>
+<dl class="docutils">
+<dt>Criteria are discussed over at :</dt>
+<dd><a class="reference external" href="https://github.com/mozilla/taar-lite/issues/1">https://github.com/mozilla/taar-lite/issues/1</a></dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="mozetl.taar.taar_amowhitelist.AbstractAccumulator">
+<em class="property">class </em><code class="descclassname">mozetl.taar.taar_amowhitelist.</code><code class="descname">AbstractAccumulator</code><a class="reference internal" href="../_modules/mozetl/taar/taar_amowhitelist.html#AbstractAccumulator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_amowhitelist.AbstractAccumulator" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="mozetl.taar.taar_amowhitelist.AbstractAccumulator.get_results">
+<code class="descname">get_results</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_amowhitelist.html#AbstractAccumulator.get_results"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_amowhitelist.AbstractAccumulator.get_results" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mozetl.taar.taar_amowhitelist.AbstractAccumulator.process_record">
+<code class="descname">process_record</code><span class="sig-paren">(</span><em>guid</em>, <em>addon_data</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_amowhitelist.html#AbstractAccumulator.process_record"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_amowhitelist.AbstractAccumulator.process_record" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="mozetl.taar.taar_amowhitelist.FeaturedAccumulator">
+<em class="property">class </em><code class="descclassname">mozetl.taar.taar_amowhitelist.</code><code class="descname">FeaturedAccumulator</code><a class="reference internal" href="../_modules/mozetl/taar/taar_amowhitelist.html#FeaturedAccumulator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_amowhitelist.FeaturedAccumulator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mozetl.taar.taar_amowhitelist.AbstractAccumulator" title="mozetl.taar.taar_amowhitelist.AbstractAccumulator"><code class="xref py py-class docutils literal notranslate"><span class="pre">mozetl.taar.taar_amowhitelist.AbstractAccumulator</span></code></a></p>
+<dl class="method">
+<dt id="mozetl.taar.taar_amowhitelist.FeaturedAccumulator.process_record">
+<code class="descname">process_record</code><span class="sig-paren">(</span><em>guid</em>, <em>addon_data</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_amowhitelist.html#FeaturedAccumulator.process_record"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_amowhitelist.FeaturedAccumulator.process_record" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="mozetl.taar.taar_amowhitelist.WhitelistAccumulator">
+<em class="property">class </em><code class="descclassname">mozetl.taar.taar_amowhitelist.</code><code class="descname">WhitelistAccumulator</code><span class="sig-paren">(</span><em>min_age</em>, <em>min_rating</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_amowhitelist.html#WhitelistAccumulator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_amowhitelist.WhitelistAccumulator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mozetl.taar.taar_amowhitelist.AbstractAccumulator" title="mozetl.taar.taar_amowhitelist.AbstractAccumulator"><code class="xref py py-class docutils literal notranslate"><span class="pre">mozetl.taar.taar_amowhitelist.AbstractAccumulator</span></code></a></p>
+<dl class="method">
+<dt id="mozetl.taar.taar_amowhitelist.WhitelistAccumulator.process_record">
+<code class="descname">process_record</code><span class="sig-paren">(</span><em>guid</em>, <em>addon_data</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_amowhitelist.html#WhitelistAccumulator.process_record"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_amowhitelist.WhitelistAccumulator.process_record" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="mozetl.taar.taar_amowhitelist.WhitelistFeaturedAccumulator">
+<em class="property">class </em><code class="descclassname">mozetl.taar.taar_amowhitelist.</code><code class="descname">WhitelistFeaturedAccumulator</code><span class="sig-paren">(</span><em>min_age</em>, <em>min_rating</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_amowhitelist.html#WhitelistFeaturedAccumulator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_amowhitelist.WhitelistFeaturedAccumulator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mozetl.taar.taar_amowhitelist.WhitelistAccumulator" title="mozetl.taar.taar_amowhitelist.WhitelistAccumulator"><code class="xref py py-class docutils literal notranslate"><span class="pre">mozetl.taar.taar_amowhitelist.WhitelistAccumulator</span></code></a></p>
+<dl class="method">
+<dt id="mozetl.taar.taar_amowhitelist.WhitelistFeaturedAccumulator.get_results">
+<code class="descname">get_results</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_amowhitelist.html#WhitelistFeaturedAccumulator.get_results"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_amowhitelist.WhitelistFeaturedAccumulator.get_results" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mozetl.taar.taar_amowhitelist.WhitelistFeaturedAccumulator.process_record">
+<code class="descname">process_record</code><span class="sig-paren">(</span><em>guid</em>, <em>addon_data</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_amowhitelist.html#WhitelistFeaturedAccumulator.process_record"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_amowhitelist.WhitelistFeaturedAccumulator.process_record" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-mozetl.taar.taar_dynamo">
+<span id="mozetl-taar-taar-dynamo-module"></span><h2>mozetl.taar.taar_dynamo module<a class="headerlink" href="#module-mozetl.taar.taar_dynamo" title="Permalink to this headline">¶</a></h2>
+<p>This module replicates the scala script over at</p>
+<p><a class="reference external" href="https://github.com/mozilla/telemetry-batch-view/blob/1c544f65ad2852703883fe31a9fba38c39e75698/src/main/scala/com/mozilla/telemetry/views/HBaseAddonRecommenderView.scala">https://github.com/mozilla/telemetry-batch-view/blob/1c544f65ad2852703883fe31a9fba38c39e75698/src/main/scala/com/mozilla/telemetry/views/HBaseAddonRecommenderView.scala</a></p>
+<p>This should be invoked with something like this:</p>
+<p>spark-submit     –master=spark://ec2-52-32-39-246.us-west-2.compute.amazonaws.com taar_dynamo.py     –date=20180218      –region=us-west-2      –table=taar_addon_data_20180206     –prod-iam-role=arn:aws:iam::361527076523:role/taar-write-dynamodb-from-dev</p>
+<dl class="class">
+<dt id="mozetl.taar.taar_dynamo.CredentialSingleton">
+<em class="property">class </em><code class="descclassname">mozetl.taar.taar_dynamo.</code><code class="descname">CredentialSingleton</code><a class="reference internal" href="../_modules/mozetl/taar/taar_dynamo.html#CredentialSingleton"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_dynamo.CredentialSingleton" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="mozetl.taar.taar_dynamo.CredentialSingleton.getInstance">
+<code class="descname">getInstance</code><span class="sig-paren">(</span><em>prod_iam_role</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_dynamo.html#CredentialSingleton.getInstance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_dynamo.CredentialSingleton.getInstance" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mozetl.taar.taar_dynamo.CredentialSingleton.get_new_creds">
+<code class="descname">get_new_creds</code><span class="sig-paren">(</span><em>prod_iam_role</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_dynamo.html#CredentialSingleton.get_new_creds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_dynamo.CredentialSingleton.get_new_creds" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="mozetl.taar.taar_dynamo.DynamoReducer">
+<em class="property">class </em><code class="descclassname">mozetl.taar.taar_dynamo.</code><code class="descname">DynamoReducer</code><span class="sig-paren">(</span><em>prod_iam_role</em>, <em>region_name=None</em>, <em>table_name=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_dynamo.html#DynamoReducer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_dynamo.DynamoReducer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dl class="method">
+<dt id="mozetl.taar.taar_dynamo.DynamoReducer.dynamo_reducer">
+<code class="descname">dynamo_reducer</code><span class="sig-paren">(</span><em>list_a</em>, <em>list_b</em>, <em>force_write=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_dynamo.html#DynamoReducer.dynamo_reducer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_dynamo.DynamoReducer.dynamo_reducer" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function can be used to reduce tuples of the form in
+<cite>list_transformer</cite>. Data is merged and when MAX_RECORDS
+number of JSON blobs are merged, the list of JSON is batch written
+into DynamoDB.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mozetl.taar.taar_dynamo.DynamoReducer.hash_client_ids">
+<code class="descname">hash_client_ids</code><span class="sig-paren">(</span><em>data_tuple</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_dynamo.html#DynamoReducer.hash_client_ids"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_dynamo.DynamoReducer.hash_client_ids" title="Permalink to this definition">¶</a></dt>
+<dd><p># Clobber the client_id by using sha256 hashes encoded as hex
+# Based on the js code in Fx</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mozetl.taar.taar_dynamo.DynamoReducer.push_to_dynamo">
+<code class="descname">push_to_dynamo</code><span class="sig-paren">(</span><em>data_tuple</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_dynamo.html#DynamoReducer.push_to_dynamo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_dynamo.DynamoReducer.push_to_dynamo" title="Permalink to this definition">¶</a></dt>
+<dd><p>This connects to DynamoDB and pushes records in <cite>item_list</cite> into
+a table.</p>
+<p>We accumulate a list of up to 50 elements long to allow debugging
+of write errors.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="mozetl.taar.taar_dynamo.etl">
+<code class="descclassname">mozetl.taar.taar_dynamo.</code><code class="descname">etl</code><span class="sig-paren">(</span><em>spark</em>, <em>run_date</em>, <em>region_name</em>, <em>table_name</em>, <em>prod_iam_role</em>, <em>sample_rate</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_dynamo.html#etl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_dynamo.etl" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function is responsible for extract, transform and load.</p>
+<p>Data is extracted from Parquet files in Amazon S3.
+Transforms and filters are applied to the data to create
+3-tuples that are easily merged in a map-reduce fashion.</p>
+<p>The 3-tuples are then loaded into DynamoDB using a map-reduce
+operation in Spark.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mozetl.taar.taar_dynamo.extract_transform">
+<code class="descclassname">mozetl.taar.taar_dynamo.</code><code class="descname">extract_transform</code><span class="sig-paren">(</span><em>spark</em>, <em>run_date</em>, <em>sample_rate=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_dynamo.html#extract_transform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_dynamo.extract_transform" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="mozetl.taar.taar_dynamo.filterDateAndClientID">
+<code class="descclassname">mozetl.taar.taar_dynamo.</code><code class="descname">filterDateAndClientID</code><span class="sig-paren">(</span><em>row_jstr</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_dynamo.html#filterDateAndClientID"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_dynamo.filterDateAndClientID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Filter out any rows where the client_id is None or where the
+subsession_start_date is not a valid date</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mozetl.taar.taar_dynamo.json_serial">
+<code class="descclassname">mozetl.taar.taar_dynamo.</code><code class="descname">json_serial</code><span class="sig-paren">(</span><em>obj</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_dynamo.html#json_serial"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_dynamo.json_serial" title="Permalink to this definition">¶</a></dt>
+<dd><p>JSON serializer for objects not serializable by default json code</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mozetl.taar.taar_dynamo.list_transformer">
+<code class="descclassname">mozetl.taar.taar_dynamo.</code><code class="descname">list_transformer</code><span class="sig-paren">(</span><em>row_jsonstr</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_dynamo.html#list_transformer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_dynamo.list_transformer" title="Permalink to this definition">¶</a></dt>
+<dd><p>We need to merge two elements of the row data - namely the
+client_id and the start_date into the main JSON blob.</p>
+<p>This is then packaged into a 4-tuple of :</p>
+<p>The first integer represents the number of records that have been
+pushed into DynamoDB.</p>
+<p>The second is the length of the JSON data list. This prevents us
+from having to compute the length of the JSON list unnecessarily.</p>
+<p>The third element of the tuple is the list of JSON data.</p>
+<p>The fourth element is a list of invalid JSON blobs.  We maintain
+this to be no more than 50 elements long.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mozetl.taar.taar_dynamo.load_rdd">
+<code class="descclassname">mozetl.taar.taar_dynamo.</code><code class="descname">load_rdd</code><span class="sig-paren">(</span><em>prod_iam_role</em>, <em>region_name</em>, <em>table_name</em>, <em>rdd</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_dynamo.html#load_rdd"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_dynamo.load_rdd" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="mozetl.taar.taar_dynamo.run_etljob">
+<code class="descclassname">mozetl.taar.taar_dynamo.</code><code class="descname">run_etljob</code><span class="sig-paren">(</span><em>spark</em>, <em>run_date</em>, <em>region_name</em>, <em>table_name</em>, <em>prod_iam_role</em>, <em>sample_rate</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_dynamo.html#run_etljob"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_dynamo.run_etljob" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-mozetl.taar.taar_lite_guidguid">
+<span id="mozetl-taar-taar-lite-guidguid-module"></span><h2>mozetl.taar.taar_lite_guidguid module<a class="headerlink" href="#module-mozetl.taar.taar_lite_guidguid" title="Permalink to this headline">¶</a></h2>
+<p>This ETL job computes the co-installation occurrence of white-listed
+Firefox webextensions for a sample of the longitudinal telemetry dataset.</p>
+<dl class="function">
+<dt id="mozetl.taar.taar_lite_guidguid.extract_telemetry">
+<code class="descclassname">mozetl.taar.taar_lite_guidguid.</code><code class="descname">extract_telemetry</code><span class="sig-paren">(</span><em>spark</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_lite_guidguid.html#extract_telemetry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_lite_guidguid.extract_telemetry" title="Permalink to this definition">¶</a></dt>
+<dd><p>load some training data from telemetry given a sparkContext</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mozetl.taar.taar_lite_guidguid.key_all">
+<code class="descclassname">mozetl.taar.taar_lite_guidguid.</code><code class="descname">key_all</code><span class="sig-paren">(</span><em>a</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_lite_guidguid.html#key_all"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_lite_guidguid.key_all" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return (for each Row) a two column set of Rows that contains each individual
+installed addon (the key_addon) as the first column and an array of guids of
+all <em>other</em> addons that were seen co-installed with the key_addon. Excluding
+the key_addon from the second column to avoid inflated counts in later aggregation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mozetl.taar.taar_lite_guidguid.load_s3">
+<code class="descclassname">mozetl.taar.taar_lite_guidguid.</code><code class="descname">load_s3</code><span class="sig-paren">(</span><em>result_df</em>, <em>date</em>, <em>prefix</em>, <em>bucket</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_lite_guidguid.html#load_s3"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_lite_guidguid.load_s3" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="mozetl.taar.taar_lite_guidguid.transform">
+<code class="descclassname">mozetl.taar.taar_lite_guidguid.</code><code class="descname">transform</code><span class="sig-paren">(</span><em>longitudinal_addons</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_lite_guidguid.html#transform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_lite_guidguid.transform" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-mozetl.taar.taar_lite_guidranking">
+<span id="mozetl-taar-taar-lite-guidranking-module"></span><h2>mozetl.taar.taar_lite_guidranking module<a class="headerlink" href="#module-mozetl.taar.taar_lite_guidranking" title="Permalink to this headline">¶</a></h2>
+<p>This ETL job computes the installation rate of all addons and then
+cross references against the whitelist to compute the total install
+rate for all whitelisted addons.</p>
+<dl class="function">
+<dt id="mozetl.taar.taar_lite_guidranking.extract_telemetry">
+<code class="descclassname">mozetl.taar.taar_lite_guidranking.</code><code class="descname">extract_telemetry</code><span class="sig-paren">(</span><em>sparkSession</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_lite_guidranking.html#extract_telemetry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_lite_guidranking.extract_telemetry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load some training data from telemetry given a sparkContext</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mozetl.taar.taar_lite_guidranking.load_s3">
+<code class="descclassname">mozetl.taar.taar_lite_guidranking.</code><code class="descname">load_s3</code><span class="sig-paren">(</span><em>result_data</em>, <em>date</em>, <em>prefix</em>, <em>bucket</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_lite_guidranking.html#load_s3"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_lite_guidranking.load_s3" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="mozetl.taar.taar_lite_guidranking.transform">
+<code class="descclassname">mozetl.taar.taar_lite_guidranking.</code><code class="descname">transform</code><span class="sig-paren">(</span><em>frame</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_lite_guidranking.html#transform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_lite_guidranking.transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert the dataframe to JSON and augment each record to
+include the install count for each addon.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-mozetl.taar.taar_locale">
+<span id="mozetl-taar-taar-locale-module"></span><h2>mozetl.taar.taar_locale module<a class="headerlink" href="#module-mozetl.taar.taar_locale" title="Permalink to this headline">¶</a></h2>
+<p>Bug 1396549 - TAAR Top addons per locale dictionary
+This notebook is adapted from a gist that computes the top N addons per
+locale after filtering for good candidates (e.g. no unsigned, no disabled,
+…) [1].</p>
+<p>[1] <a class="reference external" href="https://gist.github.com/mlopatka/46dddac9d063589275f06b0443fcc69d">https://gist.github.com/mlopatka/46dddac9d063589275f06b0443fcc69d</a></p>
+<dl class="function">
+<dt id="mozetl.taar.taar_locale.compute_threshold">
+<code class="descclassname">mozetl.taar.taar_locale.</code><code class="descname">compute_threshold</code><span class="sig-paren">(</span><em>addon_df</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_locale.html#compute_threshold"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_locale.compute_threshold" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a threshold to remove locales with a small
+number of addons installations.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mozetl.taar.taar_locale.generate_dictionary">
+<code class="descclassname">mozetl.taar.taar_locale.</code><code class="descname">generate_dictionary</code><span class="sig-paren">(</span><em>spark</em>, <em>num_addons</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_locale.html#generate_dictionary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_locale.generate_dictionary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrap the dictionary generation functions in an
+easily testable way.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mozetl.taar.taar_locale.get_addons">
+<code class="descclassname">mozetl.taar.taar_locale.</code><code class="descname">get_addons</code><span class="sig-paren">(</span><em>spark</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_locale.html#get_addons"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_locale.get_addons" title="Permalink to this definition">¶</a></dt>
+<dd><p>Only Firefox release clients are considered.
+Columns are exploded (over addon keys)  to include locale of each addon
+installation instance system addons, disabled addons, unsigned addons
+are filtered out.
+Sorting by addon-installations and grouped by locale.</p>
+<p>Note that the final result of this job does not include firefox
+telemetry client ID so we do not need to post-process the data in the
+get_addons function.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mozetl.taar.taar_locale.transform">
+<code class="descclassname">mozetl.taar.taar_locale.</code><code class="descname">transform</code><span class="sig-paren">(</span><em>addon_df</em>, <em>addon_locale_counts_df</em>, <em>num_addons</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_locale.html#transform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_locale.transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts the locale-specific addon data in to a dictionary.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>addon_df</strong> – the locale-specific addon dataframe;</li>
+<li><strong>addon_locale_counts_df</strong> – total addon-installs per locale;</li>
+<li><strong>num_addons</strong> – requested number of recommendations.
+:return: a dictionary {&lt;locale&gt;: [[‘GUID1’, 1.0], [‘GUID2’, 0.9], …]}</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-mozetl.taar.taar_similarity">
+<span id="mozetl-taar-taar-similarity-module"></span><h2>mozetl.taar.taar_similarity module<a class="headerlink" href="#module-mozetl.taar.taar_similarity" title="Permalink to this headline">¶</a></h2>
+<p>Bug 1386274 - TAAR similarity-based add-on donor list</p>
+<p>This job clusters users into different groups based on their
+active add-ons. A representative users sample is selected from
+each cluster (“donors”) and is saved to a model file along
+with a feature vector that will be used, by the TAAR library
+module, to perform recommendations.</p>
+<dl class="function">
+<dt id="mozetl.taar.taar_similarity.compute_clusters">
+<code class="descclassname">mozetl.taar.taar_similarity.</code><code class="descname">compute_clusters</code><span class="sig-paren">(</span><em>addons_df</em>, <em>num_clusters</em>, <em>random_seed</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_similarity.html#compute_clusters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_similarity.compute_clusters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs user clustering by using add-on ids as features.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mozetl.taar.taar_similarity.format_donors_dictionary">
+<code class="descclassname">mozetl.taar.taar_similarity.</code><code class="descname">format_donors_dictionary</code><span class="sig-paren">(</span><em>donors_df</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_similarity.html#format_donors_dictionary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_similarity.format_donors_dictionary" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="mozetl.taar.taar_similarity.generate_non_cartesian_pairs">
+<code class="descclassname">mozetl.taar.taar_similarity.</code><code class="descname">generate_non_cartesian_pairs</code><span class="sig-paren">(</span><em>first_rdd</em>, <em>second_rdd</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_similarity.html#generate_non_cartesian_pairs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_similarity.generate_non_cartesian_pairs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="mozetl.taar.taar_similarity.get_addons_per_client">
+<code class="descclassname">mozetl.taar.taar_similarity.</code><code class="descname">get_addons_per_client</code><span class="sig-paren">(</span><em>users_df</em>, <em>addon_whitelist</em>, <em>minimum_addons_count</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_similarity.html#get_addons_per_client"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_similarity.get_addons_per_client" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extracts a DataFrame that contains one row
+for each client along with the list of active add-on GUIDs.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mozetl.taar.taar_similarity.get_donor_pools">
+<code class="descclassname">mozetl.taar.taar_similarity.</code><code class="descname">get_donor_pools</code><span class="sig-paren">(</span><em>users_df</em>, <em>clusters_df</em>, <em>num_donors</em>, <em>random_seed=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_similarity.html#get_donor_pools"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_similarity.get_donor_pools" title="Permalink to this definition">¶</a></dt>
+<dd><p>Samples users from each cluster.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mozetl.taar.taar_similarity.get_donors">
+<code class="descclassname">mozetl.taar.taar_similarity.</code><code class="descname">get_donors</code><span class="sig-paren">(</span><em>spark</em>, <em>num_clusters</em>, <em>num_donors</em>, <em>addon_whitelist</em>, <em>date_from</em>, <em>random_seed=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_similarity.html#get_donors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_similarity.get_donors" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="mozetl.taar.taar_similarity.get_lr_curves">
+<code class="descclassname">mozetl.taar.taar_similarity.</code><code class="descname">get_lr_curves</code><span class="sig-paren">(</span><em>spark</em>, <em>features_df</em>, <em>cluster_ids</em>, <em>kernel_bandwidth</em>, <em>num_pdf_points</em>, <em>random_seed=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_similarity.html#get_lr_curves"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_similarity.get_lr_curves" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the likelihood ratio curves for clustered clients.</p>
+<p>Work-flow followed in this function is as follows:</p>
+<blockquote>
+<div><ul class="simple">
+<li>Access the DataFrame including cluster numbers and features.</li>
+<li>Load same similarity function that will be used in TAAR module.</li>
+<li>Iterate through each cluster and compute in-cluster similarity.</li>
+<li>Iterate through each cluster and compute out-cluster similarity.</li>
+<li>Compute the kernel density estimate (KDE) per similarity score.</li>
+<li>Linearly down-sample both PDFs to 1000 points.</li>
+</ul>
+</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>spark</strong> – the SparkSession object.</li>
+<li><strong>features_df</strong> – the DataFrame containing the user features (e.g. the
+ones coming from <a href="#id1"><span class="problematic" id="id2">|get_donors|</span></a>).</li>
+<li><strong>cluster_ids</strong> – the list of cluster ids (e.g. the one coming from <a href="#id3"><span class="problematic" id="id4">|get_donors|</span></a>).</li>
+<li><strong>kernel_bandwidth</strong> – the kernel bandwidth used to estimate the kernel densities.</li>
+<li><strong>num_pdf_points</strong> – the number of points to sample for the LR-curves.</li>
+<li><strong>random_seed</strong> – the provided random seed (fixed in tests).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A list in the following format
+[(idx, (lr-numerator-for-idx, lr-denominator-for-idx)), (…), …]</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="mozetl.taar.taar_similarity.get_samples">
+<code class="descclassname">mozetl.taar.taar_similarity.</code><code class="descname">get_samples</code><span class="sig-paren">(</span><em>spark</em>, <em>date_from</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_similarity.html#get_samples"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_similarity.get_samples" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a DataFrame with a valid set of sample to base the next
+processing on.</p>
+<p>Sample is limited to submissions received since <cite>date_from</cite> and latest row per each client.</p>
+<p>Reference documentation is found here:</p>
+<p>Firefox Clients Daily telemetry table
+<a class="reference external" href="https://docs.telemetry.mozilla.org/datasets/batch_view/clients_daily/reference.html">https://docs.telemetry.mozilla.org/datasets/batch_view/clients_daily/reference.html</a></p>
+<p>BUG 1485152: PR include active_addons to clients_daily table:
+<a class="reference external" href="https://github.com/mozilla/telemetry-batch-view/pull/490">https://github.com/mozilla/telemetry-batch-view/pull/490</a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mozetl.taar.taar_similarity.similarity_function">
+<code class="descclassname">mozetl.taar.taar_similarity.</code><code class="descname">similarity_function</code><span class="sig-paren">(</span><em>x</em>, <em>y</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_similarity.html#similarity_function"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_similarity.similarity_function" title="Permalink to this definition">¶</a></dt>
+<dd><p>Similarity function for comparing user features.</p>
+<p>This actually really should be implemented in taar.similarity_recommender
+and then imported here for consistency.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mozetl.taar.taar_similarity.today_minus_90_days">
+<code class="descclassname">mozetl.taar.taar_similarity.</code><code class="descname">today_minus_90_days</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_similarity.html#today_minus_90_days"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_similarity.today_minus_90_days" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-mozetl.taar.taar_utils">
+<span id="mozetl-taar-taar-utils-module"></span><h2>mozetl.taar.taar_utils module<a class="headerlink" href="#module-mozetl.taar.taar_utils" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="mozetl.taar.taar_utils.hash_telemetry_id">
+<code class="descclassname">mozetl.taar.taar_utils.</code><code class="descname">hash_telemetry_id</code><span class="sig-paren">(</span><em>telemetry_id</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_utils.html#hash_telemetry_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_utils.hash_telemetry_id" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>This hashing function is a reference implementation based on :</dt>
+<dd><a class="reference external" href="https://phabricator.services.mozilla.com/D8311">https://phabricator.services.mozilla.com/D8311</a></dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="mozetl.taar.taar_utils.load_amo_curated_whitelist">
+<code class="descclassname">mozetl.taar.taar_utils.</code><code class="descname">load_amo_curated_whitelist</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_utils.html#load_amo_curated_whitelist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_utils.load_amo_curated_whitelist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the curated whitelist of addon GUIDs</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mozetl.taar.taar_utils.load_amo_external_whitelist">
+<code class="descclassname">mozetl.taar.taar_utils.</code><code class="descname">load_amo_external_whitelist</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_utils.html#load_amo_external_whitelist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_utils.load_amo_external_whitelist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Download and parse the AMO add-on whitelist.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#RuntimeError" title="(in Python v3.7)"><strong>RuntimeError</strong></a> – the AMO whitelist file cannot be downloaded or contains
+no valid add-ons.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="mozetl.taar.taar_utils.read_from_s3">
+<code class="descclassname">mozetl.taar.taar_utils.</code><code class="descname">read_from_s3</code><span class="sig-paren">(</span><em>s3_dest_file_name</em>, <em>s3_prefix</em>, <em>bucket</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_utils.html#read_from_s3"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_utils.read_from_s3" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read JSON from an S3 bucket and return the decoded JSON blob</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mozetl.taar.taar_utils.selfdestructing_path">
+<code class="descclassname">mozetl.taar.taar_utils.</code><code class="descname">selfdestructing_path</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwds</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_utils.html#selfdestructing_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_utils.selfdestructing_path" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="mozetl.taar.taar_utils.store_json_to_s3">
+<code class="descclassname">mozetl.taar.taar_utils.</code><code class="descname">store_json_to_s3</code><span class="sig-paren">(</span><em>json_data</em>, <em>base_filename</em>, <em>date</em>, <em>prefix</em>, <em>bucket</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_utils.html#store_json_to_s3"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_utils.store_json_to_s3" title="Permalink to this definition">¶</a></dt>
+<dd><p>Saves the JSON data to a local file and then uploads it to S3.</p>
+<p>Two copies of the file will get uploaded: one with as “&lt;base_filename&gt;.json”
+and the other as “&lt;base_filename&gt;&lt;YYYYMMDD&gt;.json” for backup purposes.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>json_data</strong> – A string with the JSON content to write.</li>
+<li><strong>base_filename</strong> – A string with the base name of the file to use for saving
+locally and uploading to S3.</li>
+<li><strong>date</strong> – A date string in the “YYYYMMDD” format.</li>
+<li><strong>prefix</strong> – The S3 prefix.</li>
+<li><strong>bucket</strong> – The S3 bucket name.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="mozetl.taar.taar_utils.write_to_s3">
+<code class="descclassname">mozetl.taar.taar_utils.</code><code class="descname">write_to_s3</code><span class="sig-paren">(</span><em>source_file_name</em>, <em>s3_dest_file_name</em>, <em>s3_prefix</em>, <em>bucket</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_utils.html#write_to_s3"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_utils.write_to_s3" title="Permalink to this definition">¶</a></dt>
+<dd><p>Store the new json file containing current top addons per locale to S3.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>source_file_name</strong> – The name of the local source file.</li>
+<li><strong>s3_dest_file_name</strong> – The name of the destination file on S3.</li>
+<li><strong>s3_prefix</strong> – The S3 prefix in the bucket.</li>
+<li><strong>bucket</strong> – The S3 bucket.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-mozetl.taar">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-mozetl.taar" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">python_mozetl</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../readme.html">Firefox Telemetry Python ETL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../readme.html#benefits">Benefits</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../readme.html#tests">Tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../readme.html#scheduling">Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../readme.html#early-stage-etl-jobs">Early Stage ETL Jobs</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Ryan Harter.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/source/mozetl.taar.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

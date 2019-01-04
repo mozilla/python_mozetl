@@ -1,0 +1,134 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>mozetl.shield.utils &#8212; python_mozetl 0.1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for mozetl.shield.utils</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">datetime</span> <span class="k">import</span> <span class="n">date</span><span class="p">,</span> <span class="n">timedelta</span>
+<span class="kn">from</span> <span class="nn">moztelemetry.dataset</span> <span class="k">import</span> <span class="n">Dataset</span>
+
+
+<div class="viewcode-block" id="shield_etl_boilerplate"><a class="viewcode-back" href="../../../source/mozetl.shield.html#mozetl.shield.utils.shield_etl_boilerplate">[docs]</a><span class="k">def</span> <span class="nf">shield_etl_boilerplate</span><span class="p">(</span><span class="n">transform_func</span><span class="p">,</span> <span class="n">s3_path</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">etl_job</span><span class="p">(</span><span class="n">sc</span><span class="p">,</span> <span class="n">sqlContext</span><span class="p">,</span> <span class="n">submission_date</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">submission_date</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">submission_date</span> <span class="o">=</span> <span class="p">(</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">pings</span> <span class="o">=</span> <span class="n">Dataset</span><span class="o">.</span><span class="n">from_source</span><span class="p">(</span>
+            <span class="s2">&quot;telemetry&quot;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+            <span class="n">docType</span><span class="o">=</span><span class="s2">&quot;shield-study&quot;</span><span class="p">,</span>
+            <span class="n">submissionDate</span><span class="o">=</span><span class="n">submission_date</span><span class="p">,</span>
+            <span class="n">appName</span><span class="o">=</span><span class="s2">&quot;Firefox&quot;</span><span class="p">,</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">records</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
+
+        <span class="n">transformed_pings</span> <span class="o">=</span> <span class="n">transform_func</span><span class="p">(</span><span class="n">sqlContext</span><span class="p">,</span> <span class="n">pings</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">save</span><span class="p">:</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">s3_path</span> <span class="o">+</span> <span class="s1">&#39;/submission_date=</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">submission_date</span><span class="p">)</span>
+            <span class="n">transformed_pings</span><span class="o">.</span><span class="n">repartition</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">write</span><span class="o">.</span><span class="n">mode</span><span class="p">(</span><span class="s1">&#39;overwrite&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">parquet</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">transformed_pings</span>
+
+    <span class="k">return</span> <span class="n">etl_job</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">python_mozetl</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Firefox Telemetry Python ETL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#benefits">Benefits</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#tests">Tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#scheduling">Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#early-stage-etl-jobs">Early Stage ETL Jobs</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Ryan Harter.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

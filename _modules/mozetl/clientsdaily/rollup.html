@@ -1,0 +1,311 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>mozetl.clientsdaily.rollup &#8212; python_mozetl 0.1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for mozetl.clientsdaily.rollup</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="k">import</span> <span class="n">SparkSession</span>
+<span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="k">import</span> <span class="n">functions</span> <span class="k">as</span> <span class="n">F</span>
+<span class="kn">import</span> <span class="nn">click</span>
+<span class="kn">from</span> <span class="nn">mozetl.utils</span> <span class="k">import</span> <span class="n">extract_submission_window_for_activity_day</span>
+<span class="kn">from</span> <span class="nn">mozetl.utils</span> <span class="k">import</span> <span class="n">format_spark_path</span>
+
+<span class="n">SEARCH_ACCESS_POINTS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">&#39;abouthome&#39;</span><span class="p">,</span> <span class="s1">&#39;contextmenu&#39;</span><span class="p">,</span> <span class="s1">&#39;newtab&#39;</span><span class="p">,</span> <span class="s1">&#39;searchbar&#39;</span><span class="p">,</span> <span class="s1">&#39;system&#39;</span><span class="p">,</span> <span class="s1">&#39;urlbar&#39;</span>
+<span class="p">]</span>
+<span class="n">SEARCH_ACCESS_COLUMN_TEMPLATE</span> <span class="o">=</span> <span class="s1">&#39;search_count_</span><span class="si">{}</span><span class="s1">&#39;</span>
+<span class="n">SEARCH_ACCESS_COLUMNS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">SEARCH_ACCESS_COLUMN_TEMPLATE</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sap</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">sap</span> <span class="ow">in</span> <span class="n">SEARCH_ACCESS_POINTS</span>
+<span class="p">]</span>
+
+
+<div class="viewcode-block" id="load_main_summary"><a class="viewcode-back" href="../../../source/mozetl.clientsdaily.html#mozetl.clientsdaily.rollup.load_main_summary">[docs]</a><span class="k">def</span> <span class="nf">load_main_summary</span><span class="p">(</span><span class="n">spark</span><span class="p">,</span> <span class="n">input_bucket</span><span class="p">,</span> <span class="n">input_prefix</span><span class="p">):</span>
+    <span class="n">main_summary_path</span> <span class="o">=</span> <span class="n">format_spark_path</span><span class="p">(</span><span class="n">input_bucket</span><span class="p">,</span> <span class="n">input_prefix</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">spark</span>
+        <span class="o">.</span><span class="n">read</span>
+        <span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;mergeSchema&quot;</span><span class="p">,</span> <span class="s2">&quot;true&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">parquet</span><span class="p">(</span><span class="n">main_summary_path</span><span class="p">)</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="extract_search_counts"><a class="viewcode-back" href="../../../source/mozetl.clientsdaily.html#mozetl.clientsdaily.rollup.extract_search_counts">[docs]</a><span class="k">def</span> <span class="nf">extract_search_counts</span><span class="p">(</span><span class="n">frame</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :frame DataFrame conforming to main_summary&#39;s schema.</span>
+
+<span class="sd">    :return one row for each row in frame, replacing the nullable</span>
+<span class="sd">    array-of-structs column &quot;search_counts&quot; with seven columns</span>
+<span class="sd">        &quot;search_count_{access_point}_sum&quot;:</span>
+<span class="sd">    one for each valid SEARCH_ACCESS_POINT, plus one named &quot;all&quot;</span>
+<span class="sd">    which is always a sum of the other six.</span>
+
+<span class="sd">    All seven columns default to 0 and will be 0 if search_counts was NULL.</span>
+<span class="sd">    Note that the Mozilla term of art &quot;search access point&quot;, referring to</span>
+<span class="sd">    GUI elements, is named &quot;source&quot; in main_summary.</span>
+
+<span class="sd">    This routine is hairy because it generates a lot of SQL and Spark</span>
+<span class="sd">    pseudo-SQL; see inline comments.</span>
+
+<span class="sd">    TODO:</span>
+<span class="sd">      Replace (JOIN with WHERE NULL) with fillna() to an array literal.</span>
+<span class="sd">      Maybe use a PIVOT.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">two_columns</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;document_id&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;did&quot;</span><span class="p">),</span>
+                               <span class="s2">&quot;search_counts&quot;</span><span class="p">)</span>
+    <span class="c1"># First, each row becomes N rows, N == len(search_counts)</span>
+    <span class="n">exploded</span> <span class="o">=</span> <span class="n">two_columns</span><span class="o">.</span><span class="n">select</span><span class="p">(</span>
+        <span class="s2">&quot;did&quot;</span><span class="p">,</span> <span class="n">F</span><span class="o">.</span><span class="n">explode</span><span class="p">(</span><span class="s2">&quot;search_counts&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;search_struct&quot;</span><span class="p">))</span>
+    <span class="c1"># Remove any rows where the values are corrupt</span>
+    <span class="n">exploded</span> <span class="o">=</span> <span class="n">exploded</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="s2">&quot;search_struct.count &gt; -1&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+        <span class="s2">&quot;search_struct.source in </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">SEARCH_ACCESS_POINTS</span><span class="p">))</span>
+    <span class="p">)</span>  <span class="c1"># This in clause looks like:</span>
+    <span class="c1"># &quot;search_struct.source in (</span>
+    <span class="c1"># &#39;abouthome&#39;, &#39;contextmenu&#39;, &#39;newtab&#39;, &#39;searchbar&#39;, &#39;system&#39;, &#39;urlbar&#39;</span>
+    <span class="c1"># )&quot;</span>
+
+    <span class="c1"># Now we have clean search_count structs. Next block:</span>
+    <span class="c1"># For each of the form Row(engine=u&#39;engine&#39;, source=SAP, count=n):</span>
+    <span class="c1">#    SELECT</span>
+    <span class="c1">#     n as search_count_all,</span>
+    <span class="c1">#     n as search_count_SAP, (one of the 6 above, such as &#39;newtab&#39;)</span>
+    <span class="c1">#     0 as search_count_OTHER1</span>
+    <span class="c1">#     ...</span>
+    <span class="c1">#     0 as search_count_OTHER5</span>
+    <span class="n">if_template</span> <span class="o">=</span> <span class="s2">&quot;IF(search_struct.source = &#39;</span><span class="si">{}</span><span class="s2">&#39;, search_struct.count, 0)&quot;</span>
+    <span class="n">if_expressions</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">F</span><span class="o">.</span><span class="n">expr</span><span class="p">(</span><span class="n">if_template</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sap</span><span class="p">))</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span>
+            <span class="n">SEARCH_ACCESS_COLUMN_TEMPLATE</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sap</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">sap</span> <span class="ow">in</span> <span class="n">SEARCH_ACCESS_POINTS</span>
+    <span class="p">]</span>
+    <span class="n">unpacked</span> <span class="o">=</span> <span class="n">exploded</span><span class="o">.</span><span class="n">select</span><span class="p">(</span>
+        <span class="s2">&quot;did&quot;</span><span class="p">,</span>
+        <span class="n">F</span><span class="o">.</span><span class="n">expr</span><span class="p">(</span><span class="s2">&quot;search_struct.count&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;search_count_atom&quot;</span><span class="p">),</span>
+        <span class="o">*</span><span class="n">if_expressions</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Collapse the exploded search_counts rows into a single output row.</span>
+    <span class="n">grouping_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">([(</span><span class="n">c</span><span class="p">,</span> <span class="s2">&quot;sum&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">SEARCH_ACCESS_COLUMNS</span><span class="p">])</span>
+    <span class="n">grouping_dict</span><span class="p">[</span><span class="s2">&quot;search_count_atom&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;sum&quot;</span>
+    <span class="n">grouped</span> <span class="o">=</span> <span class="n">unpacked</span><span class="o">.</span><span class="n">groupBy</span><span class="p">(</span><span class="s2">&quot;did&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">agg</span><span class="p">(</span><span class="n">grouping_dict</span><span class="p">)</span>
+    <span class="n">extracted</span> <span class="o">=</span> <span class="n">grouped</span><span class="o">.</span><span class="n">select</span><span class="p">(</span>
+        <span class="s2">&quot;did&quot;</span><span class="p">,</span> <span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;sum(search_count_atom)&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;search_count_all&quot;</span><span class="p">),</span>
+        <span class="o">*</span><span class="p">[</span>
+            <span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;sum(</span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">c</span><span class="p">))</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">SEARCH_ACCESS_COLUMNS</span>
+         <span class="p">]</span>
+    <span class="p">)</span>
+    <span class="c1"># Create a homologous output row for each input row</span>
+    <span class="c1"># where search_counts is NULL.</span>
+    <span class="n">nulls</span> <span class="o">=</span> <span class="n">two_columns</span><span class="o">.</span><span class="n">select</span><span class="p">(</span>
+        <span class="s2">&quot;did&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+        <span class="s2">&quot;search_counts is NULL&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">select</span><span class="p">(</span>
+        <span class="s2">&quot;did&quot;</span><span class="p">,</span> <span class="n">F</span><span class="o">.</span><span class="n">lit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;search_count_all&quot;</span><span class="p">),</span>
+        <span class="o">*</span><span class="p">[</span><span class="n">F</span><span class="o">.</span><span class="n">lit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">SEARCH_ACCESS_COLUMNS</span><span class="p">]</span>
+    <span class="p">)</span>
+    <span class="n">intermediate</span> <span class="o">=</span> <span class="n">extracted</span><span class="o">.</span><span class="n">unionAll</span><span class="p">(</span><span class="n">nulls</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">intermediate</span><span class="p">,</span> <span class="n">frame</span><span class="o">.</span><span class="n">document_id</span> <span class="o">==</span> <span class="n">intermediate</span><span class="o">.</span><span class="n">did</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="to_profile_day_aggregates"><a class="viewcode-back" href="../../../source/mozetl.clientsdaily.html#mozetl.clientsdaily.rollup.to_profile_day_aggregates">[docs]</a><span class="k">def</span> <span class="nf">to_profile_day_aggregates</span><span class="p">(</span><span class="n">frame_with_extracts</span><span class="p">):</span>
+    <span class="kn">from</span> <span class="nn">fields</span> <span class="k">import</span> <span class="n">MAIN_SUMMARY_FIELD_AGGREGATORS</span>
+    <span class="k">if</span> <span class="s2">&quot;activity_date&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">frame_with_extracts</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">fields</span> <span class="k">import</span> <span class="n">ACTIVITY_DATE_COLUMN</span>
+        <span class="n">with_activity_date</span> <span class="o">=</span> <span class="n">frame_with_extracts</span><span class="o">.</span><span class="n">select</span><span class="p">(</span>
+            <span class="s2">&quot;*&quot;</span><span class="p">,</span> <span class="n">ACTIVITY_DATE_COLUMN</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">with_activity_date</span> <span class="o">=</span> <span class="n">frame_with_extracts</span>
+    <span class="k">if</span> <span class="s2">&quot;geo_subdivision1&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">with_activity_date</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">fields</span> <span class="k">import</span> <span class="n">NULL_STRING_COLUMN</span>
+        <span class="n">with_activity_date</span> <span class="o">=</span> <span class="n">with_activity_date</span><span class="o">.</span><span class="n">withColumn</span><span class="p">(</span><span class="s2">&quot;geo_subdivision1&quot;</span><span class="p">,</span> <span class="n">NULL_STRING_COLUMN</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">&quot;geo_subdivision2&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">with_activity_date</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">fields</span> <span class="k">import</span> <span class="n">NULL_STRING_COLUMN</span>
+        <span class="n">with_activity_date</span> <span class="o">=</span> <span class="n">with_activity_date</span><span class="o">.</span><span class="n">withColumn</span><span class="p">(</span><span class="s2">&quot;geo_subdivision2&quot;</span><span class="p">,</span> <span class="n">NULL_STRING_COLUMN</span><span class="p">)</span>
+    <span class="n">grouped</span> <span class="o">=</span> <span class="n">with_activity_date</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;client_id&#39;</span><span class="p">,</span> <span class="s1">&#39;activity_date&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">grouped</span><span class="o">.</span><span class="n">agg</span><span class="p">(</span><span class="o">*</span><span class="n">MAIN_SUMMARY_FIELD_AGGREGATORS</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="write_one_activity_day"><a class="viewcode-back" href="../../../source/mozetl.clientsdaily.html#mozetl.clientsdaily.rollup.write_one_activity_day">[docs]</a><span class="k">def</span> <span class="nf">write_one_activity_day</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">date</span><span class="p">,</span> <span class="n">output_prefix</span><span class="p">,</span> <span class="n">partition_count</span><span class="p">):</span>
+    <span class="n">output_path</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">/activity_date_s3=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">output_prefix</span><span class="p">,</span> <span class="n">date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">))</span>
+    <span class="n">to_write</span> <span class="o">=</span> <span class="n">results</span><span class="o">.</span><span class="n">coalesce</span><span class="p">(</span><span class="n">partition_count</span><span class="p">)</span>
+    <span class="n">to_write</span><span class="o">.</span><span class="n">write</span><span class="o">.</span><span class="n">parquet</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;overwrite&#39;</span><span class="p">)</span>
+    <span class="n">to_write</span><span class="o">.</span><span class="n">unpersist</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="get_partition_count_for_writing"><a class="viewcode-back" href="../../../source/mozetl.clientsdaily.html#mozetl.clientsdaily.rollup.get_partition_count_for_writing">[docs]</a><span class="k">def</span> <span class="nf">get_partition_count_for_writing</span><span class="p">(</span><span class="n">is_sampled</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Return a reasonable partition count.</span>
+
+<span class="sd">    using_sample_id: boolean</span>
+<span class="sd">    One day is O(140MB) if filtering down to a single sample_id, but</span>
+<span class="sd">    O(14GB) if not. Google reports 256MB &lt; partition size &lt; 1GB as ideal.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">is_sampled</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="mi">25</span></div>
+
+
+<span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">()</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--date&#39;</span><span class="p">,</span>
+              <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+              <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Start date to run on&#39;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--input-bucket&#39;</span><span class="p">,</span>
+              <span class="n">default</span><span class="o">=</span><span class="s1">&#39;telemetry-parquet&#39;</span><span class="p">,</span>
+              <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Bucket of the input dataset&#39;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--input-prefix&#39;</span><span class="p">,</span>
+              <span class="n">default</span><span class="o">=</span><span class="s1">&#39;main_summary/v4&#39;</span><span class="p">,</span>
+              <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Prefix of the input dataset&#39;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--output-bucket&#39;</span><span class="p">,</span>
+              <span class="n">default</span><span class="o">=</span><span class="s1">&#39;net-mozaws-prod-us-west-2-pipeline-analysis&#39;</span><span class="p">,</span>
+              <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Bucket of the output dataset&#39;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--output-prefix&#39;</span><span class="p">,</span>
+              <span class="n">default</span><span class="o">=</span><span class="s1">&#39;/clients_daily&#39;</span><span class="p">,</span>
+              <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Prefix of the output dataset&#39;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--output-version&#39;</span><span class="p">,</span>
+              <span class="n">default</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+              <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Version of the output dataset&#39;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--sample-id&#39;</span><span class="p">,</span>
+              <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+              <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Sample_id to restrict results to&#39;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--lag-days&#39;</span><span class="p">,</span>
+              <span class="n">default</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+              <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Number of days to allow for submission latency&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="n">input_bucket</span><span class="p">,</span> <span class="n">input_prefix</span><span class="p">,</span> <span class="n">output_bucket</span><span class="p">,</span>
+         <span class="n">output_prefix</span><span class="p">,</span> <span class="n">output_version</span><span class="p">,</span> <span class="n">sample_id</span><span class="p">,</span> <span class="n">lag_days</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Aggregate by (client_id, day) for a given day.</span>
+
+<span class="sd">    Note that the target day will actually be `lag-days` days before</span>
+<span class="sd">    the supplied date. In other words, if you pass in 2017-01-20 and</span>
+<span class="sd">    set `lag-days` to 5, the aggregation will be processed for</span>
+<span class="sd">    day 2017-01-15 (the resulting data will cover submission dates</span>
+<span class="sd">    including the activity day itself plus 5 days of lag for a total</span>
+<span class="sd">    of 6 days).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">spark</span> <span class="o">=</span> <span class="p">(</span><span class="n">SparkSession</span>
+             <span class="o">.</span><span class="n">builder</span>
+             <span class="o">.</span><span class="n">appName</span><span class="p">(</span><span class="s2">&quot;clients_daily&quot;</span><span class="p">)</span>
+             <span class="o">.</span><span class="n">getOrCreate</span><span class="p">())</span>
+    <span class="c1"># Per https://issues.apache.org/jira/browse/PARQUET-142 ,</span>
+    <span class="c1"># don&#39;t write _SUCCESS files, which interfere w/ReDash discovery</span>
+    <span class="n">spark</span><span class="o">.</span><span class="n">conf</span><span class="o">.</span><span class="n">set</span><span class="p">(</span>
+        <span class="s2">&quot;mapreduce.fileoutputcommitter.marksuccessfuljobs&quot;</span><span class="p">,</span> <span class="s2">&quot;false&quot;</span>
+    <span class="p">)</span>
+    <span class="n">main_summary</span> <span class="o">=</span> <span class="n">load_main_summary</span><span class="p">(</span><span class="n">spark</span><span class="p">,</span> <span class="n">input_bucket</span><span class="p">,</span> <span class="n">input_prefix</span><span class="p">)</span>
+    <span class="n">day_frame</span><span class="p">,</span> <span class="n">start_date</span> <span class="o">=</span> <span class="n">extract_submission_window_for_activity_day</span><span class="p">(</span><span class="n">main_summary</span><span class="p">,</span> <span class="n">date</span><span class="p">,</span> <span class="n">lag_days</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">sample_id</span><span class="p">:</span>
+        <span class="n">day_frame</span> <span class="o">=</span> <span class="n">day_frame</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="s2">&quot;sample_id = &#39;</span><span class="si">{}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sample_id</span><span class="p">))</span>
+    <span class="n">with_searches</span> <span class="o">=</span> <span class="n">extract_search_counts</span><span class="p">(</span><span class="n">day_frame</span><span class="p">)</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="n">to_profile_day_aggregates</span><span class="p">(</span><span class="n">with_searches</span><span class="p">)</span>
+    <span class="n">partition_count</span> <span class="o">=</span> <span class="n">get_partition_count_for_writing</span><span class="p">(</span><span class="nb">bool</span><span class="p">(</span><span class="n">sample_id</span><span class="p">))</span>
+    <span class="n">output_base_path</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">/v</span><span class="si">{}</span><span class="s2">/&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="n">format_spark_path</span><span class="p">(</span><span class="n">output_bucket</span><span class="p">,</span> <span class="n">output_prefix</span><span class="p">),</span> <span class="n">output_version</span><span class="p">)</span>
+    <span class="n">write_one_activity_day</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">start_date</span><span class="p">,</span> <span class="n">output_base_path</span><span class="p">,</span> <span class="n">partition_count</span><span class="p">)</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">python_mozetl</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Firefox Telemetry Python ETL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#benefits">Benefits</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#tests">Tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#scheduling">Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#early-stage-etl-jobs">Early Stage ETL Jobs</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Ryan Harter.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

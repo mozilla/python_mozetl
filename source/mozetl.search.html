@@ -1,0 +1,203 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>mozetl.search package &#8212; python_mozetl 0.1 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="mozetl-search-package">
+<h1>mozetl.search package<a class="headerlink" href="#mozetl-search-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-mozetl.search.aggregates">
+<span id="mozetl-search-aggregates-module"></span><h2>mozetl.search.aggregates module<a class="headerlink" href="#module-mozetl.search.aggregates" title="Permalink to this headline">¶</a></h2>
+<p>Firefox Desktop Search Count Datasets</p>
+<p>This job produces derived datasets that make it easy to explore search count
+data.</p>
+<p>The search_aggregates job is used to populate an executive search dashboard.
+For more information, see Bug 1381140.</p>
+<p>The search_clients_daily job produces a dataset keyed by
+<cite>(client_id, submission_date, search_counts.engine, search_counts.source)</cite>.
+This allows for deeper analysis into user level search behavior.</p>
+<dl class="function">
+<dt id="mozetl.search.aggregates.add_derived_columns">
+<code class="descclassname">mozetl.search.aggregates.</code><code class="descname">add_derived_columns</code><span class="sig-paren">(</span><em>exploded_search_counts</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/search/aggregates.html#add_derived_columns"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.search.aggregates.add_derived_columns" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds the following columns to the provided dataset:</p>
+<p>type:           One of ‘in-content-sap’, ‘follow-on’, or ‘chrome-sap’.
+addon_version:  The version of the <a class="reference external" href="mailto:followon-search&#37;&#52;&#48;mozilla">followon-search<span>&#64;</span>mozilla</a> addon, or None</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mozetl.search.aggregates.agg_first">
+<code class="descclassname">mozetl.search.aggregates.</code><code class="descname">agg_first</code><span class="sig-paren">(</span><em>col</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/search/aggregates.html#agg_first"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.search.aggregates.agg_first" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="mozetl.search.aggregates.agg_search_data">
+<code class="descclassname">mozetl.search.aggregates.</code><code class="descname">agg_search_data</code><span class="sig-paren">(</span><em>main_summary</em>, <em>grouping_cols</em>, <em>agg_functions</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/search/aggregates.html#agg_search_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.search.aggregates.agg_search_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Augment, Explode, and Aggregate search data</p>
+<p>The augmented and exploded dataset has the same columns as main_summary
+with the addition of the following:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>engine: A key in the search_counts field representing a search engine.</dt>
+<dd>e.g. ‘hoolie’</dd>
+<dt>source: A key in the search_counts field representing a search source</dt>
+<dd>e.g. ‘urlbar’</dd>
+</dl>
+<p>tagged-sap: Sum of all searches with partner codes from an SAP
+tagged-follow-on: Sum of all searches with partner codes from a downstream query
+sap: Sum of all searches originating from a direct user interaction with the Firefox UI
+addon_version: The version of the <a class="reference external" href="mailto:followon-search&#37;&#52;&#48;mozilla&#46;com">followon-search<span>&#64;</span>mozilla<span>&#46;</span>com</a> addon</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="mozetl.search.aggregates.explode_search_counts">
+<code class="descclassname">mozetl.search.aggregates.</code><code class="descname">explode_search_counts</code><span class="sig-paren">(</span><em>main_summary</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/search/aggregates.html#explode_search_counts"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.search.aggregates.explode_search_counts" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="mozetl.search.aggregates.gen_click_command">
+<code class="descclassname">mozetl.search.aggregates.</code><code class="descname">gen_click_command</code><span class="sig-paren">(</span><em>etl_job</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/search/aggregates.html#gen_click_command"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.search.aggregates.gen_click_command" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrap an ETL job with click arguements</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mozetl.search.aggregates.generate_rollups">
+<code class="descclassname">mozetl.search.aggregates.</code><code class="descname">generate_rollups</code><span class="sig-paren">(</span><em>submission_date</em>, <em>output_bucket</em>, <em>output_prefix</em>, <em>output_version</em>, <em>transform_func</em>, <em>input_bucket='telemetry-parquet'</em>, <em>input_prefix='main_summary/v4'</em>, <em>save_mode='error'</em>, <em>orderBy=[]</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/search/aggregates.html#generate_rollups"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.search.aggregates.generate_rollups" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load main_summary, apply transform_func, and write to S3</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mozetl.search.aggregates.get_search_addon_version">
+<code class="descclassname">mozetl.search.aggregates.</code><code class="descname">get_search_addon_version</code><span class="sig-paren">(</span><em>active_addons</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/search/aggregates.html#get_search_addon_version"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.search.aggregates.get_search_addon_version" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="mozetl.search.aggregates.search_aggregates">
+<code class="descclassname">mozetl.search.aggregates.</code><code class="descname">search_aggregates</code><span class="sig-paren">(</span><em>main_summary</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/search/aggregates.html#search_aggregates"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.search.aggregates.search_aggregates" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="mozetl.search.aggregates.search_aggregates_etl">
+<code class="descclassname">mozetl.search.aggregates.</code><code class="descname">search_aggregates_etl</code><span class="sig-paren">(</span><em>submission_date</em>, <em>bucket</em>, <em>prefix</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/search/aggregates.html#search_aggregates_etl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.search.aggregates.search_aggregates_etl" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="mozetl.search.aggregates.search_clients_daily">
+<code class="descclassname">mozetl.search.aggregates.</code><code class="descname">search_clients_daily</code><span class="sig-paren">(</span><em>main_summary</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/search/aggregates.html#search_clients_daily"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.search.aggregates.search_clients_daily" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="mozetl.search.aggregates.search_clients_daily_etl">
+<code class="descclassname">mozetl.search.aggregates.</code><code class="descname">search_clients_daily_etl</code><span class="sig-paren">(</span><em>submission_date</em>, <em>bucket</em>, <em>prefix</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/search/aggregates.html#search_clients_daily_etl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.search.aggregates.search_clients_daily_etl" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-mozetl.search">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-mozetl.search" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">python_mozetl</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../readme.html">Firefox Telemetry Python ETL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../readme.html#benefits">Benefits</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../readme.html#tests">Tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../readme.html#scheduling">Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../readme.html#early-stage-etl-jobs">Early Stage ETL Jobs</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Ryan Harter.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/source/mozetl.search.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

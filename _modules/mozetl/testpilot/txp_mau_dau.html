@@ -1,0 +1,222 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>mozetl.testpilot.txp_mau_dau &#8212; python_mozetl 0.1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for mozetl.testpilot.txp_mau_dau</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">os</span> <span class="k">import</span> <span class="n">environ</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="k">import</span> <span class="n">datetime</span> <span class="k">as</span> <span class="n">dt</span><span class="p">,</span> <span class="n">date</span><span class="p">,</span> <span class="n">timedelta</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">from</span> <span class="nn">pyspark.sql.functions</span> <span class="k">import</span> <span class="n">col</span><span class="p">,</span> <span class="n">countDistinct</span><span class="p">,</span> <span class="n">lit</span>
+<span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="k">import</span> <span class="n">SparkSession</span>
+
+<span class="n">SCHEMA_VERSION</span> <span class="o">=</span> <span class="s1">&#39;v3&#39;</span>
+<span class="n">TESTPILOT_EXPERIMENT_ENDPOINT</span> <span class="o">=</span> <span class="s1">&#39;https://testpilot.firefox.com/api/experiments.json&#39;</span>
+
+<span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="c1"># No tests for this job right now since there&#39;s a decent chance this will never be touched</span>
+<span class="c1"># again (except for upstream schema changes) and writing tests would be non-trivial</span>
+<span class="c1"># TODO: If we end up doing any refactoring or run into bugs, we should write tests for this job</span>
+
+
+<div class="viewcode-block" id="fmt"><a class="viewcode-back" href="../../../source/mozetl.testpilot.html#mozetl.testpilot.txp_mau_dau.fmt">[docs]</a><span class="k">def</span> <span class="nf">fmt</span><span class="p">(</span><span class="n">the_date</span><span class="p">,</span> <span class="n">date_format</span><span class="o">=</span><span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">dt</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="n">the_date</span><span class="p">,</span> <span class="n">date_format</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="parse"><a class="viewcode-back" href="../../../source/mozetl.testpilot.html#mozetl.testpilot.txp_mau_dau.parse">[docs]</a><span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">date_format</span><span class="o">=</span><span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">dt</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">date_format</span><span class="p">)</span><span class="o">.</span><span class="n">date</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="get_experiments"><a class="viewcode-back" href="../../../source/mozetl.testpilot.html#mozetl.testpilot.txp_mau_dau.get_experiments">[docs]</a><span class="k">def</span> <span class="nf">get_experiments</span><span class="p">():</span>
+    <span class="c1"># If we end up having a lot of retired tests and the job gets slow we could filter by dates</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">TESTPILOT_EXPERIMENT_ENDPOINT</span><span class="p">)</span>
+    <span class="n">r</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">el</span><span class="p">[</span><span class="s1">&#39;addon_id&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;results&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="s1">&#39;addon_id&#39;</span> <span class="ow">in</span> <span class="n">el</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="get_active_users"><a class="viewcode-back" href="../../../source/mozetl.testpilot.html#mozetl.testpilot.txp_mau_dau.get_active_users">[docs]</a><span class="k">def</span> <span class="nf">get_active_users</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">addon_ids</span><span class="p">):</span>
+    <span class="n">tp_installed</span> <span class="o">=</span> <span class="n">dataset</span> \
+        <span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">addon_id</span> <span class="o">==</span> <span class="s2">&quot;@testpilot-addon&quot;</span><span class="p">)</span> \
+        <span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s2">&quot;client_id&quot;</span><span class="p">)</span> \
+        <span class="o">.</span><span class="n">distinct</span><span class="p">()</span>
+
+    <span class="n">test_installed</span> <span class="o">=</span> <span class="n">dataset</span> \
+        <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;addon_id&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">addon_ids</span><span class="p">))</span> \
+        <span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s2">&quot;client_id&quot;</span><span class="p">,</span> <span class="s2">&quot;addon_id&quot;</span><span class="p">,</span> <span class="s2">&quot;submission_date_s3&quot;</span><span class="p">)</span> \
+        <span class="o">.</span><span class="n">distinct</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">tp_installed</span> \
+        <span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">test_installed</span><span class="p">,</span> <span class="n">test_installed</span><span class="o">.</span><span class="n">client_id</span> <span class="o">==</span> <span class="n">tp_installed</span><span class="o">.</span><span class="n">client_id</span><span class="p">)</span> \
+        <span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">test_installed</span><span class="o">.</span><span class="n">client_id</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;client_id&quot;</span><span class="p">),</span> <span class="s2">&quot;addon_id&quot;</span><span class="p">,</span> <span class="s2">&quot;submission_date_s3&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_mau_dau"><a class="viewcode-back" href="../../../source/mozetl.testpilot.html#mozetl.testpilot.txp_mau_dau.get_mau_dau">[docs]</a><span class="k">def</span> <span class="nf">get_mau_dau</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">run_date_string</span><span class="p">):</span>
+    <span class="n">all_dau</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">submission_date_s3</span> <span class="o">==</span> <span class="n">run_date_string</span><span class="p">)</span> \
+        <span class="o">.</span><span class="n">agg</span><span class="p">(</span><span class="n">countDistinct</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">client_id</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;dau&quot;</span><span class="p">))</span> \
+        <span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">lit</span><span class="p">(</span><span class="s2">&quot;testpilot&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;addon_id&quot;</span><span class="p">),</span> <span class="s2">&quot;dau&quot;</span><span class="p">)</span>
+    <span class="n">dau</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">submission_date_s3</span> <span class="o">==</span> <span class="n">run_date_string</span><span class="p">)</span> \
+        <span class="o">.</span><span class="n">groupBy</span><span class="p">(</span><span class="s2">&quot;addon_id&quot;</span><span class="p">)</span> \
+        <span class="o">.</span><span class="n">agg</span><span class="p">(</span><span class="n">countDistinct</span><span class="p">(</span><span class="s2">&quot;client_id&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;dau&quot;</span><span class="p">))</span> \
+        <span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">all_dau</span><span class="p">)</span>
+    <span class="n">all_mau</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">agg</span><span class="p">(</span><span class="n">countDistinct</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">client_id</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;mau&quot;</span><span class="p">))</span> \
+        <span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">lit</span><span class="p">(</span><span class="s2">&quot;testpilot&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;addon_id&quot;</span><span class="p">),</span> <span class="s2">&quot;mau&quot;</span><span class="p">)</span>
+    <span class="n">mau</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">groupBy</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">addon_id</span><span class="p">)</span> \
+        <span class="o">.</span><span class="n">agg</span><span class="p">(</span><span class="n">countDistinct</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">client_id</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;mau&quot;</span><span class="p">))</span> \
+        <span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">all_mau</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">dau</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">mau</span><span class="p">,</span> <span class="n">dau</span><span class="o">.</span><span class="n">addon_id</span> <span class="o">==</span> <span class="n">mau</span><span class="o">.</span><span class="n">addon_id</span><span class="p">)</span> \
+        <span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">mau</span><span class="o">.</span><span class="n">addon_id</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;test&quot;</span><span class="p">),</span> <span class="n">dau</span><span class="o">.</span><span class="n">dau</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;dau&quot;</span><span class="p">),</span> <span class="n">mau</span><span class="o">.</span><span class="n">mau</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;mau&quot;</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="get_spark_session"><a class="viewcode-back" href="../../../source/mozetl.testpilot.html#mozetl.testpilot.txp_mau_dau.get_spark_session">[docs]</a><span class="k">def</span> <span class="nf">get_spark_session</span><span class="p">(</span><span class="n">app_name</span><span class="p">):</span>
+    <span class="c1"># TODO: move this into a general library with more default configs?</span>
+    <span class="k">return</span> <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span> \
+            <span class="o">.</span><span class="n">appName</span><span class="p">(</span><span class="n">app_name</span><span class="p">)</span> \
+            <span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../../../source/mozetl.testpilot.html#mozetl.testpilot.txp_mau_dau.main">[docs]</a><span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">bucket</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">input_bucket</span><span class="p">,</span> <span class="n">input_prefix</span><span class="p">,</span> <span class="n">run_date_string</span><span class="p">,</span>
+         <span class="n">sample_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">spark_session</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">run_date_dt</span> <span class="o">=</span> <span class="n">parse</span><span class="p">(</span><span class="n">run_date_string</span><span class="p">)</span>
+    <span class="n">input_location</span> <span class="o">=</span> <span class="s2">&quot;s3://</span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">input_bucket</span><span class="p">,</span> <span class="n">input_prefix</span><span class="p">)</span>
+    <span class="n">addon_ids</span> <span class="o">=</span> <span class="n">get_experiments</span><span class="p">()</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Calculating mau/dau for date </span><span class="si">{}</span><span class="s2"> and tests </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">run_date_dt</span><span class="p">,</span> <span class="n">addon_ids</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">spark_session</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">spark_session</span> <span class="o">=</span> <span class="n">get_spark_session</span><span class="p">(</span><span class="s2">&quot;txp_mau_dau&quot;</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">dataset</span> <span class="o">=</span> <span class="n">spark_session</span><span class="o">.</span><span class="n">read</span><span class="o">.</span><span class="n">parquet</span><span class="p">(</span><span class="n">input_location</span><span class="p">)</span> \
+            <span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;submission_date_s3&quot;</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">fmt</span><span class="p">(</span><span class="n">run_date_dt</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="mi">28</span><span class="p">)))</span> \
+            <span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;submission_date_s3&quot;</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">run_date_string</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">sample_id</span><span class="p">:</span>
+            <span class="n">dataset</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;sample_id&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">sample_id</span><span class="p">)</span>
+        <span class="n">active_users</span> <span class="o">=</span> <span class="n">get_active_users</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">addon_ids</span><span class="p">)</span>
+
+        <span class="n">mau_dau</span> <span class="o">=</span> <span class="n">get_mau_dau</span><span class="p">(</span><span class="n">active_users</span><span class="p">,</span> <span class="n">run_date_string</span><span class="p">)</span><span class="o">.</span><span class="n">persist</span><span class="p">()</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Mau and Dau for </span><span class="si">{}</span><span class="s2">: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">run_date_dt</span><span class="p">,</span> <span class="n">mau_dau</span><span class="o">.</span><span class="n">collect</span><span class="p">()))</span>
+
+        <span class="n">output_location</span> <span class="o">=</span> <span class="s2">&quot;s3n://</span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="s2">/submission_date_s3=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">bucket</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">SCHEMA_VERSION</span><span class="p">,</span> <span class="n">run_date_string</span>
+        <span class="p">)</span>
+        <span class="n">mau_dau</span><span class="o">.</span><span class="n">repartition</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">write</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;parquet&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">mode</span><span class="p">(</span><span class="s2">&quot;overwrite&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">output_location</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Successfully wrote txp mau dau to </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">output_location</span><span class="p">))</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">spark_session</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">spark_session</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">bucket</span> <span class="o">=</span> <span class="n">environ</span><span class="p">[</span><span class="s1">&#39;bucket&#39;</span><span class="p">]</span>
+    <span class="n">prefix</span> <span class="o">=</span> <span class="n">environ</span><span class="p">[</span><span class="s1">&#39;prefix&#39;</span><span class="p">]</span>
+    <span class="n">input_bucket</span> <span class="o">=</span> <span class="n">environ</span><span class="p">[</span><span class="s1">&#39;inbucket&#39;</span><span class="p">]</span>
+    <span class="n">input_prefix</span> <span class="o">=</span> <span class="n">environ</span><span class="p">[</span><span class="s1">&#39;inprefix&#39;</span><span class="p">]</span>
+    <span class="n">run_date</span> <span class="o">=</span> <span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;date&#39;</span><span class="p">,</span> <span class="n">fmt</span><span class="p">(</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="mi">1</span><span class="p">)))</span>
+    <span class="n">sample_id</span> <span class="o">=</span> <span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;sampleid&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="n">main</span><span class="p">(</span><span class="n">bucket</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">input_bucket</span><span class="p">,</span> <span class="n">input_prefix</span><span class="p">,</span> <span class="n">run_date</span><span class="p">,</span> <span class="n">sample_id</span><span class="o">=</span><span class="n">sample_id</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">python_mozetl</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Firefox Telemetry Python ETL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#benefits">Benefits</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#tests">Tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#scheduling">Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#early-stage-etl-jobs">Early Stage ETL Jobs</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Ryan Harter.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

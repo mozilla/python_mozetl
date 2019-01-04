@@ -1,0 +1,193 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>mozetl.experimentsdaily.rollup &#8212; python_mozetl 0.1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for mozetl.experimentsdaily.rollup</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">click</span>
+<span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="k">import</span> <span class="n">SparkSession</span>
+<span class="kn">from</span> <span class="nn">mozetl.clientsdaily.rollup</span> <span class="k">import</span> <span class="n">extract_search_counts</span>
+<span class="kn">from</span> <span class="nn">mozetl.utils</span> <span class="k">import</span> <span class="n">extract_submission_window_for_activity_day</span>
+<span class="kn">from</span> <span class="nn">mozetl.utils</span> <span class="k">import</span> <span class="n">format_spark_path</span>
+
+<span class="n">EXCLUDED_ID</span> <span class="o">=</span> <span class="s1">&#39;pref-flip-screenshots-release-1369150&#39;</span>
+
+
+<div class="viewcode-block" id="load_experiments_summary"><a class="viewcode-back" href="../../../source/mozetl.experimentsdaily.html#mozetl.experimentsdaily.rollup.load_experiments_summary">[docs]</a><span class="k">def</span> <span class="nf">load_experiments_summary</span><span class="p">(</span><span class="n">spark</span><span class="p">,</span> <span class="n">parquet_path</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">spark</span>
+        <span class="o">.</span><span class="n">read</span>
+        <span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;mergeSchema&quot;</span><span class="p">,</span> <span class="s2">&quot;true&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">parquet</span><span class="p">(</span><span class="n">parquet_path</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="s2">&quot;experiment_id != &#39;</span><span class="si">{}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">EXCLUDED_ID</span><span class="p">))</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="to_experiment_profile_day_aggregates"><a class="viewcode-back" href="../../../source/mozetl.experimentsdaily.html#mozetl.experimentsdaily.rollup.to_experiment_profile_day_aggregates">[docs]</a><span class="k">def</span> <span class="nf">to_experiment_profile_day_aggregates</span><span class="p">(</span><span class="n">frame_with_extracts</span><span class="p">):</span>
+    <span class="kn">from</span> <span class="nn">mozetl.clientsdaily.fields</span> <span class="k">import</span> <span class="n">EXPERIMENT_FIELD_AGGREGATORS</span>
+    <span class="kn">from</span> <span class="nn">mozetl.clientsdaily.fields</span> <span class="k">import</span> <span class="n">ACTIVITY_DATE_COLUMN</span>
+    <span class="k">if</span> <span class="s2">&quot;activity_date&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">frame_with_extracts</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="n">with_activity_date</span> <span class="o">=</span> <span class="n">frame_with_extracts</span><span class="o">.</span><span class="n">select</span><span class="p">(</span>
+            <span class="s2">&quot;*&quot;</span><span class="p">,</span> <span class="n">ACTIVITY_DATE_COLUMN</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">with_activity_date</span> <span class="o">=</span> <span class="n">frame_with_extracts</span>
+    <span class="n">grouped</span> <span class="o">=</span> <span class="n">with_activity_date</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span>
+        <span class="s1">&#39;experiment_id&#39;</span><span class="p">,</span> <span class="s1">&#39;client_id&#39;</span><span class="p">,</span> <span class="s1">&#39;activity_date&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">grouped</span><span class="o">.</span><span class="n">agg</span><span class="p">(</span><span class="o">*</span><span class="n">EXPERIMENT_FIELD_AGGREGATORS</span><span class="p">)</span></div>
+
+
+<span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">()</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--date&#39;</span><span class="p">,</span>
+              <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+              <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Start date to run on&#39;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--input-bucket&#39;</span><span class="p">,</span>
+              <span class="n">default</span><span class="o">=</span><span class="s1">&#39;telemetry-parquet&#39;</span><span class="p">,</span>
+              <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Bucket of the input dataset&#39;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--input-prefix&#39;</span><span class="p">,</span>
+              <span class="n">default</span><span class="o">=</span><span class="s1">&#39;experiments/v1/&#39;</span><span class="p">,</span>
+              <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Prefix of the input dataset&#39;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--output-bucket&#39;</span><span class="p">,</span>
+              <span class="n">default</span><span class="o">=</span><span class="s1">&#39;net-mozaws-prod-us-west-2-pipeline-analysis&#39;</span><span class="p">,</span>
+              <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Bucket of the output dataset&#39;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--output-prefix&#39;</span><span class="p">,</span>
+              <span class="n">default</span><span class="o">=</span><span class="s1">&#39;/experiments_daily&#39;</span><span class="p">,</span>
+              <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Prefix of the output dataset&#39;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--output-version&#39;</span><span class="p">,</span>
+              <span class="n">default</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+              <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Version of the output dataset&#39;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--lag-days&#39;</span><span class="p">,</span>
+              <span class="n">default</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+              <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Number of days to allow for submission latency&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="n">input_bucket</span><span class="p">,</span> <span class="n">input_prefix</span><span class="p">,</span> <span class="n">output_bucket</span><span class="p">,</span>
+         <span class="n">output_prefix</span><span class="p">,</span> <span class="n">output_version</span><span class="p">,</span> <span class="n">lag_days</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Aggregate by (client_id, experiment_id, day).</span>
+
+<span class="sd">    Note that the target day will actually be `lag-days` days before</span>
+<span class="sd">    the supplied date. In other words, if you pass in 2017-01-20 and</span>
+<span class="sd">    set `lag-days` to 5, the aggregation will be processed for</span>
+<span class="sd">    day 2017-01-15 (the resulting data will cover submission dates</span>
+<span class="sd">    including the activity day itself plus 5 days of lag for a total</span>
+<span class="sd">    of 6 days).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">spark</span> <span class="o">=</span> <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">appName</span><span class="p">(</span><span class="s2">&quot;experiments_daily&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
+    <span class="n">parquet_path</span> <span class="o">=</span> <span class="n">format_spark_path</span><span class="p">(</span><span class="n">input_bucket</span><span class="p">,</span> <span class="n">input_prefix</span><span class="p">)</span>
+    <span class="n">frame</span> <span class="o">=</span> <span class="n">load_experiments_summary</span><span class="p">(</span><span class="n">spark</span><span class="p">,</span> <span class="n">parquet_path</span><span class="p">)</span>
+    <span class="n">day_frame</span><span class="p">,</span> <span class="n">start_date</span> <span class="o">=</span> <span class="n">extract_submission_window_for_activity_day</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="n">date</span><span class="p">,</span> <span class="n">lag_days</span><span class="p">)</span>
+    <span class="n">searches_frame</span> <span class="o">=</span> <span class="n">extract_search_counts</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="n">to_experiment_profile_day_aggregates</span><span class="p">(</span><span class="n">searches_frame</span><span class="p">)</span>
+    <span class="n">spark</span><span class="o">.</span><span class="n">conf</span><span class="o">.</span><span class="n">set</span><span class="p">(</span>
+        <span class="s2">&quot;mapreduce.fileoutputcommitter.marksuccessfuljobs&quot;</span><span class="p">,</span> <span class="s2">&quot;false&quot;</span>
+    <span class="p">)</span>  <span class="c1"># Don&#39;t write _SUCCESS files, which interfere w/ReDash discovery</span>
+    <span class="n">output_base_path</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">/v</span><span class="si">{}</span><span class="s2">/activity_date_s3=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="n">format_spark_path</span><span class="p">(</span><span class="n">output_bucket</span><span class="p">,</span> <span class="n">output_prefix</span><span class="p">),</span>
+        <span class="n">output_version</span><span class="p">,</span>
+        <span class="n">start_date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">))</span>
+    <span class="n">results</span><span class="o">.</span><span class="n">write</span><span class="o">.</span><span class="n">mode</span><span class="p">(</span><span class="s2">&quot;overwrite&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">parquet</span><span class="p">(</span><span class="n">output_base_path</span><span class="p">)</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">python_mozetl</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Firefox Telemetry Python ETL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#benefits">Benefits</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#tests">Tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#scheduling">Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#early-stage-etl-jobs">Early Stage ETL Jobs</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Ryan Harter.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
