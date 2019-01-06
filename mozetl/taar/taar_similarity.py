@@ -24,6 +24,7 @@ from pyspark.statcounter import StatCounter
 from scipy.spatial import distance
 from taar_utils import store_json_to_s3
 from taar_utils import load_amo_curated_whitelist
+from mozetl.utils import stop_session_safely
 
 # Define the set of feature names to be used in the donor computations.
 CATEGORICAL_FEATURES = ["city", "locale", "os"]
@@ -385,4 +386,4 @@ def main(date, bucket, prefix, num_clusters, num_donors, kernel_bandwidth, num_p
     donors = format_donors_dictionary(donors_df)
     store_json_to_s3(json.dumps(donors, indent=2), "donors", date, prefix, bucket)
     store_json_to_s3(json.dumps(lr_curves, indent=2), "lr_curves", date, prefix, bucket)
-    spark.stop()
+    stop_session_safely(spark)
