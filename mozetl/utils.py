@@ -161,3 +161,13 @@ def extract_submission_window_for_activity_day(frame, date, lag_days):
         .where("submission_date_s3 <= '{}'".format(submission_end_str)) \
         .where("activity_date = '{}'".format(activity_iso))
     return result, start_date
+
+
+def stop_session_safely(spark_session):
+    """
+    Safely stops Spark session.
+    This is no-op if running on Databricks - we shouldn't stop session there since
+    it's managed by the platform, doing so fails the job.
+    """
+    if spark_session.conf.get("spark.home", "").startsWith("/databricks"):
+        spark_session.stop()
