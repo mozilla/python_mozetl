@@ -5,9 +5,8 @@ import json
 import logging
 import logging.config
 import typing
-from six.moves import urllib
+from six.moves import urllib, queue
 from six import text_type
-import queue as queue
 
 from .taar_utils import store_json_to_s3
 
