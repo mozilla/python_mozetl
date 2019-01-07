@@ -11,6 +11,7 @@ from pyspark.sql.types import (
 from six import text_type
 
 from mozetl.topline import topline_summary as topline
+from mozetl.topline.schema import topline_schema
 
 
 def generate_dates(submission_date_s3, ts_offset=0, creation_offset=0):
@@ -340,3 +341,7 @@ def test_job_weekly(spark, generate_data, monkeypatch, tmpdir):
 
     row = df.first()
     assert row.actives == 3
+
+    # the module schema does not include the mode, and the partition column is a string
+    df = df.drop("mode").withColumn("report_start", F.col("report_start").astype("string"))
+    assert df.schema == topline_schema
