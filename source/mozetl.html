@@ -263,6 +263,14 @@ Example:
 </dd></dl>
 
 <dl class="function">
+<dt id="mozetl.utils.stop_session_safely">
+<code class="descclassname">mozetl.utils.</code><code class="descname">stop_session_safely</code><span class="sig-paren">(</span><em>spark_session</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/utils.html#stop_session_safely"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.utils.stop_session_safely" title="Permalink to this definition">¶</a></dt>
+<dd><p>Safely stops Spark session.
+This is no-op if running on Databricks - we shouldn’t stop session there since
+it’s managed by the platform, doing so fails the job.</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="mozetl.utils.upload_file_to_s3">
 <code class="descclassname">mozetl.utils.</code><code class="descname">upload_file_to_s3</code><span class="sig-paren">(</span><em>client</em>, <em>filepath</em>, <em>bucket</em>, <em>key</em>, <em>ACL='bucket-owner-full-control'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/utils.html#upload_file_to_s3"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.utils.upload_file_to_s3" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
