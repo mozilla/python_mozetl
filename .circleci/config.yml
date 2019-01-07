@@ -71,11 +71,11 @@ jobs:
     parallelism: 4
     docker:
       - image: python:2.7
-  py36:
+  py35:
     <<: *test_settings
     parallelism: 4
     docker:
-      - image: python:3.6
+      - image: python:3.5
 
   lint:
     docker:
@@ -138,7 +138,7 @@ workflows:
   build:
     jobs:
       - py27
-      - py36
+      - py35
       - lint
       - docs
       - docs-deploy:
