@@ -20,7 +20,7 @@ def schema_from_json(path):
     :path str: Path the the json data
     """
     with pkg_resources.resource_stream(mozetl.topline.__name__, path) as f:
-        data = json.load(f)
+        data = json.loads(f.read().decode("utf-8"))
         return StructType.fromJson(data)
 
 

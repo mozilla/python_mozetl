@@ -28,7 +28,7 @@ def get_test_pilot_addons():
     '''
     url = "https://testpilot.firefox.com/api/experiments.json"
     response = urllib.request.urlopen(url)
-    data = json.loads(response.read())
+    data = json.loads(response.read().decode("utf-8"))
     all_tp_addons = (
         ["@testpilot-addon"] + [i.get("addon_id") for i in data['results'] if i.get("addon_id")]
         )
