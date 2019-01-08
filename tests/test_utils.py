@@ -2,6 +2,7 @@
 import datetime as DT
 import boto3
 import pytest
+from mock import Mock
 from moto import mock_s3
 
 from mozetl import utils
@@ -132,3 +133,19 @@ def test_write_csv_to_s3_existing(generate_data):
 
     # header + 2x row = 3
     assert len(body.rstrip().split('\n')) == 3
+
+
+def test_stop_session_safely_emr():
+    spark_session = Mock(conf={'spark.home': '/var/lib/spark/'})
+
+    utils.stop_session_safely(spark_session)
+
+    spark_session.stop.assert_not_called()
+
+
+def test_stop_session_safely_databricks():
+    spark_session = Mock(conf={'spark.home': '/databricks/spark'})
+
+    utils.stop_session_safely(spark_session)
+
+    spark_session.stop.assert_called_once()
