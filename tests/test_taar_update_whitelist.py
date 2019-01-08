@@ -56,4 +56,4 @@ def test_load(mock_transformed_data):
 
     obj = conn.Object(bucket, key=prefix + "only_guids_top_200.json").get()
     json_txt = obj["Body"].read()
-    assert json.loads(json_txt) == mock_transformed_data
+    assert sorted(json.loads(json_txt)) == mock_transformed_data
