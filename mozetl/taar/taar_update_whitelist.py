@@ -53,7 +53,7 @@ def parse_json(json_data, validate_guids=False):
         for guid in guids:
             if not check_guid(guid):
                 raise GUIDError("Can't validate GUID: {}".format(guid))
-    return list(guids)
+    return sorted(list(guids))
 
 
 def load_etl(transformed_data, date, prefix, bucket):
