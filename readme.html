@@ -73,6 +73,48 @@ environment. These are used for the <code class="docutils literal notranslate"><
 <p>Tests are configured in <a class="reference external" href="tox.ini">tox.ini</a></p>
 </div>
 </div>
+<div class="section" id="manual-execution">
+<h1>Manual Execution<a class="headerlink" href="#manual-execution" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="atmo">
+<h2>ATMO<a class="headerlink" href="#atmo" title="Permalink to this headline">¶</a></h2>
+<p>The first method of manual execution is the <code class="docutils literal notranslate"><span class="pre">mozetl-submit.sh</span></code> script located in <code class="docutils literal notranslate"><span class="pre">bin</span></code>.
+This script is used with the <code class="docutils literal notranslate"><span class="pre">EMRSparkOperator</span></code> in <code class="docutils literal notranslate"><span class="pre">telemetry-airflow</span></code> to schedule execution of <code class="docutils literal notranslate"><span class="pre">mozetl</span></code> jobs.
+It may be used with <a class="reference external" href="https://analysis.telemetry.mozilla.org/">ATMO</a> to manually test jobs.</p>
+<p>In an SSH session with an ATMO cluster, grab a copy of the script:</p>
+<div class="highlight-guess notranslate"><div class="highlight"><pre><span></span>$ wget https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh
+</pre></div>
+</div>
+<p>Push your code to your own fork, where the job has been added to <code class="docutils literal notranslate"><span class="pre">mozetl.cli</span></code>. Then run it.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ ./mozetl-submit.sh <span class="se">\</span>
+    -p https://github.com/&lt;USERNAME&gt;/python_mozetl.git <span class="se">\</span>
+    -b &lt;BRANCHNAME&gt; <span class="se">\</span>
+    &lt;COMMAND&gt; <span class="se">\</span>
+        --first-argument foo <span class="se">\</span>
+        --second-argument bar
+</pre></div>
+</div>
+<p>See comments in <code class="docutils literal notranslate"><span class="pre">bin/mozetl-submit.sh</span></code> for more details.</p>
+</div>
+<div class="section" id="databricks">
+<h2>Databricks<a class="headerlink" href="#databricks" title="Permalink to this headline">¶</a></h2>
+<p>Jobs may also be executed on <a class="reference external" href="https://dbc-caf9527b-e073.cloud.databricks.com/">Databricks</a>.
+They are scheduled via the <code class="docutils literal notranslate"><span class="pre">MozDatabricksSubmitRunOperator</span></code> in <code class="docutils literal notranslate"><span class="pre">telemetry-airflow</span></code>.</p>
+<p>This script runs on your local machine and submits the job to a remote spark executor.
+First, generate an API token in the User Settings page in Databricks.
+Then run the script.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python bin/mozetl-databricks.py <span class="se">\</span>
+    --git-path https://github.com/&lt;USERNAME&gt;/python_mozetl.git <span class="se">\</span>
+    --git-branch &lt;BRANCHNAME&gt; <span class="se">\</span>
+    --token &lt;TOKEN&gt;  <span class="se">\</span>
+    &lt;COMMAND&gt; <span class="se">\</span>
+        --first-argument foo <span class="se">\</span>
+        --second-argument bar
+</pre></div>
+</div>
+<p>Run <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">bin/mozetl-databricks.py</span> <span class="pre">--help</span></code> for more options, including increasing the number of workers and using python 3.
+Refer to this <a class="reference external" href="https://github.com/mozilla/python_mozetl/pull/296">pull request</a> for more examples.</p>
+</div>
+</div>
 <div class="section" id="scheduling">
 <h1>Scheduling<a class="headerlink" href="#scheduling" title="Permalink to this headline">¶</a></h1>
 <p>You can schedule your job on either
@@ -92,15 +134,15 @@ while ATMO will only send an email to the job owner.</li>
 you can identify these dependencies in Airflow.
 This is useful if an upstream job fails.</li>
 </ul>
-<div class="section" id="id1">
-<h2>ATMO<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id4">
+<h2>ATMO<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
 <p>To schedule a job on ATMO, take a look at the
 <a class="reference external" href="scheduling/load_and_run.ipynb">load_and_run notebook</a>.
 This notebook clones and installs the python_mozetl package.
 You can then run your job from the notebook.</p>
 </div>
-<div class="section" id="id2">
-<h2>Airflow<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id5">
+<h2>Airflow<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h2>
 <p>To schedule a job on Airflow,
 you’ll need to add a new Operator to the DAGs and provide a shell script for running your job.
 Take a look at
@@ -148,9 +190,14 @@ In fact, this project was created with
 <li class="toctree-l2"><a class="reference internal" href="#calling-the-test-runner">Calling the test runner</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="#manual-execution">Manual Execution</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#atmo">ATMO</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#databricks">Databricks</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="#scheduling">Scheduling</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#id1">ATMO</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id2">Airflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id4">ATMO</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id5">Airflow</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="#early-stage-etl-jobs">Early Stage ETL Jobs</a></li>
