@@ -140,7 +140,7 @@ def test_stop_session_safely_emr():
 
     utils.stop_session_safely(spark_session)
 
-    spark_session.stop.assert_not_called()
+    spark_session.stop.assert_called_once()
 
 
 def test_stop_session_safely_databricks():
@@ -148,4 +148,4 @@ def test_stop_session_safely_databricks():
 
     utils.stop_session_safely(spark_session)
 
-    spark_session.stop.assert_called_once()
+    spark_session.stop.assert_not_called()
