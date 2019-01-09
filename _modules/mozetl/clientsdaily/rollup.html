@@ -138,19 +138,19 @@
 
 
 <div class="viewcode-block" id="to_profile_day_aggregates"><a class="viewcode-back" href="../../../source/mozetl.clientsdaily.html#mozetl.clientsdaily.rollup.to_profile_day_aggregates">[docs]</a><span class="k">def</span> <span class="nf">to_profile_day_aggregates</span><span class="p">(</span><span class="n">frame_with_extracts</span><span class="p">):</span>
-    <span class="kn">from</span> <span class="nn">fields</span> <span class="k">import</span> <span class="n">MAIN_SUMMARY_FIELD_AGGREGATORS</span>
+    <span class="kn">from</span> <span class="nn">.fields</span> <span class="k">import</span> <span class="n">MAIN_SUMMARY_FIELD_AGGREGATORS</span>
     <span class="k">if</span> <span class="s2">&quot;activity_date&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">frame_with_extracts</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
-        <span class="kn">from</span> <span class="nn">fields</span> <span class="k">import</span> <span class="n">ACTIVITY_DATE_COLUMN</span>
+        <span class="kn">from</span> <span class="nn">.fields</span> <span class="k">import</span> <span class="n">ACTIVITY_DATE_COLUMN</span>
         <span class="n">with_activity_date</span> <span class="o">=</span> <span class="n">frame_with_extracts</span><span class="o">.</span><span class="n">select</span><span class="p">(</span>
             <span class="s2">&quot;*&quot;</span><span class="p">,</span> <span class="n">ACTIVITY_DATE_COLUMN</span>
         <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">with_activity_date</span> <span class="o">=</span> <span class="n">frame_with_extracts</span>
     <span class="k">if</span> <span class="s2">&quot;geo_subdivision1&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">with_activity_date</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
-        <span class="kn">from</span> <span class="nn">fields</span> <span class="k">import</span> <span class="n">NULL_STRING_COLUMN</span>
+        <span class="kn">from</span> <span class="nn">.fields</span> <span class="k">import</span> <span class="n">NULL_STRING_COLUMN</span>
         <span class="n">with_activity_date</span> <span class="o">=</span> <span class="n">with_activity_date</span><span class="o">.</span><span class="n">withColumn</span><span class="p">(</span><span class="s2">&quot;geo_subdivision1&quot;</span><span class="p">,</span> <span class="n">NULL_STRING_COLUMN</span><span class="p">)</span>
     <span class="k">if</span> <span class="s2">&quot;geo_subdivision2&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">with_activity_date</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
-        <span class="kn">from</span> <span class="nn">fields</span> <span class="k">import</span> <span class="n">NULL_STRING_COLUMN</span>
+        <span class="kn">from</span> <span class="nn">.fields</span> <span class="k">import</span> <span class="n">NULL_STRING_COLUMN</span>
         <span class="n">with_activity_date</span> <span class="o">=</span> <span class="n">with_activity_date</span><span class="o">.</span><span class="n">withColumn</span><span class="p">(</span><span class="s2">&quot;geo_subdivision2&quot;</span><span class="p">,</span> <span class="n">NULL_STRING_COLUMN</span><span class="p">)</span>
     <span class="n">grouped</span> <span class="o">=</span> <span class="n">with_activity_date</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;client_id&#39;</span><span class="p">,</span> <span class="s1">&#39;activity_date&#39;</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">grouped</span><span class="o">.</span><span class="n">agg</span><span class="p">(</span><span class="o">*</span><span class="n">MAIN_SUMMARY_FIELD_AGGREGATORS</span><span class="p">)</span></div>

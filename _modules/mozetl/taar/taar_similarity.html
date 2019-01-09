@@ -57,8 +57,8 @@
 <span class="kn">from</span> <span class="nn">pyspark.mllib.stat</span> <span class="k">import</span> <span class="n">KernelDensity</span>
 <span class="kn">from</span> <span class="nn">pyspark.statcounter</span> <span class="k">import</span> <span class="n">StatCounter</span>
 <span class="kn">from</span> <span class="nn">scipy.spatial</span> <span class="k">import</span> <span class="n">distance</span>
-<span class="kn">from</span> <span class="nn">taar_utils</span> <span class="k">import</span> <span class="n">store_json_to_s3</span>
-<span class="kn">from</span> <span class="nn">taar_utils</span> <span class="k">import</span> <span class="n">load_amo_curated_whitelist</span>
+<span class="kn">from</span> <span class="nn">.taar_utils</span> <span class="k">import</span> <span class="n">store_json_to_s3</span>
+<span class="kn">from</span> <span class="nn">.taar_utils</span> <span class="k">import</span> <span class="n">load_amo_curated_whitelist</span>
 <span class="kn">from</span> <span class="nn">mozetl.utils</span> <span class="k">import</span> <span class="n">stop_session_safely</span>
 
 <span class="c1"># Define the set of feature names to be used in the donor computations.</span>
@@ -195,7 +195,7 @@
     <span class="c1"># Compute the proportion of user in each cluster.</span>
     <span class="n">total_donors_in_clusters</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">counts</span><span class="p">)</span>
     <span class="n">clust_sample</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">/</span> <span class="n">total_donors_in_clusters</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">counts</span><span class="p">]</span>
-    <span class="n">sampling_proportions</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">clusters</span><span class="p">,</span> <span class="n">clust_sample</span><span class="p">))</span>
+    <span class="n">sampling_proportions</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">clusters</span><span class="p">,</span> <span class="n">clust_sample</span><span class="p">)))</span>
 
     <span class="c1"># Sample the users in each cluster according to the proportions</span>
     <span class="c1"># and pass along the random seed if needed for tests.</span>
@@ -372,7 +372,7 @@
     <span class="n">numerator_density</span> <span class="o">=</span> <span class="n">kd_sc</span><span class="o">.</span><span class="n">estimate</span><span class="p">(</span><span class="n">lr_index</span><span class="p">)</span>
 
     <span class="c1"># Structure this in the correct output format.</span>
-    <span class="k">return</span> <span class="nb">zip</span><span class="p">(</span><span class="n">lr_index</span><span class="p">,</span> <span class="nb">zip</span><span class="p">(</span><span class="n">numerator_density</span><span class="p">,</span> <span class="n">denominator_density</span><span class="p">))</span></div>
+    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">lr_index</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">numerator_density</span><span class="p">,</span> <span class="n">denominator_density</span><span class="p">))))</span></div>
 
 
 <div class="viewcode-block" id="today_minus_90_days"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_similarity.today_minus_90_days">[docs]</a><span class="k">def</span> <span class="nf">today_minus_90_days</span><span class="p">():</span>

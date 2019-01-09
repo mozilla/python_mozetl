@@ -38,7 +38,7 @@
 <span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="k">import</span> <span class="n">SparkSession</span>
 <span class="kn">import</span> <span class="nn">pyspark.sql.functions</span> <span class="k">as</span> <span class="nn">fun</span>
 <span class="kn">import</span> <span class="nn">json</span>
-<span class="kn">import</span> <span class="nn">urllib</span>
+<span class="kn">from</span> <span class="nn">six.moves</span> <span class="k">import</span> <span class="n">urllib</span>
 <span class="kn">import</span> <span class="nn">click</span>
 
 <span class="n">MS_FIELDS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;client_id&#39;</span><span class="p">,</span>
@@ -62,8 +62,8 @@
 <span class="sd">    :return a list of addon_ids</span>
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;https://testpilot.firefox.com/api/experiments.json&quot;</span>
-    <span class="n">response</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">urlopen</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
-    <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">urlopen</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">))</span>
     <span class="n">all_tp_addons</span> <span class="o">=</span> <span class="p">(</span>
         <span class="p">[</span><span class="s2">&quot;@testpilot-addon&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">i</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;addon_id&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;results&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">i</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;addon_id&quot;</span><span class="p">)]</span>
         <span class="p">)</span>
@@ -100,7 +100,7 @@
 <span class="sd">    :return SparkDF</span>
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="n">dest</span> <span class="o">=</span> <span class="n">get_dest</span><span class="p">(</span><span class="n">input_bucket</span><span class="p">,</span> <span class="n">input_prefix</span><span class="p">,</span> <span class="n">input_version</span><span class="p">)</span>
-    <span class="nb">print</span> <span class="s2">&quot;loading...&quot;</span><span class="p">,</span> <span class="n">dest</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;loading...&quot;</span><span class="p">,</span> <span class="n">dest</span><span class="p">)</span>
     <span class="k">return</span> <span class="p">(</span><span class="n">spark</span>
             <span class="o">.</span><span class="n">read</span>
             <span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;mergeSchema&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>

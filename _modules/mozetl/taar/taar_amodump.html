@@ -40,10 +40,10 @@
 <span class="kn">import</span> <span class="nn">logging</span>
 <span class="kn">import</span> <span class="nn">logging.config</span>
 <span class="kn">import</span> <span class="nn">typing</span>
-<span class="kn">import</span> <span class="nn">urllib</span>
-<span class="kn">import</span> <span class="nn">Queue</span> <span class="k">as</span> <span class="nn">queue</span>
+<span class="kn">from</span> <span class="nn">six.moves</span> <span class="k">import</span> <span class="n">urllib</span><span class="p">,</span> <span class="n">queue</span>
+<span class="kn">from</span> <span class="nn">six</span> <span class="k">import</span> <span class="n">text_type</span>
 
-<span class="kn">from</span> <span class="nn">taar_utils</span> <span class="k">import</span> <span class="n">store_json_to_s3</span>
+<span class="kn">from</span> <span class="nn">.taar_utils</span> <span class="k">import</span> <span class="n">store_json_to_s3</span>
 
 <span class="kn">import</span> <span class="nn">requests</span>
 <span class="kn">from</span> <span class="nn">requests_toolbelt.threaded</span> <span class="k">import</span> <span class="n">pool</span>
@@ -128,7 +128,7 @@
         <span class="n">addon_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fetch_pages</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_fetch_versions</span><span class="p">(</span><span class="n">addon_map</span><span class="p">)</span>
         <span class="n">final_result</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">addon_map</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">addon_map</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
             <span class="k">if</span> <span class="s1">&#39;first_create_date&#39;</span> <span class="ow">in</span> <span class="n">v</span><span class="p">:</span>
                 <span class="n">final_result</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Final addon set includes </span><span class="si">%d</span><span class="s2"> addons.&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">final_result</span><span class="p">))</span>
@@ -162,7 +162,7 @@
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Filling initial verson page queue&quot;</span><span class="p">)</span>
 
         <span class="k">def</span> <span class="nf">iterFactory</span><span class="p">(</span><span class="n">guid_map</span><span class="p">):</span>
-            <span class="k">for</span> <span class="n">guid</span> <span class="ow">in</span> <span class="n">guid_map</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">guid</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">guid_map</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
                 <span class="k">yield</span> <span class="s2">&quot;https://addons.mozilla.org/api/v3/addons/addon/</span><span class="si">%s</span><span class="s2">/versions/&quot;</span> <span class="o">%</span> <span class="n">guid</span>
 
         <span class="k">def</span> <span class="nf">chunker</span><span class="p">(</span><span class="n">seq</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
@@ -222,7 +222,7 @@
                     <span class="n">results</span> <span class="o">=</span> <span class="n">jdata</span><span class="p">[</span><span class="s1">&#39;results&#39;</span><span class="p">]</span>
 
                     <span class="n">raw_guid</span> <span class="o">=</span> <span class="n">resp</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;addon/&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/versions&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-                    <span class="n">guid</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">unquote</span><span class="p">(</span><span class="n">raw_guid</span><span class="p">)</span>
+                    <span class="n">guid</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">parse</span><span class="o">.</span><span class="n">unquote</span><span class="p">(</span><span class="n">raw_guid</span><span class="p">)</span>
                     <span class="n">create_date</span> <span class="o">=</span> <span class="n">results</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;files&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;created&#39;</span><span class="p">]</span>
 
                     <span class="n">record</span> <span class="o">=</span> <span class="n">addon_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">guid</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
@@ -279,15 +279,15 @@
 <div class="viewcode-block" id="marshal"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_amodump.marshal">[docs]</a><span class="k">def</span> <span class="nf">marshal</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">type_def</span><span class="p">):</span>
     <span class="n">serializers</span> <span class="o">=</span> <span class="p">{</span><span class="n">typing</span><span class="o">.</span><span class="n">List</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
                    <span class="n">typing</span><span class="o">.</span><span class="n">Dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
-                   <span class="nb">str</span><span class="p">:</span> <span class="n">unicode</span><span class="p">,</span>
-                   <span class="n">unicode</span><span class="p">:</span> <span class="n">unicode</span><span class="p">,</span>
+                   <span class="nb">str</span><span class="p">:</span> <span class="n">text_type</span><span class="p">,</span>
+                   <span class="n">text_type</span><span class="p">:</span> <span class="n">text_type</span><span class="p">,</span>
                    <span class="nb">int</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
                    <span class="nb">float</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
                    <span class="nb">bool</span><span class="p">:</span> <span class="nb">bool</span><span class="p">}</span>
 
     <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">type_def</span><span class="p">,</span> <span class="n">JSONSchema</span><span class="p">):</span>
         <span class="n">obj</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">for</span> <span class="n">attr_name</span><span class="p">,</span> <span class="n">attr_type_def</span> <span class="ow">in</span> <span class="n">type_def</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">attr_name</span><span class="p">,</span> <span class="n">attr_type_def</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">type_def</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
             <span class="n">attr_value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">attr_name</span><span class="p">,</span> <span class="n">Undefined</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">attr_value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">Undefined</span><span class="p">:</span>
                 <span class="c1"># Try marshalling the value</span>
@@ -305,7 +305,7 @@
             <span class="n">k_cast</span><span class="p">,</span> <span class="n">v_cast</span> <span class="o">=</span> <span class="n">type_def</span><span class="o">.</span><span class="n">__args__</span>
             <span class="n">dict_vals</span> <span class="o">=</span> <span class="p">[(</span><span class="n">marshal</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">k_cast</span><span class="p">),</span>
                           <span class="n">marshal</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">v_cast</span><span class="p">))</span>
-                         <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">value</span><span class="o">.</span><span class="n">items</span><span class="p">()]</span>
+                         <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">items</span><span class="p">())]</span>
             <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">dict_vals</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">serializers</span><span class="p">[</span><span class="n">type_def</span><span class="p">](</span><span class="n">value</span><span class="p">)</span></div>

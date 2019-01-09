@@ -46,6 +46,7 @@
 <span class="kn">import</span> <span class="nn">requests</span>
 <span class="kn">import</span> <span class="nn">logging</span>
 <span class="kn">import</span> <span class="nn">moztelemetry.standards</span> <span class="k">as</span> <span class="nn">moz_std</span>
+<span class="kn">from</span> <span class="nn">six</span> <span class="k">import</span> <span class="n">text_type</span>
 
 <span class="c1"># Reasons why the data for a client can be discarded.</span>
 <span class="n">REASON_INACTIVE</span> <span class="o">=</span> <span class="s2">&quot;inactive&quot;</span>
@@ -164,10 +165,10 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">device_id_map</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">for</span> <span class="n">vendor</span><span class="p">,</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">vendor</span><span class="p">,</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="n">device_id_map</span><span class="p">[</span><span class="s1">&#39;0x&#39;</span> <span class="o">+</span> <span class="n">vendor</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">for</span> <span class="n">family</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">u</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
-            <span class="k">for</span> <span class="n">chipset</span><span class="p">,</span> <span class="n">ids</span> <span class="ow">in</span> <span class="n">v</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">family</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">u</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">chipset</span><span class="p">,</span> <span class="n">ids</span> <span class="ow">in</span> <span class="n">v</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="n">device_id_map</span><span class="p">[</span><span class="s1">&#39;0x&#39;</span> <span class="o">+</span>
                               <span class="n">vendor</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">({(</span><span class="s1">&#39;0x&#39;</span> <span class="o">+</span>
                                                <span class="n">gfx_id</span><span class="p">):</span> <span class="p">[</span><span class="n">family</span><span class="p">,</span> <span class="n">chipset</span><span class="p">]</span> <span class="k">for</span> <span class="n">gfx_id</span> <span class="ow">in</span> <span class="n">ids</span><span class="p">})</span>
@@ -247,7 +248,7 @@
         <span class="n">data</span><span class="p">[</span><span class="s1">&#39;has_flash&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span>
             <span class="p">[</span><span class="kc">True</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">plugins</span> <span class="k">if</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Shockwave Flash&#39;</span><span class="p">])</span>
 
-    <span class="k">return</span> <span class="n">REASON_BROKEN_DATA</span> <span class="k">if</span> <span class="kc">None</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">else</span> <span class="n">data</span></div>
+    <span class="k">return</span> <span class="n">REASON_BROKEN_DATA</span> <span class="k">if</span> <span class="kc">None</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">())</span> <span class="k">else</span> <span class="n">data</span></div>
 
 
 <div class="viewcode-block" id="get_latest_valid_per_client"><a class="viewcode-back" href="../../../source/mozetl.hardware_report.html#mozetl.hardware_report.summarize_json.get_latest_valid_per_client">[docs]</a><span class="k">def</span> <span class="nf">get_latest_valid_per_client</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="n">time_start</span><span class="p">,</span> <span class="n">time_end</span><span class="p">):</span>
@@ -393,7 +394,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">collapsed_groups</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">aggregated_data</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">aggregated_data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="n">key_type</span> <span class="o">=</span> <span class="n">k</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
         <span class="c1"># If the resolution is 0x0 (see bug 1324014), put that into the &quot;Other&quot;</span>
@@ -435,7 +436,7 @@
     <span class="c1"># The previous grouping might have created additional groups. Let&#39;s check</span>
     <span class="c1"># again.</span>
     <span class="n">final_groups</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">collapsed_groups</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">collapsed_groups</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="c1"># Don&#39;t clump this group into the &quot;Other&quot; bucket if it has enough</span>
         <span class="c1"># users it in.</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">v</span> <span class="o">&gt;</span> <span class="n">count_threshold</span> <span class="ow">and</span> <span class="n">k</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;Other&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">k</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">EXCLUSION_LIST</span><span class="p">:</span>
@@ -494,10 +495,10 @@
     <span class="p">}</span>
 
     <span class="c1"># Compute the percentages from the raw numbers.</span>
-    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="c1"># The old key is a tuple (key, value). We translate the key part and concatenate the</span>
         <span class="c1"># value as a string.</span>
-        <span class="n">new_key</span> <span class="o">=</span> <span class="n">keys_translation</span><span class="p">[</span><span class="n">k</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">+</span> <span class="n">unicode</span><span class="p">(</span><span class="n">k</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">new_key</span> <span class="o">=</span> <span class="n">keys_translation</span><span class="p">[</span><span class="n">k</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">+</span> <span class="n">text_type</span><span class="p">(</span><span class="n">k</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
         <span class="n">aggregated_percentages</span><span class="p">[</span><span class="n">new_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span> <span class="o">/</span> <span class="n">denom</span>
 
     <span class="k">return</span> <span class="n">aggregated_percentages</span></div>
@@ -536,7 +537,7 @@
     <span class="c1"># We expect to have at least a key in |data| whose name begins with one</span>
     <span class="c1"># of the keys in |keys_accumulator|. Iterate through the keys in |data|</span>
     <span class="c1"># and accumulate their values in the accumulator.</span>
-    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;inactive&quot;</span><span class="p">,</span> <span class="s2">&quot;broken&quot;</span><span class="p">,</span> <span class="s2">&quot;date&quot;</span><span class="p">]:</span>
             <span class="k">continue</span>
 
@@ -549,7 +550,7 @@
         <span class="n">keys_accumulator</span><span class="p">[</span><span class="n">property_name</span><span class="p">]</span> <span class="o">+=</span> <span class="n">value</span>
 
     <span class="c1"># Make sure all the properties add up to 1.0 (or close enough).</span>
-    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">keys_accumulator</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">keys_accumulator</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">value</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">0.05</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
                 <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> values do not add up to 1.0. Their sum is </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
@@ -567,7 +568,7 @@
 <div class="viewcode-block" id="serialize_results"><a class="viewcode-back" href="../../../source/mozetl.hardware_report.html#mozetl.hardware_report.summarize_json.serialize_results">[docs]</a><span class="k">def</span> <span class="nf">serialize_results</span><span class="p">(</span><span class="n">date_to_json</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Save each aggregated data item as an entry in the JSON.&quot;&quot;&quot;</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Serializing results locally...&quot;</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">file_name</span><span class="p">,</span> <span class="n">aggregated_data</span> <span class="ow">in</span> <span class="n">date_to_json</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">file_name</span><span class="p">,</span> <span class="n">aggregated_data</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">date_to_json</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
         <span class="c1"># This either appends to an existing file, or creates a new one.</span>
         <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">file_name</span><span class="p">):</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> exists, we will overwrite it.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">file_name</span><span class="p">))</span>

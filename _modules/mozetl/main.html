@@ -76,10 +76,10 @@
     <span class="n">results</span> <span class="o">=</span> <span class="n">transform_pings</span><span class="p">(</span><span class="n">get_data</span><span class="p">(</span><span class="n">sc</span><span class="p">))</span>
 
     <span class="c1"># Display results:</span>
-    <span class="n">total</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">operator</span><span class="o">.</span><span class="n">itemgetter</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">results</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()))</span>
+    <span class="n">total</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">operator</span><span class="o">.</span><span class="n">itemgetter</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="nb">iter</span><span class="p">(</span><span class="n">results</span><span class="o">.</span><span class="n">items</span><span class="p">())))</span>
     <span class="c1"># Print the OS and client_id counts in descending order:</span>
     <span class="n">sorted_results</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
-        <span class="n">results</span><span class="o">.</span><span class="n">iteritems</span><span class="p">(),</span>
+        <span class="nb">iter</span><span class="p">(</span><span class="n">results</span><span class="o">.</span><span class="n">items</span><span class="p">()),</span>
         <span class="n">key</span><span class="o">=</span><span class="n">operator</span><span class="o">.</span><span class="n">itemgetter</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span>
         <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="p">)</span>

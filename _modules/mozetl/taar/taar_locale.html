@@ -50,8 +50,8 @@
 <span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="k">import</span> <span class="n">SparkSession</span><span class="p">,</span> <span class="n">Row</span>
 <span class="kn">from</span> <span class="nn">pyspark.sql.functions</span> <span class="k">import</span> <span class="n">col</span><span class="p">,</span> <span class="n">rank</span><span class="p">,</span> <span class="n">desc</span>
 <span class="kn">from</span> <span class="nn">pyspark.sql.window</span> <span class="k">import</span> <span class="n">Window</span>
-<span class="kn">from</span> <span class="nn">taar_utils</span> <span class="k">import</span> <span class="n">store_json_to_s3</span>
-<span class="kn">from</span> <span class="nn">taar_utils</span> <span class="k">import</span> <span class="n">load_amo_curated_whitelist</span>
+<span class="kn">from</span> <span class="nn">.taar_utils</span> <span class="k">import</span> <span class="n">store_json_to_s3</span>
+<span class="kn">from</span> <span class="nn">.taar_utils</span> <span class="k">import</span> <span class="n">load_amo_curated_whitelist</span>
 
 <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>

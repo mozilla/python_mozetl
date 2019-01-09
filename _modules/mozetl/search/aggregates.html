@@ -81,7 +81,7 @@
             <span class="s1">&#39;engine&#39;</span><span class="p">,</span>
             <span class="s1">&#39;source&#39;</span><span class="p">,</span>
         <span class="p">],</span>
-        <span class="nb">map</span><span class="p">(</span><span class="n">agg_first</span><span class="p">,</span> <span class="p">[</span>
+        <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">agg_first</span><span class="p">,</span> <span class="p">[</span>
             <span class="s1">&#39;country&#39;</span><span class="p">,</span>
             <span class="s1">&#39;app_version&#39;</span><span class="p">,</span>
             <span class="s1">&#39;distribution_id&#39;</span><span class="p">,</span>
@@ -95,7 +95,7 @@
             <span class="s1">&#39;default_search_engine_data_load_path&#39;</span><span class="p">,</span>
             <span class="s1">&#39;default_search_engine_data_submission_url&#39;</span><span class="p">,</span>
             <span class="s1">&#39;sample_id&#39;</span><span class="p">,</span>
-        <span class="p">])</span> <span class="o">+</span> <span class="p">[</span>
+        <span class="p">]))</span> <span class="o">+</span> <span class="p">[</span>
             <span class="c1"># Count of &#39;first&#39; subsessions seen for this client_day</span>
             <span class="p">(</span>
                 <span class="n">count</span><span class="p">(</span><span class="n">when</span><span class="p">(</span><span class="n">col</span><span class="p">(</span><span class="s1">&#39;subsession_counter&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
