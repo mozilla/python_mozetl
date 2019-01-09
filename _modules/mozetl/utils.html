@@ -204,7 +204,7 @@
 <span class="sd">    This is no-op if running on Databricks - we shouldn&#39;t stop session there since</span>
 <span class="sd">    it&#39;s managed by the platform, doing so fails the job.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">spark_session</span><span class="o">.</span><span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;spark.home&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;/databricks&quot;</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">spark_session</span><span class="o">.</span><span class="n">conf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;spark.home&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;/databricks&quot;</span><span class="p">):</span>
         <span class="n">spark_session</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span></div>
 </pre></div>
 
