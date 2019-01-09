@@ -38,6 +38,53 @@ tox -- -k test_main.py # runs tests only in the test_main module
 
 Tests are configured in [tox.ini](tox.ini)
 
+# Manual Execution
+## ATMO
+
+The first method of manual execution is the `mozetl-submit.sh` script located in `bin`.
+This script is used with the `EMRSparkOperator` in `telemetry-airflow` to schedule execution of `mozetl` jobs.
+It may be used with [ATMO](https://analysis.telemetry.mozilla.org/) to manually test jobs.
+
+In an SSH session with an ATMO cluster, grab a copy of the script:
+```
+$ wget https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh
+```
+Push your code to your own fork, where the job has been added to `mozetl.cli`. Then run it.
+
+```bash
+$ ./mozetl-submit.sh \
+    -p https://github.com/<USERNAME>/python_mozetl.git \
+    -b <BRANCHNAME> \
+    <COMMAND> \
+        --first-argument foo \
+        --second-argument bar
+```
+
+See comments in `bin/mozetl-submit.sh` for more details.
+
+## Databricks
+
+Jobs may also be executed on [Databricks](https://dbc-caf9527b-e073.cloud.databricks.com/).
+They are scheduled via the `MozDatabricksSubmitRunOperator` in `telemetry-airflow`.
+
+This script runs on your local machine and submits the job to a remote spark executor.
+First, generate an API token in the User Settings page in Databricks.
+Then run the script.
+
+```bash
+python bin/mozetl-databricks.py \
+    --git-path https://github.com/<USERNAME>/python_mozetl.git \
+    --git-branch <BRANCHNAME> \
+    --token <TOKEN>  \
+    <COMMAND> \
+        --first-argument foo \
+        --second-argument bar
+```
+
+Run `python bin/mozetl-databricks.py --help` for more options, including increasing the number of workers and using python 3.
+Refer to this [pull request](https://github.com/mozilla/python_mozetl/pull/296) for more examples.
+
+
 # Scheduling
 
 You can schedule your job on either
