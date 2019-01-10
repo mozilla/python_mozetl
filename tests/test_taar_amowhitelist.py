@@ -229,7 +229,9 @@ EXPECTED_FINAL_JDATA = {
             "text_count": 0.0,
         },
         "summary": {
-            "zh-CN": "\\u4f7f\\u7528OSD Lyrics\\u663e\\u793a\\u8c46\\u74e3\\u7535\\u53f0\\u6b4c\\u8bcd"
+            "zh-CN": (
+                "\\u4f7f\\u7528OSD Lyrics\\u663e\\u793a\\u8c46\\u74e3\\u7535\\u53f0\\u6b4c\\u8bcd"
+            )
         },
         "tags": ["douban", "osd-lyrics", "osdlyrics", "\\u8c46\\u74e3"],
         "weekly_downloads": 1,
