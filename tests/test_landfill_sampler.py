@@ -9,28 +9,29 @@ from mozetl.landfill import sampler
 @pytest.fixture
 def sample_document():
     return {
-        'content': {"payload": {"foo": "bar"}},
-        'meta': {
-            u'Content-Length': u'7094',
-            u'Date': u'Sun, 19 Aug 2018 15:08:00 GMT',
-            u'Host': u'incoming.telemetry.mozilla.org',
-            'Hostname': u'ip-1.1.1.1',
-            'Timestamp': 1534691279765301222,
-            'Type': u'telemetry-raw',
-            u'User-Agent': u'pingsender/1.0',
-            u'X-Forwarded-For': u'127.0.0.1',
-            u'X-PingSender-Version': u'1.0',
-            u'args': u'v=4',
-            u'protocol': u'HTTP/1.1',
-            u'remote_addr': u'1.1.1.1',
-            u'uri': u'/submit/telemetry/doc-id/main/Firefox/61.0.2/release/20180807170231'
-        }
+        "content": {"payload": {"foo": "bar"}},
+        "meta": {
+            u"Content-Length": u"7094",
+            u"Date": u"Sun, 19 Aug 2018 15:08:00 GMT",
+            u"Host": u"incoming.telemetry.mozilla.org",
+            "Hostname": u"ip-1.1.1.1",
+            "Timestamp": 1534691279765301222,
+            "Type": u"telemetry-raw",
+            u"User-Agent": u"pingsender/1.0",
+            u"X-Forwarded-For": u"127.0.0.1",
+            u"X-PingSender-Version": u"1.0",
+            u"args": u"v=4",
+            u"protocol": u"HTTP/1.1",
+            u"remote_addr": u"1.1.1.1",
+            u"uri": u"/submit/telemetry/doc-id/main/Firefox/61.0.2/release/20180807170231",
+        },
     }
 
 
 @pytest.fixture
 def generate_data(spark, sample_document):
     """Update the meta-field using provided snippets."""
+
     def _update_meta(snippet):
         doc = deepcopy(sample_document)
         doc["meta"].update(snippet)
@@ -73,9 +74,9 @@ def test_transform_contains_at_most_n_documents(generate_data):
     n = 3
     params = [
         # (namespace, doc_type, doc_version, n_documents)
-        ("custom", "main", 4, n+1),
-        ("custom", "main", 3, n-1),
-        ("custom", "crash", 4, n)
+        ("custom", "main", 4, n + 1),
+        ("custom", "main", 3, n - 1),
+        ("custom", "crash", 4, n),
     ]
     snippets = []
     for ns, dt, dv, n in params:
@@ -86,8 +87,7 @@ def test_transform_contains_at_most_n_documents(generate_data):
 
     # assert there are at most n documents
     res = (
-        df
-        .groupBy("namespace", "doc_type", "doc_version")
+        df.groupBy("namespace", "doc_type", "doc_version")
         .agg(F.count("*").alias("n_documents"))
         .withColumn("at_most_n", F.col("n_documents") <= n)
         .collect()

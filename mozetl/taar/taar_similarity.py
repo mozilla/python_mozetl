@@ -177,7 +177,9 @@ def get_donor_pools(users_df, clusters_df, num_donors, random_seed=None):
     return clusters, donor_pool_df
 
 
-def get_donors(spark, num_clusters, num_donors, addon_whitelist, date_from, random_seed=None):
+def get_donors(
+    spark, num_clusters, num_donors, addon_whitelist, date_from, random_seed=None
+):
     # Get the data for the potential add-on donors.
     users_sample = get_samples(spark, date_from)
     # Get add-ons from selected users and make sure they are
@@ -315,7 +317,9 @@ def get_lr_curves(
 
     # Determine a range of observed similarity values linearly spaced.
     all_scores_rdd = same_cluster_scores_rdd.union(different_clusters_scores_rdd)
-    stats = all_scores_rdd.aggregate(StatCounter(), StatCounter.merge, StatCounter.mergeStats)
+    stats = all_scores_rdd.aggregate(
+        StatCounter(), StatCounter.merge, StatCounter.mergeStats
+    )
     min_similarity = stats.minValue
     max_similarity = stats.maxValue
     lr_index = np.arange(
@@ -353,8 +357,16 @@ def today_minus_90_days():
 @click.option("--kernel_bandwidth", default=0.35)
 @click.option("--num_pdf_points", default=1000)
 @click.option("--clients_sample_date_from", default=today_minus_90_days())
-def main(date, bucket, prefix, num_clusters, num_donors, kernel_bandwidth, num_pdf_points,
-         clients_sample_date_from):
+def main(
+    date,
+    bucket,
+    prefix,
+    num_clusters,
+    num_donors,
+    kernel_bandwidth,
+    num_pdf_points,
+    clients_sample_date_from,
+):
     logger.info("Sampling clients since {}".format(clients_sample_date_from))
 
     spark = (
@@ -375,8 +387,9 @@ def main(date, bucket, prefix, num_clusters, num_donors, kernel_bandwidth, num_p
     logger.info("Computing the list of donors...")
 
     # Compute the donors clusters and the LR curves.
-    cluster_ids, donors_df = get_donors(spark, num_clusters, num_donors, whitelist,
-                                        clients_sample_date_from)
+    cluster_ids, donors_df = get_donors(
+        spark, num_clusters, num_donors, whitelist, clients_sample_date_from
+    )
     donors_df.cache()
     lr_curves = get_lr_curves(
         spark, donors_df, cluster_ids, kernel_bandwidth, num_pdf_points

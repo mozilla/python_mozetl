@@ -25,5 +25,5 @@ def schema_from_json(path):
 
 
 # Generate module level schemas
-historical_schema = schema_from_json('historical_schema.json')
-topline_schema = schema_from_json('topline_schema.json')
+historical_schema = schema_from_json("historical_schema.json")
+topline_schema = schema_from_json("topline_schema.json")

@@ -9,8 +9,9 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-ColumnConfig = namedtuple('ColumnConfig',
-                          ['name', 'path', 'cleaning_func', 'struct_type'])
+ColumnConfig = namedtuple(
+    "ColumnConfig", ["name", "path", "cleaning_func", "struct_type"]
+)
 
 
 class DataFrameConfig(object):
@@ -29,10 +30,9 @@ class DataFrameConfig(object):
 
 def convert_pings(sqlContext, pings, data_frame_config):
     """Performs basic data pipelining on raw telemetry pings """
-    filtered_pings = get_pings_properties(
-        pings,
-        data_frame_config.get_paths()
-    ).filter(data_frame_config.ping_filter)
+    filtered_pings = get_pings_properties(pings, data_frame_config.get_paths()).filter(
+        data_frame_config.ping_filter
+    )
 
     return convert_rdd(sqlContext, filtered_pings, data_frame_config)
 
@@ -45,8 +45,7 @@ def _build_cell(ping, column_config):
         try:
             return func(raw_value)
         except Exception as e:
-            logger.warning("Unable to apply transform on data '%s': %s",
-                           raw_value, e)
+            logger.warning("Unable to apply transform on data '%s': %s", raw_value, e)
             return None
     else:
         return raw_value
@@ -62,6 +61,5 @@ def convert_rdd(sqlContext, raw_data, data_frame_config):
         return [_build_cell(ping, col) for col in data_frame_config.columns]
 
     return sqlContext.createDataFrame(
-        raw_data.map(ping_to_row),
-        schema=data_frame_config.toStructType()
+        raw_data.map(ping_to_row), schema=data_frame_config.toStructType()
     )

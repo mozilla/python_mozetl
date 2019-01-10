@@ -31,8 +31,26 @@ logger = logging.getLogger(__name__)
 
 
 # Limit the countries of interest to the following
-countries = set(['US', 'CA', 'BR', 'MX', 'FR', 'ES', 'IT', 'PL',
-                 'TR', 'RU', 'DE', 'IN', 'ID', 'CN', 'JP', 'GB'])
+countries = set(
+    [
+        "US",
+        "CA",
+        "BR",
+        "MX",
+        "FR",
+        "ES",
+        "IT",
+        "PL",
+        "TR",
+        "RU",
+        "DE",
+        "IN",
+        "ID",
+        "CN",
+        "JP",
+        "GB",
+    ]
+)
 
 
 def format_spark_path(bucket, prefix):
@@ -57,25 +75,22 @@ def reformat_data(df):
     topline_columns = {name: name for name in topline_schema.names}
 
     # Bucket results by the top k countries, and move the rest into other.
-    topline_columns['geo'] = (
-        F.when(F.col('geo').isin(list(countries)), F.col('geo'))
-         .otherwise('Other')
-         .alias('geo')
+    topline_columns["geo"] = (
+        F.when(F.col("geo").isin(list(countries)), F.col("geo"))
+        .otherwise("Other")
+        .alias("geo")
     )
 
     # Use the historical dataset's date format, drop the old date column
-    topline_columns['date'] = (
-        F.from_unixtime(
-            F.unix_timestamp(F.col('report_start'), 'yyyyMMdd'),
-            'yyyy-MM-dd')
-        .alias('date')
-    )
-    topline_columns.pop('report_start', None)
+    topline_columns["date"] = F.from_unixtime(
+        F.unix_timestamp(F.col("report_start"), "yyyyMMdd"), "yyyy-MM-dd"
+    ).alias("date")
+    topline_columns.pop("report_start", None)
 
     # The set of rows in the topline_summary can be categorized into
     # two general groups, attributes and aggregates. Attributes are
     # categorical in nature, while aggregates are numerical.
-    attributes = set(['geo', 'channel', 'os', 'date'])
+    attributes = set(["geo", "channel", "os", "date"])
     aggregates = set(topline_columns.keys()) - attributes
 
     # Cube the results. It's difficult to concisely express
@@ -83,21 +98,18 @@ def reformat_data(df):
     # attributes. Instead, ignore rows where the date field is empty,
     # which equates to ignoring aggregates over multiple dates.
     cubed_df = (
-        df
-        .select(*list(topline_columns.values()))
+        df.select(*list(topline_columns.values()))
         .cube(*attributes)
         .agg(*[F.sum(F.col(x)).alias(x) for x in aggregates])
-        .where(F.col('date').isNotNull())
-        .na.fill('all')  # the only fills in string fields
+        .where(F.col("date").isNotNull())
+        .na.fill("all")  # the only fills in string fields
     )
 
     # Remove rows where the aggregates fields are all zeroes, since
     # these take up extra space in the csv file.
-    filtered_df = (
-        cubed_df
-        .withColumn('total', sum([F.col(x) for x in aggregates]))
-        .where(F.col('total') > 0.0)
-    )
+    filtered_df = cubed_df.withColumn(
+        "total", sum([F.col(x) for x in aggregates])
+    ).where(F.col("total") > 0.0)
 
     # Generate select subexpressions based on the historical
     # schema. Columns missing in the topline_summary from the
@@ -106,8 +118,10 @@ def reformat_data(df):
     def default_column(name):
         return F.lit(0).alias(name)
 
-    column_expr = [name if name in topline_columns else default_column(name)
-                   for name in historical_schema.names]
+    column_expr = [
+        name if name in topline_columns else default_column(name)
+        for name in historical_schema.names
+    ]
     formatted_df = filtered_df.select(*column_expr)
 
     return formatted_df
@@ -121,39 +135,35 @@ def write_dashboard_data(df, bucket, prefix, mode):
 
 
 @click.command()
-@click.argument('mode', type=click.Choice(['weekly', 'monthly']))
-@click.argument('bucket')
-@click.argument('prefix')
-@click.option('--input_bucket',
-              default='telemetry-parquet',
-              help='Bucket of the ToplineSummary dataset')
-@click.option('--input_prefix',
-              default='topline_summary/v1',
-              help='Prefix of the ToplineSummary dataset')
+@click.argument("mode", type=click.Choice(["weekly", "monthly"]))
+@click.argument("bucket")
+@click.argument("prefix")
+@click.option(
+    "--input_bucket",
+    default="telemetry-parquet",
+    help="Bucket of the ToplineSummary dataset",
+)
+@click.option(
+    "--input_prefix",
+    default="topline_summary/v1",
+    help="Prefix of the ToplineSummary dataset",
+)
 def main(mode, bucket, prefix, input_bucket, input_prefix):
-    spark = (SparkSession
-             .builder
-             .appName("topline_dashboard")
-             .getOrCreate())
+    spark = SparkSession.builder.appName("topline_dashboard").getOrCreate()
 
-    logger.info('Generating {} topline_dashboard'.format(mode))
+    logger.info("Generating {} topline_dashboard".format(mode))
 
     # the inclusion of mode doesn't matter, but we need report_start
     input_path = format_spark_path(
-        input_bucket,
-        "{}/mode={}".format(input_prefix, mode)
+        input_bucket, "{}/mode={}".format(input_prefix, mode)
     )
-    logger.info('Reading input data from {}'.format(input_path))
+    logger.info("Reading input data from {}".format(input_path))
 
     # Note: The schema is applied to cast report_start to a string. The
     # DataFrameReader interface has a `.schema()` that mysteriously fails
     # in this context, so the schema is applied after reading the dataframe
     # into memory.
-    topline_summary = (
-        spark.read
-        .parquet(input_path)
-        .rdd.toDF(topline_schema)
-    )
+    topline_summary = spark.read.parquet(input_path).rdd.toDF(topline_schema)
 
     # modified topline_summary
     dashboard_data = reformat_data(topline_summary)
@@ -164,5 +174,5 @@ def main(mode, bucket, prefix, input_bucket, input_prefix):
     spark.stop()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

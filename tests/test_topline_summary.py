@@ -6,7 +6,12 @@ import pytest
 from click.testing import CliRunner
 from pyspark.sql import functions as F, Row
 from pyspark.sql.types import (
-    StructField, StructType, StringType, BooleanType, ArrayType, LongType
+    StructField,
+    StructType,
+    StringType,
+    BooleanType,
+    ArrayType,
+    LongType,
 )
 from six import text_type
 
@@ -23,7 +28,7 @@ def generate_dates(submission_date_s3, ts_offset=0, creation_offset=0):
     # variables for conversion
     epoch = arrow.get(0)
     seconds_per_day = topline.seconds_per_day
-    nanoseconds_per_second = 10**9
+    nanoseconds_per_second = 10 ** 9
 
     date_snippet = {
         "submission_date_s3": submission_date_s3,
@@ -32,40 +37,44 @@ def generate_dates(submission_date_s3, ts_offset=0, creation_offset=0):
         ),
         "timestamp": (
             int((timestamp - epoch).total_seconds() * nanoseconds_per_second)
-        )
+        ),
     }
 
     return date_snippet
 
 
-def search_row(engine='hooli', count=1, source='searchbar'):
-    return Row(
-        engine=text_type(engine),
-        source=text_type(source),
-        count=count
-    )
+def search_row(engine="hooli", count=1, source="searchbar"):
+    return Row(engine=text_type(engine), source=text_type(source), count=count)
 
 
-schema = StructType([
-    StructField("document_id", StringType(), True),
-    StructField("client_id", StringType(), True),
-    StructField("timestamp", StringType(), True),
-    StructField("is_default_browser", BooleanType(), True),
-    StructField("search_counts",
-                ArrayType(
-                    StructType([
+schema = StructType(
+    [
+        StructField("document_id", StringType(), True),
+        StructField("client_id", StringType(), True),
+        StructField("timestamp", StringType(), True),
+        StructField("is_default_browser", BooleanType(), True),
+        StructField(
+            "search_counts",
+            ArrayType(
+                StructType(
+                    [
                         StructField("engine", StringType(), True),
                         StructField("source", StringType(), True),
-                        StructField("count", LongType(), True)
-                    ]), True),
-                True),
-    StructField("country", StringType(), True),
-    StructField("profile_creation_date", LongType(), True),
-    StructField("normalized_channel", StringType(), True),
-    StructField("os", StringType(), True),
-    StructField("subsession_length", LongType(), True),
-    StructField("submission_date_s3", StringType(), True),
-])
+                        StructField("count", LongType(), True),
+                    ]
+                ),
+                True,
+            ),
+            True,
+        ),
+        StructField("country", StringType(), True),
+        StructField("profile_creation_date", LongType(), True),
+        StructField("normalized_channel", StringType(), True),
+        StructField("os", StringType(), True),
+        StructField("subsession_length", LongType(), True),
+        StructField("submission_date_s3", StringType(), True),
+    ]
+)
 
 
 start_ds = "20170601"
@@ -74,7 +83,7 @@ end_ds = "20170608"
 default_sample = {
     "document_id": "document-id",
     "client_id": "client-id",
-    "timestamp": int(1.4962752e+18),
+    "timestamp": int(1.4962752e18),
     "is_default_browser": True,
     "search_counts": [search_row()],
     "country": "US",
@@ -93,7 +102,7 @@ def generate_data(dataframe_factory):
         dataframe_factory.create_dataframe_with_key,
         base=default_sample,
         key="document_id",
-        schema=schema
+        schema=schema,
     )
 
 
@@ -111,7 +120,7 @@ def cool_df(dataframe_factory):
         "penguin suit",
         # anywhere
         "dinosaurs are always cool",
-        "chickens are dinosaurs, somewhat"
+        "chickens are dinosaurs, somewhat",
     ]
     snippets = [{"items": row} for row in rows]
     base = {"items": "foo"}
@@ -130,12 +139,7 @@ def test_column_like(cool_df):
 
 @pytest.mark.skip(reason="Bug 1377730 - Weekly Topline Summary aborts on save")
 def test_deduplicate_documents(dataframe_factory):
-    snippets = [
-        {"document_id": "1"},
-        {"document_id": "2"},
-        {"document_id": "2"},
-
-    ]
+    snippets = [{"document_id": "1"}, {"document_id": "2"}, {"document_id": "2"}]
     df = dataframe_factory.create_dataframe(snippets, default_sample, schema=schema)
 
     res = topline.clean_input(df, start_ds, end_ds)
@@ -147,7 +151,7 @@ def test_clean_input_date_range(generate_data):
         generate_dates("20170601"),
         generate_dates("20170602"),
         generate_dates("20170501"),
-        generate_dates("20170608")
+        generate_dates("20170608"),
     ]
 
     df = generate_data(snippets)
@@ -156,10 +160,7 @@ def test_clean_input_date_range(generate_data):
 
 
 def test_clean_input_country(generate_data):
-    snippets = [
-        {"country": "INVALID"},
-        {"country": "US"}
-    ]
+    snippets = [{"country": "INVALID"}, {"country": "US"}]
 
     df = generate_data(snippets)
     res = topline.clean_input(df, start_ds, end_ds)
@@ -168,10 +169,7 @@ def test_clean_input_country(generate_data):
 
 
 def test_clean_input_profile_creation(generate_data):
-    snippets = [
-        {"profile_creation_date": 1},
-        {"profile_creation_date": -1},
-    ]
+    snippets = [{"profile_creation_date": 1}, {"profile_creation_date": -1}]
 
     df = generate_data(snippets)
     res = topline.clean_input(df, start_ds, end_ds)
@@ -182,8 +180,14 @@ def test_clean_input_profile_creation(generate_data):
 
 def test_clean_input_os(generate_data):
     oses = [
-        "Windows_NT", "WINNT", "Darwin", "Linux",   # 4
-        "xWindows", "Mac", "SUN", "BaDsTrInG",      # 4
+        "Windows_NT",
+        "WINNT",
+        "Darwin",
+        "Linux",  # 4
+        "xWindows",
+        "Mac",
+        "SUN",
+        "BaDsTrInG",  # 4
     ]
     snippets = [{"os": os} for os in oses]
     df = generate_data(snippets)
@@ -211,13 +215,7 @@ def test_transform_searches(generate_data):
     snippets = [
         {"search_counts": None},
         {"search_counts": [search_row("google")]},
-        {
-            "country": "CA",
-            "search_counts": [
-                search_row("hooli"),
-                search_row("google")
-            ]
-        },
+        {"country": "CA", "search_counts": [search_row("hooli"), search_row("google")]},
     ]
 
     df = generate_data(snippets)
@@ -226,18 +224,15 @@ def test_transform_searches(generate_data):
     assert res.count() == 2
     assert res.groupBy().sum().first()["sum(google)"] == 2
     assert (
-        res
-        .groupBy("geo")
-        .sum()
-        .where(F.col("geo") == "CA")
-        .first()["sum(other)"]) == 1
+        res.groupBy("geo").sum().where(F.col("geo") == "CA").first()["sum(other)"]
+    ) == 1
 
 
 def test_transform_searches_filters_incontent(generate_data):
     snippets = [
-        {'search_counts': [search_row("google", source="in-content")]},   # no
-        {'search_counts': [search_row("google", source="contextmenu")]},  # yes
-        {'search_counts': [search_row("google", source="abouthome")]},    # yes
+        {"search_counts": [search_row("google", source="in-content")]},  # no
+        {"search_counts": [search_row("google", source="contextmenu")]},  # yes
+        {"search_counts": [search_row("google", source="abouthome")]},  # yes
     ]
 
     df = generate_data(snippets)
@@ -260,34 +255,20 @@ def test_transform_hours(generate_data):
     assert res.count() == 2
     assert res.groupBy().sum().first()["sum(hours)"] == 2.0
     assert (
-        res
-        .groupBy("geo")
-        .sum()
-        .where(F.col("geo") == "CA")
-        .first()["sum(hours)"]) == 1.0
+        res.groupBy("geo").sum().where(F.col("geo") == "CA").first()["sum(hours)"]
+    ) == 1.0
 
 
 def test_transform_clients(generate_data):
     submission_dates = generate_dates(start_ds)
     snippets = [
         # not new, default
-        {
-            "client_id": "0",
-            "profile_creation_date": 0,
-        },
+        {"client_id": "0", "profile_creation_date": 0},
         # new, but duplicate
-        {
-            "client_id": "1"
-        },
-        {
-            "client_id": "1",
-            "timestamp": submission_dates["timestamp"] + 1,
-        },
+        {"client_id": "1"},
+        {"client_id": "1", "timestamp": submission_dates["timestamp"] + 1},
         # new, not default
-        {
-            "client_id": "2",
-            "is_default_browser": False
-        }
+        {"client_id": "2", "is_default_browser": False},
     ]
 
     df = generate_data(snippets)
@@ -305,34 +286,30 @@ def test_job_weekly(spark, generate_data, monkeypatch, tmpdir):
     test_bucket = str(tmpdir)
     test_prefix = "prefix"
 
-    snippets = [
-        {"client_id": "1"},
-        {"client_id": "2"},
-        {"client_id": "3"},
-    ]
+    snippets = [{"client_id": "1"}, {"client_id": "2"}, {"client_id": "3"}]
 
     def mock_extract(spark_session, source_path):
         return generate_data(snippets)
-    monkeypatch.setattr(topline, 'extract', mock_extract)
+
+    monkeypatch.setattr(topline, "extract", mock_extract)
 
     def mock_format_spark_path(bucket, prefix):
         return "file://{}/{}".format(bucket, prefix)
-    monkeypatch.setattr(topline, 'format_spark_path', mock_format_spark_path)
+
+    monkeypatch.setattr(topline, "format_spark_path", mock_format_spark_path)
 
     runner = CliRunner()
-    args = [
-        start_ds,
-        "weekly",
-        test_bucket,
-        test_prefix,
-    ]
+    args = [start_ds, "weekly", test_bucket, test_prefix]
 
     result = runner.invoke(topline.main, args)
     assert result.exit_code == 0
 
     # assert path was written
-    assert os.path.isdir("{}/{}/v1/mode=weekly/report_start={}"
-                         .format(test_bucket, test_prefix, start_ds))
+    assert os.path.isdir(
+        "{}/{}/v1/mode=weekly/report_start={}".format(
+            test_bucket, test_prefix, start_ds
+        )
+    )
 
     # assert data can be read
     path = mock_format_spark_path(test_bucket, test_prefix)
@@ -343,5 +320,7 @@ def test_job_weekly(spark, generate_data, monkeypatch, tmpdir):
     assert row.actives == 3
 
     # the module schema does not include the mode, and the partition column is a string
-    df = df.drop("mode").withColumn("report_start", F.col("report_start").astype("string"))
+    df = df.drop("mode").withColumn(
+        "report_start", F.col("report_start").astype("string")
+    )
     assert df.schema == topline_schema

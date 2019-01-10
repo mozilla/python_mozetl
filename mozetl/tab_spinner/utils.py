@@ -12,10 +12,13 @@ def e10s_enabled_only(p):
 
 
 def long_spinners_keyed_by_build_and_client(ping):
-    return ((ping["application/buildId"][:8],
-             ping["clientId"]),
-            (ping["payload/histograms/FX_TAB_SWITCH_SPINNER_VISIBLE_LONG_MS"],
-             ping["payload/histograms/FX_TAB_SWITCH_SPINNER_VISIBLE_MS"]))
+    return (
+        (ping["application/buildId"][:8], ping["clientId"]),
+        (
+            ping["payload/histograms/FX_TAB_SWITCH_SPINNER_VISIBLE_LONG_MS"],
+            ping["payload/histograms/FX_TAB_SWITCH_SPINNER_VISIBLE_MS"],
+        ),
+    )
 
 
 def add_tuple_series(x, y):
@@ -39,14 +42,16 @@ def add_tuple_series(x, y):
 def bucket_by_long_severity_per_client(spinner_pair):
     buildId = spinner_pair[0][0]
     hist = spinner_pair[1][0]
-    named_index = ["unaffected",
-                   "0ms - 999ms",
-                   "1000ms - 2296ms",
-                   "2297ms - 5276ms",
-                   "5277ms - 12123ms",
-                   "12124ms - 27855ms",
-                   "27856ms - 63999ms",
-                   "64000ms+"]
+    named_index = [
+        "unaffected",
+        "0ms - 999ms",
+        "1000ms - 2296ms",
+        "2297ms - 5276ms",
+        "5277ms - 12123ms",
+        "12124ms - 27855ms",
+        "27856ms - 63999ms",
+        "64000ms+",
+    ]
 
     severity = pd.Series([0, 0, 0, 0, 0, 0, 0, 0], index=named_index)
 
@@ -75,14 +80,16 @@ def bucket_by_short_severity_per_client(spinner_pair):
     long_hist = spinner_pair[1][0]
     hist = spinner_pair[1][1]
 
-    named_index = ["unaffected",
-                   "not short",
-                   "0ms - 49ms",
-                   "50ms - 99ms",
-                   "100ms - 199ms",
-                   "200ms - 399ms",
-                   "400ms - 799ms",
-                   "800ms+"]
+    named_index = [
+        "unaffected",
+        "not short",
+        "0ms - 49ms",
+        "50ms - 99ms",
+        "100ms - 199ms",
+        "200ms - 399ms",
+        "400ms - 799ms",
+        "800ms+",
+    ]
 
     severity = pd.Series([0, 0, 0, 0, 0, 0, 0, 0], index=named_index)
 
@@ -114,50 +121,51 @@ def to_percentages(build_severities):
 
 
 def collect_aggregated_spinners(rdd, map_func):
-    collected_percentages = rdd \
-        .map(map_func) \
-        .reduceByKey(lambda x, y: x + y) \
-        .repartition(200) \
-        .map(to_percentages) \
+    collected_percentages = (
+        rdd.map(map_func)
+        .reduceByKey(lambda x, y: x + y)
+        .repartition(200)
+        .map(to_percentages)
         .collect()
+    )
 
     return sorted(collected_percentages, key=lambda result: result[0])
 
 
 def get_short_and_long_spinners(pings):
 
-    properties = ["clientId",
-                  "payload/histograms/FX_TAB_SWITCH_SPINNER_VISIBLE_LONG_MS",
-                  "payload/histograms/FX_TAB_SWITCH_SPINNER_VISIBLE_MS",
-                  "environment/system/os/name",
-                  "application/buildId",
-                  "environment/settings/e10sEnabled"]
+    properties = [
+        "clientId",
+        "payload/histograms/FX_TAB_SWITCH_SPINNER_VISIBLE_LONG_MS",
+        "payload/histograms/FX_TAB_SWITCH_SPINNER_VISIBLE_MS",
+        "environment/system/os/name",
+        "application/buildId",
+        "environment/settings/e10sEnabled",
+    ]
 
     ping_props = get_pings_properties(pings, properties)
 
     windows_pings_only = ping_props.filter(windows_only)
     e10s_enabled_on_windows_pings_only = windows_pings_only.filter(e10s_enabled_only)
-    grouped_spinners = e10s_enabled_on_windows_pings_only \
-        .repartition(200) \
-        .map(long_spinners_keyed_by_build_and_client) \
+    grouped_spinners = (
+        e10s_enabled_on_windows_pings_only.repartition(200)
+        .map(long_spinners_keyed_by_build_and_client)
         .reduceByKey(add_tuple_series)
+    )
 
     final_result_long = collect_aggregated_spinners(
-        grouped_spinners,
-        bucket_by_long_severity_per_client
+        grouped_spinners, bucket_by_long_severity_per_client
     )
 
     final_result_short = collect_aggregated_spinners(
-        grouped_spinners,
-        bucket_by_short_severity_per_client
+        grouped_spinners, bucket_by_short_severity_per_client
     )
 
-    if round(final_result_short[0][1][2:].sum(), 3) == round(final_result_long[0][1][1], 3):
+    if round(final_result_short[0][1][2:].sum(), 3) == round(
+        final_result_long[0][1][1], 3
+    ):
         print("Short and long counts match")
     else:
         print("Error: Short and long counts do not match")
 
-    return {
-        'long': final_result_long,
-        'short': final_result_short,
-    }
+    return {"long": final_result_long, "short": final_result_short}
