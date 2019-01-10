@@ -16,10 +16,7 @@ import boto3
 import botocore
 import click
 from boto3.s3.transfer import S3Transfer
-from moztelemetry.standards import (
-    filter_date_range,
-    count_distinct_clientids
-)
+from moztelemetry.standards import filter_date_range, count_distinct_clientids
 
 from mozetl import utils as U
 
@@ -29,7 +26,7 @@ logger = logging.getLogger(__name__)
 DEVELOPMENT = False
 
 STORAGE_BUCKET = "net-mozaws-prod-us-west-2-pipeline-analysis"
-STORAGE_SUB_DIR = 'spenrose/maudau' if DEVELOPMENT else 'mreid/maudau'
+STORAGE_SUB_DIR = "spenrose/maudau" if DEVELOPMENT else "mreid/maudau"
 MAUDAU_ROLLUP_BASENAME = "engagement_ratio.csv"
 MAUDAU_SNAPSHOT_TEMPLATE = "engagement_ratio.{}.csv"
 DASHBOARD_BUCKET = "net-mozaws-prod-metrics-data"
@@ -62,11 +59,12 @@ def count_active_users(frame, end_date, days_back):
     filtered = filter_date_range(
         frame,
         frame.subsession_start_date,
-        params['min_activity_iso'],
-        params['max_activity_iso'],
+        params["min_activity_iso"],
+        params["max_activity_iso"],
         frame.submission_date_s3,
-        params['min_submission_string'],
-        params['max_submission_string'])
+        params["min_submission_string"],
+        params["max_submission_string"],
+    )
     return count_distinct_clientids(filtered)
 
 
@@ -82,7 +80,7 @@ def parse_last_rollup(basename, start_date=None):
         reader = csv.DictReader(f)
         last_day = None
         for row in reader:
-            day = U.parse_as_submission_date(row['day'])
+            day = U.parse_as_submission_date(row["day"])
             if day >= since:
                 break
             if last_day is not None:
@@ -95,19 +93,16 @@ def parse_last_rollup(basename, start_date=None):
 
 
 def get_last_rollup(transferer):
-    '''
+    """
     Always chose the latest rollup, even if start_date is old.
-    '''
+    """
     basename = MAUDAU_ROLLUP_BASENAME
     key = os.path.join(STORAGE_SUB_DIR, basename)
     try:
-        transferer.download_file(
-            STORAGE_BUCKET,
-            key,
-            basename)
+        transferer.download_file(STORAGE_BUCKET, key, basename)
     except botocore.exceptions.ClientError as e:
         # If the file wasn't there, that's ok. Otherwise, abort!
-        if e.response['Error']['Code'] != "404":
+        if e.response["Error"]["Code"] != "404":
             raise e
         else:
             msg = "Did not find an existing file at '{}'".format(basename)
@@ -117,15 +112,18 @@ def get_last_rollup(transferer):
 
 
 def generate_counts(frame, since, until=None):
-    '''
+    """
     A thin wrapper around moztelemetry counting functions.
 
     :frame main_summary or an isomorphic subset
     :since DT.date()
     :until DT.date() (unit test convenience)
-    '''
-    cols = [frame.client_id.alias('clientId'),
-            'subsession_start_date', 'submission_date_s3']
+    """
+    cols = [
+        frame.client_id.alias("clientId"),
+        "subsession_start_date",
+        "submission_date_s3",
+    ]
     narrow = frame.select(cols)
     updates = []
     today = DT.date.today()
@@ -136,21 +134,21 @@ def generate_counts(frame, since, until=None):
         dau = count_active_users(narrow, start, 0)
         mau = count_active_users(narrow, start, MONTH)
         day = U.format_as_submission_date(start)
-        d = {'day': day, 'dau': dau, 'mau': mau, 'generated_on': generated}
+        d = {"day": day, "dau": dau, "mau": mau, "generated_on": generated}
         updates.append(d)
         start += DT.timedelta(1)
     return updates
 
 
 def write_locally(results):
-    '''
+    """
     :results [{'day': '%Y%m%d', 'dau': <int>,
               'mau': <int>, 'generated_on': '%Y%m%d'}, ...]
-    '''
+    """
     publication_date = U.format_as_submission_date(DT.date.today())
     basename = MAUDAU_SNAPSHOT_TEMPLATE.format(publication_date)
     cols = ["day", "dau", "mau", "generated_on"]
-    with open(basename, 'w') as f:
+    with open(basename, "w") as f:
         writer = csv.DictWriter(f, cols)
         writer.writeheader()
         writer.writerows(results)
@@ -158,10 +156,10 @@ def write_locally(results):
 
 
 def publish_to_s3(s3client, bucket, prefix, basename):
-    '''
+    """
     Write the file twice to storage (once dated, once as "latest")
     and once to the production dashboard.
-    '''
+    """
     dated_key = os.path.join(prefix, basename)
     U.upload_file_to_s3(s3client, basename, bucket, dated_key)
     latest_key = os.path.join(prefix, MAUDAU_ROLLUP_BASENAME)
@@ -172,22 +170,22 @@ def publish_to_s3(s3client, bucket, prefix, basename):
 
 
 @click.command()
-@click.option('--input_bucket',
-              default='telemetry-parquet',
-              help='Bucket of the input dataset')
-@click.option('--input_prefix',
-              default='main_summary/v4',
-              help='Prefix of the input dataset')
-@click.option('--output_bucket',
-              default=STORAGE_BUCKET,
-              help='Bucket of the output dataset')
-@click.option('--output_prefix',
-              default=STORAGE_SUB_DIR,
-              help='Prefix of the output dataset')
+@click.option(
+    "--input_bucket", default="telemetry-parquet", help="Bucket of the input dataset"
+)
+@click.option(
+    "--input_prefix", default="main_summary/v4", help="Prefix of the input dataset"
+)
+@click.option(
+    "--output_bucket", default=STORAGE_BUCKET, help="Bucket of the output dataset"
+)
+@click.option(
+    "--output_prefix", default=STORAGE_SUB_DIR, help="Prefix of the output dataset"
+)
 def main(input_bucket, input_prefix, output_bucket, output_prefix):
     """Calculate Firefox monthly- and daily-active users."""
 
-    s3client = boto3.client('s3', 'us-west-2')
+    s3client = boto3.client("s3", "us-west-2")
     transferer = S3Transfer(s3client)
     last_rollup_basename = get_last_rollup(transferer)
     if last_rollup_basename:
@@ -196,12 +194,7 @@ def main(input_bucket, input_prefix, output_bucket, output_prefix):
     else:
         since, carryover = None, []
         logging.info("Generating counts since beginning")
-    spark = (
-        SparkSession
-        .builder
-        .appName("maudau")
-        .getOrCreate()
-    )
+    spark = SparkSession.builder.appName("maudau").getOrCreate()
     path = U.format_spark_path(input_bucket, input_prefix)
     logging.info("Loading main_summary from {}".format(path))
     main_summary = spark.read.option("mergeSchema", "true").parquet(path)

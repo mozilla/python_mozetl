@@ -20,7 +20,7 @@ def format_date(start_date, format, offset=None):
     return start_date.format(format)
 
 
-def to_datetime(col, format='yyyyMMdd'):
+def to_datetime(col, format="yyyyMMdd"):
     """Convert a StringType column into a DateType column.
 
     Default format is `yyyyMMdd`. Formats are specified by SimpleDateFormats_.
@@ -29,15 +29,13 @@ def to_datetime(col, format='yyyyMMdd'):
 
     .. _SimpleDateFormats: http://docs.oracle.com/javase/tutorial/i18n/format/simpleDateFormat.html
     """
-    return (
-        F.from_unixtime(
-            F.unix_timestamp(col, format))
-        .alias("to_datetime({}, {})".format(col, format))
+    return F.from_unixtime(F.unix_timestamp(col, format)).alias(
+        "to_datetime({}, {})".format(col, format)
     )
 
 
 def format_spark_path(bucket, prefix):
-    return 's3://{}/{}'.format(bucket, prefix)
+    return "s3://{}/{}".format(bucket, prefix)
 
 
 def preprocess_col_expr(mapping):

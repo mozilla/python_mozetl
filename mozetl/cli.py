@@ -8,14 +8,16 @@ from mozetl.engagement.retention import job as retention_job
 from mozetl.experimentsdaily import rollup as experimentsdaily
 from mozetl.landfill import sampler as landfill_sampler
 from mozetl.maudau import maudau
-from mozetl.search.aggregates import (
-    search_aggregates_click, search_clients_daily_click
-)
+from mozetl.search.aggregates import search_aggregates_click, search_clients_daily_click
 from mozetl.sync import bookmark_validation
 from mozetl.taar import (
-    taar_locale, taar_similarity,
-    taar_dynamo, taar_amodump, taar_amowhitelist,
-    taar_lite_guidguid, taar_lite_guidranking
+    taar_locale,
+    taar_similarity,
+    taar_dynamo,
+    taar_amodump,
+    taar_amowhitelist,
+    taar_lite_guidguid,
+    taar_lite_guidranking,
 )
 
 
@@ -46,5 +48,5 @@ entry_point.add_command(landfill_sampler.main, "landfill_sampler")
 # Kept for backwards compatibility
 entry_point.add_command(search_aggregates_click, "search_dashboard")
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     entry_point()

@@ -46,17 +46,16 @@ EMPTY_TUPLE = (0, 0, [], [])
 
 
 class CredentialSingleton:
-
     def __init__(self):
         self._credentials = None
         self._lock = threading.RLock()
 
     def __getstate__(self):
-        return {'credentials': self._credentials}
+        return {"credentials": self._credentials}
 
     def __setstate__(self, state):
         # This is basically the constructor all over again
-        self._credentials = state['credentials']
+        self._credentials = state["credentials"]
         self._lock = threading.RLock()
 
     def getInstance(self, prod_iam_role):
@@ -67,33 +66,39 @@ class CredentialSingleton:
                 # Credentials should expire if the expiry time is sooner
                 # than the next 5 minutes
                 five_minute_from_now = datetime.now() + timedelta(minutes=5)
-                if self._credentials['expiry'] <= five_minute_from_now:
+                if self._credentials["expiry"] <= five_minute_from_now:
                     self._credentials = None
 
             if self._credentials is None:
                 self._credentials = self.get_new_creds(prod_iam_role)
 
-            return self._credentials['cred_args']
+            return self._credentials["cred_args"]
 
     def get_new_creds(self, prod_iam_role):
-        client = boto3.client('sts')
-        session_name = "taar_dynamo_%s_%s" % (os.getpid(),
-                                              threading.current_thread().ident)
+        client = boto3.client("sts")
+        session_name = "taar_dynamo_%s_%s" % (
+            os.getpid(),
+            threading.current_thread().ident,
+        )
 
         # 30 minutes to flush 50 records should be ridiculously
         # generous
-        response = client.assume_role(RoleArn=prod_iam_role,
-                                      RoleSessionName=session_name,
-                                      DurationSeconds=60*30)
+        response = client.assume_role(
+            RoleArn=prod_iam_role, RoleSessionName=session_name, DurationSeconds=60 * 30
+        )
 
-        raw_creds = response['Credentials']
-        cred_args = {'aws_access_key_id': raw_creds['AccessKeyId'],
-                     'aws_secret_access_key': raw_creds['SecretAccessKey'],
-                     'aws_session_token': raw_creds['SessionToken']}
+        raw_creds = response["Credentials"]
+        cred_args = {
+            "aws_access_key_id": raw_creds["AccessKeyId"],
+            "aws_secret_access_key": raw_creds["SecretAccessKey"],
+            "aws_session_token": raw_creds["SessionToken"],
+        }
 
         # Set the expiry of this credential to be 30 minutes
-        return {'expiry': datetime.now() + timedelta(minutes=30),
-                'cred_args': cred_args}
+        return {
+            "expiry": datetime.now() + timedelta(minutes=30),
+            "cred_args": cred_args,
+        }
 
 
 def json_serial(obj):
@@ -151,8 +156,8 @@ def list_transformer(row_jsonstr):
     start_date = start_date.date()
     start_date = start_date.strftime("%Y%m%d")
     jdata = json.loads(json_str)
-    jdata['client_id'] = client_id
-    jdata['start_date'] = start_date
+    jdata["client_id"] = client_id
+    jdata["start_date"] = start_date
 
     # Filter out keys with an empty value
     jdata = {key: value for key, value in list(jdata.items()) if value}
@@ -174,25 +179,25 @@ class DynamoReducer(object):
     def __init__(self, prod_iam_role, region_name=None, table_name=None):
 
         if region_name is None:
-            region_name = 'us-west-2'
+            region_name = "us-west-2"
 
         if table_name is None:
-            table_name = 'taar_addon_data'
+            table_name = "taar_addon_data"
 
         self._region_name = region_name
         self._table_name = table_name
         self._prod_iam_role = prod_iam_role
 
     def hash_client_ids(self, data_tuple):
-        '''
+        """
         # Clobber the client_id by using sha256 hashes encoded as hex
         # Based on the js code in Fx
 
-        '''
+        """
 
         for item in data_tuple[2]:
-            client_id = item['client_id']
-            item['client_id'] = hash_telemetry_id(client_id)
+            client_id = item["client_id"]
+            item["client_id"] = hash_telemetry_id(client_id)
 
     def push_to_dynamo(self, data_tuple):
         """
@@ -205,25 +210,27 @@ class DynamoReducer(object):
         # Transform the data into something that DynamoDB will always
         # accept
         # Set TTL to 60 days from now
-        ttl = int(time.time()) + 60*60*24*60
+        ttl = int(time.time()) + 60 * 60 * 24 * 60
 
         self.hash_client_ids(data_tuple)
 
-        item_list = [{'client_id': item['client_id'],
-                      'TTL': ttl,
-                      'json_payload': DynamoBinary(
-                                          zlib.compress(json.dumps(item,
-                                                                   default=json_serial)
-                                                        .encode('utf8'))
-                                      )
-                      } for item in data_tuple[2]]
+        item_list = [
+            {
+                "client_id": item["client_id"],
+                "TTL": ttl,
+                "json_payload": DynamoBinary(
+                    zlib.compress(json.dumps(item, default=json_serial).encode("utf8"))
+                ),
+            }
+            for item in data_tuple[2]
+        ]
 
         # Obtain credentials from the singleton
         cred_args = credentials.getInstance(self._prod_iam_role)
-        conn = boto3.resource('dynamodb', region_name=self._region_name, **cred_args)
+        conn = boto3.resource("dynamodb", region_name=self._region_name, **cred_args)
         table = conn.Table(self._table_name)
         try:
-            with table.batch_writer(overwrite_by_pkeys=['client_id']) as batch:
+            with table.batch_writer(overwrite_by_pkeys=["client_id"]) as batch:
                 for item in item_list:
                     batch.put_item(Item=item)
             return []
@@ -235,8 +242,7 @@ class DynamoReducer(object):
                 return []
             try:
                 error_accum = []
-                conn = boto3.resource('dynamodb',
-                                      region_name=self._region_name)
+                conn = boto3.resource("dynamodb", region_name=self._region_name)
                 table = conn.Table(self._table_name)
                 for item in item_list:
                     try:
@@ -257,16 +263,18 @@ class DynamoReducer(object):
         number of JSON blobs are merged, the list of JSON is batch written
         into DynamoDB.
         """
-        new_list = [list_a[0] + list_b[0],
-                    list_a[1] + list_b[1],
-                    list_a[2] + list_b[2],
-                    list_a[3] + list_b[3]]
+        new_list = [
+            list_a[0] + list_b[0],
+            list_a[1] + list_b[1],
+            list_a[2] + list_b[2],
+            list_a[3] + list_b[3],
+        ]
 
         if new_list[1] >= MAX_RECORDS or force_write:
             error_blobs = self.push_to_dynamo(new_list)
             if len(error_blobs) > 0:
                 # Gather up to maximum 50 error blobs
-                new_list[3].extend(error_blobs[:50-new_list[1]])
+                new_list[3].extend(error_blobs[: 50 - new_list[1]])
                 # Zero out the number of accumulated records
                 new_list[1] = 0
             else:
@@ -320,36 +328,39 @@ def extract_transform(spark, run_date, sample_rate=0):
     # multiple rows per client. We will use it to filter out the
     # full table with all the columns we require.
 
-    clientShortList = datasetForDate.select("client_id",
-                                            'subsession_start_date',
-                                            row_number().over(
-                                                Window.partitionBy('client_id')
-                                                .orderBy(desc('subsession_start_date'))
-                                            ).alias('clientid_rank'))
+    clientShortList = datasetForDate.select(
+        "client_id",
+        "subsession_start_date",
+        row_number()
+        .over(Window.partitionBy("client_id").orderBy(desc("subsession_start_date")))
+        .alias("clientid_rank"),
+    )
     print("clientShortList selected")
-    clientShortList = clientShortList.where('clientid_rank == 1').drop('clientid_rank')
+    clientShortList = clientShortList.where("clientid_rank == 1").drop("clientid_rank")
     print("clientShortList selected")
 
-    select_fields = ["client_id",
-                     "subsession_start_date",
-                     "subsession_length",
-                     "city",
-                     "locale",
-                     "os",
-                     "places_bookmarks_count",
-                     "scalar_parent_browser_engagement_tab_open_event_count",
-                     "scalar_parent_browser_engagement_total_uri_count",
-                     "scalar_parent_browser_engagement_unique_domains_count",
-                     "active_addons",
-                     "disabled_addons_ids"]
+    select_fields = [
+        "client_id",
+        "subsession_start_date",
+        "subsession_length",
+        "city",
+        "locale",
+        "os",
+        "places_bookmarks_count",
+        "scalar_parent_browser_engagement_tab_open_event_count",
+        "scalar_parent_browser_engagement_total_uri_count",
+        "scalar_parent_browser_engagement_unique_domains_count",
+        "active_addons",
+        "disabled_addons_ids",
+    ]
     dataSubset = datasetForDate.select(*select_fields)
     print("datasetForDate select fields completed")
 
     # Join the two tables: only the elements in both dataframes
     # will make it through.
-    clientsData = dataSubset.join(clientShortList,
-                                  ["client_id",
-                                   'subsession_start_date'])
+    clientsData = dataSubset.join(
+        clientShortList, ["client_id", "subsession_start_date"]
+    )
 
     print("clientsData join with client_id and subsession_start_date")
 
@@ -358,17 +369,19 @@ def extract_transform(spark, run_date, sample_rate=0):
 
     print("clientsData select of client_id and subsession_start_date completed")
 
-    jsonDataRDD = clientsData.select("city",
-                                     "subsession_start_date",
-                                     "subsession_length",
-                                     "locale",
-                                     "os",
-                                     "places_bookmarks_count",
-                                     "scalar_parent_browser_engagement_tab_open_event_count",
-                                     "scalar_parent_browser_engagement_total_uri_count",
-                                     "scalar_parent_browser_engagement_unique_domains_count",
-                                     "active_addons",
-                                     "disabled_addons_ids").toJSON()
+    jsonDataRDD = clientsData.select(
+        "city",
+        "subsession_start_date",
+        "subsession_length",
+        "locale",
+        "os",
+        "places_bookmarks_count",
+        "scalar_parent_browser_engagement_tab_open_event_count",
+        "scalar_parent_browser_engagement_total_uri_count",
+        "scalar_parent_browser_engagement_unique_domains_count",
+        "active_addons",
+        "disabled_addons_ids",
+    ).toJSON()
 
     print("jsonDataRDD selected")
     rdd = subset.rdd.zip(jsonDataRDD)
@@ -394,42 +407,40 @@ def load_rdd(prod_iam_role, region_name, table_name, rdd):
 
     # Apply the reducer one more time to force any lingering
     # data to get pushed into DynamoDB.
-    final_reduction_output = dynReducer.dynamo_reducer(reduction_output,
-                                                       EMPTY_TUPLE,
-                                                       force_write=True)
+    final_reduction_output = dynReducer.dynamo_reducer(
+        reduction_output, EMPTY_TUPLE, force_write=True
+    )
     return final_reduction_output
 
 
 def run_etljob(spark, run_date, region_name, table_name, prod_iam_role, sample_rate):
-    reduction_output = etl(spark,
-                           run_date,
-                           region_name,
-                           table_name,
-                           prod_iam_role,
-                           sample_rate)
+    reduction_output = etl(
+        spark, run_date, region_name, table_name, prod_iam_role, sample_rate
+    )
     report_data = (reduction_output[0], reduction_output[1])
     print("=" * 40)
-    print("%d records inserted to DynamoDB.\n%d records remaining in queue." % report_data)
+    print(
+        "%d records inserted to DynamoDB.\n%d records remaining in queue." % report_data
+    )
     print("=" * 40)
     return reduction_output
 
 
 @click.command()
-@click.option('--date', required=True)  # YYYYMMDD
-@click.option('--region', default='us-west-2')
-@click.option('--table', default='taar_addon_data_20180206')
-@click.option('--prod-iam-role',
-              default='arn:aws:iam::361527076523:role/taar-write-dynamodb-from-dev')
-@click.option('--sample-rate', default=0)
+@click.option("--date", required=True)  # YYYYMMDD
+@click.option("--region", default="us-west-2")
+@click.option("--table", default="taar_addon_data_20180206")
+@click.option(
+    "--prod-iam-role",
+    default="arn:aws:iam::361527076523:role/taar-write-dynamodb-from-dev",
+)
+@click.option("--sample-rate", default=0)
 def main(date, region, table, prod_iam_role, sample_rate):
     APP_NAME = "HBaseAddonRecommenderView"
     conf = SparkConf().setAppName(APP_NAME)
     spark = SparkSession.builder.config(conf=conf).getOrCreate()
     date_obj = datetime.strptime(date, "%Y%m%d")
-    reduction_output = run_etljob(spark,
-                                  date_obj,
-                                  region,
-                                  table,
-                                  prod_iam_role,
-                                  sample_rate)
+    reduction_output = run_etljob(
+        spark, date_obj, region, table, prod_iam_role, sample_rate
+    )
     pprint(reduction_output)

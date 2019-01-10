@@ -21,16 +21,14 @@ default_sample = {
     "actives": 1,
     "new_records": 1,
     "default": 1,
-    "report_start": '20160101',
+    "report_start": "20160101",
 }
 
 
 @pytest.fixture()
 def generate_data(dataframe_factory):
     return functools.partial(
-        dataframe_factory.create_dataframe,
-        base=default_sample,
-        schema=topline_schema
+        dataframe_factory.create_dataframe, base=default_sample, schema=topline_schema
     )
 
 
@@ -41,18 +39,14 @@ def simple_df(generate_data):
 
 @pytest.fixture()
 def multi_df(generate_data):
-    snippets = [
-        {'geo': 'CA'},
-        {'channel': 'release'},
-        {'os': 'Linux'}
-    ]
+    snippets = [{"geo": "CA"}, {"channel": "release"}, {"os": "Linux"}]
     return generate_data(snippets)
 
 
 # reformatted data filters out ROW into Other
 def test_reformat_filters_ROW(generate_data):
     # Maldives is not a target region
-    input_df = generate_data([{'geo': 'MV'}])
+    input_df = generate_data([{"geo": "MV"}])
     df = topline.reformat_data(input_df)
 
     assert df.where("geo='MV'").count() == 0
@@ -107,44 +101,38 @@ def test_reformat_conforms_to_historical_schema(simple_df):
 @mock_s3
 def test_cli_monthly(simple_df, tmpdir, monkeypatch):
     # set up moto with a fake bucket
-    bucket = 'test-bucket'
-    prefix = 'test-prefix'
+    bucket = "test-bucket"
+    prefix = "test-prefix"
 
-    conn = boto3.resource('s3', region_name='us-west-2')
+    conn = boto3.resource("s3", region_name="us-west-2")
     conn.create_bucket(Bucket=bucket)
 
     # change s3_path to use file:// protocol
     def mock_format_spark_path(bucket, prefix):
         return "file://{}/{}".format(bucket, prefix)
-    monkeypatch.setattr(topline, 'format_spark_path',
-                        mock_format_spark_path)
+
+    monkeypatch.setattr(topline, "format_spark_path", mock_format_spark_path)
 
     # write test data to local path
     input_bucket = str(tmpdir)
     test_path = topline.format_spark_path(
-        input_bucket,
-        'topline_summary/v1/mode=monthly'
+        input_bucket, "topline_summary/v1/mode=monthly"
     )
-    simple_df.write.partitionBy('report_start').parquet(test_path)
+    simple_df.write.partitionBy("report_start").parquet(test_path)
 
     # Run the application via the cli
     runner = CliRunner()
-    args = [
-        'monthly',
-        bucket,
-        prefix,
-        '--input_bucket', input_bucket
-    ]
+    args = ["monthly", bucket, prefix, "--input_bucket", input_bucket]
     result = runner.invoke(topline.main, args)
     assert result.exit_code == 0
 
     # read results using boto
     body = (
-        conn
-        .Object(bucket, prefix + '/topline-monthly.csv')
-        .get()['Body']
-        .read().decode('utf-8')
+        conn.Object(bucket, prefix + "/topline-monthly.csv")
+        .get()["Body"]
+        .read()
+        .decode("utf-8")
     )
 
     # header + 8x rows = 9
-    assert len(body.rstrip().split('\n')) == 9
+    assert len(body.rstrip().split("\n")) == 9

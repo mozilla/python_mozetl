@@ -289,16 +289,18 @@ def test_get_samples(spark, dataframe_factory):
         }
 
     data = [
-        client_row("c-1", "20181219", 5), client_row("c-1", "20181220", 20),
+        client_row("c-1", "20181219", 5),
+        client_row("c-1", "20181220", 20),
         client_row("c-2", "20181220"),
         client_row("c-3", "20181001"),
     ]
 
-    clients_sample = dataframe_factory.create_dataframe(snippets=data, base=default_sample,
-                                                        schema=clientsdaily_schema)
+    clients_sample = dataframe_factory.create_dataframe(
+        snippets=data, base=default_sample, schema=clientsdaily_schema
+    )
     clients_sample.createOrReplaceTempView("clients_daily")
 
-    samples_df = taar_similarity.get_samples(spark, date_from='20181201')
+    samples_df = taar_similarity.get_samples(spark, date_from="20181201")
     samples_df.cache()
 
     # There should be two entries since `c-1` occurred twice in original dataset
@@ -311,7 +313,7 @@ def test_get_samples(spark, dataframe_factory):
 
 def test_get_addons(spark, addon_whitelist, multi_clusters_df):
 
-    samples_df = taar_similarity.get_samples(spark, date_from='20180101')
+    samples_df = taar_similarity.get_samples(spark, date_from="20180101")
 
     # Force caching in the test case
     samples_df.cache()
@@ -330,7 +332,7 @@ def test_compute_donors(spark, addon_whitelist, multi_clusters_df):
     # Perform the clustering on our test data. We expect
     # 3 clusters out of this and 10 donors.
     _, donors_df = taar_similarity.get_donors(
-        spark, 3, 10, addon_whitelist, date_from='20180101', random_seed=42
+        spark, 3, 10, addon_whitelist, date_from="20180101", random_seed=42
     )
     donors = taar_similarity.format_donors_dictionary(donors_df)
 

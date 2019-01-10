@@ -84,7 +84,8 @@ default_sample = {
             "signed_state": 2,
             "type": "extension",
             "user_disabled": False,
-        }, {
+        },
+        {
             "addon_id": "non-whitelisted-addon",
             "app_disabled": False,
             "blocklisted": False,
@@ -93,7 +94,7 @@ default_sample = {
             "signed_state": 2,
             "type": "extension",
             "user_disabled": False,
-        }
+        },
     ],
 }
 
@@ -169,7 +170,7 @@ def test_generate_dictionary(spark, multi_locales_df):
 
     # The "en-US" locale must not be reported: we set it to a low
     # frequency on |multi_locale_df|.
-    expected = {'it-IT': [['test-guid-0001', 1.0]]}
+    expected = {"it-IT": [["test-guid-0001", 1.0]]}
 
     actual = taar_locale.generate_dictionary(spark, 5)
     assert actual == expected

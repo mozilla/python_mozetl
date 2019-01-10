@@ -52,8 +52,7 @@ def column_like(name, patterns, default):
     op = F
     for label in patterns:
         cond = reduce(
-            operator.__or__,
-            [F.col(name).like(pat) for pat in patterns[label]]
+            operator.__or__, [F.col(name).like(pat) for pat in patterns[label]]
         )
         op = op.when(cond, label)
     return op.otherwise(default)
@@ -93,25 +92,28 @@ def clean_input(dataframe, start, end):
 
     # convert profile creation date into seconds (day -> seconds)
     columns["profile_creation_date"] = (
-        F.when(F.col("profile_creation_date") >= 0,
-               F.col("profile_creation_date") * seconds_per_day)
+        F.when(
+            F.col("profile_creation_date") >= 0,
+            F.col("profile_creation_date") * seconds_per_day,
+        )
         .otherwise(0.0)
         .cast(types.DoubleType())
     )
 
     # generate hours of usage from subsession length (seconds -> hours)
     columns["hours"] = (
-        F.when((F.col("subsession_length") >= 0) &
-               (F.col("subsession_length") < 180 * seconds_per_day),
-               F.col("subsession_length") / seconds_per_hour)
+        F.when(
+            (F.col("subsession_length") >= 0)
+            & (F.col("subsession_length") < 180 * seconds_per_day),
+            F.col("subsession_length") / seconds_per_hour,
+        )
         .otherwise(0.0)
         .cast(types.DoubleType())
     )
 
     # clean the dataset
     clean = (
-        dataframe
-        .where(F.col("submission_date_s3") >= start)
+        dataframe.where(F.col("submission_date_s3") >= start)
         .where(F.col("submission_date_s3") < end)
         .select([expr.alias(name) for name, expr in columns.items()])
     )
@@ -130,9 +132,7 @@ def search_aggregates(dataframe, attributes):
         "yahoo": ["%Yahoo%", "%yahoo%"],
     }
 
-    s_engine = (
-        column_like("search_count.engine", patterns, "other").alias("engine")
-    )
+    s_engine = column_like("search_count.engine", patterns, "other").alias("engine")
     s_count = (
         F.when(F.col("search_count.count") > 0, F.col("search_count.count"))
         .otherwise(0)
@@ -141,10 +141,11 @@ def search_aggregates(dataframe, attributes):
 
     # generate the search aggregates by exploding and pivoting
     search = (
-        dataframe
-        .withColumn("search_count", F.explode("search_counts"))
-        .where(F.col("search_count.source").isNull() |
-               F.col("search_count.source").isin(SEARCH_SOURCE_WHITELIST))
+        dataframe.withColumn("search_count", F.explode("search_counts"))
+        .where(
+            F.col("search_count.source").isNull()
+            | F.col("search_count.source").isin(SEARCH_SOURCE_WHITELIST)
+        )
         .select("country", "channel", "os", s_engine, s_count)
         .groupBy(attributes)
         .pivot("engine", search_labels)
@@ -168,26 +169,23 @@ def client_aggregates(dataframe, timestamp, attributes):
     select_expr = {col: F.col(col) for col in attributes}
 
     select_expr["new_client"] = F.when(
-        F.col("profile_creation_date") >= timestamp, 1).otherwise(0)
+        F.col("profile_creation_date") >= timestamp, 1
+    ).otherwise(0)
 
-    select_expr["default_client"] = F.when(
-        F.col("is_default_browser"), 1).otherwise(0)
+    select_expr["default_client"] = F.when(F.col("is_default_browser"), 1).otherwise(0)
 
     select_expr["clientid_rank"] = F.row_number().over(
-        Window
-        .partitionBy("client_id")
-        .orderBy(F.desc("timestamp"))
+        Window.partitionBy("client_id").orderBy(F.desc("timestamp"))
     )
 
     clients = (
-        dataframe
-        .select([expr.alias(name) for name, expr in select_expr.items()])
+        dataframe.select([expr.alias(name) for name, expr in select_expr.items()])
         .where("clientid_rank = 1")
         .groupBy(attributes)
         .agg(
             F.count("*").alias("actives"),
             F.sum("new_client").alias("new_records"),
-            F.sum("default_client").alias("default")
+            F.sum("default_client").alias("default"),
         )
     )
 
@@ -213,11 +211,10 @@ def transform(dataframe, start, mode):
 
     # take the outer join of all aggregates and replace null values with zeros
     return (
-        clients
-        .join(searches, attributes, "outer")
+        clients.join(searches, attributes, "outer")
         .join(hours, attributes, "outer")
-        .withColumnRenamed('country', 'geo')
-        .withColumn('crashes', F.lit(0).astype("long"))
+        .withColumnRenamed("country", "geo")
+        .withColumn("crashes", F.lit(0).astype("long"))
         .na.fill(0)
     )
 
@@ -245,50 +242,32 @@ def extract(spark, path):
     path: path to parquet files in s3
     ds_start: inclusive date
     """
-    return (
-        spark.read
-        .option("mergeSchema", "true")
-        .parquet(path)
-    )
+    return spark.read.option("mergeSchema", "true").parquet(path)
 
 
 def save(dataframe, bucket, prefix, version, mode, start_date):
-    prefix = (
-        "{}/v{}/mode={}/report_start={}"
-        .format(prefix, version, mode, start_date)
-    )
+    prefix = "{}/v{}/mode={}/report_start={}".format(prefix, version, mode, start_date)
     location = format_spark_path(bucket, prefix)
     logger.info("Writing topline summary to {}".format(location))
 
     # report start is implicit in the partition path
     fields = [col for col in topline_schema.names if col != "report_start"]
-    (
-        dataframe
-        .select(fields)
-        .repartition(1)
-        .write
-        .parquet(location, mode="overwrite")
-    )
+    (dataframe.select(fields).repartition(1).write.parquet(location, mode="overwrite"))
 
 
 @click.command()
-@click.argument('start_date')
-@click.argument('mode', type=click.Choice(['weekly', 'monthly']))
-@click.argument('bucket')
-@click.argument('prefix')
-@click.option('--input_bucket',
-              default='telemetry-parquet',
-              help='Bucket of the input dataset')
-@click.option('--input_prefix',
-              default='main_summary/v4',
-              help='Prefix of the input dataset')
+@click.argument("start_date")
+@click.argument("mode", type=click.Choice(["weekly", "monthly"]))
+@click.argument("bucket")
+@click.argument("prefix")
+@click.option(
+    "--input_bucket", default="telemetry-parquet", help="Bucket of the input dataset"
+)
+@click.option(
+    "--input_prefix", default="main_summary/v4", help="Prefix of the input dataset"
+)
 def main(start_date, mode, bucket, prefix, input_bucket, input_prefix):
-    spark = (
-        SparkSession
-        .builder
-        .appName("topline_summary")
-        .getOrCreate()
-    )
+    spark = SparkSession.builder.appName("topline_summary").getOrCreate()
 
     version = 1
     source_path = format_spark_path(input_bucket, input_prefix)

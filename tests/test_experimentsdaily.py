@@ -5,24 +5,22 @@ from pyspark.sql.types import StructType
 
 
 EXPECTED_INTEGER_VALUES = {
-    'active_addons_count_mean': 1227,
-    'crashes_detected_content_sum': 7,
-    'first_paint_mean': 816743,
-    'pings_aggregated_by_this_row': 98,
-    'search_count_all_sum': 49
+    "active_addons_count_mean": 1227,
+    "crashes_detected_content_sum": 7,
+    "first_paint_mean": 816743,
+    "pings_aggregated_by_this_row": 98,
+    "search_count_all_sum": 49,
 }
 
 
 @pytest.fixture
 def sample_data(spark):
     root = os.path.dirname(__file__)
-    schema_path = os.path.join(root, 'resources',
-                               'experiments-summary.schema.json')
+    schema_path = os.path.join(root, "resources", "experiments-summary.schema.json")
     with open(schema_path) as f:
         d = json.load(f)
         schema = StructType.fromJson(d)
-    rows_path = os.path.join(root, 'resources',
-                             'experiments-summary-190-rows.json')
+    rows_path = os.path.join(root, "resources", "experiments-summary-190-rows.json")
     # FAILFAST causes us to abort early if the data doesn't match
     # the given schema. Without this there was as very annoying
     # problem where dataframe.collect() would return an empty set.
@@ -33,6 +31,7 @@ def sample_data(spark):
 def test_rollup(sample_data):
     from mozetl.experimentsdaily import rollup
     from mozetl.clientsdaily.rollup import extract_search_counts
+
     assert sample_data.count() == 100
 
     client_id_count = sample_data.where("client_id is not null").count()
@@ -48,10 +47,12 @@ def test_rollup(sample_data):
     #  1a3c4318-a5d9-42a4-9cae-7a68eec6e1eb
     assert searches_frame.count() == 98
 
-    filtered = searches_frame.where("subsession_start_date LIKE '2017-09-08%'") \
-                             .where("experiment_id = 'pref-flip-searchcomp1-pref3-1390584'") \
-                             .where("search_count_all > 0") \
-                             .orderBy("client_id")
+    filtered = (
+        searches_frame.where("subsession_start_date LIKE '2017-09-08%'")
+        .where("experiment_id = 'pref-flip-searchcomp1-pref3-1390584'")
+        .where("search_count_all > 0")
+        .orderBy("client_id")
+    )
 
     assert filtered.count() == 4
     f_collected = filtered.collect()

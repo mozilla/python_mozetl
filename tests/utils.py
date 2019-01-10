@@ -8,7 +8,7 @@ def get_resource_path(filename):
     :return: the fully qualified path for the file as a string
     """
     root = os.path.dirname(__file__)
-    return os.path.join(root, 'resources', filename)
+    return os.path.join(root, "resources", filename)
 
 
 def get_resource(filename):
