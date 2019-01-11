@@ -74,8 +74,10 @@
 <span class="kn">from</span> <span class="nn">mozetl.engagement.churn</span> <span class="k">import</span> <span class="n">job</span> <span class="k">as</span> <span class="n">churn_job</span>
 <span class="kn">from</span> <span class="nn">mozetl.engagement.churn</span> <span class="k">import</span> <span class="n">utils</span>
 <span class="kn">from</span> <span class="nn">mozetl.engagement.churn.job</span> <span class="k">import</span> <span class="p">(</span>
-    <span class="n">SECONDS_PER_DAY</span><span class="p">,</span> <span class="n">DEFAULT_DATE</span><span class="p">,</span> <span class="n">SECONDS_PER_HOUR</span><span class="p">,</span>
-    <span class="n">MAX_SUBSESSION_LENGTH</span>
+    <span class="n">SECONDS_PER_DAY</span><span class="p">,</span>
+    <span class="n">DEFAULT_DATE</span><span class="p">,</span>
+    <span class="n">SECONDS_PER_HOUR</span><span class="p">,</span>
+    <span class="n">MAX_SUBSESSION_LENGTH</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span> <span class="nn">.schema</span> <span class="k">import</span> <span class="n">retention_schema</span>
 <span class="kn">from</span> <span class="nn">functools</span> <span class="k">import</span> <span class="n">reduce</span>
@@ -84,88 +86,83 @@
 <div class="viewcode-block" id="valid_pcd"><a class="viewcode-back" href="../../../../source/mozetl.engagement.retention.html#mozetl.engagement.retention.job.valid_pcd">[docs]</a><span class="k">def</span> <span class="nf">valid_pcd</span><span class="p">(</span><span class="n">pcd</span><span class="p">,</span> <span class="n">client_date</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Determine if the profile creation date column is valid given the date</span>
 <span class="sd">    reported by the client.&quot;&quot;&quot;</span>
-    <span class="n">pcd_format</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">date_format</span><span class="p">(</span><span class="n">pcd</span><span class="p">,</span> <span class="s1">&#39;yyyy-MM-dd&#39;</span><span class="p">)</span>
+    <span class="n">pcd_format</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">date_format</span><span class="p">(</span><span class="n">pcd</span><span class="p">,</span> <span class="s2">&quot;yyyy-MM-dd&quot;</span><span class="p">)</span>
     <span class="n">is_valid_pcd</span> <span class="o">=</span> <span class="p">[</span>
         <span class="n">pcd_format</span><span class="o">.</span><span class="n">isNotNull</span><span class="p">(),</span>
         <span class="p">(</span><span class="n">pcd_format</span> <span class="o">&gt;</span> <span class="n">DEFAULT_DATE</span><span class="p">),</span>
         <span class="p">(</span><span class="n">pcd</span> <span class="o">&lt;=</span> <span class="n">client_date</span><span class="p">),</span>
     <span class="p">]</span>
-    <span class="k">return</span> <span class="p">(</span>
-        <span class="n">F</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="n">reduce</span><span class="p">(</span><span class="n">operator</span><span class="o">.</span><span class="fm">__and__</span><span class="p">,</span> <span class="n">is_valid_pcd</span><span class="p">),</span> <span class="n">pcd</span><span class="p">)</span>
-        <span class="o">.</span><span class="n">otherwise</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">lit</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
-    <span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="n">reduce</span><span class="p">(</span><span class="n">operator</span><span class="o">.</span><span class="fm">__and__</span><span class="p">,</span> <span class="n">is_valid_pcd</span><span class="p">),</span> <span class="n">pcd</span><span class="p">)</span><span class="o">.</span><span class="n">otherwise</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">lit</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="transform"><a class="viewcode-back" href="../../../../source/mozetl.engagement.retention.html#mozetl.engagement.retention.job.transform">[docs]</a><span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="n">main_summary</span><span class="p">,</span> <span class="n">start_ds</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Process a subset of `main_summary` to be used in aggregates.&quot;&quot;&quot;</span>
-    <span class="n">client_date</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="s1">&#39;subsession_start_date&#39;</span><span class="p">,</span> <span class="s1">&#39;yyyy-MM-dd&#39;</span><span class="p">)</span>
+    <span class="n">client_date</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="s2">&quot;subsession_start_date&quot;</span><span class="p">,</span> <span class="s2">&quot;yyyy-MM-dd&quot;</span><span class="p">)</span>
 
     <span class="n">pcd</span> <span class="o">=</span> <span class="n">valid_pcd</span><span class="p">(</span>
-        <span class="n">F</span><span class="o">.</span><span class="n">from_unixtime</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s1">&#39;profile_creation_date&#39;</span><span class="p">)</span> <span class="o">*</span> <span class="n">SECONDS_PER_DAY</span><span class="p">),</span>
-        <span class="n">client_date</span>
+        <span class="n">F</span><span class="o">.</span><span class="n">from_unixtime</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;profile_creation_date&quot;</span><span class="p">)</span> <span class="o">*</span> <span class="n">SECONDS_PER_DAY</span><span class="p">),</span> <span class="n">client_date</span>
     <span class="p">)</span>
 
     <span class="n">days_since_creation</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">datediff</span><span class="p">(</span><span class="n">client_date</span><span class="p">,</span> <span class="n">pcd</span><span class="p">)</span>
 
     <span class="c1"># Bug 1289573: Support values like &#39;mozilla86&#39; and &#39;mozilla86-utility-existing&#39;</span>
-    <span class="n">is_funnelcake</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s1">&#39;distribution_id&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">rlike</span><span class="p">(</span><span class="s1">&#39;^mozilla[0-9]+.*$&#39;</span><span class="p">)</span>
+    <span class="n">is_funnelcake</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;distribution_id&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">rlike</span><span class="p">(</span><span class="s2">&quot;^mozilla[0-9]+.*$&quot;</span><span class="p">)</span>
 
-    <span class="n">subsession_length</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">F</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s1">&#39;subsession_length&#39;</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">MAX_SUBSESSION_LENGTH</span><span class="p">,</span> <span class="n">MAX_SUBSESSION_LENGTH</span><span class="p">)</span>
-        <span class="o">.</span><span class="n">otherwise</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s1">&#39;subsession_length&#39;</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-                   <span class="o">.</span><span class="n">otherwise</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s1">&#39;subsession_length&#39;</span><span class="p">)))</span>
+    <span class="n">subsession_length</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">when</span><span class="p">(</span>
+        <span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;subsession_length&quot;</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">MAX_SUBSESSION_LENGTH</span><span class="p">,</span> <span class="n">MAX_SUBSESSION_LENGTH</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">otherwise</span><span class="p">(</span>
+        <span class="n">F</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;subsession_length&quot;</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">otherwise</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;subsession_length&quot;</span><span class="p">))</span>
     <span class="p">)</span>
     <span class="n">usage_hours</span> <span class="o">=</span> <span class="n">subsession_length</span> <span class="o">/</span> <span class="n">SECONDS_PER_HOUR</span>
 
     <span class="n">mapping</span> <span class="o">=</span> <span class="p">{</span>
         <span class="c1"># attributes</span>
-        <span class="s1">&#39;client_id&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="s1">&#39;subsession_start&#39;</span><span class="p">:</span> <span class="n">F</span><span class="o">.</span><span class="n">date_format</span><span class="p">(</span><span class="n">client_date</span><span class="p">,</span> <span class="s1">&#39;yyyy-MM-dd&#39;</span><span class="p">),</span>
-        <span class="s1">&#39;profile_creation&#39;</span><span class="p">:</span> <span class="n">F</span><span class="o">.</span><span class="n">date_format</span><span class="p">(</span><span class="n">pcd</span><span class="p">,</span> <span class="s1">&#39;yyyy-MM-dd&#39;</span><span class="p">),</span>
-        <span class="s1">&#39;days_since_creation&#39;</span><span class="p">:</span> <span class="p">(</span>
+        <span class="s2">&quot;client_id&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">&quot;subsession_start&quot;</span><span class="p">:</span> <span class="n">F</span><span class="o">.</span><span class="n">date_format</span><span class="p">(</span><span class="n">client_date</span><span class="p">,</span> <span class="s2">&quot;yyyy-MM-dd&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;profile_creation&quot;</span><span class="p">:</span> <span class="n">F</span><span class="o">.</span><span class="n">date_format</span><span class="p">(</span><span class="n">pcd</span><span class="p">,</span> <span class="s2">&quot;yyyy-MM-dd&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;days_since_creation&quot;</span><span class="p">:</span> <span class="p">(</span>
             <span class="n">F</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="n">days_since_creation</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">F</span><span class="o">.</span><span class="n">lit</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>  <span class="c1"># -1 is the value for bad data</span>
             <span class="o">.</span><span class="n">otherwise</span><span class="p">(</span><span class="n">days_since_creation</span><span class="p">)</span>
-            <span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="s1">&#39;long&#39;</span><span class="p">)),</span>
-        <span class="s1">&#39;channel&#39;</span><span class="p">:</span> <span class="s1">&#39;normalized_channel&#39;</span><span class="p">,</span>
-        <span class="s1">&#39;app_version&#39;</span><span class="p">:</span> <span class="p">(</span>
+            <span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="s2">&quot;long&quot;</span><span class="p">)</span>
+        <span class="p">),</span>
+        <span class="s2">&quot;channel&quot;</span><span class="p">:</span> <span class="s2">&quot;normalized_channel&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;app_version&quot;</span><span class="p">:</span> <span class="p">(</span>
             <span class="c1"># Support before Firefox 55 is limited due to high submission latency</span>
-            <span class="n">F</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s1">&#39;app_version&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">isNull</span><span class="p">()</span> <span class="o">|</span>
-                   <span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;app_version&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\\</span><span class="s1">.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="s1">&#39;55&#39;</span><span class="p">),</span> <span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s1">&#39;app_version&#39;</span><span class="p">))</span>
-            <span class="o">.</span><span class="n">otherwise</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">lit</span><span class="p">(</span><span class="s2">&quot;older&quot;</span><span class="p">))</span>
+            <span class="n">F</span><span class="o">.</span><span class="n">when</span><span class="p">(</span>
+                <span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;app_version&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">isNull</span><span class="p">()</span>
+                <span class="o">|</span> <span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;app_version&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="s2">&quot;55&quot;</span><span class="p">),</span>
+                <span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;app_version&quot;</span><span class="p">),</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">otherwise</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">lit</span><span class="p">(</span><span class="s2">&quot;older&quot;</span><span class="p">))</span>
         <span class="p">),</span>
-        <span class="s1">&#39;geo&#39;</span><span class="p">:</span> <span class="n">churn_job</span><span class="o">.</span><span class="n">in_top_countries</span><span class="p">(</span><span class="s1">&#39;country&#39;</span><span class="p">),</span>
-        <span class="s1">&#39;distribution_id&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="s1">&#39;is_funnelcake&#39;</span><span class="p">:</span> <span class="n">is_funnelcake</span><span class="p">,</span>
-        <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="s1">&#39;attribution.source&#39;</span><span class="p">,</span>
-        <span class="s1">&#39;medium&#39;</span><span class="p">:</span> <span class="s1">&#39;attribution.medium&#39;</span><span class="p">,</span>
-        <span class="s1">&#39;campaign&#39;</span><span class="p">:</span> <span class="s1">&#39;attribution.campaign&#39;</span><span class="p">,</span>
-        <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="s1">&#39;attribution.content&#39;</span><span class="p">,</span>
-        <span class="s1">&#39;sync_usage&#39;</span><span class="p">:</span> <span class="n">churn_job</span><span class="o">.</span><span class="n">sync_usage</span><span class="p">(</span>
-            <span class="s1">&#39;sync_count_desktop&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;sync_count_mobile&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;sync_configured&#39;</span>
+        <span class="s2">&quot;geo&quot;</span><span class="p">:</span> <span class="n">churn_job</span><span class="o">.</span><span class="n">in_top_countries</span><span class="p">(</span><span class="s2">&quot;country&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;distribution_id&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">&quot;is_funnelcake&quot;</span><span class="p">:</span> <span class="n">is_funnelcake</span><span class="p">,</span>
+        <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="s2">&quot;attribution.source&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;medium&quot;</span><span class="p">:</span> <span class="s2">&quot;attribution.medium&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;campaign&quot;</span><span class="p">:</span> <span class="s2">&quot;attribution.campaign&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="s2">&quot;attribution.content&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;sync_usage&quot;</span><span class="p">:</span> <span class="n">churn_job</span><span class="o">.</span><span class="n">sync_usage</span><span class="p">(</span>
+            <span class="s2">&quot;sync_count_desktop&quot;</span><span class="p">,</span> <span class="s2">&quot;sync_count_mobile&quot;</span><span class="p">,</span> <span class="s2">&quot;sync_configured&quot;</span>
         <span class="p">),</span>
-        <span class="s1">&#39;is_active&#39;</span><span class="p">:</span> <span class="n">client_date</span> <span class="o">&lt;=</span> <span class="n">utils</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">lit</span><span class="p">(</span><span class="n">start_ds</span><span class="p">)),</span>
+        <span class="s2">&quot;is_active&quot;</span><span class="p">:</span> <span class="n">client_date</span> <span class="o">&lt;=</span> <span class="n">utils</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">lit</span><span class="p">(</span><span class="n">start_ds</span><span class="p">)),</span>
         <span class="c1"># metrics</span>
-        <span class="s1">&#39;usage_hours&#39;</span><span class="p">:</span> <span class="n">usage_hours</span><span class="p">,</span>
-        <span class="s1">&#39;sum_squared_usage_hours&#39;</span><span class="p">:</span> <span class="n">usage_hours</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span>
-        <span class="s1">&#39;total_uri_count&#39;</span><span class="p">:</span>
-            <span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s1">&#39;scalar_parent_browser_engagement_total_uri_count&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="s1">&#39;long&#39;</span><span class="p">),</span>
-        <span class="s1">&#39;unique_domains_count&#39;</span><span class="p">:</span>
-            <span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s1">&#39;scalar_parent_browser_engagement_unique_domains_count&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="s1">&#39;long&#39;</span><span class="p">),</span>
+        <span class="s2">&quot;usage_hours&quot;</span><span class="p">:</span> <span class="n">usage_hours</span><span class="p">,</span>
+        <span class="s2">&quot;sum_squared_usage_hours&quot;</span><span class="p">:</span> <span class="n">usage_hours</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="s2">&quot;total_uri_count&quot;</span><span class="p">:</span> <span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span>
+            <span class="s2">&quot;scalar_parent_browser_engagement_total_uri_count&quot;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="s2">&quot;long&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;unique_domains_count&quot;</span><span class="p">:</span> <span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span>
+            <span class="s2">&quot;scalar_parent_browser_engagement_unique_domains_count&quot;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="s2">&quot;long&quot;</span><span class="p">),</span>
     <span class="p">}</span>
     <span class="n">expr</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">build_col_expr</span><span class="p">(</span><span class="n">mapping</span><span class="p">)</span>
 
     <span class="n">cleaned_data</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">main_summary</span>
-        <span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
-        <span class="o">.</span><span class="n">fillna</span><span class="p">({</span>
-            <span class="s1">&#39;profile_creation&#39;</span><span class="p">:</span> <span class="n">DEFAULT_DATE</span><span class="p">,</span>
-            <span class="s1">&#39;days_since_creation&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
-        <span class="p">})</span>
+        <span class="n">main_summary</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">fillna</span><span class="p">({</span><span class="s2">&quot;profile_creation&quot;</span><span class="p">:</span> <span class="n">DEFAULT_DATE</span><span class="p">,</span> <span class="s2">&quot;days_since_creation&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">})</span>
         <span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
         <span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
-        <span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;unknown&#39;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s2">&quot;unknown&quot;</span><span class="p">)</span>
         <span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="n">field</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">retention_schema</span><span class="o">.</span><span class="n">fields</span><span class="p">])</span>
     <span class="p">)</span>
 
@@ -173,58 +170,59 @@
 
 
 <div class="viewcode-block" id="save"><a class="viewcode-back" href="../../../../source/mozetl.engagement.retention.html#mozetl.engagement.retention.job.save">[docs]</a><span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="n">cleaned</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
-    <span class="n">cleaned</span><span class="o">.</span><span class="n">write</span><span class="o">.</span><span class="n">parquet</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;overwrite&#39;</span><span class="p">)</span></div>
+    <span class="n">cleaned</span><span class="o">.</span><span class="n">write</span><span class="o">.</span><span class="n">parquet</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;overwrite&quot;</span><span class="p">)</span></div>
 
 
 <span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">()</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--start-date&#39;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--path&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;retention_intermediate&#39;</span><span class="p">,</span>
-              <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Spark compatible route for sharing intermediate data &#39;</span>
-                   <span class="s1">&#39;with the aggregate job.&#39;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--input-bucket&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;telemetry-parquet&#39;</span><span class="p">,</span>
-              <span class="n">help</span><span class="o">=</span><span class="s1">&#39;input bucket containing main_summary&#39;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--input-prefix&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;main_summary/v4&#39;</span><span class="p">,</span>
-              <span class="n">help</span><span class="o">=</span><span class="s1">&#39;input prefix containing main_summary&#39;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--period&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-              <span class="n">help</span><span class="o">=</span><span class="s1">&#39;length of the retention period in days&#39;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--slack&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
-              <span class="n">help</span><span class="o">=</span><span class="s1">&#39;number of days to account for submission latency&#39;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--sample/--no-sample&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">start_date</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">input_bucket</span><span class="p">,</span> <span class="n">input_prefix</span><span class="p">,</span>
-         <span class="n">period</span><span class="p">,</span> <span class="n">slack</span><span class="p">,</span> <span class="n">sample</span><span class="p">):</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--start-date&quot;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+    <span class="s2">&quot;--path&quot;</span><span class="p">,</span>
+    <span class="n">default</span><span class="o">=</span><span class="s2">&quot;retention_intermediate&quot;</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Spark compatible route for sharing intermediate data &quot;</span>
+    <span class="s2">&quot;with the aggregate job.&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+    <span class="s2">&quot;--input-bucket&quot;</span><span class="p">,</span>
+    <span class="n">default</span><span class="o">=</span><span class="s2">&quot;telemetry-parquet&quot;</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;input bucket containing main_summary&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+    <span class="s2">&quot;--input-prefix&quot;</span><span class="p">,</span>
+    <span class="n">default</span><span class="o">=</span><span class="s2">&quot;main_summary/v4&quot;</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;input prefix containing main_summary&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--period&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;length of the retention period in days&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+    <span class="s2">&quot;--slack&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;number of days to account for submission latency&quot;</span>
+<span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--sample/--no-sample&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">start_date</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">input_bucket</span><span class="p">,</span> <span class="n">input_prefix</span><span class="p">,</span> <span class="n">period</span><span class="p">,</span> <span class="n">slack</span><span class="p">,</span> <span class="n">sample</span><span class="p">):</span>
 
-    <span class="n">spark</span> <span class="o">=</span> <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">appName</span><span class="p">(</span><span class="s1">&#39;retention&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
-    <span class="n">spark</span><span class="o">.</span><span class="n">conf</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;spark.sql.session.timeZone&#39;</span><span class="p">,</span> <span class="s1">&#39;UTC&#39;</span><span class="p">)</span>
+    <span class="n">spark</span> <span class="o">=</span> <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">appName</span><span class="p">(</span><span class="s2">&quot;retention&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
+    <span class="n">spark</span><span class="o">.</span><span class="n">conf</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;spark.sql.session.timeZone&quot;</span><span class="p">,</span> <span class="s2">&quot;UTC&quot;</span><span class="p">)</span>
 
     <span class="n">start_ds</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">format_date</span><span class="p">(</span>
-        <span class="n">arrow</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">start_date</span><span class="p">,</span> <span class="n">utils</span><span class="o">.</span><span class="n">DS_NODASH</span><span class="p">),</span>
-        <span class="n">utils</span><span class="o">.</span><span class="n">DS_NODASH</span><span class="p">,</span>
-        <span class="o">-</span><span class="n">slack</span>
+        <span class="n">arrow</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">start_date</span><span class="p">,</span> <span class="n">utils</span><span class="o">.</span><span class="n">DS_NODASH</span><span class="p">),</span> <span class="n">utils</span><span class="o">.</span><span class="n">DS_NODASH</span><span class="p">,</span> <span class="o">-</span><span class="n">slack</span>
     <span class="p">)</span>
 
-    <span class="n">main_summary</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">spark</span>
-        <span class="o">.</span><span class="n">read</span>
-        <span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;mergeSchema&#39;</span><span class="p">,</span> <span class="s1">&#39;true&#39;</span><span class="p">)</span>
-        <span class="o">.</span><span class="n">parquet</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">format_spark_path</span><span class="p">(</span><span class="n">input_bucket</span><span class="p">,</span> <span class="n">input_prefix</span><span class="p">))</span>
+    <span class="n">main_summary</span> <span class="o">=</span> <span class="n">spark</span><span class="o">.</span><span class="n">read</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;mergeSchema&quot;</span><span class="p">,</span> <span class="s2">&quot;true&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">parquet</span><span class="p">(</span>
+        <span class="n">utils</span><span class="o">.</span><span class="n">format_spark_path</span><span class="p">(</span><span class="n">input_bucket</span><span class="p">,</span> <span class="n">input_prefix</span><span class="p">)</span>
     <span class="p">)</span>
 
-    <span class="n">new_profile</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">spark</span>
-        <span class="o">.</span><span class="n">read</span>
-        <span class="o">.</span><span class="n">parquet</span><span class="p">(</span>
-            <span class="s2">&quot;s3://net-mozaws-prod-us-west-2-pipeline-data/&quot;</span>
-            <span class="s2">&quot;telemetry-new-profile-parquet/v1/&quot;</span>
-        <span class="p">)</span>
+    <span class="n">new_profile</span> <span class="o">=</span> <span class="n">spark</span><span class="o">.</span><span class="n">read</span><span class="o">.</span><span class="n">parquet</span><span class="p">(</span>
+        <span class="s2">&quot;s3://net-mozaws-prod-us-west-2-pipeline-data/&quot;</span>
+        <span class="s2">&quot;telemetry-new-profile-parquet/v1/&quot;</span>
     <span class="p">)</span>
 
-    <span class="n">extracted</span> <span class="o">=</span> <span class="n">churn_job</span><span class="o">.</span><span class="n">extract</span><span class="p">(</span><span class="n">main_summary</span><span class="p">,</span> <span class="n">new_profile</span><span class="p">,</span> <span class="n">start_ds</span><span class="p">,</span> <span class="n">period</span><span class="p">,</span> <span class="n">slack</span><span class="p">,</span> <span class="n">sample</span><span class="p">)</span>
+    <span class="n">extracted</span> <span class="o">=</span> <span class="n">churn_job</span><span class="o">.</span><span class="n">extract</span><span class="p">(</span>
+        <span class="n">main_summary</span><span class="p">,</span> <span class="n">new_profile</span><span class="p">,</span> <span class="n">start_ds</span><span class="p">,</span> <span class="n">period</span><span class="p">,</span> <span class="n">slack</span><span class="p">,</span> <span class="n">sample</span>
+    <span class="p">)</span>
 
     <span class="n">retention</span> <span class="o">=</span> <span class="n">transform</span><span class="p">(</span><span class="n">extracted</span><span class="p">,</span> <span class="n">start_ds</span><span class="p">)</span>
     <span class="n">save</span><span class="p">(</span><span class="n">retention</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
 
 
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
     <span class="n">main</span><span class="p">()</span>
 </pre></div>
 

@@ -49,6 +49,7 @@
 <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
+<span class="c1"># fmt: off</span>
 <span class="n">countries</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">&quot;AD&quot;</span><span class="p">,</span> <span class="s2">&quot;AE&quot;</span><span class="p">,</span> <span class="s2">&quot;AF&quot;</span><span class="p">,</span> <span class="s2">&quot;AG&quot;</span><span class="p">,</span> <span class="s2">&quot;AI&quot;</span><span class="p">,</span> <span class="s2">&quot;AL&quot;</span><span class="p">,</span> <span class="s2">&quot;AM&quot;</span><span class="p">,</span> <span class="s2">&quot;AO&quot;</span><span class="p">,</span> <span class="s2">&quot;AQ&quot;</span><span class="p">,</span> <span class="s2">&quot;AR&quot;</span><span class="p">,</span> <span class="s2">&quot;AS&quot;</span><span class="p">,</span>
     <span class="s2">&quot;AT&quot;</span><span class="p">,</span> <span class="s2">&quot;AU&quot;</span><span class="p">,</span> <span class="s2">&quot;AW&quot;</span><span class="p">,</span> <span class="s2">&quot;AX&quot;</span><span class="p">,</span> <span class="s2">&quot;AZ&quot;</span><span class="p">,</span> <span class="s2">&quot;BA&quot;</span><span class="p">,</span> <span class="s2">&quot;BB&quot;</span><span class="p">,</span> <span class="s2">&quot;BD&quot;</span><span class="p">,</span> <span class="s2">&quot;BE&quot;</span><span class="p">,</span> <span class="s2">&quot;BF&quot;</span><span class="p">,</span> <span class="s2">&quot;BG&quot;</span><span class="p">,</span>
@@ -74,6 +75,7 @@
     <span class="s2">&quot;UM&quot;</span><span class="p">,</span> <span class="s2">&quot;US&quot;</span><span class="p">,</span> <span class="s2">&quot;UY&quot;</span><span class="p">,</span> <span class="s2">&quot;UZ&quot;</span><span class="p">,</span> <span class="s2">&quot;VA&quot;</span><span class="p">,</span> <span class="s2">&quot;VC&quot;</span><span class="p">,</span> <span class="s2">&quot;VE&quot;</span><span class="p">,</span> <span class="s2">&quot;VG&quot;</span><span class="p">,</span> <span class="s2">&quot;VI&quot;</span><span class="p">,</span> <span class="s2">&quot;VN&quot;</span><span class="p">,</span> <span class="s2">&quot;VU&quot;</span><span class="p">,</span>
     <span class="s2">&quot;WF&quot;</span><span class="p">,</span> <span class="s2">&quot;WS&quot;</span><span class="p">,</span> <span class="s2">&quot;YE&quot;</span><span class="p">,</span> <span class="s2">&quot;YT&quot;</span><span class="p">,</span> <span class="s2">&quot;ZA&quot;</span><span class="p">,</span> <span class="s2">&quot;ZM&quot;</span><span class="p">,</span> <span class="s2">&quot;ZW&quot;</span>
 <span class="p">}</span>
+<span class="c1"># fmt: on</span>
 
 <span class="n">seconds_per_hour</span> <span class="o">=</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">60</span>
 <span class="n">seconds_per_day</span> <span class="o">=</span> <span class="n">seconds_per_hour</span> <span class="o">*</span> <span class="mi">24</span>
@@ -85,8 +87,7 @@
     <span class="n">op</span> <span class="o">=</span> <span class="n">F</span>
     <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">patterns</span><span class="p">:</span>
         <span class="n">cond</span> <span class="o">=</span> <span class="n">reduce</span><span class="p">(</span>
-            <span class="n">operator</span><span class="o">.</span><span class="fm">__or__</span><span class="p">,</span>
-            <span class="p">[</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">like</span><span class="p">(</span><span class="n">pat</span><span class="p">)</span> <span class="k">for</span> <span class="n">pat</span> <span class="ow">in</span> <span class="n">patterns</span><span class="p">[</span><span class="n">label</span><span class="p">]]</span>
+            <span class="n">operator</span><span class="o">.</span><span class="fm">__or__</span><span class="p">,</span> <span class="p">[</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">like</span><span class="p">(</span><span class="n">pat</span><span class="p">)</span> <span class="k">for</span> <span class="n">pat</span> <span class="ow">in</span> <span class="n">patterns</span><span class="p">[</span><span class="n">label</span><span class="p">]]</span>
         <span class="p">)</span>
         <span class="n">op</span> <span class="o">=</span> <span class="n">op</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="n">cond</span><span class="p">,</span> <span class="n">label</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">op</span><span class="o">.</span><span class="n">otherwise</span><span class="p">(</span><span class="n">default</span><span class="p">)</span></div>
@@ -126,25 +127,28 @@
 
     <span class="c1"># convert profile creation date into seconds (day -&gt; seconds)</span>
     <span class="n">columns</span><span class="p">[</span><span class="s2">&quot;profile_creation_date&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">F</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;profile_creation_date&quot;</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span>
-               <span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;profile_creation_date&quot;</span><span class="p">)</span> <span class="o">*</span> <span class="n">seconds_per_day</span><span class="p">)</span>
+        <span class="n">F</span><span class="o">.</span><span class="n">when</span><span class="p">(</span>
+            <span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;profile_creation_date&quot;</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;profile_creation_date&quot;</span><span class="p">)</span> <span class="o">*</span> <span class="n">seconds_per_day</span><span class="p">,</span>
+        <span class="p">)</span>
         <span class="o">.</span><span class="n">otherwise</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
         <span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">types</span><span class="o">.</span><span class="n">DoubleType</span><span class="p">())</span>
     <span class="p">)</span>
 
     <span class="c1"># generate hours of usage from subsession length (seconds -&gt; hours)</span>
     <span class="n">columns</span><span class="p">[</span><span class="s2">&quot;hours&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">F</span><span class="o">.</span><span class="n">when</span><span class="p">((</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;subsession_length&quot;</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span>
-               <span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;subsession_length&quot;</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">180</span> <span class="o">*</span> <span class="n">seconds_per_day</span><span class="p">),</span>
-               <span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;subsession_length&quot;</span><span class="p">)</span> <span class="o">/</span> <span class="n">seconds_per_hour</span><span class="p">)</span>
+        <span class="n">F</span><span class="o">.</span><span class="n">when</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;subsession_length&quot;</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="o">&amp;</span> <span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;subsession_length&quot;</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">180</span> <span class="o">*</span> <span class="n">seconds_per_day</span><span class="p">),</span>
+            <span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;subsession_length&quot;</span><span class="p">)</span> <span class="o">/</span> <span class="n">seconds_per_hour</span><span class="p">,</span>
+        <span class="p">)</span>
         <span class="o">.</span><span class="n">otherwise</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
         <span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">types</span><span class="o">.</span><span class="n">DoubleType</span><span class="p">())</span>
     <span class="p">)</span>
 
     <span class="c1"># clean the dataset</span>
     <span class="n">clean</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">dataframe</span>
-        <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;submission_date_s3&quot;</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">start</span><span class="p">)</span>
+        <span class="n">dataframe</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;submission_date_s3&quot;</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">start</span><span class="p">)</span>
         <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;submission_date_s3&quot;</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">end</span><span class="p">)</span>
         <span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="n">expr</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">expr</span> <span class="ow">in</span> <span class="n">columns</span><span class="o">.</span><span class="n">items</span><span class="p">()])</span>
     <span class="p">)</span>
@@ -163,9 +167,7 @@
         <span class="s2">&quot;yahoo&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;%Yahoo%&quot;</span><span class="p">,</span> <span class="s2">&quot;%yahoo%&quot;</span><span class="p">],</span>
     <span class="p">}</span>
 
-    <span class="n">s_engine</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">column_like</span><span class="p">(</span><span class="s2">&quot;search_count.engine&quot;</span><span class="p">,</span> <span class="n">patterns</span><span class="p">,</span> <span class="s2">&quot;other&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;engine&quot;</span><span class="p">)</span>
-    <span class="p">)</span>
+    <span class="n">s_engine</span> <span class="o">=</span> <span class="n">column_like</span><span class="p">(</span><span class="s2">&quot;search_count.engine&quot;</span><span class="p">,</span> <span class="n">patterns</span><span class="p">,</span> <span class="s2">&quot;other&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;engine&quot;</span><span class="p">)</span>
     <span class="n">s_count</span> <span class="o">=</span> <span class="p">(</span>
         <span class="n">F</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;search_count.count&quot;</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;search_count.count&quot;</span><span class="p">))</span>
         <span class="o">.</span><span class="n">otherwise</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
@@ -174,10 +176,11 @@
 
     <span class="c1"># generate the search aggregates by exploding and pivoting</span>
     <span class="n">search</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">dataframe</span>
-        <span class="o">.</span><span class="n">withColumn</span><span class="p">(</span><span class="s2">&quot;search_count&quot;</span><span class="p">,</span> <span class="n">F</span><span class="o">.</span><span class="n">explode</span><span class="p">(</span><span class="s2">&quot;search_counts&quot;</span><span class="p">))</span>
-        <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;search_count.source&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">isNull</span><span class="p">()</span> <span class="o">|</span>
-               <span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;search_count.source&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">SEARCH_SOURCE_WHITELIST</span><span class="p">))</span>
+        <span class="n">dataframe</span><span class="o">.</span><span class="n">withColumn</span><span class="p">(</span><span class="s2">&quot;search_count&quot;</span><span class="p">,</span> <span class="n">F</span><span class="o">.</span><span class="n">explode</span><span class="p">(</span><span class="s2">&quot;search_counts&quot;</span><span class="p">))</span>
+        <span class="o">.</span><span class="n">where</span><span class="p">(</span>
+            <span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;search_count.source&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">isNull</span><span class="p">()</span>
+            <span class="o">|</span> <span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;search_count.source&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">SEARCH_SOURCE_WHITELIST</span><span class="p">)</span>
+        <span class="p">)</span>
         <span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s2">&quot;country&quot;</span><span class="p">,</span> <span class="s2">&quot;channel&quot;</span><span class="p">,</span> <span class="s2">&quot;os&quot;</span><span class="p">,</span> <span class="n">s_engine</span><span class="p">,</span> <span class="n">s_count</span><span class="p">)</span>
         <span class="o">.</span><span class="n">groupBy</span><span class="p">(</span><span class="n">attributes</span><span class="p">)</span>
         <span class="o">.</span><span class="n">pivot</span><span class="p">(</span><span class="s2">&quot;engine&quot;</span><span class="p">,</span> <span class="n">search_labels</span><span class="p">)</span>
@@ -201,26 +204,23 @@
     <span class="n">select_expr</span> <span class="o">=</span> <span class="p">{</span><span class="n">col</span><span class="p">:</span> <span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="n">col</span><span class="p">)</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">attributes</span><span class="p">}</span>
 
     <span class="n">select_expr</span><span class="p">[</span><span class="s2">&quot;new_client&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">when</span><span class="p">(</span>
-        <span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;profile_creation_date&quot;</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">timestamp</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">otherwise</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;profile_creation_date&quot;</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">timestamp</span><span class="p">,</span> <span class="mi">1</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">otherwise</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
-    <span class="n">select_expr</span><span class="p">[</span><span class="s2">&quot;default_client&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">when</span><span class="p">(</span>
-        <span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;is_default_browser&quot;</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">otherwise</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">select_expr</span><span class="p">[</span><span class="s2">&quot;default_client&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;is_default_browser&quot;</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">otherwise</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
     <span class="n">select_expr</span><span class="p">[</span><span class="s2">&quot;clientid_rank&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">row_number</span><span class="p">()</span><span class="o">.</span><span class="n">over</span><span class="p">(</span>
-        <span class="n">Window</span>
-        <span class="o">.</span><span class="n">partitionBy</span><span class="p">(</span><span class="s2">&quot;client_id&quot;</span><span class="p">)</span>
-        <span class="o">.</span><span class="n">orderBy</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">desc</span><span class="p">(</span><span class="s2">&quot;timestamp&quot;</span><span class="p">))</span>
+        <span class="n">Window</span><span class="o">.</span><span class="n">partitionBy</span><span class="p">(</span><span class="s2">&quot;client_id&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">orderBy</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">desc</span><span class="p">(</span><span class="s2">&quot;timestamp&quot;</span><span class="p">))</span>
     <span class="p">)</span>
 
     <span class="n">clients</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">dataframe</span>
-        <span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="n">expr</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">expr</span> <span class="ow">in</span> <span class="n">select_expr</span><span class="o">.</span><span class="n">items</span><span class="p">()])</span>
+        <span class="n">dataframe</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="n">expr</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">expr</span> <span class="ow">in</span> <span class="n">select_expr</span><span class="o">.</span><span class="n">items</span><span class="p">()])</span>
         <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="s2">&quot;clientid_rank = 1&quot;</span><span class="p">)</span>
         <span class="o">.</span><span class="n">groupBy</span><span class="p">(</span><span class="n">attributes</span><span class="p">)</span>
         <span class="o">.</span><span class="n">agg</span><span class="p">(</span>
             <span class="n">F</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">&quot;*&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;actives&quot;</span><span class="p">),</span>
             <span class="n">F</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;new_client&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;new_records&quot;</span><span class="p">),</span>
-            <span class="n">F</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;default_client&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;default&quot;</span><span class="p">)</span>
+            <span class="n">F</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;default_client&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;default&quot;</span><span class="p">),</span>
         <span class="p">)</span>
     <span class="p">)</span>
 
@@ -246,11 +246,10 @@
 
     <span class="c1"># take the outer join of all aggregates and replace null values with zeros</span>
     <span class="k">return</span> <span class="p">(</span>
-        <span class="n">clients</span>
-        <span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">searches</span><span class="p">,</span> <span class="n">attributes</span><span class="p">,</span> <span class="s2">&quot;outer&quot;</span><span class="p">)</span>
+        <span class="n">clients</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">searches</span><span class="p">,</span> <span class="n">attributes</span><span class="p">,</span> <span class="s2">&quot;outer&quot;</span><span class="p">)</span>
         <span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">hours</span><span class="p">,</span> <span class="n">attributes</span><span class="p">,</span> <span class="s2">&quot;outer&quot;</span><span class="p">)</span>
-        <span class="o">.</span><span class="n">withColumnRenamed</span><span class="p">(</span><span class="s1">&#39;country&#39;</span><span class="p">,</span> <span class="s1">&#39;geo&#39;</span><span class="p">)</span>
-        <span class="o">.</span><span class="n">withColumn</span><span class="p">(</span><span class="s1">&#39;crashes&#39;</span><span class="p">,</span> <span class="n">F</span><span class="o">.</span><span class="n">lit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;long&quot;</span><span class="p">))</span>
+        <span class="o">.</span><span class="n">withColumnRenamed</span><span class="p">(</span><span class="s2">&quot;country&quot;</span><span class="p">,</span> <span class="s2">&quot;geo&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">withColumn</span><span class="p">(</span><span class="s2">&quot;crashes&quot;</span><span class="p">,</span> <span class="n">F</span><span class="o">.</span><span class="n">lit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;long&quot;</span><span class="p">))</span>
         <span class="o">.</span><span class="n">na</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
     <span class="p">)</span></div>
 
@@ -278,50 +277,32 @@
 <span class="sd">    path: path to parquet files in s3</span>
 <span class="sd">    ds_start: inclusive date</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="p">(</span>
-        <span class="n">spark</span><span class="o">.</span><span class="n">read</span>
-        <span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;mergeSchema&quot;</span><span class="p">,</span> <span class="s2">&quot;true&quot;</span><span class="p">)</span>
-        <span class="o">.</span><span class="n">parquet</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
-    <span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">spark</span><span class="o">.</span><span class="n">read</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;mergeSchema&quot;</span><span class="p">,</span> <span class="s2">&quot;true&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">parquet</span><span class="p">(</span><span class="n">path</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="save"><a class="viewcode-back" href="../../../source/mozetl.topline.html#mozetl.topline.topline_summary.save">[docs]</a><span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="n">dataframe</span><span class="p">,</span> <span class="n">bucket</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">version</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">start_date</span><span class="p">):</span>
-    <span class="n">prefix</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">/v</span><span class="si">{}</span><span class="s2">/mode=</span><span class="si">{}</span><span class="s2">/report_start=</span><span class="si">{}</span><span class="s2">&quot;</span>
-        <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">prefix</span><span class="p">,</span> <span class="n">version</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">start_date</span><span class="p">)</span>
-    <span class="p">)</span>
+    <span class="n">prefix</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">/v</span><span class="si">{}</span><span class="s2">/mode=</span><span class="si">{}</span><span class="s2">/report_start=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">prefix</span><span class="p">,</span> <span class="n">version</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">start_date</span><span class="p">)</span>
     <span class="n">location</span> <span class="o">=</span> <span class="n">format_spark_path</span><span class="p">(</span><span class="n">bucket</span><span class="p">,</span> <span class="n">prefix</span><span class="p">)</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Writing topline summary to </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">location</span><span class="p">))</span>
 
     <span class="c1"># report start is implicit in the partition path</span>
     <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">topline_schema</span><span class="o">.</span><span class="n">names</span> <span class="k">if</span> <span class="n">col</span> <span class="o">!=</span> <span class="s2">&quot;report_start&quot;</span><span class="p">]</span>
-    <span class="p">(</span>
-        <span class="n">dataframe</span>
-        <span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span>
-        <span class="o">.</span><span class="n">repartition</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-        <span class="o">.</span><span class="n">write</span>
-        <span class="o">.</span><span class="n">parquet</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;overwrite&quot;</span><span class="p">)</span>
-    <span class="p">)</span></div>
+    <span class="p">(</span><span class="n">dataframe</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span><span class="o">.</span><span class="n">repartition</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">write</span><span class="o">.</span><span class="n">parquet</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;overwrite&quot;</span><span class="p">))</span></div>
 
 
 <span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">()</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s1">&#39;start_date&#39;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s1">&#39;mode&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">click</span><span class="o">.</span><span class="n">Choice</span><span class="p">([</span><span class="s1">&#39;weekly&#39;</span><span class="p">,</span> <span class="s1">&#39;monthly&#39;</span><span class="p">]))</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s1">&#39;bucket&#39;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s1">&#39;prefix&#39;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--input_bucket&#39;</span><span class="p">,</span>
-              <span class="n">default</span><span class="o">=</span><span class="s1">&#39;telemetry-parquet&#39;</span><span class="p">,</span>
-              <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Bucket of the input dataset&#39;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--input_prefix&#39;</span><span class="p">,</span>
-              <span class="n">default</span><span class="o">=</span><span class="s1">&#39;main_summary/v4&#39;</span><span class="p">,</span>
-              <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Prefix of the input dataset&#39;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;start_date&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;mode&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">click</span><span class="o">.</span><span class="n">Choice</span><span class="p">([</span><span class="s2">&quot;weekly&quot;</span><span class="p">,</span> <span class="s2">&quot;monthly&quot;</span><span class="p">]))</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;bucket&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;prefix&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+    <span class="s2">&quot;--input_bucket&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;telemetry-parquet&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Bucket of the input dataset&quot;</span>
+<span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+    <span class="s2">&quot;--input_prefix&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;main_summary/v4&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Prefix of the input dataset&quot;</span>
+<span class="p">)</span>
 <span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">start_date</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">bucket</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">input_bucket</span><span class="p">,</span> <span class="n">input_prefix</span><span class="p">):</span>
-    <span class="n">spark</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">SparkSession</span>
-        <span class="o">.</span><span class="n">builder</span>
-        <span class="o">.</span><span class="n">appName</span><span class="p">(</span><span class="s2">&quot;topline_summary&quot;</span><span class="p">)</span>
-        <span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
-    <span class="p">)</span>
+    <span class="n">spark</span> <span class="o">=</span> <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">appName</span><span class="p">(</span><span class="s2">&quot;topline_summary&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
 
     <span class="n">version</span> <span class="o">=</span> <span class="mi">1</span>
     <span class="n">source_path</span> <span class="o">=</span> <span class="n">format_spark_path</span><span class="p">(</span><span class="n">input_bucket</span><span class="p">,</span> <span class="n">input_prefix</span><span class="p">)</span>

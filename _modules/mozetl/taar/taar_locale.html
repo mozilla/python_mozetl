@@ -56,7 +56,7 @@
 <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
-<span class="n">LOCALE_FILE_NAME</span> <span class="o">=</span> <span class="s1">&#39;top10_dict&#39;</span>
+<span class="n">LOCALE_FILE_NAME</span> <span class="o">=</span> <span class="s2">&quot;top10_dict&quot;</span>
 
 
 <div class="viewcode-block" id="get_addons"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_locale.get_addons">[docs]</a><span class="k">def</span> <span class="nf">get_addons</span><span class="p">(</span><span class="n">spark</span><span class="p">):</span>
@@ -71,66 +71,65 @@
 <span class="sd">    telemetry client ID so we do not need to post-process the data in the</span>
 <span class="sd">    get_addons function.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">spark</span><span class="o">.</span><span class="n">sql</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
-<span class="s2">       WITH sample AS</span>
-<span class="s2">       (</span>
-<span class="s2">          SELECT</span>
-<span class="s2">            client_id,</span>
-<span class="s2">            locale AS locality,</span>
-<span class="s2">            EXPLODE(active_addons)</span>
-<span class="s2">          FROM</span>
-<span class="s2">            clients_daily</span>
-<span class="s2">          WHERE</span>
-<span class="s2">            channel=&#39;release&#39; AND</span>
-<span class="s2">            app_name=&#39;Firefox&#39;</span>
-<span class="s2">        ),</span>
-<span class="s2">        filtered_sample AS (</span>
-<span class="s2">          SELECT</span>
-<span class="s2">            locality,</span>
-<span class="s2">            col.addon_id as addon_key</span>
-<span class="s2">          FROM</span>
-<span class="s2">            sample</span>
-<span class="s2">          WHERE</span>
-<span class="s2">            col.blocklisted = FALSE -- not blocklisted</span>
-<span class="s2">            AND col.type = &#39;extension&#39; -- nice webextensions only</span>
-<span class="s2">            AND col.signed_state = 2 -- fully reviewed addons only</span>
-<span class="s2">            AND col.user_disabled = FALSE -- active addons only get counted</span>
-<span class="s2">            AND col.app_disabled = FALSE -- exclude compatibility disabled</span>
-<span class="s2">            AND col.is_system = FALSE -- exclude system addons</span>
-<span class="s2">            AND locality &lt;&gt; &#39;null&#39;</span>
-<span class="s2">            AND col.addon_id is not null</span>
-<span class="s2">        ),</span>
-<span class="s2">        country_addon_pairs AS (</span>
-<span class="s2">        SELECT</span>
-<span class="s2">        COUNT(*) AS pair_cnts, addon_key, locality</span>
-<span class="s2">        from filtered_sample</span>
-<span class="s2">        GROUP BY locality, addon_key</span>
-<span class="s2">        )</span>
+    <span class="k">return</span> <span class="n">spark</span><span class="o">.</span><span class="n">sql</span><span class="p">(</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">       WITH sample AS</span>
+<span class="sd">       (</span>
+<span class="sd">          SELECT</span>
+<span class="sd">            client_id,</span>
+<span class="sd">            locale AS locality,</span>
+<span class="sd">            EXPLODE(active_addons)</span>
+<span class="sd">          FROM</span>
+<span class="sd">            clients_daily</span>
+<span class="sd">          WHERE</span>
+<span class="sd">            channel=&#39;release&#39; AND</span>
+<span class="sd">            app_name=&#39;Firefox&#39;</span>
+<span class="sd">        ),</span>
+<span class="sd">        filtered_sample AS (</span>
+<span class="sd">          SELECT</span>
+<span class="sd">            locality,</span>
+<span class="sd">            col.addon_id as addon_key</span>
+<span class="sd">          FROM</span>
+<span class="sd">            sample</span>
+<span class="sd">          WHERE</span>
+<span class="sd">            col.blocklisted = FALSE -- not blocklisted</span>
+<span class="sd">            AND col.type = &#39;extension&#39; -- nice webextensions only</span>
+<span class="sd">            AND col.signed_state = 2 -- fully reviewed addons only</span>
+<span class="sd">            AND col.user_disabled = FALSE -- active addons only get counted</span>
+<span class="sd">            AND col.app_disabled = FALSE -- exclude compatibility disabled</span>
+<span class="sd">            AND col.is_system = FALSE -- exclude system addons</span>
+<span class="sd">            AND locality &lt;&gt; &#39;null&#39;</span>
+<span class="sd">            AND col.addon_id is not null</span>
+<span class="sd">        ),</span>
+<span class="sd">        country_addon_pairs AS (</span>
+<span class="sd">        SELECT</span>
+<span class="sd">        COUNT(*) AS pair_cnts, addon_key, locality</span>
+<span class="sd">        from filtered_sample</span>
+<span class="sd">        GROUP BY locality, addon_key</span>
+<span class="sd">        )</span>
 
-<span class="s2">        SELECT</span>
-<span class="s2">            pair_cnts,</span>
-<span class="s2">            addon_key,</span>
-<span class="s2">            locality</span>
-<span class="s2">        FROM</span>
-<span class="s2">            country_addon_pairs</span>
-<span class="s2">        ORDER BY locality, pair_cnts DESC</span>
-<span class="s2">    &quot;&quot;&quot;</span><span class="p">)</span></div>
+<span class="sd">        SELECT</span>
+<span class="sd">            pair_cnts,</span>
+<span class="sd">            addon_key,</span>
+<span class="sd">            locality</span>
+<span class="sd">        FROM</span>
+<span class="sd">            country_addon_pairs</span>
+<span class="sd">        ORDER BY locality, pair_cnts DESC</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="compute_threshold"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_locale.compute_threshold">[docs]</a><span class="k">def</span> <span class="nf">compute_threshold</span><span class="p">(</span><span class="n">addon_df</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; Get a threshold to remove locales with a small</span>
 <span class="sd">    number of addons installations.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">addon_install_counts</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">addon_df</span>
-        <span class="o">.</span><span class="n">groupBy</span><span class="p">(</span><span class="s1">&#39;locality&#39;</span><span class="p">)</span>
-        <span class="o">.</span><span class="n">agg</span><span class="p">({</span><span class="s1">&#39;pair_cnts&#39;</span><span class="p">:</span> <span class="s1">&#39;sum&#39;</span><span class="p">})</span>
-    <span class="p">)</span>
+    <span class="n">addon_install_counts</span> <span class="o">=</span> <span class="n">addon_df</span><span class="o">.</span><span class="n">groupBy</span><span class="p">(</span><span class="s2">&quot;locality&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">agg</span><span class="p">({</span><span class="s2">&quot;pair_cnts&quot;</span><span class="p">:</span> <span class="s2">&quot;sum&quot;</span><span class="p">})</span>
 
     <span class="c1"># Compute a threshold at the 25th percentile to remove locales with a</span>
     <span class="c1"># small number of addons installations.</span>
-    <span class="n">locale_pop_threshold</span> <span class="o">=</span>\
-        <span class="n">addon_install_counts</span><span class="o">.</span><span class="n">approxQuantile</span><span class="p">(</span><span class="s1">&#39;sum(pair_cnts)&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mf">0.25</span><span class="p">],</span> <span class="mf">0.2</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">locale_pop_threshold</span> <span class="o">=</span> <span class="n">addon_install_counts</span><span class="o">.</span><span class="n">approxQuantile</span><span class="p">(</span>
+        <span class="s2">&quot;sum(pair_cnts)&quot;</span><span class="p">,</span> <span class="p">[</span><span class="mf">0.25</span><span class="p">],</span> <span class="mf">0.2</span>
+    <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 
     <span class="c1"># Safety net in case the distribution gets really skewed, we should</span>
     <span class="c1"># require 2000 addon installation instances to make recommendations.</span>
@@ -140,10 +139,9 @@
     <span class="c1"># Filter the list to only include locales including a sufficient</span>
     <span class="c1"># number of addon installations. Include number of addons in locales</span>
     <span class="c1"># that satisfy the threshold condition.</span>
-    <span class="n">addon_locale_counts</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">addon_install_counts</span>
-        <span class="o">.</span><span class="n">filter</span><span class="p">((</span><span class="n">col</span><span class="p">(</span><span class="s1">&#39;sum(pair_cnts)&#39;</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">locale_pop_threshold</span><span class="p">))</span>
-        <span class="p">)</span>
+    <span class="n">addon_locale_counts</span> <span class="o">=</span> <span class="n">addon_install_counts</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+        <span class="p">(</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;sum(pair_cnts)&quot;</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">locale_pop_threshold</span><span class="p">)</span>
+    <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">addon_locale_counts</span></div>
 
@@ -159,7 +157,7 @@
 
     <span class="c1"># Helper function to normalize addon installations in a lambda.</span>
     <span class="k">def</span> <span class="nf">normalize_cnts</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
-        <span class="n">loc_norm</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;pair_cnts&#39;</span><span class="p">])</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;sum(pair_cnts)&#39;</span><span class="p">])</span>
+        <span class="n">loc_norm</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;pair_cnts&quot;</span><span class="p">])</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;sum(pair_cnts)&quot;</span><span class="p">])</span>
         <span class="k">return</span> <span class="n">loc_norm</span>
 
     <span class="c1"># Instantiate an empty dict.</span>
@@ -171,53 +169,42 @@
     <span class="n">df1</span> <span class="o">=</span> <span class="n">addon_locale_counts_df</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;df1&quot;</span><span class="p">)</span>
     <span class="n">df2</span> <span class="o">=</span> <span class="n">addon_df</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;df2&quot;</span><span class="p">)</span>
 
-    <span class="n">combined_df</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">addon_df</span>
-        <span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">df1</span><span class="p">,</span> <span class="n">df2</span><span class="o">.</span><span class="n">locality</span> <span class="o">==</span> <span class="n">df1</span><span class="o">.</span><span class="n">locality</span><span class="p">)</span>
-        <span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">df1</span><span class="o">.</span><span class="n">locality</span><span class="p">)</span>
-    <span class="p">)</span>
+    <span class="n">combined_df</span> <span class="o">=</span> <span class="n">addon_df</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">df1</span><span class="p">,</span> <span class="n">df2</span><span class="o">.</span><span class="n">locality</span> <span class="o">==</span> <span class="n">df1</span><span class="o">.</span><span class="n">locality</span><span class="p">)</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">df1</span><span class="o">.</span><span class="n">locality</span><span class="p">)</span>
 
     <span class="c1"># Normalize installation rate per locale.</span>
     <span class="n">normalized_installs</span> <span class="o">=</span> <span class="n">combined_df</span><span class="o">.</span><span class="n">rdd</span><span class="o">.</span><span class="n">map</span><span class="p">(</span>
         <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">Row</span><span class="p">(</span>
-            <span class="n">addon_key</span><span class="o">=</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;addon_key&#39;</span><span class="p">],</span>
-            <span class="n">locality</span><span class="o">=</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;locality&#39;</span><span class="p">],</span>
-            <span class="n">loc_norm</span><span class="o">=</span><span class="n">normalize_cnts</span><span class="p">(</span><span class="n">p</span><span class="p">))</span>
-        <span class="p">)</span><span class="o">.</span><span class="n">toDF</span><span class="p">()</span>
+            <span class="n">addon_key</span><span class="o">=</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;addon_key&quot;</span><span class="p">],</span> <span class="n">locality</span><span class="o">=</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;locality&quot;</span><span class="p">],</span> <span class="n">loc_norm</span><span class="o">=</span><span class="n">normalize_cnts</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+        <span class="p">)</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">toDF</span><span class="p">()</span>
 
     <span class="c1"># Groupby locale and sort by normalized install rate</span>
-    <span class="n">window</span> <span class="o">=</span> <span class="n">Window</span>\
-        <span class="o">.</span><span class="n">partitionBy</span><span class="p">(</span><span class="n">normalized_installs</span><span class="p">[</span><span class="s1">&#39;locality&#39;</span><span class="p">])</span>\
-        <span class="o">.</span><span class="n">orderBy</span><span class="p">(</span><span class="n">desc</span><span class="p">(</span><span class="s1">&#39;loc_norm&#39;</span><span class="p">))</span>
+    <span class="n">window</span> <span class="o">=</span> <span class="n">Window</span><span class="o">.</span><span class="n">partitionBy</span><span class="p">(</span><span class="n">normalized_installs</span><span class="p">[</span><span class="s2">&quot;locality&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">orderBy</span><span class="p">(</span>
+        <span class="n">desc</span><span class="p">(</span><span class="s2">&quot;loc_norm&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
 
     <span class="c1"># Truncate reults exceeding required number of addons.</span>
     <span class="n">truncated_df</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">normalized_installs</span>
-        <span class="o">.</span><span class="n">select</span><span class="p">(</span>
-            <span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="n">rank</span><span class="p">()</span>
-            <span class="o">.</span><span class="n">over</span><span class="p">(</span><span class="n">window</span><span class="p">)</span>
-            <span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s1">&#39;rank&#39;</span><span class="p">)</span>
-            <span class="p">)</span>
-        <span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">col</span><span class="p">(</span><span class="s1">&#39;rank&#39;</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">num_addons</span><span class="p">)</span>
-        <span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">col</span><span class="p">(</span><span class="s1">&#39;rank&#39;</span><span class="p">))</span>
-        <span class="p">)</span>
+        <span class="n">normalized_installs</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s2">&quot;*&quot;</span><span class="p">,</span> <span class="n">rank</span><span class="p">()</span><span class="o">.</span><span class="n">over</span><span class="p">(</span><span class="n">window</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;rank&quot;</span><span class="p">))</span>
+        <span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;rank&quot;</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">num_addons</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;rank&quot;</span><span class="p">))</span>
+    <span class="p">)</span>
 
     <span class="n">list_of_locales</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">truncated_df</span>
-        <span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">truncated_df</span><span class="o">.</span><span class="n">locality</span><span class="p">)</span>
-        <span class="o">.</span><span class="n">distinct</span><span class="p">()</span>
-        <span class="o">.</span><span class="n">collect</span><span class="p">()</span>
-        <span class="p">]</span>
+        <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">truncated_df</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">truncated_df</span><span class="o">.</span><span class="n">locality</span><span class="p">)</span><span class="o">.</span><span class="n">distinct</span><span class="p">()</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+    <span class="p">]</span>
 
     <span class="c1"># There is probably a *much* smarter way fo doing this...</span>
     <span class="c1"># but alas, I am le tired.</span>
     <span class="k">for</span> <span class="n">specific_locale</span> <span class="ow">in</span> <span class="n">list_of_locales</span><span class="p">:</span>
         <span class="c1"># Most popular addons per locale sorted by normalized</span>
         <span class="c1"># number of installs.</span>
-        <span class="n">top10_per</span><span class="p">[</span><span class="n">specific_locale</span><span class="p">]</span> <span class="o">=</span>\
-            <span class="p">[[</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;addon_key&#39;</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;loc_norm&#39;</span><span class="p">]]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">truncated_df</span>
-                <span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">truncated_df</span><span class="o">.</span><span class="n">locality</span> <span class="o">==</span> <span class="n">specific_locale</span><span class="p">)</span>
-                <span class="o">.</span><span class="n">collect</span><span class="p">()]</span>
+        <span class="n">top10_per</span><span class="p">[</span><span class="n">specific_locale</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="s2">&quot;addon_key&quot;</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;loc_norm&quot;</span><span class="p">]]</span>
+            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">truncated_df</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+                <span class="n">truncated_df</span><span class="o">.</span><span class="n">locality</span> <span class="o">==</span> <span class="n">specific_locale</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+        <span class="p">]</span>
     <span class="k">return</span> <span class="n">top10_per</span></div>
 
 
@@ -240,21 +227,20 @@
 
 
 <span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">()</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--date&#39;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--bucket&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;telemetry-private-analysis-2&#39;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--prefix&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;taar/locale/&#39;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--num_addons&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--date&quot;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--bucket&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;telemetry-private-analysis-2&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--prefix&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;taar/locale/&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--num_addons&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="n">bucket</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">num_addons</span><span class="p">):</span>
-    <span class="n">spark</span> <span class="o">=</span> <span class="p">(</span><span class="n">SparkSession</span>
-             <span class="o">.</span><span class="n">builder</span>
-             <span class="o">.</span><span class="n">appName</span><span class="p">(</span><span class="s2">&quot;taar_locale&quot;</span><span class="p">)</span>
-             <span class="o">.</span><span class="n">enableHiveSupport</span><span class="p">()</span>
-             <span class="o">.</span><span class="n">getOrCreate</span><span class="p">())</span>
+    <span class="n">spark</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">appName</span><span class="p">(</span><span class="s2">&quot;taar_locale&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">enableHiveSupport</span><span class="p">()</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
+    <span class="p">)</span>
 
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Processing top N addons per locale&quot;</span><span class="p">)</span>
     <span class="n">locale_dict</span> <span class="o">=</span> <span class="n">generate_dictionary</span><span class="p">(</span><span class="n">spark</span><span class="p">,</span> <span class="n">num_addons</span><span class="p">)</span>
-    <span class="n">store_json_to_s3</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">locale_dict</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span> <span class="n">LOCALE_FILE_NAME</span><span class="p">,</span>
-                     <span class="n">date</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">bucket</span><span class="p">)</span>
+    <span class="n">store_json_to_s3</span><span class="p">(</span>
+        <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">locale_dict</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span> <span class="n">LOCALE_FILE_NAME</span><span class="p">,</span> <span class="n">date</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">bucket</span>
+    <span class="p">)</span>
 
     <span class="n">spark</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
 </pre></div>

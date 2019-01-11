@@ -47,10 +47,13 @@
 
 
 <div class="viewcode-block" id="long_spinners_keyed_by_build_and_client"><a class="viewcode-back" href="../../../source/mozetl.tab_spinner.html#mozetl.tab_spinner.utils.long_spinners_keyed_by_build_and_client">[docs]</a><span class="k">def</span> <span class="nf">long_spinners_keyed_by_build_and_client</span><span class="p">(</span><span class="n">ping</span><span class="p">):</span>
-    <span class="k">return</span> <span class="p">((</span><span class="n">ping</span><span class="p">[</span><span class="s2">&quot;application/buildId&quot;</span><span class="p">][:</span><span class="mi">8</span><span class="p">],</span>
-             <span class="n">ping</span><span class="p">[</span><span class="s2">&quot;clientId&quot;</span><span class="p">]),</span>
-            <span class="p">(</span><span class="n">ping</span><span class="p">[</span><span class="s2">&quot;payload/histograms/FX_TAB_SWITCH_SPINNER_VISIBLE_LONG_MS&quot;</span><span class="p">],</span>
-             <span class="n">ping</span><span class="p">[</span><span class="s2">&quot;payload/histograms/FX_TAB_SWITCH_SPINNER_VISIBLE_MS&quot;</span><span class="p">]))</span></div>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="p">(</span><span class="n">ping</span><span class="p">[</span><span class="s2">&quot;application/buildId&quot;</span><span class="p">][:</span><span class="mi">8</span><span class="p">],</span> <span class="n">ping</span><span class="p">[</span><span class="s2">&quot;clientId&quot;</span><span class="p">]),</span>
+        <span class="p">(</span>
+            <span class="n">ping</span><span class="p">[</span><span class="s2">&quot;payload/histograms/FX_TAB_SWITCH_SPINNER_VISIBLE_LONG_MS&quot;</span><span class="p">],</span>
+            <span class="n">ping</span><span class="p">[</span><span class="s2">&quot;payload/histograms/FX_TAB_SWITCH_SPINNER_VISIBLE_MS&quot;</span><span class="p">],</span>
+        <span class="p">),</span>
+    <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="add_tuple_series"><a class="viewcode-back" href="../../../source/mozetl.tab_spinner.html#mozetl.tab_spinner.utils.add_tuple_series">[docs]</a><span class="k">def</span> <span class="nf">add_tuple_series</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
@@ -74,14 +77,16 @@
 <div class="viewcode-block" id="bucket_by_long_severity_per_client"><a class="viewcode-back" href="../../../source/mozetl.tab_spinner.html#mozetl.tab_spinner.utils.bucket_by_long_severity_per_client">[docs]</a><span class="k">def</span> <span class="nf">bucket_by_long_severity_per_client</span><span class="p">(</span><span class="n">spinner_pair</span><span class="p">):</span>
     <span class="n">buildId</span> <span class="o">=</span> <span class="n">spinner_pair</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">hist</span> <span class="o">=</span> <span class="n">spinner_pair</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-    <span class="n">named_index</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;unaffected&quot;</span><span class="p">,</span>
-                   <span class="s2">&quot;0ms - 999ms&quot;</span><span class="p">,</span>
-                   <span class="s2">&quot;1000ms - 2296ms&quot;</span><span class="p">,</span>
-                   <span class="s2">&quot;2297ms - 5276ms&quot;</span><span class="p">,</span>
-                   <span class="s2">&quot;5277ms - 12123ms&quot;</span><span class="p">,</span>
-                   <span class="s2">&quot;12124ms - 27855ms&quot;</span><span class="p">,</span>
-                   <span class="s2">&quot;27856ms - 63999ms&quot;</span><span class="p">,</span>
-                   <span class="s2">&quot;64000ms+&quot;</span><span class="p">]</span>
+    <span class="n">named_index</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;unaffected&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;0ms - 999ms&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;1000ms - 2296ms&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;2297ms - 5276ms&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;5277ms - 12123ms&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;12124ms - 27855ms&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;27856ms - 63999ms&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;64000ms+&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
 
     <span class="n">severity</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">index</span><span class="o">=</span><span class="n">named_index</span><span class="p">)</span>
 
@@ -110,14 +115,16 @@
     <span class="n">long_hist</span> <span class="o">=</span> <span class="n">spinner_pair</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">hist</span> <span class="o">=</span> <span class="n">spinner_pair</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
 
-    <span class="n">named_index</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;unaffected&quot;</span><span class="p">,</span>
-                   <span class="s2">&quot;not short&quot;</span><span class="p">,</span>
-                   <span class="s2">&quot;0ms - 49ms&quot;</span><span class="p">,</span>
-                   <span class="s2">&quot;50ms - 99ms&quot;</span><span class="p">,</span>
-                   <span class="s2">&quot;100ms - 199ms&quot;</span><span class="p">,</span>
-                   <span class="s2">&quot;200ms - 399ms&quot;</span><span class="p">,</span>
-                   <span class="s2">&quot;400ms - 799ms&quot;</span><span class="p">,</span>
-                   <span class="s2">&quot;800ms+&quot;</span><span class="p">]</span>
+    <span class="n">named_index</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;unaffected&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;not short&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;0ms - 49ms&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;50ms - 99ms&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;100ms - 199ms&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;200ms - 399ms&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;400ms - 799ms&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;800ms+&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
 
     <span class="n">severity</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">index</span><span class="o">=</span><span class="n">named_index</span><span class="p">)</span>
 
@@ -149,53 +156,54 @@
 
 
 <div class="viewcode-block" id="collect_aggregated_spinners"><a class="viewcode-back" href="../../../source/mozetl.tab_spinner.html#mozetl.tab_spinner.utils.collect_aggregated_spinners">[docs]</a><span class="k">def</span> <span class="nf">collect_aggregated_spinners</span><span class="p">(</span><span class="n">rdd</span><span class="p">,</span> <span class="n">map_func</span><span class="p">):</span>
-    <span class="n">collected_percentages</span> <span class="o">=</span> <span class="n">rdd</span> \
-        <span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">map_func</span><span class="p">)</span> \
-        <span class="o">.</span><span class="n">reduceByKey</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span><span class="p">)</span> \
-        <span class="o">.</span><span class="n">repartition</span><span class="p">(</span><span class="mi">200</span><span class="p">)</span> \
-        <span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">to_percentages</span><span class="p">)</span> \
+    <span class="n">collected_percentages</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">rdd</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">map_func</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">reduceByKey</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">repartition</span><span class="p">(</span><span class="mi">200</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">to_percentages</span><span class="p">)</span>
         <span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+    <span class="p">)</span>
 
     <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">collected_percentages</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">result</span><span class="p">:</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span></div>
 
 
 <div class="viewcode-block" id="get_short_and_long_spinners"><a class="viewcode-back" href="../../../source/mozetl.tab_spinner.html#mozetl.tab_spinner.utils.get_short_and_long_spinners">[docs]</a><span class="k">def</span> <span class="nf">get_short_and_long_spinners</span><span class="p">(</span><span class="n">pings</span><span class="p">):</span>
 
-    <span class="n">properties</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;clientId&quot;</span><span class="p">,</span>
-                  <span class="s2">&quot;payload/histograms/FX_TAB_SWITCH_SPINNER_VISIBLE_LONG_MS&quot;</span><span class="p">,</span>
-                  <span class="s2">&quot;payload/histograms/FX_TAB_SWITCH_SPINNER_VISIBLE_MS&quot;</span><span class="p">,</span>
-                  <span class="s2">&quot;environment/system/os/name&quot;</span><span class="p">,</span>
-                  <span class="s2">&quot;application/buildId&quot;</span><span class="p">,</span>
-                  <span class="s2">&quot;environment/settings/e10sEnabled&quot;</span><span class="p">]</span>
+    <span class="n">properties</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;clientId&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;payload/histograms/FX_TAB_SWITCH_SPINNER_VISIBLE_LONG_MS&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;payload/histograms/FX_TAB_SWITCH_SPINNER_VISIBLE_MS&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;environment/system/os/name&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;application/buildId&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;environment/settings/e10sEnabled&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
 
     <span class="n">ping_props</span> <span class="o">=</span> <span class="n">get_pings_properties</span><span class="p">(</span><span class="n">pings</span><span class="p">,</span> <span class="n">properties</span><span class="p">)</span>
 
     <span class="n">windows_pings_only</span> <span class="o">=</span> <span class="n">ping_props</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">windows_only</span><span class="p">)</span>
     <span class="n">e10s_enabled_on_windows_pings_only</span> <span class="o">=</span> <span class="n">windows_pings_only</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">e10s_enabled_only</span><span class="p">)</span>
-    <span class="n">grouped_spinners</span> <span class="o">=</span> <span class="n">e10s_enabled_on_windows_pings_only</span> \
-        <span class="o">.</span><span class="n">repartition</span><span class="p">(</span><span class="mi">200</span><span class="p">)</span> \
-        <span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">long_spinners_keyed_by_build_and_client</span><span class="p">)</span> \
+    <span class="n">grouped_spinners</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">e10s_enabled_on_windows_pings_only</span><span class="o">.</span><span class="n">repartition</span><span class="p">(</span><span class="mi">200</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">long_spinners_keyed_by_build_and_client</span><span class="p">)</span>
         <span class="o">.</span><span class="n">reduceByKey</span><span class="p">(</span><span class="n">add_tuple_series</span><span class="p">)</span>
+    <span class="p">)</span>
 
     <span class="n">final_result_long</span> <span class="o">=</span> <span class="n">collect_aggregated_spinners</span><span class="p">(</span>
-        <span class="n">grouped_spinners</span><span class="p">,</span>
-        <span class="n">bucket_by_long_severity_per_client</span>
+        <span class="n">grouped_spinners</span><span class="p">,</span> <span class="n">bucket_by_long_severity_per_client</span>
     <span class="p">)</span>
 
     <span class="n">final_result_short</span> <span class="o">=</span> <span class="n">collect_aggregated_spinners</span><span class="p">(</span>
-        <span class="n">grouped_spinners</span><span class="p">,</span>
-        <span class="n">bucket_by_short_severity_per_client</span>
+        <span class="n">grouped_spinners</span><span class="p">,</span> <span class="n">bucket_by_short_severity_per_client</span>
     <span class="p">)</span>
 
-    <span class="k">if</span> <span class="nb">round</span><span class="p">(</span><span class="n">final_result_short</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="mi">2</span><span class="p">:]</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="nb">round</span><span class="p">(</span><span class="n">final_result_long</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="mi">3</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">round</span><span class="p">(</span><span class="n">final_result_short</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="mi">2</span><span class="p">:]</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="nb">round</span><span class="p">(</span>
+        <span class="n">final_result_long</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="mi">3</span>
+    <span class="p">):</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Short and long counts match&quot;</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Error: Short and long counts do not match&quot;</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="p">{</span>
-        <span class="s1">&#39;long&#39;</span><span class="p">:</span> <span class="n">final_result_long</span><span class="p">,</span>
-        <span class="s1">&#39;short&#39;</span><span class="p">:</span> <span class="n">final_result_short</span><span class="p">,</span>
-    <span class="p">}</span></div>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;long&quot;</span><span class="p">:</span> <span class="n">final_result_long</span><span class="p">,</span> <span class="s2">&quot;short&quot;</span><span class="p">:</span> <span class="n">final_result_short</span><span class="p">}</span></div>
 </pre></div>
 
           </div>

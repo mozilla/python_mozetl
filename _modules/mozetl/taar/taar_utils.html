@@ -51,11 +51,11 @@
 <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
-<span class="n">AMO_DUMP_BUCKET</span> <span class="o">=</span> <span class="s1">&#39;telemetry-parquet&#39;</span>
-<span class="n">AMO_DUMP_KEY</span> <span class="o">=</span> <span class="s1">&#39;telemetry-ml/addon_recommender/addons_database.json&#39;</span>
+<span class="n">AMO_DUMP_BUCKET</span> <span class="o">=</span> <span class="s2">&quot;telemetry-parquet&quot;</span>
+<span class="n">AMO_DUMP_KEY</span> <span class="o">=</span> <span class="s2">&quot;telemetry-ml/addon_recommender/addons_database.json&quot;</span>
 
-<span class="n">AMO_WHITELIST_KEY</span> <span class="o">=</span> <span class="s1">&#39;telemetry-ml/addon_recommender/whitelist_addons_database.json&#39;</span>
-<span class="n">AMO_CURATED_WHITELIST_KEY</span> <span class="o">=</span> <span class="s1">&#39;telemetry-ml/addon_recommender/only_guids_top_200.json&#39;</span>
+<span class="n">AMO_WHITELIST_KEY</span> <span class="o">=</span> <span class="s2">&quot;telemetry-ml/addon_recommender/whitelist_addons_database.json&quot;</span>
+<span class="n">AMO_CURATED_WHITELIST_KEY</span> <span class="o">=</span> <span class="s2">&quot;telemetry-ml/addon_recommender/only_guids_top_200.json&quot;</span>
 
 
 <div class="viewcode-block" id="selfdestructing_path"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_utils.selfdestructing_path">[docs]</a><span class="nd">@contextlib</span><span class="o">.</span><span class="n">contextmanager</span>
@@ -69,14 +69,10 @@
 <span class="sd">    Read JSON from an S3 bucket and return the decoded JSON blob</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">full_s3_name</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">s3_prefix</span><span class="p">,</span> <span class="n">s3_dest_file_name</span><span class="p">)</span>
-    <span class="n">conn</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">resource</span><span class="p">(</span><span class="s1">&#39;s3&#39;</span><span class="p">,</span> <span class="n">region_name</span><span class="o">=</span><span class="s1">&#39;us-west-2&#39;</span><span class="p">)</span>
+    <span class="n">full_s3_name</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">s3_prefix</span><span class="p">,</span> <span class="n">s3_dest_file_name</span><span class="p">)</span>
+    <span class="n">conn</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">resource</span><span class="p">(</span><span class="s2">&quot;s3&quot;</span><span class="p">,</span> <span class="n">region_name</span><span class="o">=</span><span class="s2">&quot;us-west-2&quot;</span><span class="p">)</span>
     <span class="n">stored_data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span>
-        <span class="n">conn</span>
-        <span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">bucket</span><span class="p">,</span> <span class="n">full_s3_name</span><span class="p">)</span>
-        <span class="o">.</span><span class="n">get</span><span class="p">()[</span><span class="s1">&#39;Body&#39;</span><span class="p">]</span>
-        <span class="o">.</span><span class="n">read</span><span class="p">()</span>
-        <span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+        <span class="n">conn</span><span class="o">.</span><span class="n">Object</span><span class="p">(</span><span class="n">bucket</span><span class="p">,</span> <span class="n">full_s3_name</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">()[</span><span class="s2">&quot;Body&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">stored_data</span></div>
 
@@ -89,7 +85,7 @@
 <span class="sd">    :param s3_prefix: The S3 prefix in the bucket.</span>
 <span class="sd">    :param bucket: The S3 bucket.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s1">&#39;s3&#39;</span><span class="p">,</span> <span class="s1">&#39;us-west-2&#39;</span><span class="p">)</span>
+    <span class="n">client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;s3&quot;</span><span class="p">,</span> <span class="s2">&quot;us-west-2&quot;</span><span class="p">)</span>
     <span class="n">transfer</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">s3</span><span class="o">.</span><span class="n">transfer</span><span class="o">.</span><span class="n">S3Transfer</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>
 
     <span class="c1"># Update the state in the analysis bucket.</span>
@@ -119,8 +115,7 @@
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">FULL_FILENAME</span><span class="p">,</span> <span class="s2">&quot;w+&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">json_file</span><span class="p">:</span>
             <span class="n">json_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">json_data</span><span class="p">)</span>
 
-        <span class="n">archived_file_copy</span> <span class="o">=</span>\
-            <span class="s2">&quot;</span><span class="si">{}{}</span><span class="s2">.json&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">base_filename</span><span class="p">,</span> <span class="n">date</span><span class="p">)</span>
+        <span class="n">archived_file_copy</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}{}</span><span class="s2">.json&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">base_filename</span><span class="p">,</span> <span class="n">date</span><span class="p">)</span>
 
         <span class="c1"># Store a copy of the current JSON with datestamp.</span>
         <span class="n">write_to_s3</span><span class="p">(</span><span class="n">FULL_FILENAME</span><span class="p">,</span> <span class="n">archived_file_copy</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">bucket</span><span class="p">)</span>
@@ -137,20 +132,21 @@
     <span class="n">amo_dump</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="c1"># Load the most current AMO dump JSON resource.</span>
-        <span class="n">s3</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s1">&#39;s3&#39;</span><span class="p">)</span>
+        <span class="n">s3</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;s3&quot;</span><span class="p">)</span>
         <span class="n">s3_contents</span> <span class="o">=</span> <span class="n">s3</span><span class="o">.</span><span class="n">get_object</span><span class="p">(</span><span class="n">Bucket</span><span class="o">=</span><span class="n">AMO_DUMP_BUCKET</span><span class="p">,</span> <span class="n">Key</span><span class="o">=</span><span class="n">AMO_WHITELIST_KEY</span><span class="p">)</span>
-        <span class="n">amo_dump</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">s3_contents</span><span class="p">[</span><span class="s1">&#39;Body&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span>
+        <span class="n">amo_dump</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">s3_contents</span><span class="p">[</span><span class="s2">&quot;Body&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">))</span>
     <span class="k">except</span> <span class="n">ClientError</span><span class="p">:</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;Failed to download from S3&quot;</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="p">{</span>
-            <span class="s2">&quot;bucket&quot;</span><span class="p">:</span> <span class="n">AMO_DUMP_BUCKET</span><span class="p">,</span>
-            <span class="s2">&quot;key&quot;</span><span class="p">:</span> <span class="n">AMO_DUMP_KEY</span><span class="p">})</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span>
+            <span class="s2">&quot;Failed to download from S3&quot;</span><span class="p">,</span>
+            <span class="n">extra</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;bucket&quot;</span><span class="p">:</span> <span class="n">AMO_DUMP_BUCKET</span><span class="p">,</span> <span class="s2">&quot;key&quot;</span><span class="p">:</span> <span class="n">AMO_DUMP_KEY</span><span class="p">},</span>
+        <span class="p">)</span>
 
     <span class="c1"># If the load fails, we will have an empty whitelist, this may be problematic.</span>
     <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">amo_dump</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
-        <span class="n">addon_files</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;current_version&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;files&#39;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="n">addon_files</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;current_version&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;files&quot;</span><span class="p">,</span> <span class="p">{})</span>
         <span class="c1"># If any of the addon files are web_extensions compatible, it can be recommended.</span>
         <span class="k">if</span> <span class="nb">any</span><span class="p">([</span><span class="n">f</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;is_webextension&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">addon_files</span><span class="p">]):</span>
-            <span class="n">final_whitelist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">[</span><span class="s1">&#39;guid&#39;</span><span class="p">])</span>
+            <span class="n">final_whitelist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">[</span><span class="s2">&quot;guid&quot;</span><span class="p">])</span>
 
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">final_whitelist</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Empty AMO whitelist detected&quot;</span><span class="p">)</span>
@@ -162,9 +158,11 @@
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Return the curated whitelist of addon GUIDs</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">whitelist</span> <span class="o">=</span> <span class="n">read_from_s3</span><span class="p">(</span><span class="s1">&#39;only_guids_top_200.json&#39;</span><span class="p">,</span>
-                             <span class="s1">&#39;telemetry-ml/addon_recommender/&#39;</span><span class="p">,</span>
-                             <span class="s1">&#39;telemetry-parquet&#39;</span><span class="p">)</span>
+    <span class="n">whitelist</span> <span class="o">=</span> <span class="n">read_from_s3</span><span class="p">(</span>
+        <span class="s2">&quot;only_guids_top_200.json&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;telemetry-ml/addon_recommender/&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;telemetry-parquet&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">whitelist</span><span class="p">)</span></div>
 
 
@@ -174,7 +172,7 @@
 <span class="sd">            https://phabricator.services.mozilla.com/D8311</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha256</span><span class="p">(</span><span class="n">telemetry_id</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf8&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span></div>
+    <span class="k">return</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha256</span><span class="p">(</span><span class="n">telemetry_id</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf8&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span></div>
 </pre></div>
 
           </div>

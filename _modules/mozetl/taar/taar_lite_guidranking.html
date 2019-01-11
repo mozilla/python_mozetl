@@ -47,30 +47,32 @@
 <span class="kn">import</span> <span class="nn">mozetl.taar.taar_utils</span> <span class="k">as</span> <span class="nn">taar_utils</span>
 
 
-<span class="n">OUTPUT_BUCKET</span> <span class="o">=</span> <span class="s1">&#39;telemetry-parquet&#39;</span>
-<span class="n">OUTPUT_PREFIX</span> <span class="o">=</span> <span class="s1">&#39;taar/lite/&#39;</span>
-<span class="n">OUTPUT_BASE_FILENAME</span> <span class="o">=</span> <span class="s1">&#39;guid_install_ranking&#39;</span>
+<span class="n">OUTPUT_BUCKET</span> <span class="o">=</span> <span class="s2">&quot;telemetry-parquet&quot;</span>
+<span class="n">OUTPUT_PREFIX</span> <span class="o">=</span> <span class="s2">&quot;taar/lite/&quot;</span>
+<span class="n">OUTPUT_BASE_FILENAME</span> <span class="o">=</span> <span class="s2">&quot;guid_install_ranking&quot;</span>
 
 
 <div class="viewcode-block" id="extract_telemetry"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_lite_guidranking.extract_telemetry">[docs]</a><span class="k">def</span> <span class="nf">extract_telemetry</span><span class="p">(</span><span class="n">sparkSession</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; Load some training data from telemetry given a sparkContext</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">frame</span> <span class="o">=</span> <span class="n">sparkSession</span><span class="o">.</span><span class="n">sql</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
-<span class="s2">    SELECT</span>
-<span class="s2">        addon_guid,</span>
-<span class="s2">        count(*) as install_count</span>
-<span class="s2">    FROM</span>
-<span class="s2">        (SELECT</span>
-<span class="s2">            EXPLODE(active_addons[0]) as (addon_guid, addon_row)</span>
-<span class="s2">        FROM</span>
-<span class="s2">            longitudinal</span>
-<span class="s2">        WHERE</span>
-<span class="s2">            normalized_channel=&#39;release&#39; AND</span>
-<span class="s2">            build IS NOT NULL AND</span>
-<span class="s2">            build[0].application_name=&#39;Firefox&#39;</span>
-<span class="s2">        )</span>
-<span class="s2">    GROUP BY addon_guid</span>
-<span class="s2">    &quot;&quot;&quot;</span><span class="p">)</span>
+    <span class="n">frame</span> <span class="o">=</span> <span class="n">sparkSession</span><span class="o">.</span><span class="n">sql</span><span class="p">(</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    SELECT</span>
+<span class="sd">        addon_guid,</span>
+<span class="sd">        count(*) as install_count</span>
+<span class="sd">    FROM</span>
+<span class="sd">        (SELECT</span>
+<span class="sd">            EXPLODE(active_addons[0]) as (addon_guid, addon_row)</span>
+<span class="sd">        FROM</span>
+<span class="sd">            longitudinal</span>
+<span class="sd">        WHERE</span>
+<span class="sd">            normalized_channel=&#39;release&#39; AND</span>
+<span class="sd">            build IS NOT NULL AND</span>
+<span class="sd">            build[0].application_name=&#39;Firefox&#39;</span>
+<span class="sd">        )</span>
+<span class="sd">    GROUP BY addon_guid</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="p">)</span>
     <span class="k">return</span> <span class="n">frame</span></div>
 
 
@@ -78,29 +80,29 @@
     <span class="sd">&quot;&quot;&quot; Convert the dataframe to JSON and augment each record to</span>
 <span class="sd">    include the install count for each addon.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="nf">lambda_func</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">addon_guid</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">install_count</span><span class="p">)</span>
+
     <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">rdd</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">lambda_func</span><span class="p">)</span><span class="o">.</span><span class="n">collect</span><span class="p">())</span></div>
 
 
 <div class="viewcode-block" id="load_s3"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_lite_guidranking.load_s3">[docs]</a><span class="k">def</span> <span class="nf">load_s3</span><span class="p">(</span><span class="n">result_data</span><span class="p">,</span> <span class="n">date</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">bucket</span><span class="p">):</span>
-    <span class="n">taar_utils</span><span class="o">.</span><span class="n">store_json_to_s3</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">result_data</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span>
-                                <span class="n">OUTPUT_BASE_FILENAME</span><span class="p">,</span>
-                                <span class="n">date</span><span class="p">,</span>
-                                <span class="n">prefix</span><span class="p">,</span>
-                                <span class="n">bucket</span><span class="p">)</span></div>
+    <span class="n">taar_utils</span><span class="o">.</span><span class="n">store_json_to_s3</span><span class="p">(</span>
+        <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">result_data</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span> <span class="n">OUTPUT_BASE_FILENAME</span><span class="p">,</span> <span class="n">date</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">bucket</span>
+    <span class="p">)</span></div>
 
 
 <span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">()</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--date&#39;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--bucket&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">OUTPUT_BUCKET</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--prefix&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">OUTPUT_PREFIX</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--date&quot;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--bucket&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">OUTPUT_BUCKET</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--prefix&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">OUTPUT_PREFIX</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="n">bucket</span><span class="p">,</span> <span class="n">prefix</span><span class="p">):</span>
-    <span class="n">spark</span> <span class="o">=</span> <span class="p">(</span><span class="n">SparkSession</span>
-             <span class="o">.</span><span class="n">builder</span>
-             <span class="o">.</span><span class="n">appName</span><span class="p">(</span><span class="s2">&quot;taar_lite_ranking&quot;</span><span class="p">)</span>
-             <span class="o">.</span><span class="n">enableHiveSupport</span><span class="p">()</span>
-             <span class="o">.</span><span class="n">getOrCreate</span><span class="p">())</span>
+    <span class="n">spark</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">appName</span><span class="p">(</span><span class="s2">&quot;taar_lite_ranking&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">enableHiveSupport</span><span class="p">()</span>
+        <span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
+    <span class="p">)</span>
 
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Processing GUID install rankings&quot;</span><span class="p">)</span>
 
@@ -109,7 +111,7 @@
     <span class="n">load_s3</span><span class="p">(</span><span class="n">result_data</span><span class="p">,</span> <span class="n">date</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">bucket</span><span class="p">)</span>
 
 
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
     <span class="n">main</span><span class="p">()</span>
 </pre></div>
 

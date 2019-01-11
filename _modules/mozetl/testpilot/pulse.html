@@ -34,9 +34,17 @@
             
   <h1>Source code for mozetl.testpilot.pulse</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">dateutil.parser</span>
-<span class="kn">from</span> <span class="nn">pyspark.sql.types</span> <span class="k">import</span> <span class="p">(</span><span class="n">LongType</span><span class="p">,</span> <span class="n">DoubleType</span><span class="p">,</span> <span class="n">BooleanType</span><span class="p">,</span> <span class="n">StringType</span><span class="p">,</span>
-                               <span class="n">TimestampType</span><span class="p">,</span> <span class="n">ArrayType</span><span class="p">,</span> <span class="n">MapType</span><span class="p">,</span> <span class="n">StructType</span><span class="p">,</span>
-                               <span class="n">StructField</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">pyspark.sql.types</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="n">LongType</span><span class="p">,</span>
+    <span class="n">DoubleType</span><span class="p">,</span>
+    <span class="n">BooleanType</span><span class="p">,</span>
+    <span class="n">StringType</span><span class="p">,</span>
+    <span class="n">TimestampType</span><span class="p">,</span>
+    <span class="n">ArrayType</span><span class="p">,</span>
+    <span class="n">MapType</span><span class="p">,</span>
+    <span class="n">StructType</span><span class="p">,</span>
+    <span class="n">StructField</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="k">import</span> <span class="n">Row</span>
 
 <span class="kn">from</span> <span class="nn">..basic</span> <span class="k">import</span> <span class="n">DataFrameConfig</span><span class="p">,</span> <span class="n">convert_pings</span>
@@ -52,10 +60,10 @@
     <span class="n">float_type</span> <span class="o">=</span> <span class="p">(</span><span class="n">_option_or_none</span><span class="p">(</span><span class="nb">float</span><span class="p">),</span> <span class="n">DoubleType</span><span class="p">())</span>
 
     <span class="n">field_types</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s1">&#39;num&#39;</span><span class="p">:</span> <span class="n">int_type</span><span class="p">,</span>
-        <span class="s1">&#39;cached&#39;</span><span class="p">:</span> <span class="n">float_type</span><span class="p">,</span>
-        <span class="s1">&#39;cdn&#39;</span><span class="p">:</span> <span class="n">float_type</span><span class="p">,</span>
-        <span class="s1">&#39;time&#39;</span><span class="p">:</span> <span class="n">int_type</span><span class="p">,</span>
+        <span class="s2">&quot;num&quot;</span><span class="p">:</span> <span class="n">int_type</span><span class="p">,</span>
+        <span class="s2">&quot;cached&quot;</span><span class="p">:</span> <span class="n">float_type</span><span class="p">,</span>
+        <span class="s2">&quot;cdn&quot;</span><span class="p">:</span> <span class="n">float_type</span><span class="p">,</span>
+        <span class="s2">&quot;time&quot;</span><span class="p">:</span> <span class="n">int_type</span><span class="p">,</span>
     <span class="p">}</span>
 
     <span class="c1"># python3 work-around to keep field_types in scope since class variables</span>
@@ -63,7 +71,9 @@
     <span class="n">_keys</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">field_types</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
     <span class="n">_dtypes</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">field_types</span><span class="o">.</span><span class="n">get</span><span class="p">,</span> <span class="n">_keys</span><span class="p">)</span>
 
-    <span class="n">StructType</span> <span class="o">=</span> <span class="n">StructType</span><span class="p">([</span><span class="n">StructField</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">_keys</span><span class="p">,</span> <span class="n">_dtypes</span><span class="p">)])</span>
+    <span class="n">StructType</span> <span class="o">=</span> <span class="n">StructType</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">StructField</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">_keys</span><span class="p">,</span> <span class="n">_dtypes</span><span class="p">)]</span>
+    <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request_dict</span><span class="p">):</span>
         <span class="n">args</span> <span class="o">=</span> <span class="p">{</span>
@@ -85,50 +95,97 @@
     <span class="k">return</span> <span class="n">convert_pings</span><span class="p">(</span>
         <span class="n">sqlContext</span><span class="p">,</span>
         <span class="n">pings</span><span class="p">,</span>
-        <span class="n">DataFrameConfig</span><span class="p">([</span>
-            <span class="p">(</span><span class="s2">&quot;method&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/method&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
-            <span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/id&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
-            <span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/type&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
-            <span class="p">(</span><span class="s2">&quot;object&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/object&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
-            <span class="p">(</span><span class="s2">&quot;category&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/category&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
-            <span class="p">(</span><span class="s2">&quot;variant&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/variant&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
-            <span class="p">(</span><span class="s2">&quot;details&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/details&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
-            <span class="p">(</span><span class="s2">&quot;sentiment&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/sentiment&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">LongType</span><span class="p">()),</span>
-            <span class="p">(</span><span class="s2">&quot;reason&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/reason&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
-            <span class="p">(</span><span class="s2">&quot;adBlocker&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/adBlocker&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">BooleanType</span><span class="p">()),</span>
-            <span class="p">(</span><span class="s2">&quot;addons&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/addons&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">ArrayType</span><span class="p">(</span><span class="n">StringType</span><span class="p">())),</span>
-            <span class="p">(</span><span class="s2">&quot;channel&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/channel&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
-            <span class="p">(</span><span class="s2">&quot;hostname&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/hostname&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
-            <span class="p">(</span><span class="s2">&quot;language&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/language&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
-            <span class="p">(</span><span class="s2">&quot;openTabs&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/openTabs&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">LongType</span><span class="p">()),</span>
-            <span class="p">(</span><span class="s2">&quot;openWindows&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/openWindows&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">LongType</span><span class="p">()),</span>
-            <span class="p">(</span><span class="s2">&quot;platform&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/platform&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
-            <span class="p">(</span><span class="s2">&quot;protocol&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/protocol&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
-            <span class="p">(</span><span class="s2">&quot;telemetryId&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/telemetryId&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
-            <span class="p">(</span><span class="s2">&quot;timerContentLoaded&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/timerContentLoaded&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">LongType</span><span class="p">()),</span>
-            <span class="p">(</span><span class="s2">&quot;timerFirstInteraction&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/timerFirstInteraction&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">LongType</span><span class="p">()),</span>
-            <span class="p">(</span><span class="s2">&quot;timerFirstPaint&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/timerFirstPaint&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">LongType</span><span class="p">()),</span>
-            <span class="p">(</span><span class="s2">&quot;timerWindowLoad&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/timerWindowLoad&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">LongType</span><span class="p">()),</span>
-            <span class="p">(</span><span class="s2">&quot;inner_timestamp&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/timestamp&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">LongType</span><span class="p">()),</span>
-            <span class="p">(</span><span class="s2">&quot;fx_version&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/fx_version&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
-            <span class="p">(</span><span class="s2">&quot;creation_date&quot;</span><span class="p">,</span> <span class="s2">&quot;creationDate&quot;</span><span class="p">,</span> <span class="n">dateutil</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">parse</span><span class="p">,</span> <span class="n">TimestampType</span><span class="p">()),</span>
-            <span class="p">(</span><span class="s2">&quot;test&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/test&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
-            <span class="p">(</span><span class="s2">&quot;variants&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/variants&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
-            <span class="p">(</span><span class="s2">&quot;timestamp&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/timestamp&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">LongType</span><span class="p">()),</span>
-            <span class="p">(</span><span class="s2">&quot;version&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/version&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
-            <span class="p">(</span><span class="s2">&quot;requests&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/requests&quot;</span><span class="p">,</span> <span class="n">_requests_to_rows</span><span class="p">,</span> <span class="n">RequestsType</span><span class="p">),</span>
-            <span class="p">(</span><span class="s2">&quot;disconnectRequests&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/disconnectRequests&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">LongType</span><span class="p">()),</span>
-            <span class="p">(</span><span class="s2">&quot;consoleErrors&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/consoleErrors&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">LongType</span><span class="p">()),</span>
-            <span class="p">(</span><span class="s2">&quot;e10sStatus&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/e10sStatus&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">LongType</span><span class="p">()),</span>
-            <span class="p">(</span><span class="s2">&quot;e10sProcessCount&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/e10sProcessCount&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">LongType</span><span class="p">()),</span>
-            <span class="p">(</span><span class="s2">&quot;trackingProtection&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/trackingProtection&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">BooleanType</span><span class="p">())</span>
-        <span class="p">],</span> <span class="k">lambda</span> <span class="n">ping</span><span class="p">:</span> <span class="n">ping</span><span class="p">[</span><span class="s1">&#39;payload/test&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;pulse@mozilla.com&#39;</span><span class="p">)</span>
+        <span class="n">DataFrameConfig</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="p">(</span><span class="s2">&quot;method&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/method&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
+                <span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/id&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
+                <span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/type&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
+                <span class="p">(</span><span class="s2">&quot;object&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/object&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
+                <span class="p">(</span><span class="s2">&quot;category&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/category&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
+                <span class="p">(</span><span class="s2">&quot;variant&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/variant&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
+                <span class="p">(</span><span class="s2">&quot;details&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/details&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
+                <span class="p">(</span><span class="s2">&quot;sentiment&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/sentiment&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">LongType</span><span class="p">()),</span>
+                <span class="p">(</span><span class="s2">&quot;reason&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/reason&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
+                <span class="p">(</span><span class="s2">&quot;adBlocker&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/adBlocker&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">BooleanType</span><span class="p">()),</span>
+                <span class="p">(</span><span class="s2">&quot;addons&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/addons&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">ArrayType</span><span class="p">(</span><span class="n">StringType</span><span class="p">())),</span>
+                <span class="p">(</span><span class="s2">&quot;channel&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/channel&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
+                <span class="p">(</span><span class="s2">&quot;hostname&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/hostname&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
+                <span class="p">(</span><span class="s2">&quot;language&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/language&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
+                <span class="p">(</span><span class="s2">&quot;openTabs&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/openTabs&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">LongType</span><span class="p">()),</span>
+                <span class="p">(</span><span class="s2">&quot;openWindows&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/openWindows&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">LongType</span><span class="p">()),</span>
+                <span class="p">(</span><span class="s2">&quot;platform&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/platform&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
+                <span class="p">(</span><span class="s2">&quot;protocol&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/protocol&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
+                <span class="p">(</span><span class="s2">&quot;telemetryId&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/telemetryId&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
+                <span class="p">(</span>
+                    <span class="s2">&quot;timerContentLoaded&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;payload/payload/timerContentLoaded&quot;</span><span class="p">,</span>
+                    <span class="kc">None</span><span class="p">,</span>
+                    <span class="n">LongType</span><span class="p">(),</span>
+                <span class="p">),</span>
+                <span class="p">(</span>
+                    <span class="s2">&quot;timerFirstInteraction&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;payload/payload/timerFirstInteraction&quot;</span><span class="p">,</span>
+                    <span class="kc">None</span><span class="p">,</span>
+                    <span class="n">LongType</span><span class="p">(),</span>
+                <span class="p">),</span>
+                <span class="p">(</span>
+                    <span class="s2">&quot;timerFirstPaint&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;payload/payload/timerFirstPaint&quot;</span><span class="p">,</span>
+                    <span class="kc">None</span><span class="p">,</span>
+                    <span class="n">LongType</span><span class="p">(),</span>
+                <span class="p">),</span>
+                <span class="p">(</span>
+                    <span class="s2">&quot;timerWindowLoad&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;payload/payload/timerWindowLoad&quot;</span><span class="p">,</span>
+                    <span class="kc">None</span><span class="p">,</span>
+                    <span class="n">LongType</span><span class="p">(),</span>
+                <span class="p">),</span>
+                <span class="p">(</span><span class="s2">&quot;inner_timestamp&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/timestamp&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">LongType</span><span class="p">()),</span>
+                <span class="p">(</span><span class="s2">&quot;fx_version&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/fx_version&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
+                <span class="p">(</span>
+                    <span class="s2">&quot;creation_date&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;creationDate&quot;</span><span class="p">,</span>
+                    <span class="n">dateutil</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">parse</span><span class="p">,</span>
+                    <span class="n">TimestampType</span><span class="p">(),</span>
+                <span class="p">),</span>
+                <span class="p">(</span><span class="s2">&quot;test&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/test&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
+                <span class="p">(</span><span class="s2">&quot;variants&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/variants&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
+                <span class="p">(</span><span class="s2">&quot;timestamp&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/timestamp&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">LongType</span><span class="p">()),</span>
+                <span class="p">(</span><span class="s2">&quot;version&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/version&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
+                <span class="p">(</span>
+                    <span class="s2">&quot;requests&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;payload/payload/requests&quot;</span><span class="p">,</span>
+                    <span class="n">_requests_to_rows</span><span class="p">,</span>
+                    <span class="n">RequestsType</span><span class="p">,</span>
+                <span class="p">),</span>
+                <span class="p">(</span>
+                    <span class="s2">&quot;disconnectRequests&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;payload/payload/disconnectRequests&quot;</span><span class="p">,</span>
+                    <span class="kc">None</span><span class="p">,</span>
+                    <span class="n">LongType</span><span class="p">(),</span>
+                <span class="p">),</span>
+                <span class="p">(</span><span class="s2">&quot;consoleErrors&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/consoleErrors&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">LongType</span><span class="p">()),</span>
+                <span class="p">(</span><span class="s2">&quot;e10sStatus&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/e10sStatus&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">LongType</span><span class="p">()),</span>
+                <span class="p">(</span>
+                    <span class="s2">&quot;e10sProcessCount&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;payload/payload/e10sProcessCount&quot;</span><span class="p">,</span>
+                    <span class="kc">None</span><span class="p">,</span>
+                    <span class="n">LongType</span><span class="p">(),</span>
+                <span class="p">),</span>
+                <span class="p">(</span>
+                    <span class="s2">&quot;trackingProtection&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;payload/payload/trackingProtection&quot;</span><span class="p">,</span>
+                    <span class="kc">None</span><span class="p">,</span>
+                    <span class="n">BooleanType</span><span class="p">(),</span>
+                <span class="p">),</span>
+            <span class="p">],</span>
+            <span class="k">lambda</span> <span class="n">ping</span><span class="p">:</span> <span class="n">ping</span><span class="p">[</span><span class="s2">&quot;payload/test&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;pulse@mozilla.com&quot;</span><span class="p">,</span>
+        <span class="p">),</span>
     <span class="p">)</span></div>
 
 
 <span class="n">etl_job</span> <span class="o">=</span> <span class="n">testpilot_etl_boilerplate</span><span class="p">(</span>
-    <span class="n">transform_pings</span><span class="p">,</span>
-    <span class="s1">&#39;s3://telemetry-parquet/testpilot/txp_pulse/v1&#39;</span>
+    <span class="n">transform_pings</span><span class="p">,</span> <span class="s2">&quot;s3://telemetry-parquet/testpilot/txp_pulse/v1&quot;</span>
 <span class="p">)</span>
 </pre></div>
 

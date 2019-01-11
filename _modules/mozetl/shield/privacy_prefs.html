@@ -48,7 +48,7 @@
 <span class="kn">from</span> <span class="nn">..basic</span> <span class="k">import</span> <span class="n">convert_pings</span><span class="p">,</span> <span class="n">DataFrameConfig</span>
 
 
-<span class="n">SHIELD_ADDON_ID</span> <span class="o">=</span> <span class="s1">&#39;@shield-study-privacy&#39;</span>
+<span class="n">SHIELD_ADDON_ID</span> <span class="o">=</span> <span class="s2">&quot;@shield-study-privacy&quot;</span>
 
 <span class="c1"># Note that the JSON paths in this config are unusual for Shield pings.</span>
 <span class="c1"># See https://bugzil.la/1387236 for more details and discussion</span>
@@ -64,11 +64,11 @@
 <span class="p">]</span>
 
 <span class="n">STUDY_STATE_DATAFRAME_COLUMN_CONFIGS</span> <span class="o">=</span> <span class="n">COMMON_COLUMN_CONFIGS</span> <span class="o">+</span> <span class="p">[</span>
-    <span class="p">(</span><span class="s2">&quot;study&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/study_name&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
+    <span class="p">(</span><span class="s2">&quot;study&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/study_name&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">())</span>
 <span class="p">]</span>
 
 <span class="n">STUDY_EVENT_DATAFRAME_COLUMN_CONFIGS</span> <span class="o">=</span> <span class="n">COMMON_COLUMN_CONFIGS</span> <span class="o">+</span> <span class="p">[</span>
-    <span class="p">(</span><span class="s2">&quot;study&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/study&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
+    <span class="p">(</span><span class="s2">&quot;study&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/study&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">())</span>
 <span class="p">]</span>
 
 
@@ -76,8 +76,7 @@
     <span class="k">return</span> <span class="n">convert_pings</span><span class="p">(</span>
         <span class="n">sqlContext</span><span class="p">,</span>
         <span class="n">pings</span><span class="p">,</span>
-        <span class="n">DataFrameConfig</span><span class="p">(</span><span class="n">STUDY_STATE_DATAFRAME_COLUMN_CONFIGS</span><span class="p">,</span>
-                        <span class="n">include_state_pings</span><span class="p">)</span>
+        <span class="n">DataFrameConfig</span><span class="p">(</span><span class="n">STUDY_STATE_DATAFRAME_COLUMN_CONFIGS</span><span class="p">,</span> <span class="n">include_state_pings</span><span class="p">),</span>
     <span class="p">)</span></div>
 
 
@@ -85,31 +84,30 @@
     <span class="k">return</span> <span class="n">convert_pings</span><span class="p">(</span>
         <span class="n">sqlContext</span><span class="p">,</span>
         <span class="n">pings</span><span class="p">,</span>
-        <span class="n">DataFrameConfig</span><span class="p">(</span><span class="n">STUDY_EVENT_DATAFRAME_COLUMN_CONFIGS</span><span class="p">,</span>
-                        <span class="n">include_event_pings</span><span class="p">)</span>
+        <span class="n">DataFrameConfig</span><span class="p">(</span><span class="n">STUDY_EVENT_DATAFRAME_COLUMN_CONFIGS</span><span class="p">,</span> <span class="n">include_event_pings</span><span class="p">),</span>
     <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="include_event_pings"><a class="viewcode-back" href="../../../source/mozetl.shield.html#mozetl.shield.privacy_prefs.include_event_pings">[docs]</a><span class="k">def</span> <span class="nf">include_event_pings</span><span class="p">(</span><span class="n">ping</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">ping</span><span class="p">[</span><span class="s1">&#39;payload/study&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">SHIELD_ADDON_ID</span></div>
+    <span class="k">return</span> <span class="n">ping</span><span class="p">[</span><span class="s2">&quot;payload/study&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">SHIELD_ADDON_ID</span></div>
 
 
 <div class="viewcode-block" id="include_state_pings"><a class="viewcode-back" href="../../../source/mozetl.shield.html#mozetl.shield.privacy_prefs.include_state_pings">[docs]</a><span class="k">def</span> <span class="nf">include_state_pings</span><span class="p">(</span><span class="n">ping</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">ping</span><span class="p">[</span><span class="s1">&#39;payload/study_name&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">SHIELD_ADDON_ID</span></div>
+    <span class="k">return</span> <span class="n">ping</span><span class="p">[</span><span class="s2">&quot;payload/study_name&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">SHIELD_ADDON_ID</span></div>
 
 
 <div class="viewcode-block" id="etl_job"><a class="viewcode-back" href="../../../source/mozetl.shield.html#mozetl.shield.privacy_prefs.etl_job">[docs]</a><span class="k">def</span> <span class="nf">etl_job</span><span class="p">(</span><span class="n">sc</span><span class="p">,</span> <span class="n">sqlContext</span><span class="p">,</span> <span class="n">submission_date</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-    <span class="n">s3_path</span> <span class="o">=</span> <span class="s1">&#39;s3n://telemetry-parquet/harter/privacy_prefs_shield/v2&#39;</span>
+    <span class="n">s3_path</span> <span class="o">=</span> <span class="s2">&quot;s3n://telemetry-parquet/harter/privacy_prefs_shield/v2&quot;</span>
     <span class="k">if</span> <span class="n">submission_date</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">submission_date</span> <span class="o">=</span> <span class="p">(</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span>
 
-    <span class="n">pings</span> <span class="o">=</span> <span class="n">Dataset</span><span class="o">.</span><span class="n">from_source</span><span class="p">(</span>
-        <span class="s2">&quot;telemetry&quot;</span>
-    <span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
-        <span class="n">docType</span><span class="o">=</span><span class="s2">&quot;shield-study&quot;</span><span class="p">,</span>
-        <span class="n">submissionDate</span><span class="o">=</span><span class="n">submission_date</span><span class="p">,</span>
-        <span class="n">appName</span><span class="o">=</span><span class="s2">&quot;Firefox&quot;</span><span class="p">,</span>
-    <span class="p">)</span><span class="o">.</span><span class="n">records</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
+    <span class="n">pings</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">Dataset</span><span class="o">.</span><span class="n">from_source</span><span class="p">(</span><span class="s2">&quot;telemetry&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">where</span><span class="p">(</span>
+            <span class="n">docType</span><span class="o">=</span><span class="s2">&quot;shield-study&quot;</span><span class="p">,</span> <span class="n">submissionDate</span><span class="o">=</span><span class="n">submission_date</span><span class="p">,</span> <span class="n">appName</span><span class="o">=</span><span class="s2">&quot;Firefox&quot;</span>
+        <span class="p">)</span>
+        <span class="o">.</span><span class="n">records</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
+    <span class="p">)</span>
 
     <span class="n">transformed_event_pings</span> <span class="o">=</span> <span class="n">transform_event_pings</span><span class="p">(</span><span class="n">sqlContext</span><span class="p">,</span> <span class="n">pings</span><span class="p">)</span>
 
@@ -118,8 +116,8 @@
     <span class="n">transformed_pings</span> <span class="o">=</span> <span class="n">transformed_event_pings</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">transformed_state_pings</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">save</span><span class="p">:</span>
-        <span class="n">path</span> <span class="o">=</span> <span class="n">s3_path</span> <span class="o">+</span> <span class="s1">&#39;/submission_date=</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">submission_date</span><span class="p">)</span>
-        <span class="n">transformed_pings</span><span class="o">.</span><span class="n">repartition</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">write</span><span class="o">.</span><span class="n">mode</span><span class="p">(</span><span class="s1">&#39;overwrite&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">parquet</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">s3_path</span> <span class="o">+</span> <span class="s2">&quot;/submission_date=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">submission_date</span><span class="p">)</span>
+        <span class="n">transformed_pings</span><span class="o">.</span><span class="n">repartition</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">write</span><span class="o">.</span><span class="n">mode</span><span class="p">(</span><span class="s2">&quot;overwrite&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">parquet</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">transformed_pings</span></div>
 </pre></div>

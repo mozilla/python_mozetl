@@ -51,10 +51,7 @@
 <span class="kn">import</span> <span class="nn">botocore</span>
 <span class="kn">import</span> <span class="nn">click</span>
 <span class="kn">from</span> <span class="nn">boto3.s3.transfer</span> <span class="k">import</span> <span class="n">S3Transfer</span>
-<span class="kn">from</span> <span class="nn">moztelemetry.standards</span> <span class="k">import</span> <span class="p">(</span>
-    <span class="n">filter_date_range</span><span class="p">,</span>
-    <span class="n">count_distinct_clientids</span>
-<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">moztelemetry.standards</span> <span class="k">import</span> <span class="n">filter_date_range</span><span class="p">,</span> <span class="n">count_distinct_clientids</span>
 
 <span class="kn">from</span> <span class="nn">mozetl</span> <span class="k">import</span> <span class="n">utils</span> <span class="k">as</span> <span class="n">U</span>
 
@@ -64,7 +61,7 @@
 <span class="n">DEVELOPMENT</span> <span class="o">=</span> <span class="kc">False</span>
 
 <span class="n">STORAGE_BUCKET</span> <span class="o">=</span> <span class="s2">&quot;net-mozaws-prod-us-west-2-pipeline-analysis&quot;</span>
-<span class="n">STORAGE_SUB_DIR</span> <span class="o">=</span> <span class="s1">&#39;spenrose/maudau&#39;</span> <span class="k">if</span> <span class="n">DEVELOPMENT</span> <span class="k">else</span> <span class="s1">&#39;mreid/maudau&#39;</span>
+<span class="n">STORAGE_SUB_DIR</span> <span class="o">=</span> <span class="s2">&quot;spenrose/maudau&quot;</span> <span class="k">if</span> <span class="n">DEVELOPMENT</span> <span class="k">else</span> <span class="s2">&quot;mreid/maudau&quot;</span>
 <span class="n">MAUDAU_ROLLUP_BASENAME</span> <span class="o">=</span> <span class="s2">&quot;engagement_ratio.csv&quot;</span>
 <span class="n">MAUDAU_SNAPSHOT_TEMPLATE</span> <span class="o">=</span> <span class="s2">&quot;engagement_ratio.</span><span class="si">{}</span><span class="s2">.csv&quot;</span>
 <span class="n">DASHBOARD_BUCKET</span> <span class="o">=</span> <span class="s2">&quot;net-mozaws-prod-metrics-data&quot;</span>
@@ -97,11 +94,12 @@
     <span class="n">filtered</span> <span class="o">=</span> <span class="n">filter_date_range</span><span class="p">(</span>
         <span class="n">frame</span><span class="p">,</span>
         <span class="n">frame</span><span class="o">.</span><span class="n">subsession_start_date</span><span class="p">,</span>
-        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;min_activity_iso&#39;</span><span class="p">],</span>
-        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;max_activity_iso&#39;</span><span class="p">],</span>
+        <span class="n">params</span><span class="p">[</span><span class="s2">&quot;min_activity_iso&quot;</span><span class="p">],</span>
+        <span class="n">params</span><span class="p">[</span><span class="s2">&quot;max_activity_iso&quot;</span><span class="p">],</span>
         <span class="n">frame</span><span class="o">.</span><span class="n">submission_date_s3</span><span class="p">,</span>
-        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;min_submission_string&#39;</span><span class="p">],</span>
-        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;max_submission_string&#39;</span><span class="p">])</span>
+        <span class="n">params</span><span class="p">[</span><span class="s2">&quot;min_submission_string&quot;</span><span class="p">],</span>
+        <span class="n">params</span><span class="p">[</span><span class="s2">&quot;max_submission_string&quot;</span><span class="p">],</span>
+    <span class="p">)</span>
     <span class="k">return</span> <span class="n">count_distinct_clientids</span><span class="p">(</span><span class="n">filtered</span><span class="p">)</span></div>
 
 
@@ -117,7 +115,7 @@
         <span class="n">reader</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">DictReader</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
         <span class="n">last_day</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">reader</span><span class="p">:</span>
-            <span class="n">day</span> <span class="o">=</span> <span class="n">U</span><span class="o">.</span><span class="n">parse_as_submission_date</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;day&#39;</span><span class="p">])</span>
+            <span class="n">day</span> <span class="o">=</span> <span class="n">U</span><span class="o">.</span><span class="n">parse_as_submission_date</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;day&quot;</span><span class="p">])</span>
             <span class="k">if</span> <span class="n">day</span> <span class="o">&gt;=</span> <span class="n">since</span><span class="p">:</span>
                 <span class="k">break</span>
             <span class="k">if</span> <span class="n">last_day</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -130,19 +128,16 @@
 
 
 <div class="viewcode-block" id="get_last_rollup"><a class="viewcode-back" href="../../../source/mozetl.maudau.html#mozetl.maudau.maudau.get_last_rollup">[docs]</a><span class="k">def</span> <span class="nf">get_last_rollup</span><span class="p">(</span><span class="n">transferer</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;</span>
+    <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Always chose the latest rollup, even if start_date is old.</span>
-<span class="sd">    &#39;&#39;&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">basename</span> <span class="o">=</span> <span class="n">MAUDAU_ROLLUP_BASENAME</span>
     <span class="n">key</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">STORAGE_SUB_DIR</span><span class="p">,</span> <span class="n">basename</span><span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">transferer</span><span class="o">.</span><span class="n">download_file</span><span class="p">(</span>
-            <span class="n">STORAGE_BUCKET</span><span class="p">,</span>
-            <span class="n">key</span><span class="p">,</span>
-            <span class="n">basename</span><span class="p">)</span>
+        <span class="n">transferer</span><span class="o">.</span><span class="n">download_file</span><span class="p">(</span><span class="n">STORAGE_BUCKET</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">basename</span><span class="p">)</span>
     <span class="k">except</span> <span class="n">botocore</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ClientError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
         <span class="c1"># If the file wasn&#39;t there, that&#39;s ok. Otherwise, abort!</span>
-        <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">response</span><span class="p">[</span><span class="s1">&#39;Error&#39;</span><span class="p">][</span><span class="s1">&#39;Code&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;404&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">response</span><span class="p">[</span><span class="s2">&quot;Error&quot;</span><span class="p">][</span><span class="s2">&quot;Code&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;404&quot;</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">e</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;Did not find an existing file at &#39;</span><span class="si">{}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">basename</span><span class="p">)</span>
@@ -152,15 +147,18 @@
 
 
 <div class="viewcode-block" id="generate_counts"><a class="viewcode-back" href="../../../source/mozetl.maudau.html#mozetl.maudau.maudau.generate_counts">[docs]</a><span class="k">def</span> <span class="nf">generate_counts</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="n">since</span><span class="p">,</span> <span class="n">until</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;</span>
+    <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    A thin wrapper around moztelemetry counting functions.</span>
 
 <span class="sd">    :frame main_summary or an isomorphic subset</span>
 <span class="sd">    :since DT.date()</span>
 <span class="sd">    :until DT.date() (unit test convenience)</span>
-<span class="sd">    &#39;&#39;&#39;</span>
-    <span class="n">cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">frame</span><span class="o">.</span><span class="n">client_id</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s1">&#39;clientId&#39;</span><span class="p">),</span>
-            <span class="s1">&#39;subsession_start_date&#39;</span><span class="p">,</span> <span class="s1">&#39;submission_date_s3&#39;</span><span class="p">]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cols</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">frame</span><span class="o">.</span><span class="n">client_id</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;clientId&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;subsession_start_date&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;submission_date_s3&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
     <span class="n">narrow</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">cols</span><span class="p">)</span>
     <span class="n">updates</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">today</span> <span class="o">=</span> <span class="n">DT</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span>
@@ -171,21 +169,21 @@
         <span class="n">dau</span> <span class="o">=</span> <span class="n">count_active_users</span><span class="p">(</span><span class="n">narrow</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
         <span class="n">mau</span> <span class="o">=</span> <span class="n">count_active_users</span><span class="p">(</span><span class="n">narrow</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">MONTH</span><span class="p">)</span>
         <span class="n">day</span> <span class="o">=</span> <span class="n">U</span><span class="o">.</span><span class="n">format_as_submission_date</span><span class="p">(</span><span class="n">start</span><span class="p">)</span>
-        <span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;day&#39;</span><span class="p">:</span> <span class="n">day</span><span class="p">,</span> <span class="s1">&#39;dau&#39;</span><span class="p">:</span> <span class="n">dau</span><span class="p">,</span> <span class="s1">&#39;mau&#39;</span><span class="p">:</span> <span class="n">mau</span><span class="p">,</span> <span class="s1">&#39;generated_on&#39;</span><span class="p">:</span> <span class="n">generated</span><span class="p">}</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;day&quot;</span><span class="p">:</span> <span class="n">day</span><span class="p">,</span> <span class="s2">&quot;dau&quot;</span><span class="p">:</span> <span class="n">dau</span><span class="p">,</span> <span class="s2">&quot;mau&quot;</span><span class="p">:</span> <span class="n">mau</span><span class="p">,</span> <span class="s2">&quot;generated_on&quot;</span><span class="p">:</span> <span class="n">generated</span><span class="p">}</span>
         <span class="n">updates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
         <span class="n">start</span> <span class="o">+=</span> <span class="n">DT</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">updates</span></div>
 
 
 <div class="viewcode-block" id="write_locally"><a class="viewcode-back" href="../../../source/mozetl.maudau.html#mozetl.maudau.maudau.write_locally">[docs]</a><span class="k">def</span> <span class="nf">write_locally</span><span class="p">(</span><span class="n">results</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;</span>
+    <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    :results [{&#39;day&#39;: &#39;%Y%m%d&#39;, &#39;dau&#39;: &lt;int&gt;,</span>
 <span class="sd">              &#39;mau&#39;: &lt;int&gt;, &#39;generated_on&#39;: &#39;%Y%m%d&#39;}, ...]</span>
-<span class="sd">    &#39;&#39;&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">publication_date</span> <span class="o">=</span> <span class="n">U</span><span class="o">.</span><span class="n">format_as_submission_date</span><span class="p">(</span><span class="n">DT</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">())</span>
     <span class="n">basename</span> <span class="o">=</span> <span class="n">MAUDAU_SNAPSHOT_TEMPLATE</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">publication_date</span><span class="p">)</span>
     <span class="n">cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;day&quot;</span><span class="p">,</span> <span class="s2">&quot;dau&quot;</span><span class="p">,</span> <span class="s2">&quot;mau&quot;</span><span class="p">,</span> <span class="s2">&quot;generated_on&quot;</span><span class="p">]</span>
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">basename</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">basename</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
         <span class="n">writer</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">DictWriter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">cols</span><span class="p">)</span>
         <span class="n">writer</span><span class="o">.</span><span class="n">writeheader</span><span class="p">()</span>
         <span class="n">writer</span><span class="o">.</span><span class="n">writerows</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
@@ -193,10 +191,10 @@
 
 
 <div class="viewcode-block" id="publish_to_s3"><a class="viewcode-back" href="../../../source/mozetl.maudau.html#mozetl.maudau.maudau.publish_to_s3">[docs]</a><span class="k">def</span> <span class="nf">publish_to_s3</span><span class="p">(</span><span class="n">s3client</span><span class="p">,</span> <span class="n">bucket</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">basename</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;</span>
+    <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Write the file twice to storage (once dated, once as &quot;latest&quot;)</span>
 <span class="sd">    and once to the production dashboard.</span>
-<span class="sd">    &#39;&#39;&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">dated_key</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">prefix</span><span class="p">,</span> <span class="n">basename</span><span class="p">)</span>
     <span class="n">U</span><span class="o">.</span><span class="n">upload_file_to_s3</span><span class="p">(</span><span class="n">s3client</span><span class="p">,</span> <span class="n">basename</span><span class="p">,</span> <span class="n">bucket</span><span class="p">,</span> <span class="n">dated_key</span><span class="p">)</span>
     <span class="n">latest_key</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">prefix</span><span class="p">,</span> <span class="n">MAUDAU_ROLLUP_BASENAME</span><span class="p">)</span>
@@ -207,22 +205,22 @@
 
 
 <span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">()</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--input_bucket&#39;</span><span class="p">,</span>
-              <span class="n">default</span><span class="o">=</span><span class="s1">&#39;telemetry-parquet&#39;</span><span class="p">,</span>
-              <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Bucket of the input dataset&#39;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--input_prefix&#39;</span><span class="p">,</span>
-              <span class="n">default</span><span class="o">=</span><span class="s1">&#39;main_summary/v4&#39;</span><span class="p">,</span>
-              <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Prefix of the input dataset&#39;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--output_bucket&#39;</span><span class="p">,</span>
-              <span class="n">default</span><span class="o">=</span><span class="n">STORAGE_BUCKET</span><span class="p">,</span>
-              <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Bucket of the output dataset&#39;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--output_prefix&#39;</span><span class="p">,</span>
-              <span class="n">default</span><span class="o">=</span><span class="n">STORAGE_SUB_DIR</span><span class="p">,</span>
-              <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Prefix of the output dataset&#39;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+    <span class="s2">&quot;--input_bucket&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;telemetry-parquet&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Bucket of the input dataset&quot;</span>
+<span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+    <span class="s2">&quot;--input_prefix&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;main_summary/v4&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Prefix of the input dataset&quot;</span>
+<span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+    <span class="s2">&quot;--output_bucket&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">STORAGE_BUCKET</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Bucket of the output dataset&quot;</span>
+<span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+    <span class="s2">&quot;--output_prefix&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">STORAGE_SUB_DIR</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Prefix of the output dataset&quot;</span>
+<span class="p">)</span>
 <span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">input_bucket</span><span class="p">,</span> <span class="n">input_prefix</span><span class="p">,</span> <span class="n">output_bucket</span><span class="p">,</span> <span class="n">output_prefix</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Calculate Firefox monthly- and daily-active users.&quot;&quot;&quot;</span>
 
-    <span class="n">s3client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s1">&#39;s3&#39;</span><span class="p">,</span> <span class="s1">&#39;us-west-2&#39;</span><span class="p">)</span>
+    <span class="n">s3client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;s3&quot;</span><span class="p">,</span> <span class="s2">&quot;us-west-2&quot;</span><span class="p">)</span>
     <span class="n">transferer</span> <span class="o">=</span> <span class="n">S3Transfer</span><span class="p">(</span><span class="n">s3client</span><span class="p">)</span>
     <span class="n">last_rollup_basename</span> <span class="o">=</span> <span class="n">get_last_rollup</span><span class="p">(</span><span class="n">transferer</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">last_rollup_basename</span><span class="p">:</span>
@@ -231,12 +229,7 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="n">since</span><span class="p">,</span> <span class="n">carryover</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="p">[]</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Generating counts since beginning&quot;</span><span class="p">)</span>
-    <span class="n">spark</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">SparkSession</span>
-        <span class="o">.</span><span class="n">builder</span>
-        <span class="o">.</span><span class="n">appName</span><span class="p">(</span><span class="s2">&quot;maudau&quot;</span><span class="p">)</span>
-        <span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
-    <span class="p">)</span>
+    <span class="n">spark</span> <span class="o">=</span> <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">appName</span><span class="p">(</span><span class="s2">&quot;maudau&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
     <span class="n">path</span> <span class="o">=</span> <span class="n">U</span><span class="o">.</span><span class="n">format_spark_path</span><span class="p">(</span><span class="n">input_bucket</span><span class="p">,</span> <span class="n">input_prefix</span><span class="p">)</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading main_summary from </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
     <span class="n">main_summary</span> <span class="o">=</span> <span class="n">spark</span><span class="o">.</span><span class="n">read</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;mergeSchema&quot;</span><span class="p">,</span> <span class="s2">&quot;true&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">parquet</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>

@@ -42,19 +42,21 @@
         <span class="k">if</span> <span class="n">submission_date</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">submission_date</span> <span class="o">=</span> <span class="p">(</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span>
 
-        <span class="n">pings</span> <span class="o">=</span> <span class="n">Dataset</span><span class="o">.</span><span class="n">from_source</span><span class="p">(</span>
-            <span class="s2">&quot;telemetry&quot;</span>
-        <span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
-            <span class="n">docType</span><span class="o">=</span><span class="s2">&quot;shield-study&quot;</span><span class="p">,</span>
-            <span class="n">submissionDate</span><span class="o">=</span><span class="n">submission_date</span><span class="p">,</span>
-            <span class="n">appName</span><span class="o">=</span><span class="s2">&quot;Firefox&quot;</span><span class="p">,</span>
-        <span class="p">)</span><span class="o">.</span><span class="n">records</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
+        <span class="n">pings</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">Dataset</span><span class="o">.</span><span class="n">from_source</span><span class="p">(</span><span class="s2">&quot;telemetry&quot;</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">where</span><span class="p">(</span>
+                <span class="n">docType</span><span class="o">=</span><span class="s2">&quot;shield-study&quot;</span><span class="p">,</span>
+                <span class="n">submissionDate</span><span class="o">=</span><span class="n">submission_date</span><span class="p">,</span>
+                <span class="n">appName</span><span class="o">=</span><span class="s2">&quot;Firefox&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">records</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
+        <span class="p">)</span>
 
         <span class="n">transformed_pings</span> <span class="o">=</span> <span class="n">transform_func</span><span class="p">(</span><span class="n">sqlContext</span><span class="p">,</span> <span class="n">pings</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">save</span><span class="p">:</span>
-            <span class="n">path</span> <span class="o">=</span> <span class="n">s3_path</span> <span class="o">+</span> <span class="s1">&#39;/submission_date=</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">submission_date</span><span class="p">)</span>
-            <span class="n">transformed_pings</span><span class="o">.</span><span class="n">repartition</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">write</span><span class="o">.</span><span class="n">mode</span><span class="p">(</span><span class="s1">&#39;overwrite&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">parquet</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">s3_path</span> <span class="o">+</span> <span class="s2">&quot;/submission_date=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">submission_date</span><span class="p">)</span>
+            <span class="n">transformed_pings</span><span class="o">.</span><span class="n">repartition</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">write</span><span class="o">.</span><span class="n">mode</span><span class="p">(</span><span class="s2">&quot;overwrite&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">parquet</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">transformed_pings</span>
 

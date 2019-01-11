@@ -80,18 +80,14 @@
 <span class="sd">    :overwrite bool: specifies whether to overwrite existing data.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">df</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">historical_df</span>
-        <span class="o">.</span><span class="n">where</span><span class="p">(</span>
-              <span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s1">&#39;geo&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;all&#39;</span><span class="p">)</span> <span class="o">&amp;</span>
-              <span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s1">&#39;os&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;all&#39;</span><span class="p">)</span> <span class="o">&amp;</span>
-              <span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s1">&#39;channel&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;all&#39;</span><span class="p">))</span>
-        <span class="o">.</span><span class="n">withColumn</span><span class="p">(</span><span class="s1">&#39;report_start&#39;</span><span class="p">,</span> <span class="n">F</span><span class="o">.</span><span class="n">date_format</span><span class="p">(</span><span class="s1">&#39;date&#39;</span><span class="p">,</span> <span class="s1">&#39;yyyyMMdd&#39;</span><span class="p">))</span>
-    <span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">historical_df</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+        <span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;geo&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">&quot;all&quot;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;os&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">&quot;all&quot;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;channel&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">&quot;all&quot;</span><span class="p">)</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">withColumn</span><span class="p">(</span><span class="s2">&quot;report_start&quot;</span><span class="p">,</span> <span class="n">F</span><span class="o">.</span><span class="n">date_format</span><span class="p">(</span><span class="s2">&quot;date&quot;</span><span class="p">,</span> <span class="s2">&quot;yyyyMMdd&quot;</span><span class="p">))</span>
 
     <span class="c1"># Cast all elements from the csv file. Assume both schemas are flat.</span>
-    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">dataType</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-                     <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">topline_schema</span><span class="o">.</span><span class="n">fields</span><span class="p">])</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select</span><span class="p">(</span>
+        <span class="o">*</span><span class="p">[</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">dataType</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">topline_schema</span><span class="o">.</span><span class="n">fields</span><span class="p">]</span>
+    <span class="p">)</span>
 
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Saving historical data to </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
 
@@ -103,52 +99,57 @@
     <span class="c1"># `telemetry-private-analysis-2/executive-report-&lt;mode&gt;/data/`</span>
     <span class="k">if</span> <span class="n">batch</span><span class="p">:</span>
         <span class="c1"># The csv file is read from a file named `v4-&lt;mode&gt;.csv`</span>
-        <span class="n">writer</span> <span class="o">=</span> <span class="n">writer</span><span class="o">.</span><span class="n">partitionBy</span><span class="p">(</span><span class="s1">&#39;report_start&#39;</span><span class="p">)</span>
+        <span class="n">writer</span> <span class="o">=</span> <span class="n">writer</span><span class="o">.</span><span class="n">partitionBy</span><span class="p">(</span><span class="s2">&quot;report_start&quot;</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="c1"># This folder contains csv files that should contain only a single</span>
         <span class="c1"># date. Assert that property here.</span>
         <span class="n">path</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">/report_start=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span><span class="o">.</span><span class="n">report_start</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s1">&#39;report_start&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">distinct</span><span class="p">()</span><span class="o">.</span><span class="n">count</span><span class="p">()</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s2">&quot;report_start&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">distinct</span><span class="p">()</span><span class="o">.</span><span class="n">count</span><span class="p">()</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;There should only be a single reporting date&quot;</span><span class="p">)</span>
 
     <span class="n">writer</span><span class="o">.</span><span class="n">parquet</span><span class="p">(</span><span class="n">path</span><span class="p">)</span></div>
 
 
 <span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">()</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s1">&#39;source_s3_path&#39;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s1">&#39;mode&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">click</span><span class="o">.</span><span class="n">Choice</span><span class="p">([</span><span class="s1">&#39;weekly&#39;</span><span class="p">,</span> <span class="s1">&#39;monthly&#39;</span><span class="p">]))</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s1">&#39;bucket&#39;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--prefix&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;topline_summary/v1&#39;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--batch/--no-batch&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-              <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Used when the csv file contains multiple reporting &#39;</span>
-              <span class="s1">&#39;periods&#39;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--overwrite/--no-overwrite&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-              <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Overwrite existing data. Caution when applying &#39;</span>
-              <span class="s1">&#39;this batch mode, since it will overwrite all data in &#39;</span>
-              <span class="s1">&#39;the specified source S3 path.&#39;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;source_s3_path&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;mode&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">click</span><span class="o">.</span><span class="n">Choice</span><span class="p">([</span><span class="s2">&quot;weekly&quot;</span><span class="p">,</span> <span class="s2">&quot;monthly&quot;</span><span class="p">]))</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;bucket&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--prefix&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;topline_summary/v1&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+    <span class="s2">&quot;--batch/--no-batch&quot;</span><span class="p">,</span>
+    <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Used when the csv file contains multiple reporting &quot;</span> <span class="s2">&quot;periods&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+    <span class="s2">&quot;--overwrite/--no-overwrite&quot;</span><span class="p">,</span>
+    <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Overwrite existing data. Caution when applying &quot;</span>
+    <span class="s2">&quot;this batch mode, since it will overwrite all data in &quot;</span>
+    <span class="s2">&quot;the specified source S3 path.&quot;</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">source_s3_path</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">bucket</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">overwrite</span><span class="p">):</span>
 
     <span class="k">if</span> <span class="n">batch</span> <span class="ow">and</span> <span class="n">overwrite</span><span class="p">:</span>
         <span class="n">warning_text</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s1">&#39;CAUTION: Using --batch and --overwrite will completely &#39;</span>
-            <span class="s1">&#39;overwrite the prefix with input data located in &#39;</span>
-            <span class="s1">&#39;`s3://</span><span class="si">{}</span><span class="s1">/</span><span class="si">{}</span><span class="s1">/mode=</span><span class="si">{}</span><span class="s1">`. Do you want to continue?&#39;</span>
+            <span class="s2">&quot;CAUTION: Using --batch and --overwrite will completely &quot;</span>
+            <span class="s2">&quot;overwrite the prefix with input data located in &quot;</span>
+            <span class="s2">&quot;`s3://</span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="s2">/mode=</span><span class="si">{}</span><span class="s2">`. Do you want to continue?&quot;</span>
         <span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">bucket</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
 
         <span class="n">click</span><span class="o">.</span><span class="n">confirm</span><span class="p">(</span><span class="n">warning_text</span><span class="p">,</span> <span class="n">abort</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-    <span class="n">spark</span> <span class="o">=</span> <span class="p">(</span><span class="n">SparkSession</span>
-             <span class="o">.</span><span class="n">builder</span>
-             <span class="o">.</span><span class="n">appName</span><span class="p">(</span><span class="s1">&#39;topline_historical_backfill&#39;</span><span class="p">)</span>
-             <span class="o">.</span><span class="n">getOrCreate</span><span class="p">())</span>
+    <span class="n">spark</span> <span class="o">=</span> <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">appName</span><span class="p">(</span><span class="s2">&quot;topline_historical_backfill&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
 
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Running historical backfill for </span><span class="si">{}</span><span class="s2"> executive report at </span><span class="si">{}</span><span class="s2">.&quot;</span>
-                 <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="n">source_s3_path</span><span class="p">))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">&quot;Running historical backfill for </span><span class="si">{}</span><span class="s2"> executive report at </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">mode</span><span class="p">,</span> <span class="n">source_s3_path</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
 
-    <span class="n">historical_df</span> <span class="o">=</span> <span class="n">spark</span><span class="o">.</span><span class="n">read</span><span class="o">.</span><span class="n">csv</span><span class="p">(</span><span class="n">source_s3_path</span><span class="p">,</span>
-                                   <span class="n">schema</span><span class="o">=</span><span class="n">historical_schema</span><span class="p">,</span>
-                                   <span class="n">header</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">output_path</span> <span class="o">=</span> <span class="n">format_output_path</span><span class="p">(</span><span class="n">bucket</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">/mode=</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">prefix</span><span class="p">,</span> <span class="n">mode</span><span class="p">))</span>
+    <span class="n">historical_df</span> <span class="o">=</span> <span class="n">spark</span><span class="o">.</span><span class="n">read</span><span class="o">.</span><span class="n">csv</span><span class="p">(</span>
+        <span class="n">source_s3_path</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="n">historical_schema</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+    <span class="n">output_path</span> <span class="o">=</span> <span class="n">format_output_path</span><span class="p">(</span><span class="n">bucket</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">/mode=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">prefix</span><span class="p">,</span> <span class="n">mode</span><span class="p">))</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">backfill_topline_summary</span><span class="p">(</span><span class="n">historical_df</span><span class="p">,</span> <span class="n">output_path</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">overwrite</span><span class="p">)</span>
     <span class="k">finally</span><span class="p">:</span>
@@ -156,7 +157,7 @@
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Finished historical backfill job.&quot;</span><span class="p">)</span>
 
 
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
     <span class="n">main</span><span class="p">()</span>
 </pre></div>
 

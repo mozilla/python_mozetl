@@ -41,7 +41,7 @@
 
 <div class="viewcode-block" id="check_output"><a class="viewcode-back" href="../../../source/mozetl.hardware_report.html#mozetl.hardware_report.check_output.check_output">[docs]</a><span class="k">def</span> <span class="nf">check_output</span><span class="p">():</span>
     <span class="n">data</span> <span class="o">=</span> <span class="n">_get_data</span><span class="p">()</span>
-    <span class="n">changes</span> <span class="o">=</span> <span class="n">_check_most_recent_change</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">min_change</span><span class="o">=.</span><span class="mi">3</span><span class="p">)</span>
+    <span class="n">changes</span> <span class="o">=</span> <span class="n">_check_most_recent_change</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">min_change</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">changes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">_report_changes</span><span class="p">(</span><span class="n">changes</span><span class="p">)</span></div>
@@ -56,12 +56,17 @@
 <span class="sd">    into { 20170101: {data1: some1, ...}, 20170102: {data1:some2, ...} }</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;hwsurvey-weekly.json&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">hwsurvey</span><span class="p">:</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="n">ujson</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">hwsurvey</span><span class="o">.</span><span class="n">readlines</span><span class="p">()))</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">ujson</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">hwsurvey</span><span class="o">.</span><span class="n">readlines</span><span class="p">()))</span>
 
-    <span class="k">return</span> <span class="p">{</span><span class="nb">int</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">e</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">])):</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">e</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">e</span> <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s1">&#39;date&#39;</span><span class="p">}</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">data</span><span class="p">}</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="nb">int</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">e</span><span class="p">[</span><span class="s2">&quot;date&quot;</span><span class="p">])):</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">e</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">e</span> <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s2">&quot;date&quot;</span><span class="p">}</span>
+        <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">data</span>
+    <span class="p">}</span>
 
 
-<span class="k">def</span> <span class="nf">_check_most_recent_change</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">min_change</span><span class="o">=.</span><span class="mi">05</span><span class="p">,</span> <span class="n">min_value</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">missing_val</span><span class="o">=.</span><span class="mi">01</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_check_most_recent_change</span><span class="p">(</span>
+    <span class="n">values</span><span class="p">,</span> <span class="n">min_change</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">min_value</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">missing_val</span><span class="o">=</span><span class="mf">0.01</span>
+<span class="p">):</span>
     <span class="k">assert</span> <span class="n">missing_val</span> <span class="o">&gt;</span> <span class="mi">0</span>
 
     <span class="n">recent_week</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">values</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
@@ -74,12 +79,13 @@
     <span class="p">]</span>
 
     <span class="k">return</span> <span class="p">{</span>
-        <span class="n">k</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;change&#39;</span><span class="p">:</span> <span class="n">c</span><span class="p">,</span>
-            <span class="s1">&#39;old_value&#39;</span><span class="p">:</span> <span class="n">base</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">missing_val</span><span class="p">),</span>
-            <span class="s1">&#39;new_value&#39;</span><span class="p">:</span> <span class="n">compare</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">missing_val</span><span class="p">)}</span>
+        <span class="n">k</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;change&quot;</span><span class="p">:</span> <span class="n">c</span><span class="p">,</span>
+            <span class="s2">&quot;old_value&quot;</span><span class="p">:</span> <span class="n">base</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">missing_val</span><span class="p">),</span>
+            <span class="s2">&quot;new_value&quot;</span><span class="p">:</span> <span class="n">compare</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">missing_val</span><span class="p">),</span>
+        <span class="p">}</span>
         <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">changes</span>
-        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">min_change</span>
-        <span class="ow">and</span> <span class="n">base</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">missing_val</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">min_value</span>
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">min_change</span> <span class="ow">and</span> <span class="n">base</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">missing_val</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">min_value</span>
     <span class="p">}</span>
 
 
@@ -87,17 +93,19 @@
     <span class="k">def</span> <span class="nf">mk_line</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v1</span><span class="p">,</span> <span class="n">v2</span><span class="p">):</span>
         <span class="k">return</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">: Last week = </span><span class="si">{:.2f}</span><span class="s2">%, This week = </span><span class="si">{:.2f}</span><span class="s2">%&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v1</span><span class="p">,</span> <span class="n">v2</span><span class="p">)</span>
 
-    <span class="n">change_strings</span> <span class="o">=</span> <span class="p">[(</span><span class="n">v</span><span class="p">[</span><span class="s1">&#39;change&#39;</span><span class="p">],</span> <span class="n">mk_line</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">[</span><span class="s1">&#39;old_value&#39;</span><span class="p">]</span><span class="o">*</span><span class="mi">100</span><span class="p">,</span> <span class="n">v</span><span class="p">[</span><span class="s1">&#39;new_value&#39;</span><span class="p">]</span><span class="o">*</span><span class="mi">100</span><span class="p">))</span>
-                      <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">changes</span><span class="o">.</span><span class="n">items</span><span class="p">()]</span>
-    <span class="k">return</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">change_strings</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">])])</span>
+    <span class="n">change_strings</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="s2">&quot;change&quot;</span><span class="p">],</span> <span class="n">mk_line</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">[</span><span class="s2">&quot;old_value&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span> <span class="n">v</span><span class="p">[</span><span class="s2">&quot;new_value&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">100</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">changes</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+    <span class="p">]</span>
+    <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">change_strings</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">])])</span>
 
 
 <span class="k">def</span> <span class="nf">_report_changes</span><span class="p">(</span><span class="n">changes</span><span class="p">):</span>
     <span class="n">send_ses</span><span class="p">(</span>
-        <span class="s1">&#39;telemetry-alerts@mozilla.com&#39;</span><span class="p">,</span>
-        <span class="s1">&#39;Hardware Report Validation Checks&#39;</span><span class="p">,</span>
+        <span class="s2">&quot;telemetry-alerts@mozilla.com&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Hardware Report Validation Checks&quot;</span><span class="p">,</span>
         <span class="n">_make_report</span><span class="p">(</span><span class="n">changes</span><span class="p">),</span>
-        <span class="s1">&#39;firefox-hardware-report-feedback@mozilla.com&#39;</span>
+        <span class="s2">&quot;firefox-hardware-report-feedback@mozilla.com&quot;</span><span class="p">,</span>
     <span class="p">)</span>
 </pre></div>
 

@@ -44,17 +44,34 @@
 <span class="n">DATAFRAME_COLUMN_CONFIGS</span> <span class="o">=</span> <span class="p">[</span>
     <span class="p">(</span><span class="s2">&quot;uuid&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/uuid&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
     <span class="p">(</span><span class="s2">&quot;userContextId&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/userContextId&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
-    <span class="p">(</span><span class="s2">&quot;clickedContainerTabCount&quot;</span><span class="p">,</span>
-     <span class="s2">&quot;payload/payload/clickedContainerTabCount&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">LongType</span><span class="p">()),</span>
+    <span class="p">(</span>
+        <span class="s2">&quot;clickedContainerTabCount&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;payload/payload/clickedContainerTabCount&quot;</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="n">LongType</span><span class="p">(),</span>
+    <span class="p">),</span>
     <span class="p">(</span><span class="s2">&quot;eventSource&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/eventSource&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
     <span class="p">(</span><span class="s2">&quot;event&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/event&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
-    <span class="p">(</span><span class="s2">&quot;hiddenContainersCount&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/hiddenContainersCount&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">LongType</span><span class="p">()),</span>
+    <span class="p">(</span>
+        <span class="s2">&quot;hiddenContainersCount&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;payload/payload/hiddenContainersCount&quot;</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="n">LongType</span><span class="p">(),</span>
+    <span class="p">),</span>
     <span class="p">(</span><span class="s2">&quot;shownContainersCount&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/shownContainersCount&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">LongType</span><span class="p">()),</span>
     <span class="p">(</span><span class="s2">&quot;totalContainersCount&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/totalContainersCount&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">LongType</span><span class="p">()),</span>
-    <span class="p">(</span><span class="s2">&quot;totalContainerTabsCount&quot;</span><span class="p">,</span>
-     <span class="s2">&quot;payload/payload/totalContainerTabsCount&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">LongType</span><span class="p">()),</span>
-    <span class="p">(</span><span class="s2">&quot;totalNonContainerTabsCount&quot;</span><span class="p">,</span>
-     <span class="s2">&quot;payload/payload/totalNonContainerTabsCount&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">LongType</span><span class="p">()),</span>
+    <span class="p">(</span>
+        <span class="s2">&quot;totalContainerTabsCount&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;payload/payload/totalContainerTabsCount&quot;</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="n">LongType</span><span class="p">(),</span>
+    <span class="p">),</span>
+    <span class="p">(</span>
+        <span class="s2">&quot;totalNonContainerTabsCount&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;payload/payload/totalNonContainerTabsCount&quot;</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="n">LongType</span><span class="p">(),</span>
+    <span class="p">),</span>
     <span class="p">(</span><span class="s2">&quot;pageRequestCount&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/payload/pageRequestCount&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">LongType</span><span class="p">()),</span>
     <span class="p">(</span><span class="s2">&quot;test&quot;</span><span class="p">,</span> <span class="s2">&quot;payload/test&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span>
 <span class="p">]</span>
@@ -64,7 +81,7 @@
     <span class="k">return</span> <span class="n">convert_pings</span><span class="p">(</span>
         <span class="n">sqlContext</span><span class="p">,</span>
         <span class="n">pings</span><span class="p">,</span>
-        <span class="n">DataFrameConfig</span><span class="p">(</span><span class="n">DATAFRAME_COLUMN_CONFIGS</span><span class="p">,</span> <span class="n">include_testpilot_pings</span><span class="p">)</span>
+        <span class="n">DataFrameConfig</span><span class="p">(</span><span class="n">DATAFRAME_COLUMN_CONFIGS</span><span class="p">,</span> <span class="n">include_testpilot_pings</span><span class="p">),</span>
     <span class="p">)</span></div>
 
 
@@ -72,26 +89,25 @@
     <span class="k">return</span> <span class="n">convert_pings</span><span class="p">(</span>
         <span class="n">sqlContext</span><span class="p">,</span>
         <span class="n">pings</span><span class="p">,</span>
-        <span class="n">DataFrameConfig</span><span class="p">(</span><span class="n">DATAFRAME_COLUMN_CONFIGS</span><span class="p">,</span> <span class="n">include_testpilot_and_shield_pings</span><span class="p">)</span>
+        <span class="n">DataFrameConfig</span><span class="p">(</span><span class="n">DATAFRAME_COLUMN_CONFIGS</span><span class="p">,</span> <span class="n">include_testpilot_and_shield_pings</span><span class="p">),</span>
     <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="include_testpilot_pings"><a class="viewcode-back" href="../../../source/mozetl.testpilot.html#mozetl.testpilot.containers.include_testpilot_pings">[docs]</a><span class="k">def</span> <span class="nf">include_testpilot_pings</span><span class="p">(</span><span class="n">ping</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">ping</span><span class="p">[</span><span class="s1">&#39;payload/test&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">TESTPILOT_ADDON_ID</span></div>
+    <span class="k">return</span> <span class="n">ping</span><span class="p">[</span><span class="s2">&quot;payload/test&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">TESTPILOT_ADDON_ID</span></div>
 
 
 <div class="viewcode-block" id="include_testpilot_and_shield_pings"><a class="viewcode-back" href="../../../source/mozetl.testpilot.html#mozetl.testpilot.containers.include_testpilot_and_shield_pings">[docs]</a><span class="k">def</span> <span class="nf">include_testpilot_and_shield_pings</span><span class="p">(</span><span class="n">ping</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">ping</span><span class="p">[</span><span class="s1">&#39;payload/test&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="n">TESTPILOT_ADDON_ID</span><span class="p">,</span> <span class="n">SHIELD_ADDON_ID</span><span class="p">]</span></div>
+    <span class="k">return</span> <span class="n">ping</span><span class="p">[</span><span class="s2">&quot;payload/test&quot;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="n">TESTPILOT_ADDON_ID</span><span class="p">,</span> <span class="n">SHIELD_ADDON_ID</span><span class="p">]</span></div>
 
 
 <span class="n">testpilot_etl_job</span> <span class="o">=</span> <span class="n">testpilot_etl_boilerplate</span><span class="p">(</span>
     <span class="n">transform_testpilot_pings</span><span class="p">,</span>
-    <span class="s1">&#39;s3n://telemetry-parquet/harter/containers_testpilottest/v2&#39;</span>
+    <span class="s2">&quot;s3n://telemetry-parquet/harter/containers_testpilottest/v2&quot;</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="n">shield_etl_job</span> <span class="o">=</span> <span class="n">testpilot_etl_boilerplate</span><span class="p">(</span>
-    <span class="n">transform_shield_pings</span><span class="p">,</span>
-    <span class="s1">&#39;s3n://telemetry-parquet/harter/containers_shield/v1&#39;</span>
+    <span class="n">transform_shield_pings</span><span class="p">,</span> <span class="s2">&quot;s3n://telemetry-parquet/harter/containers_shield/v1&quot;</span>
 <span class="p">)</span>
 
 

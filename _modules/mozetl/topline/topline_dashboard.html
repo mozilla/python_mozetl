@@ -66,8 +66,26 @@
 
 
 <span class="c1"># Limit the countries of interest to the following</span>
-<span class="n">countries</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="s1">&#39;US&#39;</span><span class="p">,</span> <span class="s1">&#39;CA&#39;</span><span class="p">,</span> <span class="s1">&#39;BR&#39;</span><span class="p">,</span> <span class="s1">&#39;MX&#39;</span><span class="p">,</span> <span class="s1">&#39;FR&#39;</span><span class="p">,</span> <span class="s1">&#39;ES&#39;</span><span class="p">,</span> <span class="s1">&#39;IT&#39;</span><span class="p">,</span> <span class="s1">&#39;PL&#39;</span><span class="p">,</span>
-                 <span class="s1">&#39;TR&#39;</span><span class="p">,</span> <span class="s1">&#39;RU&#39;</span><span class="p">,</span> <span class="s1">&#39;DE&#39;</span><span class="p">,</span> <span class="s1">&#39;IN&#39;</span><span class="p">,</span> <span class="s1">&#39;ID&#39;</span><span class="p">,</span> <span class="s1">&#39;CN&#39;</span><span class="p">,</span> <span class="s1">&#39;JP&#39;</span><span class="p">,</span> <span class="s1">&#39;GB&#39;</span><span class="p">])</span>
+<span class="n">countries</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span>
+    <span class="p">[</span>
+        <span class="s2">&quot;US&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;CA&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;BR&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;MX&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;FR&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;ES&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;IT&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;PL&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;TR&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;RU&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;DE&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;IN&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;ID&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;CN&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;JP&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;GB&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
+<span class="p">)</span>
 
 
 <div class="viewcode-block" id="format_spark_path"><a class="viewcode-back" href="../../../source/mozetl.topline.html#mozetl.topline.topline_dashboard.format_spark_path">[docs]</a><span class="k">def</span> <span class="nf">format_spark_path</span><span class="p">(</span><span class="n">bucket</span><span class="p">,</span> <span class="n">prefix</span><span class="p">):</span>
@@ -92,25 +110,22 @@
     <span class="n">topline_columns</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">name</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">topline_schema</span><span class="o">.</span><span class="n">names</span><span class="p">}</span>
 
     <span class="c1"># Bucket results by the top k countries, and move the rest into other.</span>
-    <span class="n">topline_columns</span><span class="p">[</span><span class="s1">&#39;geo&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">F</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s1">&#39;geo&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">countries</span><span class="p">)),</span> <span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s1">&#39;geo&#39;</span><span class="p">))</span>
-         <span class="o">.</span><span class="n">otherwise</span><span class="p">(</span><span class="s1">&#39;Other&#39;</span><span class="p">)</span>
-         <span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s1">&#39;geo&#39;</span><span class="p">)</span>
+    <span class="n">topline_columns</span><span class="p">[</span><span class="s2">&quot;geo&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">F</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;geo&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">countries</span><span class="p">)),</span> <span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;geo&quot;</span><span class="p">))</span>
+        <span class="o">.</span><span class="n">otherwise</span><span class="p">(</span><span class="s2">&quot;Other&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;geo&quot;</span><span class="p">)</span>
     <span class="p">)</span>
 
     <span class="c1"># Use the historical dataset&#39;s date format, drop the old date column</span>
-    <span class="n">topline_columns</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">F</span><span class="o">.</span><span class="n">from_unixtime</span><span class="p">(</span>
-            <span class="n">F</span><span class="o">.</span><span class="n">unix_timestamp</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s1">&#39;report_start&#39;</span><span class="p">),</span> <span class="s1">&#39;yyyyMMdd&#39;</span><span class="p">),</span>
-            <span class="s1">&#39;yyyy-MM-dd&#39;</span><span class="p">)</span>
-        <span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s1">&#39;date&#39;</span><span class="p">)</span>
-    <span class="p">)</span>
-    <span class="n">topline_columns</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;report_start&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">topline_columns</span><span class="p">[</span><span class="s2">&quot;date&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">from_unixtime</span><span class="p">(</span>
+        <span class="n">F</span><span class="o">.</span><span class="n">unix_timestamp</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;report_start&quot;</span><span class="p">),</span> <span class="s2">&quot;yyyyMMdd&quot;</span><span class="p">),</span> <span class="s2">&quot;yyyy-MM-dd&quot;</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;date&quot;</span><span class="p">)</span>
+    <span class="n">topline_columns</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;report_start&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
     <span class="c1"># The set of rows in the topline_summary can be categorized into</span>
     <span class="c1"># two general groups, attributes and aggregates. Attributes are</span>
     <span class="c1"># categorical in nature, while aggregates are numerical.</span>
-    <span class="n">attributes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="s1">&#39;geo&#39;</span><span class="p">,</span> <span class="s1">&#39;channel&#39;</span><span class="p">,</span> <span class="s1">&#39;os&#39;</span><span class="p">,</span> <span class="s1">&#39;date&#39;</span><span class="p">])</span>
+    <span class="n">attributes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="s2">&quot;geo&quot;</span><span class="p">,</span> <span class="s2">&quot;channel&quot;</span><span class="p">,</span> <span class="s2">&quot;os&quot;</span><span class="p">,</span> <span class="s2">&quot;date&quot;</span><span class="p">])</span>
     <span class="n">aggregates</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">topline_columns</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">-</span> <span class="n">attributes</span>
 
     <span class="c1"># Cube the results. It&#39;s difficult to concisely express</span>
@@ -118,21 +133,18 @@
     <span class="c1"># attributes. Instead, ignore rows where the date field is empty,</span>
     <span class="c1"># which equates to ignoring aggregates over multiple dates.</span>
     <span class="n">cubed_df</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">df</span>
-        <span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="o">*</span><span class="nb">list</span><span class="p">(</span><span class="n">topline_columns</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="o">*</span><span class="nb">list</span><span class="p">(</span><span class="n">topline_columns</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
         <span class="o">.</span><span class="n">cube</span><span class="p">(</span><span class="o">*</span><span class="n">attributes</span><span class="p">)</span>
         <span class="o">.</span><span class="n">agg</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">F</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="n">x</span><span class="p">))</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">aggregates</span><span class="p">])</span>
-        <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s1">&#39;date&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">isNotNull</span><span class="p">())</span>
-        <span class="o">.</span><span class="n">na</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="s1">&#39;all&#39;</span><span class="p">)</span>  <span class="c1"># the only fills in string fields</span>
+        <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;date&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">isNotNull</span><span class="p">())</span>
+        <span class="o">.</span><span class="n">na</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="s2">&quot;all&quot;</span><span class="p">)</span>  <span class="c1"># the only fills in string fields</span>
     <span class="p">)</span>
 
     <span class="c1"># Remove rows where the aggregates fields are all zeroes, since</span>
     <span class="c1"># these take up extra space in the csv file.</span>
-    <span class="n">filtered_df</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">cubed_df</span>
-        <span class="o">.</span><span class="n">withColumn</span><span class="p">(</span><span class="s1">&#39;total&#39;</span><span class="p">,</span> <span class="nb">sum</span><span class="p">([</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">aggregates</span><span class="p">]))</span>
-        <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s1">&#39;total&#39;</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">)</span>
-    <span class="p">)</span>
+    <span class="n">filtered_df</span> <span class="o">=</span> <span class="n">cubed_df</span><span class="o">.</span><span class="n">withColumn</span><span class="p">(</span>
+        <span class="s2">&quot;total&quot;</span><span class="p">,</span> <span class="nb">sum</span><span class="p">([</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">aggregates</span><span class="p">])</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;total&quot;</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">)</span>
 
     <span class="c1"># Generate select subexpressions based on the historical</span>
     <span class="c1"># schema. Columns missing in the topline_summary from the</span>
@@ -141,8 +153,10 @@
     <span class="k">def</span> <span class="nf">default_column</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">lit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
 
-    <span class="n">column_expr</span> <span class="o">=</span> <span class="p">[</span><span class="n">name</span> <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">topline_columns</span> <span class="k">else</span> <span class="n">default_column</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
-                   <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">historical_schema</span><span class="o">.</span><span class="n">names</span><span class="p">]</span>
+    <span class="n">column_expr</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">name</span> <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">topline_columns</span> <span class="k">else</span> <span class="n">default_column</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">historical_schema</span><span class="o">.</span><span class="n">names</span>
+    <span class="p">]</span>
     <span class="n">formatted_df</span> <span class="o">=</span> <span class="n">filtered_df</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="o">*</span><span class="n">column_expr</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">formatted_df</span></div>
@@ -156,39 +170,35 @@
 
 
 <span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">()</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s1">&#39;mode&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">click</span><span class="o">.</span><span class="n">Choice</span><span class="p">([</span><span class="s1">&#39;weekly&#39;</span><span class="p">,</span> <span class="s1">&#39;monthly&#39;</span><span class="p">]))</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s1">&#39;bucket&#39;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s1">&#39;prefix&#39;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--input_bucket&#39;</span><span class="p">,</span>
-              <span class="n">default</span><span class="o">=</span><span class="s1">&#39;telemetry-parquet&#39;</span><span class="p">,</span>
-              <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Bucket of the ToplineSummary dataset&#39;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--input_prefix&#39;</span><span class="p">,</span>
-              <span class="n">default</span><span class="o">=</span><span class="s1">&#39;topline_summary/v1&#39;</span><span class="p">,</span>
-              <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Prefix of the ToplineSummary dataset&#39;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;mode&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">click</span><span class="o">.</span><span class="n">Choice</span><span class="p">([</span><span class="s2">&quot;weekly&quot;</span><span class="p">,</span> <span class="s2">&quot;monthly&quot;</span><span class="p">]))</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;bucket&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;prefix&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+    <span class="s2">&quot;--input_bucket&quot;</span><span class="p">,</span>
+    <span class="n">default</span><span class="o">=</span><span class="s2">&quot;telemetry-parquet&quot;</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Bucket of the ToplineSummary dataset&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+    <span class="s2">&quot;--input_prefix&quot;</span><span class="p">,</span>
+    <span class="n">default</span><span class="o">=</span><span class="s2">&quot;topline_summary/v1&quot;</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Prefix of the ToplineSummary dataset&quot;</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="n">bucket</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">input_bucket</span><span class="p">,</span> <span class="n">input_prefix</span><span class="p">):</span>
-    <span class="n">spark</span> <span class="o">=</span> <span class="p">(</span><span class="n">SparkSession</span>
-             <span class="o">.</span><span class="n">builder</span>
-             <span class="o">.</span><span class="n">appName</span><span class="p">(</span><span class="s2">&quot;topline_dashboard&quot;</span><span class="p">)</span>
-             <span class="o">.</span><span class="n">getOrCreate</span><span class="p">())</span>
+    <span class="n">spark</span> <span class="o">=</span> <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">appName</span><span class="p">(</span><span class="s2">&quot;topline_dashboard&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
 
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Generating </span><span class="si">{}</span><span class="s1"> topline_dashboard&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mode</span><span class="p">))</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Generating </span><span class="si">{}</span><span class="s2"> topline_dashboard&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mode</span><span class="p">))</span>
 
     <span class="c1"># the inclusion of mode doesn&#39;t matter, but we need report_start</span>
     <span class="n">input_path</span> <span class="o">=</span> <span class="n">format_spark_path</span><span class="p">(</span>
-        <span class="n">input_bucket</span><span class="p">,</span>
-        <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">/mode=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">input_prefix</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
+        <span class="n">input_bucket</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">/mode=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">input_prefix</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
     <span class="p">)</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Reading input data from </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">input_path</span><span class="p">))</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Reading input data from </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">input_path</span><span class="p">))</span>
 
     <span class="c1"># Note: The schema is applied to cast report_start to a string. The</span>
     <span class="c1"># DataFrameReader interface has a `.schema()` that mysteriously fails</span>
     <span class="c1"># in this context, so the schema is applied after reading the dataframe</span>
     <span class="c1"># into memory.</span>
-    <span class="n">topline_summary</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">spark</span><span class="o">.</span><span class="n">read</span>
-        <span class="o">.</span><span class="n">parquet</span><span class="p">(</span><span class="n">input_path</span><span class="p">)</span>
-        <span class="o">.</span><span class="n">rdd</span><span class="o">.</span><span class="n">toDF</span><span class="p">(</span><span class="n">topline_schema</span><span class="p">)</span>
-    <span class="p">)</span>
+    <span class="n">topline_summary</span> <span class="o">=</span> <span class="n">spark</span><span class="o">.</span><span class="n">read</span><span class="o">.</span><span class="n">parquet</span><span class="p">(</span><span class="n">input_path</span><span class="p">)</span><span class="o">.</span><span class="n">rdd</span><span class="o">.</span><span class="n">toDF</span><span class="p">(</span><span class="n">topline_schema</span><span class="p">)</span>
 
     <span class="c1"># modified topline_summary</span>
     <span class="n">dashboard_data</span> <span class="o">=</span> <span class="n">reformat_data</span><span class="p">(</span><span class="n">topline_summary</span><span class="p">)</span>
@@ -199,7 +209,7 @@
     <span class="n">spark</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
 
 
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
     <span class="n">main</span><span class="p">()</span>
 </pre></div>
 

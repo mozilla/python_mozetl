@@ -81,17 +81,16 @@
 
 
 <div class="viewcode-block" id="CredentialSingleton"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_dynamo.CredentialSingleton">[docs]</a><span class="k">class</span> <span class="nc">CredentialSingleton</span><span class="p">:</span>
-
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_credentials</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">RLock</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">__getstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;credentials&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_credentials</span><span class="p">}</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;credentials&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_credentials</span><span class="p">}</span>
 
     <span class="k">def</span> <span class="nf">__setstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
         <span class="c1"># This is basically the constructor all over again</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_credentials</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s1">&#39;credentials&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_credentials</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;credentials&quot;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">RLock</span><span class="p">()</span>
 
 <div class="viewcode-block" id="CredentialSingleton.getInstance"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_dynamo.CredentialSingleton.getInstance">[docs]</a>    <span class="k">def</span> <span class="nf">getInstance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prod_iam_role</span><span class="p">):</span>
@@ -102,33 +101,39 @@
                 <span class="c1"># Credentials should expire if the expiry time is sooner</span>
                 <span class="c1"># than the next 5 minutes</span>
                 <span class="n">five_minute_from_now</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_credentials</span><span class="p">[</span><span class="s1">&#39;expiry&#39;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">five_minute_from_now</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_credentials</span><span class="p">[</span><span class="s2">&quot;expiry&quot;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">five_minute_from_now</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_credentials</span> <span class="o">=</span> <span class="kc">None</span>
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_credentials</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_credentials</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_new_creds</span><span class="p">(</span><span class="n">prod_iam_role</span><span class="p">)</span>
 
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_credentials</span><span class="p">[</span><span class="s1">&#39;cred_args&#39;</span><span class="p">]</span></div>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_credentials</span><span class="p">[</span><span class="s2">&quot;cred_args&quot;</span><span class="p">]</span></div>
 
 <div class="viewcode-block" id="CredentialSingleton.get_new_creds"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_dynamo.CredentialSingleton.get_new_creds">[docs]</a>    <span class="k">def</span> <span class="nf">get_new_creds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prod_iam_role</span><span class="p">):</span>
-        <span class="n">client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s1">&#39;sts&#39;</span><span class="p">)</span>
-        <span class="n">session_name</span> <span class="o">=</span> <span class="s2">&quot;taar_dynamo_</span><span class="si">%s</span><span class="s2">_</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getpid</span><span class="p">(),</span>
-                                              <span class="n">threading</span><span class="o">.</span><span class="n">current_thread</span><span class="p">()</span><span class="o">.</span><span class="n">ident</span><span class="p">)</span>
+        <span class="n">client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;sts&quot;</span><span class="p">)</span>
+        <span class="n">session_name</span> <span class="o">=</span> <span class="s2">&quot;taar_dynamo_</span><span class="si">%s</span><span class="s2">_</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">getpid</span><span class="p">(),</span>
+            <span class="n">threading</span><span class="o">.</span><span class="n">current_thread</span><span class="p">()</span><span class="o">.</span><span class="n">ident</span><span class="p">,</span>
+        <span class="p">)</span>
 
         <span class="c1"># 30 minutes to flush 50 records should be ridiculously</span>
         <span class="c1"># generous</span>
-        <span class="n">response</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">assume_role</span><span class="p">(</span><span class="n">RoleArn</span><span class="o">=</span><span class="n">prod_iam_role</span><span class="p">,</span>
-                                      <span class="n">RoleSessionName</span><span class="o">=</span><span class="n">session_name</span><span class="p">,</span>
-                                      <span class="n">DurationSeconds</span><span class="o">=</span><span class="mi">60</span><span class="o">*</span><span class="mi">30</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">assume_role</span><span class="p">(</span>
+            <span class="n">RoleArn</span><span class="o">=</span><span class="n">prod_iam_role</span><span class="p">,</span> <span class="n">RoleSessionName</span><span class="o">=</span><span class="n">session_name</span><span class="p">,</span> <span class="n">DurationSeconds</span><span class="o">=</span><span class="mi">60</span> <span class="o">*</span> <span class="mi">30</span>
+        <span class="p">)</span>
 
-        <span class="n">raw_creds</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;Credentials&#39;</span><span class="p">]</span>
-        <span class="n">cred_args</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;aws_access_key_id&#39;</span><span class="p">:</span> <span class="n">raw_creds</span><span class="p">[</span><span class="s1">&#39;AccessKeyId&#39;</span><span class="p">],</span>
-                     <span class="s1">&#39;aws_secret_access_key&#39;</span><span class="p">:</span> <span class="n">raw_creds</span><span class="p">[</span><span class="s1">&#39;SecretAccessKey&#39;</span><span class="p">],</span>
-                     <span class="s1">&#39;aws_session_token&#39;</span><span class="p">:</span> <span class="n">raw_creds</span><span class="p">[</span><span class="s1">&#39;SessionToken&#39;</span><span class="p">]}</span>
+        <span class="n">raw_creds</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s2">&quot;Credentials&quot;</span><span class="p">]</span>
+        <span class="n">cred_args</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;aws_access_key_id&quot;</span><span class="p">:</span> <span class="n">raw_creds</span><span class="p">[</span><span class="s2">&quot;AccessKeyId&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;aws_secret_access_key&quot;</span><span class="p">:</span> <span class="n">raw_creds</span><span class="p">[</span><span class="s2">&quot;SecretAccessKey&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;aws_session_token&quot;</span><span class="p">:</span> <span class="n">raw_creds</span><span class="p">[</span><span class="s2">&quot;SessionToken&quot;</span><span class="p">],</span>
+        <span class="p">}</span>
 
         <span class="c1"># Set the expiry of this credential to be 30 minutes</span>
-        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;expiry&#39;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="mi">30</span><span class="p">),</span>
-                <span class="s1">&#39;cred_args&#39;</span><span class="p">:</span> <span class="n">cred_args</span><span class="p">}</span></div></div>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;expiry&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="mi">30</span><span class="p">),</span>
+            <span class="s2">&quot;cred_args&quot;</span><span class="p">:</span> <span class="n">cred_args</span><span class="p">,</span>
+        <span class="p">}</span></div></div>
 
 
 <div class="viewcode-block" id="json_serial"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_dynamo.json_serial">[docs]</a><span class="k">def</span> <span class="nf">json_serial</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
@@ -186,8 +191,8 @@
     <span class="n">start_date</span> <span class="o">=</span> <span class="n">start_date</span><span class="o">.</span><span class="n">date</span><span class="p">()</span>
     <span class="n">start_date</span> <span class="o">=</span> <span class="n">start_date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="n">jdata</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">json_str</span><span class="p">)</span>
-    <span class="n">jdata</span><span class="p">[</span><span class="s1">&#39;client_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">client_id</span>
-    <span class="n">jdata</span><span class="p">[</span><span class="s1">&#39;start_date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">start_date</span>
+    <span class="n">jdata</span><span class="p">[</span><span class="s2">&quot;client_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">client_id</span>
+    <span class="n">jdata</span><span class="p">[</span><span class="s2">&quot;start_date&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">start_date</span>
 
     <span class="c1"># Filter out keys with an empty value</span>
     <span class="n">jdata</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">value</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">jdata</span><span class="o">.</span><span class="n">items</span><span class="p">())</span> <span class="k">if</span> <span class="n">value</span><span class="p">}</span>
@@ -209,25 +214,25 @@
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prod_iam_role</span><span class="p">,</span> <span class="n">region_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">table_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 
         <span class="k">if</span> <span class="n">region_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">region_name</span> <span class="o">=</span> <span class="s1">&#39;us-west-2&#39;</span>
+            <span class="n">region_name</span> <span class="o">=</span> <span class="s2">&quot;us-west-2&quot;</span>
 
         <span class="k">if</span> <span class="n">table_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">table_name</span> <span class="o">=</span> <span class="s1">&#39;taar_addon_data&#39;</span>
+            <span class="n">table_name</span> <span class="o">=</span> <span class="s2">&quot;taar_addon_data&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_region_name</span> <span class="o">=</span> <span class="n">region_name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_table_name</span> <span class="o">=</span> <span class="n">table_name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_prod_iam_role</span> <span class="o">=</span> <span class="n">prod_iam_role</span>
 
 <div class="viewcode-block" id="DynamoReducer.hash_client_ids"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_dynamo.DynamoReducer.hash_client_ids">[docs]</a>    <span class="k">def</span> <span class="nf">hash_client_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_tuple</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;</span>
+        <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        # Clobber the client_id by using sha256 hashes encoded as hex</span>
 <span class="sd">        # Based on the js code in Fx</span>
 
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">data_tuple</span><span class="p">[</span><span class="mi">2</span><span class="p">]:</span>
-            <span class="n">client_id</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s1">&#39;client_id&#39;</span><span class="p">]</span>
-            <span class="n">item</span><span class="p">[</span><span class="s1">&#39;client_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hash_telemetry_id</span><span class="p">(</span><span class="n">client_id</span><span class="p">)</span></div>
+            <span class="n">client_id</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;client_id&quot;</span><span class="p">]</span>
+            <span class="n">item</span><span class="p">[</span><span class="s2">&quot;client_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hash_telemetry_id</span><span class="p">(</span><span class="n">client_id</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="DynamoReducer.push_to_dynamo"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_dynamo.DynamoReducer.push_to_dynamo">[docs]</a>    <span class="k">def</span> <span class="nf">push_to_dynamo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_tuple</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -240,25 +245,27 @@
         <span class="c1"># Transform the data into something that DynamoDB will always</span>
         <span class="c1"># accept</span>
         <span class="c1"># Set TTL to 60 days from now</span>
-        <span class="n">ttl</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span> <span class="o">+</span> <span class="mi">60</span><span class="o">*</span><span class="mi">60</span><span class="o">*</span><span class="mi">24</span><span class="o">*</span><span class="mi">60</span>
+        <span class="n">ttl</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span> <span class="o">+</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">24</span> <span class="o">*</span> <span class="mi">60</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">hash_client_ids</span><span class="p">(</span><span class="n">data_tuple</span><span class="p">)</span>
 
-        <span class="n">item_list</span> <span class="o">=</span> <span class="p">[{</span><span class="s1">&#39;client_id&#39;</span><span class="p">:</span> <span class="n">item</span><span class="p">[</span><span class="s1">&#39;client_id&#39;</span><span class="p">],</span>
-                      <span class="s1">&#39;TTL&#39;</span><span class="p">:</span> <span class="n">ttl</span><span class="p">,</span>
-                      <span class="s1">&#39;json_payload&#39;</span><span class="p">:</span> <span class="n">DynamoBinary</span><span class="p">(</span>
-                                          <span class="n">zlib</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">item</span><span class="p">,</span>
-                                                                   <span class="n">default</span><span class="o">=</span><span class="n">json_serial</span><span class="p">)</span>
-                                                        <span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf8&#39;</span><span class="p">))</span>
-                                      <span class="p">)</span>
-                      <span class="p">}</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">data_tuple</span><span class="p">[</span><span class="mi">2</span><span class="p">]]</span>
+        <span class="n">item_list</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;client_id&quot;</span><span class="p">:</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;client_id&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;TTL&quot;</span><span class="p">:</span> <span class="n">ttl</span><span class="p">,</span>
+                <span class="s2">&quot;json_payload&quot;</span><span class="p">:</span> <span class="n">DynamoBinary</span><span class="p">(</span>
+                    <span class="n">zlib</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">json_serial</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf8&quot;</span><span class="p">))</span>
+                <span class="p">),</span>
+            <span class="p">}</span>
+            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">data_tuple</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="p">]</span>
 
         <span class="c1"># Obtain credentials from the singleton</span>
         <span class="n">cred_args</span> <span class="o">=</span> <span class="n">credentials</span><span class="o">.</span><span class="n">getInstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_prod_iam_role</span><span class="p">)</span>
-        <span class="n">conn</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">resource</span><span class="p">(</span><span class="s1">&#39;dynamodb&#39;</span><span class="p">,</span> <span class="n">region_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_region_name</span><span class="p">,</span> <span class="o">**</span><span class="n">cred_args</span><span class="p">)</span>
+        <span class="n">conn</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">resource</span><span class="p">(</span><span class="s2">&quot;dynamodb&quot;</span><span class="p">,</span> <span class="n">region_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_region_name</span><span class="p">,</span> <span class="o">**</span><span class="n">cred_args</span><span class="p">)</span>
         <span class="n">table</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_table_name</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">with</span> <span class="n">table</span><span class="o">.</span><span class="n">batch_writer</span><span class="p">(</span><span class="n">overwrite_by_pkeys</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;client_id&#39;</span><span class="p">])</span> <span class="k">as</span> <span class="n">batch</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">table</span><span class="o">.</span><span class="n">batch_writer</span><span class="p">(</span><span class="n">overwrite_by_pkeys</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;client_id&quot;</span><span class="p">])</span> <span class="k">as</span> <span class="n">batch</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">item_list</span><span class="p">:</span>
                     <span class="n">batch</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span><span class="n">Item</span><span class="o">=</span><span class="n">item</span><span class="p">)</span>
             <span class="k">return</span> <span class="p">[]</span>
@@ -270,8 +277,7 @@
                 <span class="k">return</span> <span class="p">[]</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">error_accum</span> <span class="o">=</span> <span class="p">[]</span>
-                <span class="n">conn</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">resource</span><span class="p">(</span><span class="s1">&#39;dynamodb&#39;</span><span class="p">,</span>
-                                      <span class="n">region_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_region_name</span><span class="p">)</span>
+                <span class="n">conn</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">resource</span><span class="p">(</span><span class="s2">&quot;dynamodb&quot;</span><span class="p">,</span> <span class="n">region_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_region_name</span><span class="p">)</span>
                 <span class="n">table</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_table_name</span><span class="p">)</span>
                 <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">item_list</span><span class="p">:</span>
                     <span class="k">try</span><span class="p">:</span>
@@ -292,16 +298,18 @@
 <span class="sd">        number of JSON blobs are merged, the list of JSON is batch written</span>
 <span class="sd">        into DynamoDB.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">new_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">list_a</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">list_b</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-                    <span class="n">list_a</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">list_b</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
-                    <span class="n">list_a</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">list_b</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
-                    <span class="n">list_a</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="n">list_b</span><span class="p">[</span><span class="mi">3</span><span class="p">]]</span>
+        <span class="n">new_list</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">list_a</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">list_b</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+            <span class="n">list_a</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">list_b</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+            <span class="n">list_a</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">list_b</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+            <span class="n">list_a</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="n">list_b</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span>
+        <span class="p">]</span>
 
         <span class="k">if</span> <span class="n">new_list</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">MAX_RECORDS</span> <span class="ow">or</span> <span class="n">force_write</span><span class="p">:</span>
             <span class="n">error_blobs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">push_to_dynamo</span><span class="p">(</span><span class="n">new_list</span><span class="p">)</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">error_blobs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="c1"># Gather up to maximum 50 error blobs</span>
-                <span class="n">new_list</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">error_blobs</span><span class="p">[:</span><span class="mi">50</span><span class="o">-</span><span class="n">new_list</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+                <span class="n">new_list</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">error_blobs</span><span class="p">[:</span> <span class="mi">50</span> <span class="o">-</span> <span class="n">new_list</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
                 <span class="c1"># Zero out the number of accumulated records</span>
                 <span class="n">new_list</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="k">else</span><span class="p">:</span>
@@ -355,36 +363,39 @@
     <span class="c1"># multiple rows per client. We will use it to filter out the</span>
     <span class="c1"># full table with all the columns we require.</span>
 
-    <span class="n">clientShortList</span> <span class="o">=</span> <span class="n">datasetForDate</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s2">&quot;client_id&quot;</span><span class="p">,</span>
-                                            <span class="s1">&#39;subsession_start_date&#39;</span><span class="p">,</span>
-                                            <span class="n">row_number</span><span class="p">()</span><span class="o">.</span><span class="n">over</span><span class="p">(</span>
-                                                <span class="n">Window</span><span class="o">.</span><span class="n">partitionBy</span><span class="p">(</span><span class="s1">&#39;client_id&#39;</span><span class="p">)</span>
-                                                <span class="o">.</span><span class="n">orderBy</span><span class="p">(</span><span class="n">desc</span><span class="p">(</span><span class="s1">&#39;subsession_start_date&#39;</span><span class="p">))</span>
-                                            <span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s1">&#39;clientid_rank&#39;</span><span class="p">))</span>
+    <span class="n">clientShortList</span> <span class="o">=</span> <span class="n">datasetForDate</span><span class="o">.</span><span class="n">select</span><span class="p">(</span>
+        <span class="s2">&quot;client_id&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;subsession_start_date&quot;</span><span class="p">,</span>
+        <span class="n">row_number</span><span class="p">()</span>
+        <span class="o">.</span><span class="n">over</span><span class="p">(</span><span class="n">Window</span><span class="o">.</span><span class="n">partitionBy</span><span class="p">(</span><span class="s2">&quot;client_id&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">orderBy</span><span class="p">(</span><span class="n">desc</span><span class="p">(</span><span class="s2">&quot;subsession_start_date&quot;</span><span class="p">)))</span>
+        <span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;clientid_rank&quot;</span><span class="p">),</span>
+    <span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;clientShortList selected&quot;</span><span class="p">)</span>
-    <span class="n">clientShortList</span> <span class="o">=</span> <span class="n">clientShortList</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="s1">&#39;clientid_rank == 1&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s1">&#39;clientid_rank&#39;</span><span class="p">)</span>
+    <span class="n">clientShortList</span> <span class="o">=</span> <span class="n">clientShortList</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="s2">&quot;clientid_rank == 1&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s2">&quot;clientid_rank&quot;</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;clientShortList selected&quot;</span><span class="p">)</span>
 
-    <span class="n">select_fields</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;client_id&quot;</span><span class="p">,</span>
-                     <span class="s2">&quot;subsession_start_date&quot;</span><span class="p">,</span>
-                     <span class="s2">&quot;subsession_length&quot;</span><span class="p">,</span>
-                     <span class="s2">&quot;city&quot;</span><span class="p">,</span>
-                     <span class="s2">&quot;locale&quot;</span><span class="p">,</span>
-                     <span class="s2">&quot;os&quot;</span><span class="p">,</span>
-                     <span class="s2">&quot;places_bookmarks_count&quot;</span><span class="p">,</span>
-                     <span class="s2">&quot;scalar_parent_browser_engagement_tab_open_event_count&quot;</span><span class="p">,</span>
-                     <span class="s2">&quot;scalar_parent_browser_engagement_total_uri_count&quot;</span><span class="p">,</span>
-                     <span class="s2">&quot;scalar_parent_browser_engagement_unique_domains_count&quot;</span><span class="p">,</span>
-                     <span class="s2">&quot;active_addons&quot;</span><span class="p">,</span>
-                     <span class="s2">&quot;disabled_addons_ids&quot;</span><span class="p">]</span>
+    <span class="n">select_fields</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;client_id&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;subsession_start_date&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;subsession_length&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;city&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;locale&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;os&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;places_bookmarks_count&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;scalar_parent_browser_engagement_tab_open_event_count&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;scalar_parent_browser_engagement_total_uri_count&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;scalar_parent_browser_engagement_unique_domains_count&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;active_addons&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;disabled_addons_ids&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
     <span class="n">dataSubset</span> <span class="o">=</span> <span class="n">datasetForDate</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="o">*</span><span class="n">select_fields</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;datasetForDate select fields completed&quot;</span><span class="p">)</span>
 
     <span class="c1"># Join the two tables: only the elements in both dataframes</span>
     <span class="c1"># will make it through.</span>
-    <span class="n">clientsData</span> <span class="o">=</span> <span class="n">dataSubset</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">clientShortList</span><span class="p">,</span>
-                                  <span class="p">[</span><span class="s2">&quot;client_id&quot;</span><span class="p">,</span>
-                                   <span class="s1">&#39;subsession_start_date&#39;</span><span class="p">])</span>
+    <span class="n">clientsData</span> <span class="o">=</span> <span class="n">dataSubset</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+        <span class="n">clientShortList</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;client_id&quot;</span><span class="p">,</span> <span class="s2">&quot;subsession_start_date&quot;</span><span class="p">]</span>
+    <span class="p">)</span>
 
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;clientsData join with client_id and subsession_start_date&quot;</span><span class="p">)</span>
 
@@ -393,17 +404,19 @@
 
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;clientsData select of client_id and subsession_start_date completed&quot;</span><span class="p">)</span>
 
-    <span class="n">jsonDataRDD</span> <span class="o">=</span> <span class="n">clientsData</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s2">&quot;city&quot;</span><span class="p">,</span>
-                                     <span class="s2">&quot;subsession_start_date&quot;</span><span class="p">,</span>
-                                     <span class="s2">&quot;subsession_length&quot;</span><span class="p">,</span>
-                                     <span class="s2">&quot;locale&quot;</span><span class="p">,</span>
-                                     <span class="s2">&quot;os&quot;</span><span class="p">,</span>
-                                     <span class="s2">&quot;places_bookmarks_count&quot;</span><span class="p">,</span>
-                                     <span class="s2">&quot;scalar_parent_browser_engagement_tab_open_event_count&quot;</span><span class="p">,</span>
-                                     <span class="s2">&quot;scalar_parent_browser_engagement_total_uri_count&quot;</span><span class="p">,</span>
-                                     <span class="s2">&quot;scalar_parent_browser_engagement_unique_domains_count&quot;</span><span class="p">,</span>
-                                     <span class="s2">&quot;active_addons&quot;</span><span class="p">,</span>
-                                     <span class="s2">&quot;disabled_addons_ids&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">toJSON</span><span class="p">()</span>
+    <span class="n">jsonDataRDD</span> <span class="o">=</span> <span class="n">clientsData</span><span class="o">.</span><span class="n">select</span><span class="p">(</span>
+        <span class="s2">&quot;city&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;subsession_start_date&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;subsession_length&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;locale&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;os&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;places_bookmarks_count&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;scalar_parent_browser_engagement_tab_open_event_count&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;scalar_parent_browser_engagement_total_uri_count&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;scalar_parent_browser_engagement_unique_domains_count&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;active_addons&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;disabled_addons_ids&quot;</span><span class="p">,</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">toJSON</span><span class="p">()</span>
 
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;jsonDataRDD selected&quot;</span><span class="p">)</span>
     <span class="n">rdd</span> <span class="o">=</span> <span class="n">subset</span><span class="o">.</span><span class="n">rdd</span><span class="o">.</span><span class="n">zip</span><span class="p">(</span><span class="n">jsonDataRDD</span><span class="p">)</span>
@@ -429,44 +442,42 @@
 
     <span class="c1"># Apply the reducer one more time to force any lingering</span>
     <span class="c1"># data to get pushed into DynamoDB.</span>
-    <span class="n">final_reduction_output</span> <span class="o">=</span> <span class="n">dynReducer</span><span class="o">.</span><span class="n">dynamo_reducer</span><span class="p">(</span><span class="n">reduction_output</span><span class="p">,</span>
-                                                       <span class="n">EMPTY_TUPLE</span><span class="p">,</span>
-                                                       <span class="n">force_write</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">final_reduction_output</span> <span class="o">=</span> <span class="n">dynReducer</span><span class="o">.</span><span class="n">dynamo_reducer</span><span class="p">(</span>
+        <span class="n">reduction_output</span><span class="p">,</span> <span class="n">EMPTY_TUPLE</span><span class="p">,</span> <span class="n">force_write</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
     <span class="k">return</span> <span class="n">final_reduction_output</span></div>
 
 
 <div class="viewcode-block" id="run_etljob"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_dynamo.run_etljob">[docs]</a><span class="k">def</span> <span class="nf">run_etljob</span><span class="p">(</span><span class="n">spark</span><span class="p">,</span> <span class="n">run_date</span><span class="p">,</span> <span class="n">region_name</span><span class="p">,</span> <span class="n">table_name</span><span class="p">,</span> <span class="n">prod_iam_role</span><span class="p">,</span> <span class="n">sample_rate</span><span class="p">):</span>
-    <span class="n">reduction_output</span> <span class="o">=</span> <span class="n">etl</span><span class="p">(</span><span class="n">spark</span><span class="p">,</span>
-                           <span class="n">run_date</span><span class="p">,</span>
-                           <span class="n">region_name</span><span class="p">,</span>
-                           <span class="n">table_name</span><span class="p">,</span>
-                           <span class="n">prod_iam_role</span><span class="p">,</span>
-                           <span class="n">sample_rate</span><span class="p">)</span>
+    <span class="n">reduction_output</span> <span class="o">=</span> <span class="n">etl</span><span class="p">(</span>
+        <span class="n">spark</span><span class="p">,</span> <span class="n">run_date</span><span class="p">,</span> <span class="n">region_name</span><span class="p">,</span> <span class="n">table_name</span><span class="p">,</span> <span class="n">prod_iam_role</span><span class="p">,</span> <span class="n">sample_rate</span>
+    <span class="p">)</span>
     <span class="n">report_data</span> <span class="o">=</span> <span class="p">(</span><span class="n">reduction_output</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">reduction_output</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">40</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2"> records inserted to DynamoDB.</span><span class="se">\n</span><span class="si">%d</span><span class="s2"> records remaining in queue.&quot;</span> <span class="o">%</span> <span class="n">report_data</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span>
+        <span class="s2">&quot;</span><span class="si">%d</span><span class="s2"> records inserted to DynamoDB.</span><span class="se">\n</span><span class="si">%d</span><span class="s2"> records remaining in queue.&quot;</span> <span class="o">%</span> <span class="n">report_data</span>
+    <span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">40</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">reduction_output</span></div>
 
 
 <span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">()</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--date&#39;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># YYYYMMDD</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--region&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;us-west-2&#39;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--table&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;taar_addon_data_20180206&#39;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--prod-iam-role&#39;</span><span class="p">,</span>
-              <span class="n">default</span><span class="o">=</span><span class="s1">&#39;arn:aws:iam::361527076523:role/taar-write-dynamodb-from-dev&#39;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--sample-rate&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--date&quot;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># YYYYMMDD</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--region&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;us-west-2&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--table&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;taar_addon_data_20180206&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+    <span class="s2">&quot;--prod-iam-role&quot;</span><span class="p">,</span>
+    <span class="n">default</span><span class="o">=</span><span class="s2">&quot;arn:aws:iam::361527076523:role/taar-write-dynamodb-from-dev&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--sample-rate&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="n">region</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">prod_iam_role</span><span class="p">,</span> <span class="n">sample_rate</span><span class="p">):</span>
     <span class="n">APP_NAME</span> <span class="o">=</span> <span class="s2">&quot;HBaseAddonRecommenderView&quot;</span>
     <span class="n">conf</span> <span class="o">=</span> <span class="n">SparkConf</span><span class="p">()</span><span class="o">.</span><span class="n">setAppName</span><span class="p">(</span><span class="n">APP_NAME</span><span class="p">)</span>
     <span class="n">spark</span> <span class="o">=</span> <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">config</span><span class="p">(</span><span class="n">conf</span><span class="o">=</span><span class="n">conf</span><span class="p">)</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
     <span class="n">date_obj</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">reduction_output</span> <span class="o">=</span> <span class="n">run_etljob</span><span class="p">(</span><span class="n">spark</span><span class="p">,</span>
-                                  <span class="n">date_obj</span><span class="p">,</span>
-                                  <span class="n">region</span><span class="p">,</span>
-                                  <span class="n">table</span><span class="p">,</span>
-                                  <span class="n">prod_iam_role</span><span class="p">,</span>
-                                  <span class="n">sample_rate</span><span class="p">)</span>
+    <span class="n">reduction_output</span> <span class="o">=</span> <span class="n">run_etljob</span><span class="p">(</span>
+        <span class="n">spark</span><span class="p">,</span> <span class="n">date_obj</span><span class="p">,</span> <span class="n">region</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">prod_iam_role</span><span class="p">,</span> <span class="n">sample_rate</span>
+    <span class="p">)</span>
     <span class="n">pprint</span><span class="p">(</span><span class="n">reduction_output</span><span class="p">)</span>
 </pre></div>
 

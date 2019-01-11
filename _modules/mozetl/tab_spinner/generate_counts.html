@@ -51,9 +51,8 @@
     <span class="n">end_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">appBuildId_filter</span><span class="p">(</span><span class="n">b</span><span class="p">):</span>
-        <span class="k">return</span> <span class="p">(</span>
-            <span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">start_date</span><span class="p">)</span> <span class="ow">or</span> <span class="n">b</span> <span class="o">&gt;</span> <span class="n">start_date</span><span class="p">)</span> <span class="ow">and</span>
-            <span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">end_date</span><span class="p">)</span> <span class="ow">or</span> <span class="n">b</span> <span class="o">&lt;</span> <span class="n">end_date</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">start_date</span><span class="p">)</span> <span class="ow">or</span> <span class="n">b</span> <span class="o">&gt;</span> <span class="n">start_date</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
+            <span class="n">b</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">end_date</span><span class="p">)</span> <span class="ow">or</span> <span class="n">b</span> <span class="o">&lt;</span> <span class="n">end_date</span>
         <span class="p">)</span>
 
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Start Date: </span><span class="si">{}</span><span class="s2">, End Date: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">start_date</span><span class="p">,</span> <span class="n">end_date</span><span class="p">))</span>
@@ -63,35 +62,41 @@
     <span class="k">for</span> <span class="n">build_type</span> <span class="ow">in</span> <span class="n">nightly_build_channels</span><span class="p">:</span>
         <span class="c1"># Bug 1341340 - if we&#39;re looking for pings from before 20161012, we need to query</span>
         <span class="c1"># old infra.</span>
-        <span class="n">old_infra_pings</span> <span class="o">=</span> <span class="n">Dataset</span><span class="o">.</span><span class="n">from_source</span><span class="p">(</span><span class="s2">&quot;telemetry-oldinfra&quot;</span><span class="p">)</span> \
-            <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">docType</span><span class="o">=</span><span class="s1">&#39;main&#39;</span><span class="p">)</span> \
-            <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">submissionDate</span><span class="o">=</span><span class="k">lambda</span> <span class="n">b</span><span class="p">:</span> <span class="n">b</span> <span class="o">&lt;</span> <span class="s2">&quot;20161201&quot;</span><span class="p">)</span> \
-            <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">appBuildId</span><span class="o">=</span><span class="n">appBuildId_filter</span><span class="p">)</span> \
-            <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">appUpdateChannel</span><span class="o">=</span><span class="n">build_type</span><span class="p">)</span> \
+        <span class="n">old_infra_pings</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">Dataset</span><span class="o">.</span><span class="n">from_source</span><span class="p">(</span><span class="s2">&quot;telemetry-oldinfra&quot;</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">docType</span><span class="o">=</span><span class="s2">&quot;main&quot;</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">submissionDate</span><span class="o">=</span><span class="k">lambda</span> <span class="n">b</span><span class="p">:</span> <span class="n">b</span> <span class="o">&lt;</span> <span class="s2">&quot;20161201&quot;</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">appBuildId</span><span class="o">=</span><span class="n">appBuildId_filter</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">appUpdateChannel</span><span class="o">=</span><span class="n">build_type</span><span class="p">)</span>
             <span class="o">.</span><span class="n">records</span><span class="p">(</span><span class="n">sc</span><span class="p">,</span> <span class="n">sample</span><span class="o">=</span><span class="n">sample_size</span><span class="p">)</span>
+        <span class="p">)</span>
 
-        <span class="n">new_infra_pings</span> <span class="o">=</span> <span class="n">Dataset</span><span class="o">.</span><span class="n">from_source</span><span class="p">(</span><span class="s2">&quot;telemetry&quot;</span><span class="p">)</span> \
-            <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">docType</span><span class="o">=</span><span class="s1">&#39;main&#39;</span><span class="p">)</span> \
-            <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">submissionDate</span><span class="o">=</span><span class="k">lambda</span> <span class="n">b</span><span class="p">:</span> <span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;20161201&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">b</span> <span class="o">&gt;</span> <span class="s2">&quot;20161201&quot;</span><span class="p">))</span> \
-            <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">appBuildId</span><span class="o">=</span><span class="n">appBuildId_filter</span><span class="p">)</span> \
-            <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">appUpdateChannel</span><span class="o">=</span><span class="n">build_type</span><span class="p">)</span> \
+        <span class="n">new_infra_pings</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">Dataset</span><span class="o">.</span><span class="n">from_source</span><span class="p">(</span><span class="s2">&quot;telemetry&quot;</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">docType</span><span class="o">=</span><span class="s2">&quot;main&quot;</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">where</span><span class="p">(</span>
+                <span class="n">submissionDate</span><span class="o">=</span><span class="k">lambda</span> <span class="n">b</span><span class="p">:</span> <span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;20161201&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">b</span> <span class="o">&gt;</span> <span class="s2">&quot;20161201&quot;</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">appBuildId</span><span class="o">=</span><span class="n">appBuildId_filter</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">appUpdateChannel</span><span class="o">=</span><span class="n">build_type</span><span class="p">)</span>
             <span class="o">.</span><span class="n">records</span><span class="p">(</span><span class="n">sc</span><span class="p">,</span> <span class="n">sample</span><span class="o">=</span><span class="n">sample_size</span><span class="p">)</span>
+        <span class="p">)</span>
 
         <span class="n">pings</span> <span class="o">=</span> <span class="n">old_infra_pings</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">new_infra_pings</span><span class="p">)</span>
         <span class="n">build_results</span><span class="p">[</span><span class="n">build_type</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_short_and_long_spinners</span><span class="p">(</span><span class="n">pings</span><span class="p">)</span>
 
-    <span class="n">s3_client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s1">&#39;s3&#39;</span><span class="p">)</span>
+    <span class="n">s3_client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;s3&quot;</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">result_key</span><span class="p">,</span> <span class="n">results</span> <span class="ow">in</span> <span class="n">build_results</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="n">filename</span> <span class="o">=</span> <span class="s2">&quot;severities_by_build_id_</span><span class="si">%s</span><span class="s2">.json&quot;</span> <span class="o">%</span> <span class="n">result_key</span>
         <span class="n">results_json</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">results_json</span><span class="p">)</span>
 
         <span class="n">s3_client</span><span class="o">.</span><span class="n">upload_file</span><span class="p">(</span>
             <span class="n">filename</span><span class="p">,</span>
-            <span class="s1">&#39;telemetry-public-analysis-2&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;spinner-severity-generator/data/</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+            <span class="s2">&quot;telemetry-public-analysis-2&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;spinner-severity-generator/data/</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">filename</span><span class="p">),</span>
         <span class="p">)</span></div>
 </pre></div>
 

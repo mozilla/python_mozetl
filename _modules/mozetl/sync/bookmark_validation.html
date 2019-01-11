@@ -93,27 +93,24 @@
 <span class="s2">    &quot;&quot;&quot;</span>
     <span class="n">engine_validations</span> <span class="o">=</span> <span class="n">spark</span><span class="o">.</span><span class="n">sql</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
 
-    <span class="n">bookmark_validations</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">engine_validations</span>
-        <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;engine_name&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="s2">&quot;bookmarks&quot;</span><span class="p">,</span> <span class="s2">&quot;bookmarks-buffered&quot;</span><span class="p">))</span>
+    <span class="n">bookmark_validations</span> <span class="o">=</span> <span class="n">engine_validations</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+        <span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;engine_name&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="s2">&quot;bookmarks&quot;</span><span class="p">,</span> <span class="s2">&quot;bookmarks-buffered&quot;</span><span class="p">)</span>
     <span class="p">)</span>
 
-    <span class="n">bookmark_validation_problems</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">bookmark_validations</span>
-        <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;engine_has_problems&quot;</span><span class="p">))</span>
+    <span class="n">bookmark_validation_problems</span> <span class="o">=</span> <span class="n">bookmark_validations</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+        <span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;engine_has_problems&quot;</span><span class="p">)</span>
     <span class="p">)</span>
 
     <span class="c1"># Generate aggregates over all bookmarks</span>
     <span class="n">bookmark_aggregates</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">bookmark_validations</span>
-        <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;engine_validation_checked&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">isNotNull</span><span class="p">())</span>
+        <span class="n">bookmark_validations</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;engine_validation_checked&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">isNotNull</span><span class="p">())</span>
         <span class="c1"># see bug 1410963 for submission date vs sync date</span>
-        <span class="o">.</span><span class="n">groupBy</span><span class="p">(</span><span class="s2">&quot;submission_day&quot;</span><span class="p">)</span>
-        <span class="o">.</span><span class="n">agg</span><span class="p">(</span>
-            <span class="n">F</span><span class="o">.</span><span class="n">countDistinct</span><span class="p">(</span><span class="s2">&quot;uid&quot;</span><span class="p">,</span> <span class="s2">&quot;device_id&quot;</span><span class="p">,</span> <span class="s2">&quot;when&quot;</span><span class="p">)</span>
-            <span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;total_bookmark_validations&quot;</span><span class="p">),</span>
+        <span class="o">.</span><span class="n">groupBy</span><span class="p">(</span><span class="s2">&quot;submission_day&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">agg</span><span class="p">(</span>
+            <span class="n">F</span><span class="o">.</span><span class="n">countDistinct</span><span class="p">(</span><span class="s2">&quot;uid&quot;</span><span class="p">,</span> <span class="s2">&quot;device_id&quot;</span><span class="p">,</span> <span class="s2">&quot;when&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span>
+                <span class="s2">&quot;total_bookmark_validations&quot;</span>
+            <span class="p">),</span>
             <span class="n">F</span><span class="o">.</span><span class="n">countDistinct</span><span class="p">(</span><span class="s2">&quot;uid&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;total_validated_users&quot;</span><span class="p">),</span>
-            <span class="n">F</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;engine_validation_checked&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;total_bookmarks_checked&quot;</span><span class="p">)</span>
+            <span class="n">F</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;engine_validation_checked&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;total_bookmarks_checked&quot;</span><span class="p">),</span>
         <span class="p">)</span>
     <span class="p">)</span>
 
@@ -125,30 +122,29 @@
     <span class="sd">&quot;&quot;&quot;Save tables to disk.&quot;&quot;&quot;</span>
 
     <span class="k">for</span> <span class="n">table_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;bmk_validation_problems&quot;</span><span class="p">,</span> <span class="s2">&quot;bmk_total_per_day&quot;</span><span class="p">]:</span>
-        <span class="n">path</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s2">&quot;s3://</span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="s2">/v</span><span class="si">{}</span><span class="s2">/start_date=</span><span class="si">{}</span><span class="s2">&quot;</span>
-            <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">bucket</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">table_name</span><span class="p">,</span> <span class="n">version</span><span class="p">,</span> <span class="n">start_date</span><span class="p">)</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s2">&quot;s3://</span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="s2">/v</span><span class="si">{}</span><span class="s2">/start_date=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">bucket</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">table_name</span><span class="p">,</span> <span class="n">version</span><span class="p">,</span> <span class="n">start_date</span>
         <span class="p">)</span>
 
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Saving table </span><span class="si">{}</span><span class="s2"> on start_date </span><span class="si">{}</span><span class="s2"> to </span><span class="si">{}</span><span class="s2">&quot;</span>
-                    <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">table_name</span><span class="p">,</span> <span class="n">start_date</span><span class="p">,</span> <span class="n">path</span><span class="p">))</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s2">&quot;Saving table </span><span class="si">{}</span><span class="s2"> on start_date </span><span class="si">{}</span><span class="s2"> to </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">table_name</span><span class="p">,</span> <span class="n">start_date</span><span class="p">,</span> <span class="n">path</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
 
         <span class="n">df</span> <span class="o">=</span> <span class="n">spark</span><span class="o">.</span><span class="n">sql</span><span class="p">(</span><span class="s2">&quot;SELECT * FROM </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">table_name</span><span class="p">))</span>
         <span class="n">df</span><span class="o">.</span><span class="n">repartition</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">write</span><span class="o">.</span><span class="n">parquet</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;overwrite&quot;</span><span class="p">)</span></div>
 
 
 <span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">()</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--start_date&#39;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Date to process&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--end_date&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Optional end date to run until&quot;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--bucket&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;telemetry-parquet&#39;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--prefix&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;sync&#39;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--input_bucket&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;telemetry-parquet&#39;</span><span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--input_prefix&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;sync_summary/v2&#39;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--start_date&quot;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Date to process&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--end_date&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Optional end date to run until&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--bucket&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;telemetry-parquet&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--prefix&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;sync&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--input_bucket&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;telemetry-parquet&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--input_prefix&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;sync_summary/v2&quot;</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">start_date</span><span class="p">,</span> <span class="n">end_date</span><span class="p">,</span> <span class="n">bucket</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">input_bucket</span><span class="p">,</span> <span class="n">input_prefix</span><span class="p">):</span>
-    <span class="n">spark</span> <span class="o">=</span> <span class="p">(</span><span class="n">SparkSession</span>
-             <span class="o">.</span><span class="n">builder</span>
-             <span class="o">.</span><span class="n">appName</span><span class="p">(</span><span class="s2">&quot;sync_bookmark&quot;</span><span class="p">)</span>
-             <span class="o">.</span><span class="n">getOrCreate</span><span class="p">())</span>
+    <span class="n">spark</span> <span class="o">=</span> <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">appName</span><span class="p">(</span><span class="s2">&quot;sync_bookmark&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
 
     <span class="n">version</span> <span class="o">=</span> <span class="mi">1</span>
     <span class="n">input_path</span> <span class="o">=</span> <span class="s2">&quot;s3://</span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">input_bucket</span><span class="p">,</span> <span class="n">input_prefix</span><span class="p">)</span>
@@ -158,10 +154,9 @@
     <span class="n">start</span> <span class="o">=</span> <span class="n">arrow</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">start_date</span><span class="p">,</span> <span class="n">ds_format</span><span class="p">)</span>
     <span class="n">end</span> <span class="o">=</span> <span class="n">arrow</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">end_date</span> <span class="k">if</span> <span class="n">end_date</span> <span class="k">else</span> <span class="n">start_date</span><span class="p">,</span> <span class="n">ds_format</span><span class="p">)</span>
 
-    <span class="k">for</span> <span class="n">date</span> <span class="ow">in</span> <span class="n">arrow</span><span class="o">.</span><span class="n">Arrow</span><span class="o">.</span><span class="n">range</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">date</span> <span class="ow">in</span> <span class="n">arrow</span><span class="o">.</span><span class="n">Arrow</span><span class="o">.</span><span class="n">range</span><span class="p">(</span><span class="s2">&quot;day&quot;</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">):</span>
         <span class="n">current_date</span> <span class="o">=</span> <span class="n">date</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ds_format</span><span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Processing sync bookmark validation for </span><span class="si">{}</span><span class="s2">&quot;</span>
-                    <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">current_date</span><span class="p">))</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Processing sync bookmark validation for </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">current_date</span><span class="p">))</span>
         <span class="n">extract</span><span class="p">(</span><span class="n">spark</span><span class="p">,</span> <span class="n">input_path</span><span class="p">,</span> <span class="n">current_date</span><span class="p">)</span>
         <span class="n">transform</span><span class="p">(</span><span class="n">spark</span><span class="p">)</span>
         <span class="n">load</span><span class="p">(</span><span class="n">spark</span><span class="p">,</span> <span class="n">bucket</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">version</span><span class="p">,</span> <span class="n">current_date</span><span class="p">)</span>

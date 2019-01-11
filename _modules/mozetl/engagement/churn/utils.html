@@ -55,7 +55,7 @@
     <span class="k">return</span> <span class="n">start_date</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">format</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="to_datetime"><a class="viewcode-back" href="../../../../source/mozetl.engagement.churn.html#mozetl.engagement.churn.utils.to_datetime">[docs]</a><span class="k">def</span> <span class="nf">to_datetime</span><span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;yyyyMMdd&#39;</span><span class="p">):</span>
+<div class="viewcode-block" id="to_datetime"><a class="viewcode-back" href="../../../../source/mozetl.engagement.churn.html#mozetl.engagement.churn.utils.to_datetime">[docs]</a><span class="k">def</span> <span class="nf">to_datetime</span><span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;yyyyMMdd&quot;</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Convert a StringType column into a DateType column.</span>
 
 <span class="sd">    Default format is `yyyyMMdd`. Formats are specified by SimpleDateFormats_.</span>
@@ -64,15 +64,13 @@
 
 <span class="sd">    .. _SimpleDateFormats: http://docs.oracle.com/javase/tutorial/i18n/format/simpleDateFormat.html</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="p">(</span>
-        <span class="n">F</span><span class="o">.</span><span class="n">from_unixtime</span><span class="p">(</span>
-            <span class="n">F</span><span class="o">.</span><span class="n">unix_timestamp</span><span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="nb">format</span><span class="p">))</span>
-        <span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;to_datetime(</span><span class="si">{}</span><span class="s2">, </span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="nb">format</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">from_unixtime</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">unix_timestamp</span><span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="nb">format</span><span class="p">))</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span>
+        <span class="s2">&quot;to_datetime(</span><span class="si">{}</span><span class="s2">, </span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="nb">format</span><span class="p">)</span>
     <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="format_spark_path"><a class="viewcode-back" href="../../../../source/mozetl.engagement.churn.html#mozetl.engagement.churn.utils.format_spark_path">[docs]</a><span class="k">def</span> <span class="nf">format_spark_path</span><span class="p">(</span><span class="n">bucket</span><span class="p">,</span> <span class="n">prefix</span><span class="p">):</span>
-    <span class="k">return</span> <span class="s1">&#39;s3://</span><span class="si">{}</span><span class="s1">/</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">bucket</span><span class="p">,</span> <span class="n">prefix</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="s2">&quot;s3://</span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">bucket</span><span class="p">,</span> <span class="n">prefix</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="preprocess_col_expr"><a class="viewcode-back" href="../../../../source/mozetl.engagement.churn.html#mozetl.engagement.churn.utils.preprocess_col_expr">[docs]</a><span class="k">def</span> <span class="nf">preprocess_col_expr</span><span class="p">(</span><span class="n">mapping</span><span class="p">):</span>
