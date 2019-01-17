@@ -5,7 +5,15 @@
 import click
 import json
 import requests
-from taar_utils import store_json_to_s3
+from .taar_utils import store_json_to_s3
+
+
+class LoadError(Exception):
+    pass
+
+
+class ShortWhitelistError(Exception):
+    pass
 
 
 WHITELIST_FILENAME = "only_guids_top_200"
@@ -24,16 +32,15 @@ def load_raw_json(url):
         json_data = json.loads(r.text)
         return json_data
 
+    err_msg = "HTTP {} status loading JSON from AMO editorial endpoint.".format(
+        r.status_code
+    )
+    raise LoadError(err_msg)
+
 
 def validate_row(row):
-    if "addon" not in row:
-        return False
-    meta = row["addon"]
-    if "guid" not in meta:
-        return False
-    if meta["guid"] in (None, "null", ""):
-        return False
-    return True
+    guid = row.get("addon", {}).get("guid", None)
+    return guid not in (None, "null", "")
 
 
 def check_guid(guid):
@@ -42,18 +49,20 @@ def check_guid(guid):
     return r.status_code == 200
 
 
-def parse_json(json_data, validate_guids=False):
-    guids = set()
-    for row in json_data["results"]:
-        if not validate_row(row):
-            continue
-        guids.add(row["addon"]["guid"])
+def parse_json(json_data, allow_short_guidlist, validate_guids=False):
+    guids = {row["addon"]["guid"] for row in json_data["results"] if validate_row(row)}
 
     if validate_guids:
         for guid in guids:
             if not check_guid(guid):
                 raise GUIDError("Can't validate GUID: {}".format(guid))
-    return sorted(list(guids))
+    result = sorted(list(guids))
+
+    if not allow_short_guidlist and len(result) < 100:
+        raise ShortWhitelistError(
+            "Only obtained {} editorial reviewed addons.".format(len(result))
+        )
+    return result
 
 
 def load_etl(transformed_data, date, prefix, bucket):
@@ -67,9 +76,9 @@ def load_etl(transformed_data, date, prefix, bucket):
 @click.option("--url", default=EDITORIAL_URI)
 @click.option("--bucket", default="telemetry-parquet")
 @click.option("--prefix", default="taar/locale/")
-def main(date, url, bucket, prefix):
+@click.option("--validate_guid", default=False)
+def main(date, url, bucket, prefix, validate_guid):
 
     data_extract = load_raw_json(url)
-
-    jdata = parse_json(data_extract, False)
+    jdata = parse_json(data_extract, False, validate_guid)
     load_etl(jdata, date, prefix, bucket)
