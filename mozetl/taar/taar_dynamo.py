@@ -199,7 +199,7 @@ class DynamoReducer(object):
             client_id = item["client_id"]
             item["client_id"] = hash_telemetry_id(client_id)
 
-    def push_to_dynamo(self, data_tuple):
+    def push_to_dynamo(self, data_tuple):  # noqa
         """
         This connects to DynamoDB and pushes records in `item_list` into
         a table.
@@ -226,8 +226,15 @@ class DynamoReducer(object):
         ]
 
         # Obtain credentials from the singleton
-        cred_args = credentials.getInstance(self._prod_iam_role)
+
+        print("Using prod iam role: %s" % self._prod_iam_role)
+        if self._prod_iam_role is not None:
+            cred_args = credentials.getInstance(self._prod_iam_role)
+        else:
+            cred_args = {}
+
         conn = boto3.resource("dynamodb", region_name=self._region_name, **cred_args)
+
         table = conn.Table(self._table_name)
         try:
             with table.batch_writer(overwrite_by_pkeys=["client_id"]) as batch:
@@ -440,6 +447,10 @@ def main(date, region, table, prod_iam_role, sample_rate):
     conf = SparkConf().setAppName(APP_NAME)
     spark = SparkSession.builder.config(conf=conf).getOrCreate()
     date_obj = datetime.strptime(date, "%Y%m%d")
+
+    if prod_iam_role.strip() == "":
+        prod_iam_role = None
+
     reduction_output = run_etljob(
         spark, date_obj, region, table, prod_iam_role, sample_rate
     )
