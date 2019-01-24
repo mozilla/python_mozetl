@@ -37,8 +37,6 @@
 
 <span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="k">import</span> <span class="n">SparkSession</span>
 <span class="kn">import</span> <span class="nn">pyspark.sql.functions</span> <span class="k">as</span> <span class="nn">fun</span>
-<span class="kn">import</span> <span class="nn">json</span>
-<span class="kn">from</span> <span class="nn">six.moves</span> <span class="k">import</span> <span class="n">urllib</span>
 <span class="kn">import</span> <span class="nn">click</span>
 
 <span class="n">MS_FIELDS</span> <span class="o">=</span> <span class="p">[</span>
@@ -57,25 +55,6 @@
     <span class="s2">&quot;addons.is_web_extension&quot;</span><span class="p">,</span>
     <span class="s2">&quot;addons.install_day&quot;</span><span class="p">,</span>
 <span class="p">]</span>
-
-
-<div class="viewcode-block" id="get_test_pilot_addons"><a class="viewcode-back" href="../../../source/mozetl.addon_aggregates.html#mozetl.addon_aggregates.addon_aggregates.get_test_pilot_addons">[docs]</a><span class="k">def</span> <span class="nf">get_test_pilot_addons</span><span class="p">():</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Fetches all the live test pilot experiments listed in</span>
-<span class="sd">    the experiments.json file.</span>
-<span class="sd">    :return a list of addon_ids</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;https://testpilot.firefox.com/api/experiments.json&quot;</span>
-        <span class="n">response</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">urlopen</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">))</span>
-        <span class="n">all_tp_addons</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;@testpilot-addon&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span>
-            <span class="n">i</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;addon_id&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;results&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">i</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;addon_id&quot;</span><span class="p">)</span>
-        <span class="p">]</span>
-    <span class="k">except</span><span class="p">:</span>  <span class="c1"># noqa</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Couldn&#39;t fetch experiments.json from testpilot&quot;</span><span class="p">)</span>
-        <span class="n">all_tp_addons</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">return</span> <span class="n">all_tp_addons</span></div>
 
 
 <div class="viewcode-block" id="get_dest"><a class="viewcode-back" href="../../../source/mozetl.addon_aggregates.html#mozetl.addon_aggregates.addon_aggregates.get_dest">[docs]</a><span class="k">def</span> <span class="nf">get_dest</span><span class="p">(</span><span class="n">output_bucket</span><span class="p">,</span> <span class="n">output_prefix</span><span class="p">,</span> <span class="n">output_version</span><span class="p">,</span> <span class="n">date</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sample_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -159,8 +138,7 @@
                 <span class="o">&amp;</span> <span class="p">(</span><span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">foreign_install</span><span class="p">)</span>
                 <span class="o">&amp;</span> <span class="p">(</span><span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">addon_id</span><span class="o">.</span><span class="n">like</span><span class="p">(</span><span class="s2">&quot;%mozilla%&quot;</span><span class="p">))</span>
                 <span class="o">&amp;</span> <span class="p">(</span><span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">addon_id</span><span class="o">.</span><span class="n">like</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%c</span><span class="s2">liqz%&quot;</span><span class="p">))</span>
-                <span class="o">&amp;</span> <span class="p">(</span><span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">addon_id</span><span class="o">.</span><span class="n">like</span><span class="p">(</span><span class="s2">&quot;%@unified-urlbar%&quot;</span><span class="p">))</span>
-                <span class="o">&amp;</span> <span class="p">(</span><span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">addon_id</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="o">*</span><span class="n">NON_MOZ_TEST_PILOT_ADDONS</span><span class="p">)),</span>
+                <span class="o">&amp;</span> <span class="p">(</span><span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">addon_id</span><span class="o">.</span><span class="n">like</span><span class="p">(</span><span class="s2">&quot;%@unified-urlbar%&quot;</span><span class="p">)),</span>
                 <span class="mi">1</span><span class="p">,</span>
             <span class="p">)</span><span class="o">.</span><span class="n">otherwise</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
         <span class="p">)</span>
@@ -219,12 +197,6 @@
         <span class="p">)</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">addon_aggregates</span></div>
-
-
-<span class="n">NON_MOZ_TEST_PILOT_ADDONS</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span>
-    <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">get_test_pilot_addons</span><span class="p">()</span> <span class="k">if</span> <span class="s2">&quot;mozilla&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">i</span><span class="p">]</span>
-<span class="p">)</span>
-<span class="n">DEFAULT_THEME_ID</span> <span class="o">=</span> <span class="s2">&quot;{972ce4c6-7e08-4474-a285-3208198ce6fd}&quot;</span>
 
 
 <span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">()</span>
