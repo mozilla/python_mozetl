@@ -2,8 +2,6 @@
 
 from pyspark.sql import SparkSession
 import pyspark.sql.functions as fun
-import json
-from six.moves import urllib
 import click
 
 MS_FIELDS = [
@@ -22,25 +20,6 @@ ADDON_FIELDS = [
     "addons.is_web_extension",
     "addons.install_day",
 ]
-
-
-def get_test_pilot_addons():
-    """
-    Fetches all the live test pilot experiments listed in
-    the experiments.json file.
-    :return a list of addon_ids
-    """
-    try:
-        url = "https://testpilot.firefox.com/api/experiments.json"
-        response = urllib.request.urlopen(url)
-        data = json.loads(response.read().decode("utf-8"))
-        all_tp_addons = ["@testpilot-addon"] + [
-            i.get("addon_id") for i in data["results"] if i.get("addon_id")
-        ]
-    except:  # noqa
-        print("Couldn't fetch experiments.json from testpilot")
-        all_tp_addons = []
-    return all_tp_addons
 
 
 def get_dest(output_bucket, output_prefix, output_version, date=None, sample_id=None):
@@ -124,8 +103,7 @@ def add_addon_columns(df):
                 & (~df.foreign_install)
                 & (~df.addon_id.like("%mozilla%"))
                 & (~df.addon_id.like("%cliqz%"))
-                & (~df.addon_id.like("%@unified-urlbar%"))
-                & (~df.addon_id.isin(*NON_MOZ_TEST_PILOT_ADDONS)),
+                & (~df.addon_id.like("%@unified-urlbar%")),
                 1,
             ).otherwise(0),
         )
@@ -184,12 +162,6 @@ def aggregate_addons(df):
         )
     )
     return addon_aggregates
-
-
-NON_MOZ_TEST_PILOT_ADDONS = set(
-    [i for i in get_test_pilot_addons() if "mozilla" not in i]
-)
-DEFAULT_THEME_ID = "{972ce4c6-7e08-4474-a285-3208198ce6fd}"
 
 
 @click.command()
