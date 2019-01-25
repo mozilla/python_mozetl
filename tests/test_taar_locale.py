@@ -509,6 +509,10 @@ def test_get_protected_and_dictionary(
 
 def test_get_top_addons_by_locale(addon_count_neg):
     actual = taar_locale.get_top_addons_by_locale(addon_count_neg, 3)
+    # Weights should sum to 1 within each locale.
+    for addons in actual.values():
+        assert sum([w for a, w in addons]) == 1.0
+
     expected = {
         "en-US": [("guid-1", 0.8), ("guid-2", 0.2), ("guid-3", 0.0)],
         "de": [("guid-3", 0.625), ("guid-2", 0.375), ("guid-1", 0.0)],
