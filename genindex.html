@@ -15,6 +15,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="#" />
     <link rel="search" title="Search" href="search.html" />
    
@@ -143,7 +144,7 @@
 </li>
       <li><a href="source/mozetl.taar.html#mozetl.taar.taar_similarity.compute_clusters">compute_clusters() (in module mozetl.taar.taar_similarity)</a>
 </li>
-      <li><a href="source/mozetl.taar.html#mozetl.taar.taar_locale.compute_threshold">compute_threshold() (in module mozetl.taar.taar_locale)</a>
+      <li><a href="source/mozetl.taar.html#mozetl.taar.taar_locale.compute_noisy_counts">compute_noisy_counts() (in module mozetl.taar.taar_locale)</a>
 </li>
       <li><a href="source/mozetl.basic.html#mozetl.basic.transform.convert_pings">convert_pings() (in module mozetl.basic.transform)</a>
 </li>
@@ -297,9 +298,11 @@
 </li>
       <li><a href="source/mozetl.testpilot.html#mozetl.testpilot.txp_mau_dau.get_active_users">get_active_users() (in module mozetl.testpilot.txp_mau_dau)</a>
 </li>
-      <li><a href="source/mozetl.taar.html#mozetl.taar.taar_locale.get_addons">get_addons() (in module mozetl.taar.taar_locale)</a>
+      <li><a href="source/mozetl.taar.html#mozetl.taar.taar_locale.get_addon_limits_by_locale">get_addon_limits_by_locale() (in module mozetl.taar.taar_locale)</a>
 </li>
       <li><a href="source/mozetl.taar.html#mozetl.taar.taar_similarity.get_addons_per_client">get_addons_per_client() (in module mozetl.taar.taar_similarity)</a>
+</li>
+      <li><a href="source/mozetl.taar.html#mozetl.taar.taar_locale.get_client_addons">get_client_addons() (in module mozetl.taar.taar_locale)</a>
 </li>
       <li><a href="source/mozetl.html#mozetl.main.get_data">get_data() (in module mozetl.main)</a>
 </li>
@@ -341,6 +344,8 @@
 </li>
       <li><a href="source/mozetl.basic.html#mozetl.basic.transform.DataFrameConfig.get_paths">get_paths() (mozetl.basic.transform.DataFrameConfig method)</a>
 </li>
+      <li><a href="source/mozetl.taar.html#mozetl.taar.taar_locale.get_protected_locale_addon_counts">get_protected_locale_addon_counts() (in module mozetl.taar.taar_locale)</a>
+</li>
       <li><a href="source/mozetl.engagement.churn.html#mozetl.engagement.churn.release.get_release_info">get_release_info() (in module mozetl.engagement.churn.release)</a>
 </li>
       <li><a href="source/mozetl.taar.html#mozetl.taar.taar_amowhitelist.AbstractAccumulator.get_results">get_results() (mozetl.taar.taar_amowhitelist.AbstractAccumulator method)</a>
@@ -358,6 +363,8 @@
       <li><a href="source/mozetl.tab_spinner.html#mozetl.tab_spinner.utils.get_short_and_long_spinners">get_short_and_long_spinners() (in module mozetl.tab_spinner.utils)</a>
 </li>
       <li><a href="source/mozetl.testpilot.html#mozetl.testpilot.txp_mau_dau.get_spark_session">get_spark_session() (in module mozetl.testpilot.txp_mau_dau)</a>
+</li>
+      <li><a href="source/mozetl.taar.html#mozetl.taar.taar_locale.get_top_addons_by_locale">get_top_addons_by_locale() (in module mozetl.taar.taar_locale)</a>
 </li>
       <li><a href="source/mozetl.hardware_report.html#mozetl.hardware_report.summarize_json.get_valid_client_record">get_valid_client_record() (in module mozetl.hardware_report.summarize_json)</a>
 </li>
@@ -427,6 +434,8 @@
 <h2 id="L">L</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="source/mozetl.taar.html#mozetl.taar.taar_locale.limit_client_addons">limit_client_addons() (in module mozetl.taar.taar_locale)</a>
+</li>
       <li><a href="source/mozetl.taar.html#mozetl.taar.taar_dynamo.list_transformer">list_transformer() (in module mozetl.taar.taar_dynamo)</a>
 </li>
       <li><a href="source/mozetl.sync.html#mozetl.sync.bookmark_validation.load">load() (in module mozetl.sync.bookmark_validation)</a>
@@ -443,10 +452,10 @@
 </li>
       <li><a href="source/mozetl.taar.html#mozetl.taar.taar_amowhitelist.AMOTransformer.load_featuredlist">load_featuredlist() (mozetl.taar.taar_amowhitelist.AMOTransformer method)</a>
 </li>
-      <li><a href="source/mozetl.taar.html#mozetl.taar.taar_amowhitelist.AMOTransformer.load_featuredwhitelist">load_featuredwhitelist() (mozetl.taar.taar_amowhitelist.AMOTransformer method)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="source/mozetl.taar.html#mozetl.taar.taar_amowhitelist.AMOTransformer.load_featuredwhitelist">load_featuredwhitelist() (mozetl.taar.taar_amowhitelist.AMOTransformer method)</a>
+</li>
       <li><a href="source/mozetl.addon_aggregates.html#mozetl.addon_aggregates.addon_aggregates.load_main_summary">load_main_summary() (in module mozetl.addon_aggregates.addon_aggregates)</a>
 
       <ul>
@@ -661,9 +670,11 @@
 </li>
       <li><a href="source/mozetl.topline.html#mozetl.topline.topline_dashboard.reformat_data">reformat_data() (in module mozetl.topline.topline_dashboard)</a>
 </li>
+      <li><a href="source/mozetl.testpilot.html#mozetl.testpilot.pulse.Request">Request (class in mozetl.testpilot.pulse)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="source/mozetl.testpilot.html#mozetl.testpilot.pulse.Request">Request (class in mozetl.testpilot.pulse)</a>
+      <li><a href="source/mozetl.taar.html#mozetl.taar.taar_locale.rlaplace">rlaplace() (in module mozetl.taar.taar_locale)</a>
 </li>
       <li><a href="source/mozetl.taar.html#mozetl.taar.taar_dynamo.run_etljob">run_etljob() (in module mozetl.taar.taar_dynamo)</a>
 </li>
@@ -753,8 +764,6 @@
         <li><a href="source/mozetl.taar.html#mozetl.taar.taar_lite_guidguid.transform">(in module mozetl.taar.taar_lite_guidguid)</a>
 </li>
         <li><a href="source/mozetl.taar.html#mozetl.taar.taar_lite_guidranking.transform">(in module mozetl.taar.taar_lite_guidranking)</a>
-</li>
-        <li><a href="source/mozetl.taar.html#mozetl.taar.taar_locale.transform">(in module mozetl.taar.taar_locale)</a>
 </li>
         <li><a href="source/mozetl.topline.html#mozetl.topline.topline_summary.transform">(in module mozetl.topline.topline_summary)</a>
 </li>
