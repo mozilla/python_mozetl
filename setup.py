@@ -2,12 +2,13 @@
 from setuptools import setup, find_packages
 
 test_deps = [
-    'coverage',
-    'pytest-cov',
-    'pytest-timeout',
-    'moto',
-    'mock',
-    'pytest',
+    'coverage==4.5.2',
+    'pytest-cov==2.6.0',
+    'pytest-timeout==1.3.3',
+    'moto==1.3.6',
+    'mock==2.0.0',
+    'pytest==3.10.1',
+    'flake8==3.6.0'
 ]
 
 extras = {
@@ -24,14 +25,19 @@ setup(
     packages=find_packages(exclude=['tests']),
     include_package_data=True,
     install_requires=[
-        'pyspark',
-        'python_moztelemetry',  # TODO: pin version
-        'click',
-        'requests',
-        'click_datetime',
-        'arrow',
-        'scipy',
-        'numpy'
+        'arrow==0.10.0',
+        'click==6.7',
+        'click_datetime==0.2',
+        'numpy==1.13.3',
+        'pandas>=0.23.0',
+        'pyspark==2.3.1',
+        'pyspark_hyperloglog==2.1.1',
+        'python_moztelemetry==0.10.2',
+        'requests-toolbelt==0.8.0',
+        'requests==2.20.1',
+        'scipy==1.0.0rc1',
+        'typing==3.6.4',
+        'six==1.11.0',
     ],
     tests_require=test_deps,
     extras_require=extras,
