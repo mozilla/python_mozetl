@@ -38,121 +38,20 @@
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-mozetl.testpilot.containers">
-<span id="mozetl-testpilot-containers-module"></span><h2>mozetl.testpilot.containers module<a class="headerlink" href="#module-mozetl.testpilot.containers" title="Permalink to this headline">¶</a></h2>
-<dl class="function">
-<dt id="mozetl.testpilot.containers.etl_job">
-<code class="descclassname">mozetl.testpilot.containers.</code><code class="descname">etl_job</code><span class="sig-paren">(</span><em>sc</em>, <em>sqlContext</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/testpilot/containers.html#etl_job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.testpilot.containers.etl_job" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="mozetl.testpilot.containers.include_testpilot_and_shield_pings">
-<code class="descclassname">mozetl.testpilot.containers.</code><code class="descname">include_testpilot_and_shield_pings</code><span class="sig-paren">(</span><em>ping</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/testpilot/containers.html#include_testpilot_and_shield_pings"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.testpilot.containers.include_testpilot_and_shield_pings" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="mozetl.testpilot.containers.include_testpilot_pings">
-<code class="descclassname">mozetl.testpilot.containers.</code><code class="descname">include_testpilot_pings</code><span class="sig-paren">(</span><em>ping</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/testpilot/containers.html#include_testpilot_pings"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.testpilot.containers.include_testpilot_pings" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="mozetl.testpilot.containers.transform_shield_pings">
-<code class="descclassname">mozetl.testpilot.containers.</code><code class="descname">transform_shield_pings</code><span class="sig-paren">(</span><em>sqlContext</em>, <em>pings</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/testpilot/containers.html#transform_shield_pings"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.testpilot.containers.transform_shield_pings" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="mozetl.testpilot.containers.transform_testpilot_pings">
-<code class="descclassname">mozetl.testpilot.containers.</code><code class="descname">transform_testpilot_pings</code><span class="sig-paren">(</span><em>sqlContext</em>, <em>pings</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/testpilot/containers.html#transform_testpilot_pings"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.testpilot.containers.transform_testpilot_pings" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
+<div class="section" id="mozetl-testpilot-containers-module">
+<h2>mozetl.testpilot.containers module<a class="headerlink" href="#mozetl-testpilot-containers-module" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-mozetl.testpilot.pulse">
-<span id="mozetl-testpilot-pulse-module"></span><h2>mozetl.testpilot.pulse module<a class="headerlink" href="#module-mozetl.testpilot.pulse" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="mozetl.testpilot.pulse.Request">
-<em class="property">class </em><code class="descclassname">mozetl.testpilot.pulse.</code><code class="descname">Request</code><span class="sig-paren">(</span><em>request_dict</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/testpilot/pulse.html#Request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.testpilot.pulse.Request" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
-<dl class="attribute">
-<dt id="mozetl.testpilot.pulse.Request.StructType">
-<code class="descname">StructType</code><em class="property"> = StructType(List(StructField(cached,DoubleType,true),StructField(cdn,DoubleType,true),StructField(num,LongType,true),StructField(time,LongType,true)))</em><a class="headerlink" href="#mozetl.testpilot.pulse.Request.StructType" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="mozetl.testpilot.pulse.Request.field_types">
-<code class="descname">field_types</code><em class="property"> = {'cached': (&lt;function &lt;lambda&gt;&gt;, DoubleType), 'cdn': (&lt;function &lt;lambda&gt;&gt;, DoubleType), 'num': (&lt;function &lt;lambda&gt;&gt;, LongType), 'time': (&lt;function &lt;lambda&gt;&gt;, LongType)}</em><a class="headerlink" href="#mozetl.testpilot.pulse.Request.field_types" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="mozetl.testpilot.pulse.Request.float_type">
-<code class="descname">float_type</code><em class="property"> = (&lt;function &lt;lambda&gt;&gt;, DoubleType)</em><a class="headerlink" href="#mozetl.testpilot.pulse.Request.float_type" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="mozetl.testpilot.pulse.Request.int_type">
-<code class="descname">int_type</code><em class="property"> = (&lt;function &lt;lambda&gt;&gt;, LongType)</em><a class="headerlink" href="#mozetl.testpilot.pulse.Request.int_type" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="mozetl.testpilot.pulse.Request.x">
-<code class="descname">x</code><em class="property"> = ('time', (&lt;function &lt;lambda&gt;&gt;, LongType))</em><a class="headerlink" href="#mozetl.testpilot.pulse.Request.x" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="function">
-<dt id="mozetl.testpilot.pulse.transform_pings">
-<code class="descclassname">mozetl.testpilot.pulse.</code><code class="descname">transform_pings</code><span class="sig-paren">(</span><em>sqlContext</em>, <em>pings</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/testpilot/pulse.html#transform_pings"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.testpilot.pulse.transform_pings" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
+<div class="section" id="mozetl-testpilot-pulse-module">
+<h2>mozetl.testpilot.pulse module<a class="headerlink" href="#mozetl-testpilot-pulse-module" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-mozetl.testpilot.txp_mau_dau">
-<span id="mozetl-testpilot-txp-mau-dau-module"></span><h2>mozetl.testpilot.txp_mau_dau module<a class="headerlink" href="#module-mozetl.testpilot.txp_mau_dau" title="Permalink to this headline">¶</a></h2>
-<dl class="function">
-<dt id="mozetl.testpilot.txp_mau_dau.fmt">
-<code class="descclassname">mozetl.testpilot.txp_mau_dau.</code><code class="descname">fmt</code><span class="sig-paren">(</span><em>the_date</em>, <em>date_format='%Y%m%d'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/testpilot/txp_mau_dau.html#fmt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.testpilot.txp_mau_dau.fmt" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="mozetl.testpilot.txp_mau_dau.get_active_users">
-<code class="descclassname">mozetl.testpilot.txp_mau_dau.</code><code class="descname">get_active_users</code><span class="sig-paren">(</span><em>dataset</em>, <em>addon_ids</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/testpilot/txp_mau_dau.html#get_active_users"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.testpilot.txp_mau_dau.get_active_users" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="mozetl.testpilot.txp_mau_dau.get_experiments">
-<code class="descclassname">mozetl.testpilot.txp_mau_dau.</code><code class="descname">get_experiments</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/testpilot/txp_mau_dau.html#get_experiments"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.testpilot.txp_mau_dau.get_experiments" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="mozetl.testpilot.txp_mau_dau.get_mau_dau">
-<code class="descclassname">mozetl.testpilot.txp_mau_dau.</code><code class="descname">get_mau_dau</code><span class="sig-paren">(</span><em>df</em>, <em>run_date_string</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/testpilot/txp_mau_dau.html#get_mau_dau"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.testpilot.txp_mau_dau.get_mau_dau" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="mozetl.testpilot.txp_mau_dau.get_spark_session">
-<code class="descclassname">mozetl.testpilot.txp_mau_dau.</code><code class="descname">get_spark_session</code><span class="sig-paren">(</span><em>app_name</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/testpilot/txp_mau_dau.html#get_spark_session"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.testpilot.txp_mau_dau.get_spark_session" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="mozetl.testpilot.txp_mau_dau.main">
-<code class="descclassname">mozetl.testpilot.txp_mau_dau.</code><code class="descname">main</code><span class="sig-paren">(</span><em>bucket</em>, <em>prefix</em>, <em>input_bucket</em>, <em>input_prefix</em>, <em>run_date_string</em>, <em>sample_id=None</em>, <em>spark_session=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/testpilot/txp_mau_dau.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.testpilot.txp_mau_dau.main" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="mozetl.testpilot.txp_mau_dau.parse">
-<code class="descclassname">mozetl.testpilot.txp_mau_dau.</code><code class="descname">parse</code><span class="sig-paren">(</span><em>d</em>, <em>date_format='%Y%m%d'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/testpilot/txp_mau_dau.html#parse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.testpilot.txp_mau_dau.parse" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
+<div class="section" id="mozetl-testpilot-txp-mau-dau-module">
+<h2>mozetl.testpilot.txp_mau_dau module<a class="headerlink" href="#mozetl-testpilot-txp-mau-dau-module" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-mozetl.testpilot.utils">
-<span id="mozetl-testpilot-utils-module"></span><h2>mozetl.testpilot.utils module<a class="headerlink" href="#module-mozetl.testpilot.utils" title="Permalink to this headline">¶</a></h2>
-<dl class="function">
-<dt id="mozetl.testpilot.utils.testpilot_etl_boilerplate">
-<code class="descclassname">mozetl.testpilot.utils.</code><code class="descname">testpilot_etl_boilerplate</code><span class="sig-paren">(</span><em>transform_func</em>, <em>s3_path</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/testpilot/utils.html#testpilot_etl_boilerplate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.testpilot.utils.testpilot_etl_boilerplate" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
+<div class="section" id="mozetl-testpilot-utils-module">
+<h2>mozetl.testpilot.utils module<a class="headerlink" href="#mozetl-testpilot-utils-module" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-mozetl.testpilot">
-<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-mozetl.testpilot" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-contents">
+<h2>Module contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
 </div>
 </div>
 
@@ -217,7 +116,7 @@
       &copy;2018, Ryan Harter.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
