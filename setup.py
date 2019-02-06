@@ -26,8 +26,10 @@ setup(
     include_package_data=True,
     install_requires=[
         'arrow==0.10.0',
+        'bgbb==0.1.3',
         'click==6.7',
         'click_datetime==0.2',
+        'numba==0.42.0',
         'numpy==1.13.3',
         'pandas>=0.23.0',
         'pyspark==2.3.1',
