@@ -1,6 +1,10 @@
 import click
 
 from mozetl.addon_aggregates import addon_aggregates
+from mozetl.bgbb import (
+    fit_airflow_job as bgbb_fit_job,
+    pred_airflow_job as bgbb_pred_job,
+)
 from mozetl.clientsdaily import rollup as clientsdaily
 from mozetl.engagement.churn import job as churn_job
 from mozetl.engagement.churn_to_csv import job as churn_to_csv_job
@@ -28,6 +32,8 @@ def entry_point():
     pass
 
 
+entry_point.add_command(bgbb_fit_job.main, "bgbb_fit")
+entry_point.add_command(bgbb_pred_job.main, "bgbb_pred")
 entry_point.add_command(churn_job.main, "churn")
 entry_point.add_command(churn_to_csv_job.main, "churn_to_csv")
 entry_point.add_command(clientsdaily.main, "clients_daily")

@@ -27,11 +27,13 @@ setup(
     # PLEASE pin any dependencies to exact versions, otherwise things might unexpectedly break!!
     install_requires=[
         'arrow==0.10.0',
+        'bgbb==0.1.3',
         'boto==2.49.0',
         'boto3==1.9.87',
         'botocore==1.10.84',
         'click==6.7',
         'click_datetime==0.2',
+        'numba==0.42.0',
         'numpy==1.13.3',
         'pandas==0.23.4',
         'pyspark==2.3.1',
