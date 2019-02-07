@@ -24,6 +24,7 @@ setup(
     url='https://github.com/mozilla/python_mozetl.git',
     packages=find_packages(exclude=['tests']),
     include_package_data=True,
+    # PLEASE pin any dependencies to exact versions, otherwise things might unexpectedly break!!
     install_requires=[
         'arrow==0.10.0',
         'boto==2.49.0',
@@ -32,7 +33,7 @@ setup(
         'click==6.7',
         'click_datetime==0.2',
         'numpy==1.13.3',
-        'pandas>=0.23.0',
+        'pandas==0.23.4',
         'pyspark==2.3.1',
         'pyspark_hyperloglog==2.1.1',
         'python_moztelemetry==0.10.2',
