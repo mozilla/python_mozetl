@@ -33,7 +33,7 @@ setup(
         'click==6.7',
         'click_datetime==0.2',
         'numpy==1.13.3',
-        'pandas==0.18.1',
+        'pandas==0.19.2',
         'pyspark==2.3.1',
         'pyspark_hyperloglog==2.1.1',
         'python_moztelemetry==0.10.2',
