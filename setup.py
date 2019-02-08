@@ -25,9 +25,6 @@ setup(
     packages=find_packages(exclude=['tests']),
     include_package_data=True,
     # PLEASE pin any dependencies to exact versions, otherwise things might unexpectedly break!!
-    # When bumping dependencies, please keep the versions here in sync with the versions of
-    # the python packages installed by https://github.com/mozilla/emr-bootstrap-spark/
-    # (both explicitly and via the conda environment)
     install_requires=[
         'arrow==0.10.0',
         'boto==2.49.0',
