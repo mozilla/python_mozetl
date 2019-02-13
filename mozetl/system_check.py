@@ -23,12 +23,12 @@ logging.basicConfig(level=logging.DEBUG)
 
 @click.command()
 @click.argument("--local/--no-local", default=False)
+@click.argument("--submission-date-s3", type=str, default=format_as_submission_date(datetime.now() - timedelta(2)))
 @click.argument("--input-bucket", type=str, default="telemetry-parquet")
 @click.argument("--input-prefix", type=str, default="main_summary/v4")
 @click.argument("--output-bucket", type=str, default="telemetry-test-bucket")
 @click.argument("--output-prefix", type=str, default="mozetl_system_check")
-@click
-def main(local, input_bucket, input_prefix, output_bucket, output_prefix):
+def main(local, submission_date_s3, input_bucket, input_prefix, output_bucket, output_prefix):
     # print argument information
     for k, v in locals():
         print("{}: {}".format(k, v))
@@ -39,7 +39,7 @@ def main(local, input_bucket, input_prefix, output_bucket, output_prefix):
 
     # run a basic count over a sample of `main_summary` from 2 days ago
     if not local:
-        ds_nodash = format_as_submission_date(datetime.now() - timedelta(2))
+        ds_nodash = submission_date_s3
         input_path = format_spark_path(input_bucket, input_prefix)
         output_path = format_spark_path(output_bucket, output_prefix)
 
