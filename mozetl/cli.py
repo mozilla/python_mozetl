@@ -21,6 +21,7 @@ from mozetl.taar import (
     taar_lite_guidranking,
     taar_update_whitelist,
 )
+from mozetl import system_check
 
 
 @click.group()
@@ -48,6 +49,7 @@ entry_point.add_command(addon_aggregates.main, "addon_aggregates")
 entry_point.add_command(maudau.main, "engagement_ratio")
 entry_point.add_command(landfill_sampler.main, "landfill_sampler")
 entry_point.add_command(tab_spinner.main, "long_tab_spinners")
+entry_point.add_command(system_check.main, "system_check")
 
 # Kept for backwards compatibility
 entry_point.add_command(search_aggregates_click, "search_dashboard")
