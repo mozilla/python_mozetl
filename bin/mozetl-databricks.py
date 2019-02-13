@@ -29,9 +29,7 @@ def generate_runner(module_name, instance, token):
     logging.debug(dedent(runner_data))
 
     request = {
-        "content": b64encode(dedent(runner_data)),
-        "format": "SOURCE",
-        "language": "PYTHON",
+        "contents": b64encode(dedent(runner_data)),
         "overwrite": True,
         "path": "/FileStore/airflow/{module}_runner.py".format(module=module_name),
     }
@@ -41,7 +39,7 @@ def generate_runner(module_name, instance, token):
         "Authorization": "Bearer {token}".format(token=token),
         "Content-Type": "application/json",
     }
-    conn.request("POST", "/api/2.0/workspace/import", json.dumps(request), headers)
+    conn.request("POST", "/api/2.0/dbfs/put", json.dumps(request), headers)
     resp = conn.getresponse()
     logging.info("status: {} reason: {}".format(resp.status, resp.reason))
     logging.info(resp.read())
@@ -61,7 +59,7 @@ def run_submit(args):
             },
         },
         "spark_python_task": {
-            "python_file": "s3://telemetry-airflow/steps/mozetl_runner.py",
+            "python_file": "dbfs:/FileStore/airflow/{module}_runner.py".format(args.module_name),
             "parameters": args.command,
         },
         "libraries": {
