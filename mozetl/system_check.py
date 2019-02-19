@@ -36,7 +36,7 @@ def main(
     local, submission_date_s3, input_bucket, input_prefix, output_bucket, output_prefix
 ):
     # print argument information
-    for k, v in locals():
+    for k, v in locals().items():
         print("{}: {}".format(k, v))
 
     print("Python version: {}".format(sys.version_info))
