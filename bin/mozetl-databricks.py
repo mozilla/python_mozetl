@@ -59,7 +59,7 @@ def run_submit(args):
             },
         },
         "spark_python_task": {
-            "python_file": "dbfs:/FileStore/airflow/{module}_runner.py".format(args.module_name),
+            "python_file": "dbfs:/FileStore/airflow/{module}_runner.py".format(module=args.module_name),
             "parameters": args.command,
         },
         "libraries": {
@@ -79,7 +79,7 @@ def run_submit(args):
     logging.debug(json.dumps(config, indent=2))
 
     # https://docs.databricks.com/api/latest/jobs.html#runs-submit
-    conn = httplib.HTTPSConnection(instance)
+    conn = httplib.HTTPSConnection(args.instance)
     headers = {
         "Authorization": "Bearer {token}".format(token=args.token),
         "Content-Type": "application/json",
