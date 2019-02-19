@@ -22,16 +22,16 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 @click.command()
-@click.argument("--local/--no-local", default=False)
-@click.argument(
+@click.option("--local/--no-local", default=False)
+@click.option(
     "--submission-date-s3",
     type=str,
     default=format_as_submission_date(datetime.now() - timedelta(2)),
 )
-@click.argument("--input-bucket", type=str, default="telemetry-parquet")
-@click.argument("--input-prefix", type=str, default="main_summary/v4")
-@click.argument("--output-bucket", type=str, default="telemetry-test-bucket")
-@click.argument("--output-prefix", type=str, default="mozetl_system_check")
+@click.option("--input-bucket", type=str, default="telemetry-parquet")
+@click.option("--input-prefix", type=str, default="main_summary/v4")
+@click.option("--output-bucket", type=str, default="telemetry-test-bucket")
+@click.option("--output-prefix", type=str, default="mozetl_system_check")
 def main(
     local, submission_date_s3, input_bucket, input_prefix, output_bucket, output_prefix
 ):
