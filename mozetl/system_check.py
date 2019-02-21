@@ -55,10 +55,8 @@ def main(
             )
         )
 
-        main_summary = spark.read.parquet(input_path)
-        subset = main_summary.where(
-            "submission_date_s3 = '{}'".format(ds_nodash)
-        ).where("sample_id='{}'".format(1))
+        path = "{}/submission_date_s3={}/sample_id={}".format(input_path, ds_nodash, 1)
+        subset = spark.read.parquet(path)
         print("Saw {} documents".format(subset.count()))
 
         summary = subset.select(
