@@ -1,5 +1,4 @@
 import os
-import pytest
 from click.testing import CliRunner
 from pyspark.sql import Row
 from mozetl import system_check
