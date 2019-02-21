@@ -84,6 +84,9 @@ python bin/mozetl-databricks.py \
 Run `python bin/mozetl-databricks.py --help` for more options, including increasing the number of workers and using python 3.
 Refer to this [pull request](https://github.com/mozilla/python_mozetl/pull/296) for more examples.
 
+It is also possible to use this script for external mozetl-compatible modules by setting the `--git-path` and `--module-name` options appropriately.
+See this [pull request](https://github.com/mozilla/python_mozetl/pull/316) for more information about building a mozetl-compatible repository that can be scheduled on Databricks.
+
 
 # Scheduling
 
