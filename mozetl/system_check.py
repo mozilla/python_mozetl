@@ -10,7 +10,7 @@ import click
 import logging
 
 from datetime import datetime, timedelta
-from pyspark.sql import SparkSession, Row
+from pyspark.sql import SparkSession
 from mozetl.utils import (
     format_as_submission_date,
     format_spark_path,
