@@ -1,3 +1,4 @@
+import os
 import pytest
 from click.testing import CliRunner
 from pyspark.sql import Row
@@ -64,9 +65,7 @@ def test_job(spark, monkeypatch, tmpdir):
 
     # assert path was written
     assert os.path.isdir(
-        "{}/{}/v1/submission_date_s3={}".format(
-            test_bucket, test_output_prefix, ds_nodash
-        )
+        "{}/{}/submission_date_s3={}".format(test_bucket, test_output_prefix, ds_nodash)
     )
 
     # assert data can be read
