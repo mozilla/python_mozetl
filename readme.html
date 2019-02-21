@@ -114,6 +114,8 @@ Then run the script.</p>
 </div>
 <p>Run <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">bin/mozetl-databricks.py</span> <span class="pre">--help</span></code> for more options, including increasing the number of workers and using python 3.
 Refer to this <a class="reference external" href="https://github.com/mozilla/python_mozetl/pull/296">pull request</a> for more examples.</p>
+<p>It is also possible to use this script for external mozetl-compatible modules by setting the <code class="docutils literal notranslate"><span class="pre">--git-path</span></code> and <code class="docutils literal notranslate"><span class="pre">--module-name</span></code> options appropriately.
+See this <a class="reference external" href="https://github.com/mozilla/python_mozetl/pull/316">pull request</a> for more information about building a mozetl-compatible repository that can be scheduled on Databricks.</p>
 </div>
 </div>
 <div class="section" id="scheduling">
@@ -135,15 +137,15 @@ while ATMO will only send an email to the job owner.</li>
 you can identify these dependencies in Airflow.
 This is useful if an upstream job fails.</li>
 </ul>
-<div class="section" id="id4">
-<h2>ATMO<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id5">
+<h2>ATMO<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h2>
 <p>To schedule a job on ATMO, take a look at the
 <a class="reference external" href="scheduling/load_and_run.ipynb">load_and_run notebook</a>.
 This notebook clones and installs the python_mozetl package.
 You can then run your job from the notebook.</p>
 </div>
-<div class="section" id="id5">
-<h2>Airflow<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id6">
+<h2>Airflow<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h2>
 <p>To schedule a job on Airflow,
 you’ll need to add a new Operator to the DAGs and provide a shell script for running your job.
 Take a look at
@@ -197,8 +199,8 @@ In fact, this project was created with
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="#scheduling">Scheduling</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#id4">ATMO</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id5">Airflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id5">ATMO</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id6">Airflow</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="#early-stage-etl-jobs">Early Stage ETL Jobs</a></li>
