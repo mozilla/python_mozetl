@@ -1,2 +1,2 @@
 def test_cli_import():
-    from mozetl import cli
+    from mozetl import cli  # noqa

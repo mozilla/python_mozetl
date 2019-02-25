@@ -7,6 +7,7 @@ from moztelemetry.dataset import Dataset
 
 from .utils import get_short_and_long_spinners
 
+
 # numpy.float64 is not JSON serializable, so an encoder is provided for
 # serialization. In this particular case, the values are within a pandas series.
 # See: https://stackoverflow.com/a/47626762
