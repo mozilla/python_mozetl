@@ -1,10 +1,21 @@
 import boto3
 import json
+import pandas as pd
 from datetime import datetime, timedelta
 
 from moztelemetry.dataset import Dataset
 
 from .utils import get_short_and_long_spinners
+
+# numpy.float64 is not JSON serializable, so an encoder is provided for
+# serialization. In this particular case, the values are within a pandas series.
+# See: https://stackoverflow.com/a/47626762
+class CustomEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, pd.Series):
+            return obj.to_dict()
+        else:
+            return json.JSONEncoder.default(self, obj)
 
 
 def run_spinner_etl(sc):
@@ -34,7 +45,7 @@ def run_spinner_etl(sc):
     s3_client = boto3.client("s3")
     filename = "severities_by_build_id_nightly.json"
     with open(filename, "w") as f:
-        f.write(json.dumps(results, ensure_ascii=False))
+        f.write(json.dumps(results, ensure_ascii=False, cls=CustomEncoder))
 
     s3_client.upload_file(
         filename,
