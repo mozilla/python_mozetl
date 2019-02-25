@@ -1,6 +1,6 @@
 import click
 from pyspark.sql import SparkSession
-from generate_counts import run_spinner_etl
+from .generate_counts import run_spinner_etl
 
 
 @click.command()
