@@ -40,6 +40,33 @@
 </div>
 <div class="section" id="module-mozetl.tab_spinner.generate_counts">
 <span id="mozetl-tab-spinner-generate-counts-module"></span><h2>mozetl.tab_spinner.generate_counts module<a class="headerlink" href="#module-mozetl.tab_spinner.generate_counts" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="mozetl.tab_spinner.generate_counts.CustomEncoder">
+<em class="property">class </em><code class="descclassname">mozetl.tab_spinner.generate_counts.</code><code class="descname">CustomEncoder</code><span class="sig-paren">(</span><em>skipkeys=False</em>, <em>ensure_ascii=True</em>, <em>check_circular=True</em>, <em>allow_nan=True</em>, <em>sort_keys=False</em>, <em>indent=None</em>, <em>separators=None</em>, <em>encoding='utf-8'</em>, <em>default=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/tab_spinner/generate_counts.html#CustomEncoder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.tab_spinner.generate_counts.CustomEncoder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">json.encoder.JSONEncoder</span></code></p>
+<dl class="method">
+<dt id="mozetl.tab_spinner.generate_counts.CustomEncoder.default">
+<code class="descname">default</code><span class="sig-paren">(</span><em>obj</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/tab_spinner/generate_counts.html#CustomEncoder.default"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.tab_spinner.generate_counts.CustomEncoder.default" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implement this method in a subclass such that it returns
+a serializable object for <code class="docutils literal notranslate"><span class="pre">o</span></code>, or calls the base implementation
+(to raise a <code class="docutils literal notranslate"><span class="pre">TypeError</span></code>).</p>
+<p>For example, to support arbitrary iterators, you could
+implement default like this:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">default</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">o</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">iterable</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">o</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">iterable</span><span class="p">)</span>
+    <span class="c1"># Let the base class default method raise the TypeError</span>
+    <span class="k">return</span> <span class="n">JSONEncoder</span><span class="o">.</span><span class="n">default</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">o</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
 <dl class="function">
 <dt id="mozetl.tab_spinner.generate_counts.run_spinner_etl">
 <code class="descclassname">mozetl.tab_spinner.generate_counts.</code><code class="descname">run_spinner_etl</code><span class="sig-paren">(</span><em>sc</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/tab_spinner/generate_counts.html#run_spinner_etl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.tab_spinner.generate_counts.run_spinner_etl" title="Permalink to this definition">¶</a></dt>
