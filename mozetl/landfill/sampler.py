@@ -14,16 +14,11 @@ v2 - Addition of document version as a partition value
 v3 - Retain whitelisted metadata fields and simplify schema
 """
 
-import re
-
 import click
 from moztelemetry.dataset import Dataset
 from pyspark.sql import Window, SparkSession
 from pyspark.sql.functions import col, row_number
 from pyspark.sql.types import StructType, StructField, StringType
-
-# regex for capturing the telemetry version from the uri arguments
-META_ARG_VERSION = re.compile(r"v=([\d]+)")
 
 # whitelist for fields to keep from the ingestion metadata
 META_WHITELIST = {
@@ -56,6 +51,21 @@ def extract(sc, submission_date, sample=0.01):
     return landfill
 
 
+# Detect document version from the payload itself.
+# Should match with the logic here:
+# https://github.com/mozilla-services/lua_sandbox_extensions/blob/master/moz_telemetry/io_modules/decoders/moz_ingest/telemetry.lua#L162
+def _detect_telemetry_version(content):
+    if "ver" in content:
+        return str(content["ver"])
+    if "version" in content:
+        return str(content["version"])
+    if "deviceinfo" in content:
+        return "3"
+    if "v" in content:
+        return str(content["v"])
+    return "1"
+
+
 def _process(message):
     """Process the URI specification from the tagged metadata
 
@@ -70,18 +80,18 @@ def _process(message):
     # Some paths do not adhere to the spec, so append empty values to avoid index errors.
     path = meta["uri"].split("/")[2:] + [None, None, None, None]
     namespace = path[0]
+    content = message.get("content")
 
     if namespace == "telemetry":
         doc_type = path[TELEMETRY_DOC_TYPE]
-        arg = META_ARG_VERSION.search(meta.get("args", ""))
-        doc_version = arg.group(1) if arg else None
+        doc_version = _detect_telemetry_version(content)
         doc_id = path[TELEMETRY_DOC_ID]
     else:
         doc_type = path[GENERIC_DOC_TYPE]
         doc_version = path[GENERIC_DOC_VER]
         doc_id = path[GENERIC_DOC_ID]
 
-    return namespace, doc_type, doc_version, doc_id, meta, message.get("content")
+    return namespace, doc_type, doc_version, doc_id, meta, content
 
 
 def transform(landfill, n_documents=1000):

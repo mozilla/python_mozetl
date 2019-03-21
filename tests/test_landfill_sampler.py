@@ -52,7 +52,59 @@ def test_process_namespace_telemetry(sample_document):
     uri = "/submit/telemetry/doc-id/main/Firefox/61.0.2/release/20180807170231"
     sample_document["meta"]["uri"] = uri
     row = sampler._process(sample_document)
+    assert row[:4] == ("telemetry", "main", "1", "doc-id")
+
+
+def test_process_namespace_telemetry_deviceinfo(sample_document):
+    uri = "/submit/telemetry/doc-id/appusage/Firefox/61.0.2/release/20180807170231"
+    sample_document["meta"]["uri"] = uri
+    sample_document["content"]["deviceinfo"] = "foo"
+    row = sampler._process(sample_document)
+    assert row[:4] == ("telemetry", "appusage", "3", "doc-id")
+
+
+def test_process_namespace_telemetry_version_4(sample_document):
+    uri = "/submit/telemetry/doc-id/main/Firefox/61.0.2/release/20180807170231"
+    sample_document["meta"]["uri"] = uri
+    sample_document["content"]["version"] = 4
+    row = sampler._process(sample_document)
     assert row[:4] == ("telemetry", "main", "4", "doc-id")
+
+
+def test_process_namespace_telemetry_version_5(sample_document):
+    uri = "/submit/telemetry/doc-id/main/Firefox/61.0.2/release/20180807170231"
+    sample_document["meta"]["uri"] = uri
+    sample_document["content"]["version"] = 5
+    row = sampler._process(sample_document)
+    assert row[:4] == ("telemetry", "main", "5", "doc-id")
+
+
+def test_process_namespace_telemetry_ver_6(sample_document):
+    uri = "/submit/telemetry/doc-id/main/Firefox/61.0.2/release/20180807170231"
+    sample_document["meta"]["uri"] = uri
+    sample_document["content"]["ver"] = 6
+    row = sampler._process(sample_document)
+    assert row[:4] == ("telemetry", "main", "6", "doc-id")
+
+
+def test_process_namespace_telemetry_v_7(sample_document):
+    uri = "/submit/telemetry/doc-id/main/Firefox/61.0.2/release/20180807170231"
+    sample_document["meta"]["uri"] = uri
+    sample_document["content"]["ver"] = 7
+    row = sampler._process(sample_document)
+    assert row[:4] == ("telemetry", "main", "7", "doc-id")
+
+
+def test_process_namespace_telemetry_ver_version_v(sample_document):
+    uri = "/submit/telemetry/doc-id/main/Firefox/61.0.2/release/20180807170231"
+    sample_document["meta"]["uri"] = uri
+    # Populate all the version-related fields.
+    sample_document["content"]["ver"] = 8
+    sample_document["content"]["version"] = 9
+    sample_document["content"]["v"] = 10
+    sample_document["content"]["deviceinfo"] = "foo"
+    row = sampler._process(sample_document)
+    assert row[:4] == ("telemetry", "main", "8", "doc-id")
 
 
 def test_process_namespace_generic(sample_document):
