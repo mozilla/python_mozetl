@@ -17,6 +17,7 @@ from mozetl.taar import (
     taar_dynamo,
     taar_amodump,
     taar_amowhitelist,
+    taar_ensemble,
     taar_lite_guidguid,
     taar_lite_guidranking,
     taar_update_whitelist,
@@ -45,6 +46,7 @@ entry_point.add_command(taar_amodump.main, "taar_amodump")
 entry_point.add_command(taar_lite_guidranking.main, "taar_lite_guidranking")
 entry_point.add_command(taar_amowhitelist.main, "taar_amowhitelist")
 entry_point.add_command(taar_update_whitelist.main, "taar_update_whitelist")
+entry_point.add_command(taar_ensemble.main, "taar_ensemble")
 entry_point.add_command(addon_aggregates.main, "addon_aggregates")
 entry_point.add_command(maudau.main, "engagement_ratio")
 entry_point.add_command(landfill_sampler.main, "landfill_sampler")
