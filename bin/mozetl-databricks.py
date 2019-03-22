@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 
 import argparse
-import os
+import ast
 import json
 import logging
 from base64 import b64encode
@@ -34,7 +34,7 @@ def generate_runner(module_name, instance, token):
     # This runner has been auto-generated from mozilla/python_mozetl/bin/mozetl-databricks.py.
     # Any changes made to the runner file will be over-written on subsequent runs.
     from {module} import cli
-    
+
     try:
         cli.entry_point(auto_envvar_prefix="MOZETL")
     except SystemExit:
@@ -61,11 +61,13 @@ def run_submit(args):
         "run_name": "mozetl local submission",
         "new_cluster": {
             "spark_version": "4.3.x-scala2.11",
-            "node_type_id": "c3.4xlarge",
+            "node_type_id": args.node_type_id,
             "num_workers": args.num_workers,
             "aws_attributes": {
-                "availability": "ON_DEMAND",
+                "first_on_demand": 1,
+                "availability": args.aws_availability,
                 "instance_profile_arn": "arn:aws:iam::144996185633:instance-profile/databricks-ec2",
+                "spot_bid_price_percent": 100,
             },
         },
         "spark_python_task": {
@@ -74,13 +76,15 @@ def run_submit(args):
             ),
             "parameters": args.command,
         },
-        "libraries": {
-            "pypi": {
-                "package": "git+{path}@{branch}".format(
-                    path=args.git_path, branch=args.git_branch
-                )
+        "libraries": [
+            {
+                "pypi": {
+                    "package": "git+{path}@{branch}".format(
+                        path=args.git_path, branch=args.git_branch
+                    )
+                }
             }
-        },
+        ],
     }
 
     if args.python == 3:
@@ -88,7 +92,29 @@ def run_submit(args):
             "PYSPARK_PYTHON": "/databricks/python3/bin/python3"
         }
 
-    logging.debug(json.dumps(config, indent=2))
+    if len(args.pypi_libs) > 0:
+        config["libraries"].extend(
+            [{"pypi": {"package": lib}} for lib in args.pypi_libs]
+        )
+
+    if args.autoscale:
+        # Autoscale from 1 worker up to num_workers
+        num_workers = config["new_cluster"]["num_workers"]
+        config["new_cluster"]["autoscale"] = {
+            "min_workers": 1,
+            "max_workers": num_workers,
+        }
+
+        # Delete the num_workers option as it's mutually exclusive
+        # with autoscaling
+        del config["new_cluster"]["num_workers"]
+
+    if args.spot_price_percent != 100:
+        config["new_cluster"]["aws_attributes"][
+            "spot_bid_price_percent"
+        ] = args.spot_price_percent
+
+    logging.info(json.dumps(config, indent=2))
 
     # https://docs.databricks.com/api/latest/jobs.html#runs-submit
     resp = api_request(
@@ -99,6 +125,34 @@ def run_submit(args):
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="run mozetl")
+
+    def coerce_pypi_names(additional_arg):
+        """
+        This safely parses pypi package imports using the ast module
+        """
+
+        class customAction(argparse.Action):
+            def __call__(self, parser, args, values, option_string=None):
+
+                coerced_values = []
+                try:
+                    coerced_values = ast.literal_eval(values)
+                    for package in coerced_values:
+                        # Do some basic checks that this looks like a
+                        # pypi package
+                        if (
+                            not isinstance(package, str)
+                            or len(package.split("==")) != 2
+                        ):
+                            raise ValueError(
+                                "Invalid package list spec: {}".format(values)
+                            )
+                except Exception:
+                    raise
+                setattr(args, self.dest, coerced_values)
+
+        return customAction
+
     parser.add_argument(
         "--git-path",
         type=str,
@@ -109,11 +163,29 @@ def parse_arguments():
         "--git-branch", type=str, default="master", help="The branch to run e.g. master"
     )
     parser.add_argument(
+        "--node-type-id", type=str, default="c3.4xlarge", help="EC2 Node type"
+    )
+    parser.add_argument(
+        "--aws-availability",
+        type=str,
+        default="ON_DEMAND",
+        choices=["ON_DEMAND", "SPOT", "SPOT_WITH_FALLBACK"],
+        help="Set the AWS availability type for the cluster",
+    )
+    parser.add_argument(
+        "--spot-price-percent",
+        type=int,
+        default=100,
+        help="Set the bid price for AWS spot instances",
+    )
+
+    parser.add_argument(
         "--num-workers",
         type=int,
         default=2,
         help="Number of worker instances to spawn in the cluster",
     )
+    parser.add_argument("--autoscale", action="store_true", help="Enable autoscale")
     parser.add_argument(
         "--python",
         type=int,
@@ -126,6 +198,13 @@ def parse_arguments():
         type=str,
         required=True,
         help="A Databricks authorization token, generated from the user settings page",
+    )
+    parser.add_argument(
+        "--pypi-libs",
+        type=str,
+        default="",
+        help="PyPI libraries to install",
+        action=coerce_pypi_names("pypi_libs"),
     )
     parser.add_argument(
         "--instance",
