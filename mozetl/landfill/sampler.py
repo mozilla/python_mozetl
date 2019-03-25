@@ -15,6 +15,7 @@ v3 - Retain whitelisted metadata fields and simplify schema
 """
 
 import click
+import json
 from moztelemetry.dataset import Dataset
 from pyspark.sql import Window, SparkSession
 from pyspark.sql.functions import col, row_number
@@ -42,6 +43,9 @@ GENERIC_DOC_VER = 2
 GENERIC_DOC_ID = 3
 
 
+UNPARSEABLE_TELEMETRY_VERSION = "0"
+
+
 def extract(sc, submission_date, sample=0.01):
     landfill = (
         Dataset.from_source("landfill")
@@ -51,10 +55,21 @@ def extract(sc, submission_date, sample=0.01):
     return landfill
 
 
-# Detect document version from the payload itself.
-# Should match with the logic here:
-# https://github.com/mozilla-services/lua_sandbox_extensions/blob/master/moz_telemetry/io_modules/decoders/moz_ingest/telemetry.lua#L162
-def _detect_telemetry_version(content):
+def _detect_telemetry_version(content_string):
+    """Detect document version from the payload itself.
+    Should match with the logic here:
+    https://github.com/mozilla-services/lua_sandbox_extensions/blob/master/moz_telemetry/io_modules/decoders/moz_ingest/telemetry.lua#L162
+    If the given content string is not parseable as JSON,
+    default to a version of "0".
+    """
+    if content_string is None:
+        return UNPARSEABLE_TELEMETRY_VERSION
+
+    try:
+        content = json.loads(content_string)
+    except ValueError:
+        return UNPARSEABLE_TELEMETRY_VERSION
+
     if "ver" in content:
         return str(content["ver"])
     if "version" in content:
