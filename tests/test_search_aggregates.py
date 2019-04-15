@@ -7,6 +7,7 @@ from pyspark.sql.types import (
     BooleanType,
     StringType,
     LongType,
+    MapType,
     StructType,
     DoubleType,
 )
@@ -117,6 +118,18 @@ main_summary_schema = [
     ("distribution_id", None, StringType(), True),
     ("subsession_counter", 1, LongType(), True),
     ("search_counts", [generate_search_count()], search_type, True),
+    (
+        "scalar_parent_browser_search_ad_clicks",
+        None,
+        MapType(StringType(), LongType()),
+        True,
+    ),
+    (
+        "scalar_parent_browser_search_with_ads",
+        None,
+        MapType(StringType(), LongType()),
+        True,
+    ),
     ("active_addons", active_addons, addons_type, True),
     # 30 minutes in active_ticks (30min * 60sec/min / 5sec/tick)
     ("active_ticks", 360, LongType(), True),
@@ -142,7 +155,16 @@ main_summary_schema = [
     ),
 ]
 
-exploded_schema = [x for x in main_summary_schema if x[0] != "search_counts"] + [
+exploded_schema = [
+    x
+    for x in main_summary_schema
+    if x[0]
+    not in (
+        "search_counts",
+        "scalar_parent_browser_search_with_ads",
+        "scalar_parent_browser_search_ad_clicks",
+    )
+] + [
     ("engine", "google", StringType(), False),
     ("source", "urlbar", StringType(), False),
     ("count", 4, LongType(), False),
@@ -266,6 +288,10 @@ def expected_search_dashboard_data(define_dataframe_factory):
                     ("tagged_follow_on", None, LongType(), True),
                     ("sap", 4, LongType(), True),
                     ("organic", None, LongType(), True),
+                    ("ad-click", None, LongType(), True),
+                    ("search-with-ads", None, LongType(), True),
+                    ("ad_click", None, LongType(), True),
+                    ("search_with_ads", None, LongType(), True),
                     ("unknown", None, LongType(), True),
                     ("client_count", 1, LongType(), True),
                 ],
@@ -312,6 +338,10 @@ def expected_search_clients_daily_data(define_dataframe_factory):
                     ("tagged_follow_on", None, LongType(), True),
                     ("sap", 4, LongType(), True),
                     ("organic", None, LongType(), True),
+                    ("ad-click", None, LongType(), True),
+                    ("ad_click", None, LongType(), True),
+                    ("search-with-ads", None, LongType(), True),
+                    ("search_with_ads", None, LongType(), True),
                     ("unknown", None, LongType(), True),
                     # Roughly 2016-01-01
                     ("profile_creation_date", 16801, LongType(), False),
@@ -403,6 +433,30 @@ def test_explode_search_counts_bing_absurd(
     actual = explode_search_counts(main_summary_bing_absurd)
 
     assert df_equals(expected, actual)
+
+
+def test_explode_ad_click_counts(
+    generate_main_summary_data, generate_exploded_data, df_equals
+):
+    main_summary_with_ad_click_counts = generate_main_summary_data(
+        [
+            {
+                "scalar_parent_browser_search_ad_clicks": {"google": 1},
+                "scalar_parent_browser_search_with_ads": {"google": 1},
+            }
+        ]
+    )
+
+    expected = generate_exploded_data(
+        [
+            {},
+            {"source": "ad-click:", "count": 1},
+            {"source": "search-with-ads:", "count": 1},
+        ]
+    )
+    exploded = explode_search_counts(main_summary_with_ad_click_counts)
+
+    assert df_equals(exploded, expected)
 
 
 def test_add_derived_columns(
