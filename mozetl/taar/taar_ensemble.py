@@ -265,9 +265,9 @@ def to_stacked_row(recommender_list, client_row):
 
 
 def build_stacked_datasets(dataset, folds):
-    # For each of n_folds, we apply the stacking
+    # For each of k_folds, we apply the stacking
     # function to the training fold.
-    # Where n_folds = 3, this will yield a list consisting
+    # Where k_folds = 3, this will yield a list consisting
     # of 3 RDDs.   Each RDD is defined by the output of the
     # `stacking` function.
 
@@ -409,15 +409,15 @@ class CostLLR:
         return (c1 + c2) / 2
 
 
-def cross_validation_split(dataset, n_folds):
+def cross_validation_split(dataset, k_folds):
     """
-  Splits dataframe into n_folds, returning array of dataframes
+  Splits dataframe into k_folds, returning array of dataframes
   """
     dataset_split = []
-    h = 1.0 / n_folds
+    h = 1.0 / k_folds
     df = dataset.select("*", rand().alias("rand"))
 
-    for i in range(n_folds):
+    for i in range(k_folds):
         validateLB = i * h
         validateUB = (i + 1) * h
         condition = (df["rand"] >= validateLB) & (df["rand"] < validateUB)
@@ -465,8 +465,8 @@ def compute_regression(spark, rdd_list, regParam, elasticNetParam):
 
 
 def transform(spark, taar_training, regParam, elasticNetParam):
-    n_folds = 4
-    df_folds = cross_validation_split(taar_training, n_folds)
+    k_folds = 4
+    df_folds = cross_validation_split(taar_training, k_folds)
 
     stacked_datasets_rdd_list = build_stacked_datasets(taar_training, df_folds)
 
