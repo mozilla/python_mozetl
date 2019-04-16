@@ -92,7 +92,7 @@ def get_addons_per_client(users_df, minimum_addons_count):
             or addon.install_day is None
         )
 
-    # may need addiitonal whitelisting to remove shield addons
+    # may need additional whitelisting to remove shield addons
 
     def get_valid_addon_ids(addons):
         sorted_addons = sorted(
