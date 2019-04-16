@@ -203,7 +203,7 @@ def parse_arguments():
         "--pypi-libs",
         type=str,
         default="",
-        help="PyPI libraries to install",
+        help="""PyPI libraries to install. ex: \"['pylib1==0.1', 'pylib2==3.1']\"""",
         action=coerce_pypi_names("pypi_libs"),
     )
     parser.add_argument(
