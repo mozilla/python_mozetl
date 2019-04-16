@@ -154,6 +154,12 @@ def row_to_json(row):
 
 
 def reload_configuration():
+    """
+    Configuration needs to be reloaded on a per worker node basis.
+    This is an unfortunate a side effect of re-using the TAAR library which
+    expects to be using python-decouple to load the configuration
+    from enviroment variables.
+    """
     from taar.recommenders import s3config
 
     # Locale Recommender Overrides
