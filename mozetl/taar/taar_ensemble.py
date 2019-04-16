@@ -321,8 +321,8 @@ def today_minus_7_days():
     return (date.today() + timedelta(days=-7)).strftime("%Y%m%d")
 
 
-def verifyValidCoefs(coefs):
-    """ verify that the model has proper floating point values by
+def verify_valid_coefs(coefs):
+    """ verify that the model has proper floating point values (> 0)
     """
 
     assert "ensemble_weights" in coefs
@@ -483,7 +483,7 @@ def transform(spark, taar_training, regParam, elasticNetParam):
         )
     }
 
-    verifyValidCoefs(coefs)
+    verify_valid_coefs(coefs)
 
     return coefs
 
