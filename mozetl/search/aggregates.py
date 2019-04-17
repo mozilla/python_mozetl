@@ -34,6 +34,7 @@ from pyspark.sql.types import StringType
 from pyspark.sql import SparkSession
 
 from mozetl.constants import SEARCH_SOURCE_WHITELIST
+from mozetl.utils import stop_session_safely
 
 
 DEFAULT_INPUT_BUCKET = "telemetry-parquet"
@@ -271,7 +272,7 @@ def generate_rollups(
     logger.info("Saving rollups to: {}".format(output_path))
     (search_dashboard_data.write.mode(save_mode).save(output_path))
 
-    spark.stop()
+    stop_session_safely(spark)
     logger.info("... done (took: %s)", str(datetime.datetime.now() - start))
 
 
