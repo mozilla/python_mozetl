@@ -29,8 +29,9 @@ from pyspark.sql.functions import (
     size,
     max,
     lit,
+    collect_list,
 )
-from pyspark.sql.types import StringType
+from pyspark.sql.types import IntegerType, MapType, StringType
 from pyspark.sql import SparkSession
 
 from mozetl.constants import SEARCH_SOURCE_WHITELIST
@@ -50,57 +51,85 @@ def agg_first(col):
     return first(col).alias(col)
 
 
+@udf(MapType(StringType(), IntegerType(), False))
+def udf_map_sum(maps):
+    result = {}
+    for element in maps:
+        for key, value in element.items():
+            if isinstance(value, int):
+                result[key] = result.get(key, 0) + value
+    return result
+
+
+def agg_map_sum(col):
+    return udf_map_sum(collect_list(col))
+
+
 def search_clients_daily(main_summary):
-    return agg_search_data(
-        main_summary,
-        ["client_id", "submission_date", "engine", "source"],
-        list(
-            map(
-                agg_first,
-                [
-                    "country",
-                    "app_version",
-                    "distribution_id",
-                    "locale",
-                    "search_cohort",
-                    "addon_version",
-                    "os",
-                    "channel",
-                    "profile_creation_date",
-                    "default_search_engine",
-                    "default_search_engine_data_load_path",
-                    "default_search_engine_data_submission_url",
-                    "sample_id",
-                ],
+    return (
+        agg_search_data(
+            main_summary,
+            ["client_id", "submission_date", "engine", "source"],
+            list(
+                map(
+                    agg_first,
+                    [
+                        "country",
+                        "app_version",
+                        "distribution_id",
+                        "locale",
+                        "search_cohort",
+                        "addon_version",
+                        "os",
+                        "channel",
+                        "profile_creation_date",
+                        "default_search_engine",
+                        "default_search_engine_data_load_path",
+                        "default_search_engine_data_submission_url",
+                        "sample_id",
+                    ],
+                )
             )
+            + [
+                # Count of 'first' subsessions seen for this client_day
+                (
+                    count(when(col("subsession_counter") == 1, 1)).alias(
+                        "sessions_started_on_this_day"
+                    )
+                ),
+                first(
+                    datediff(
+                        "subsession_start_date",
+                        from_unixtime(col("profile_creation_date") * 24 * 60 * 60),
+                    )
+                ).alias("profile_age_in_days"),
+                sum(col("subsession_length") / 3600.0).alias("subsession_hours_sum"),
+                mean(size("active_addons")).alias("active_addons_count_mean"),
+                (
+                    max(
+                        "scalar_parent_browser_engagement_max_concurrent_tab_count"
+                    ).alias("max_concurrent_tab_count_max")
+                ),
+                (
+                    sum("scalar_parent_browser_engagement_tab_open_event_count").alias(
+                        "tab_open_event_count_sum"
+                    )
+                ),
+                (sum(col("active_ticks") * 5 / 3600.0).alias("active_hours_sum")),
+                (
+                    collect_list("scalar_parent_browser_search_ad_clicks").alias(
+                        "search_ad_clicks_sum"
+                    )
+                ),
+                (
+                    collect_list("scalar_parent_browser_search_with_ads").alias(
+                        "search_with_ads_sum"
+                    )
+                ),
+            ],
         )
-        + [
-            # Count of 'first' subsessions seen for this client_day
-            (
-                count(when(col("subsession_counter") == 1, 1)).alias(
-                    "sessions_started_on_this_day"
-                )
-            ),
-            first(
-                datediff(
-                    "subsession_start_date",
-                    from_unixtime(col("profile_creation_date") * 24 * 60 * 60),
-                )
-            ).alias("profile_age_in_days"),
-            sum(col("subsession_length") / 3600.0).alias("subsession_hours_sum"),
-            mean(size("active_addons")).alias("active_addons_count_mean"),
-            (
-                max("scalar_parent_browser_engagement_max_concurrent_tab_count").alias(
-                    "max_concurrent_tab_count_max"
-                )
-            ),
-            (
-                sum("scalar_parent_browser_engagement_tab_open_event_count").alias(
-                    "tab_open_event_count_sum"
-                )
-            ),
-            (sum(col("active_ticks") * 5 / 3600.0).alias("active_hours_sum")),
-        ],
+        .withColumn(udf_map_sum("search_ad_clicks_sum").alias("search_ad_clicks_sum"))
+        .withColumn(udf_map_sum("search_with_ads_sum").alias("search_with_ads_sum"))
     )
 
 

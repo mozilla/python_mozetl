@@ -9,6 +9,8 @@ from pyspark.sql.types import (
     LongType,
     StructType,
     DoubleType,
+    MapType,
+    IntegerType,
 )
 from mozetl.search.aggregates import (
     search_aggregates,
@@ -82,6 +84,8 @@ addons_type = ArrayType(
     )
 )
 
+map_str_int_type = MapType(StringType(), IntegerType())
+
 
 def generate_addon(addon_id, name, version):
     return {"addon_id": addon_id, "name": name, "version": version}
@@ -140,6 +144,8 @@ main_summary_schema = [
         StringType(),
         False,
     ),
+    ("scalar_parent_browser_search_ad_clicks", None, map_str_int_type, True),
+    ("scalar_parent_browser_search_with_ads", None, map_str_int_type, True),
 ]
 
 exploded_schema = [x for x in main_summary_schema if x[0] != "search_counts"] + [
@@ -179,6 +185,25 @@ def main_summary(generate_main_summary_data):
         +
         # Client with no searches
         [{"client_id": "c", "search_counts": None}]
+        +
+        # Client with a variety of ad interactions
+        [
+            {
+                "client_id": "d",
+                "scalar_parent_browser_search_ad_clicks": {"google": 5, "yahoo": None},
+                "scalar_parent_browser_search_with_ads": {"google": 10, "bing": None},
+            },
+            {
+                "client_id": "d",
+                "scalar_parent_browser_search_ad_clicks": {"google": 5},
+                "scalar_parent_browser_search_with_ads": {"yahoo": 10},
+            },
+            {
+                "client_id": "d",
+                "scalar_parent_browser_search_ad_clicks": {"yahoo": 5},
+                "scalar_parent_browser_search_with_ads": {"google": 10},
+            },
+        ]
     )
 
 
@@ -335,6 +360,8 @@ def expected_search_clients_daily_data(define_dataframe_factory):
                     ("max_concurrent_tab_count_max", 10, LongType(), True),
                     ("tab_open_event_count_sum", 5, LongType(), True),
                     ("active_hours_sum", 0.5, DoubleType(), True),
+                    ("search_ad_clicks_sum", {}, map_str_int_type, True),
+                    ("search_with_ads_sum", {}, map_str_int_type, True),
                 ],
             )
         )
@@ -364,6 +391,11 @@ def expected_search_clients_daily_data(define_dataframe_factory):
                 "tagged_follow_on": None,
                 "source": None,
                 "engine": None,
+            },
+            {
+                "client_id": "d",
+                "search_ad_clicks_sum": {"google": 10, "yahoo": 5},
+                "search_with_ads_sum": {"google": 20, "yahoo": 10},
             },
         ]
     )
