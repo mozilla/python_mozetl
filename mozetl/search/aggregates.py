@@ -13,9 +13,7 @@ This allows for deeper analysis into user level search behavior.
 import click
 import logging
 import datetime
-from pyspark_hyperloglog import hll
 from pyspark.sql.functions import (
-    expr,
     explode,
     col,
     when,
@@ -104,9 +102,8 @@ def search_clients_daily(main_summary):
 
 
 def search_aggregates(main_summary):
-    hll.register()
     return agg_search_data(
-        main_summary.withColumn("hll", expr("hll_create(client_id, 12)")),
+        main_summary,
         [
             "addon_version",
             "app_version",
@@ -119,7 +116,7 @@ def search_aggregates(main_summary):
             "submission_date",
             "default_search_engine",
         ],
-        [expr("hll_cardinality(hll_merge(hll)) as client_count")],
+        [],
     ).where(col("engine").isNotNull())
 
 

@@ -267,7 +267,6 @@ def expected_search_dashboard_data(define_dataframe_factory):
                     ("sap", 4, LongType(), True),
                     ("organic", None, LongType(), True),
                     ("unknown", None, LongType(), True),
-                    ("client_count", 1, LongType(), True),
                 ],
             )
         )
