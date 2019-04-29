@@ -112,7 +112,7 @@ main_summary_schema = [
     ("channel", "release", StringType(), True),
     ("country", "DE", StringType(), True),
     ("locale", "de", StringType(), True),
-    ("user_pref_browser_search_region", "DE", StringType(), False),
+    ("user_pref_browser_search_region", "DE", StringType(), True),
     ("search_cohort", None, StringType(), True),
     ("app_version", "54.0.1", StringType(), True),
     ("distribution_id", None, StringType(), True),
@@ -179,7 +179,13 @@ def main_summary(generate_main_summary_data):
         [{}] * 5
         +
         # Client with no searches
-        [{"client_id": "c", "search_counts": None}]
+        [
+            {
+                "client_id": "c",
+                "search_counts": None,
+                "user_pref_browser_search_region": None,
+            }
+        ]
     )
 
 
@@ -366,6 +372,7 @@ def expected_search_clients_daily_data(define_dataframe_factory):
                 "tagged_follow_on": None,
                 "source": None,
                 "engine": None,
+                "user_pref_browser_search_region": None,
             },
         ]
     )
