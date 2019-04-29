@@ -209,18 +209,28 @@ def explode_search_counts(main_summary):
             exploded_col_name + "." + field for field in ["engine", "source", "count"]
         ]
 
-    base_search_counts = main_summary.withColumn(
-        "single_search_count", explode(col("search_counts"))
-    ).filter("single_search_count.count < %s" % MAX_CLIENT_SEARCH_COUNT)
-
     def _drop_source_columns(base):
+        derived = base
         for source_col in [
             "search_counts",
             "scalar_parent_browser_search_ad_clicks",
             "scalar_parent_browser_search_with_ads",
         ]:
-            base = base.drop(source_col)
-        return base
+            derived = derived.drop(source_col)
+        return derived
+
+    def _select_counts(main_summary, col_name, count_udf=None):
+        derived = main_summary.withColumn(
+            "single_search_count", explode(col("search_counts"))
+        ).filter("single_search_count.count < %s" % MAX_CLIENT_SEARCH_COUNT)
+        if count_udf is not None:
+            derived = derived.withColumn(col_name, explode(count_udf))
+        derived = _drop_source_columns(
+            derived.select(["*"] + _get_search_fields(col_name)).drop(col_name)
+        )
+        if col_name is not "single_search_count":
+            derived = derived.drop("single_search_count")
+        return derived
 
     def _get_ad_counts(scalar_name, col_name, udf_function):
         count_udf = udf(
@@ -235,18 +245,9 @@ def explode_search_counts(main_summary):
                 )
             ),
         )
-        return _drop_source_columns(
-            base_search_counts.withColumn(col_name, explode(count_udf(scalar_name)))
-            .select(["*"] + _get_search_fields(col_name))
-            .drop(col_name)
-            .drop("single_search_count")
-        )
+        return _select_counts(main_summary, col_name, count_udf(scalar_name))
 
-    exploded_search_counts = _drop_source_columns(
-        base_search_counts.select(
-            ["*"] + _get_search_fields("single_search_count")
-        ).drop("single_search_count")
-    )
+    exploded_search_counts = _select_counts(main_summary, "single_search_count")
 
     try:
         exploded_search_counts = exploded_search_counts.union(
@@ -283,7 +284,8 @@ def explode_search_counts(main_summary):
 def add_derived_columns(exploded_search_counts):
     """Adds the following columns to the provided dataset:
 
-    type:           One of 'in-content-sap', 'follow-on', or 'chrome-sap'.
+    type:           One of 'in-content-sap', 'follow-on', 'chrome-sap',
+                    'ad-click' or 'search-with-ads'.
     addon_version:  The version of the followon-search@mozilla addon, or None
     """
     udf_get_search_addon_version = udf(get_search_addon_version, StringType())
