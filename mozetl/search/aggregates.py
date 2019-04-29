@@ -62,6 +62,7 @@ def search_clients_daily(main_summary):
                     "app_version",
                     "distribution_id",
                     "locale",
+                    "user_pref_browser_search_region",
                     "search_cohort",
                     "addon_version",
                     "os",
