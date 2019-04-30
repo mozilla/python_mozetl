@@ -52,8 +52,11 @@ This allows for deeper analysis into user level search behavior.</p>
 <dt id="mozetl.search.aggregates.add_derived_columns">
 <code class="descclassname">mozetl.search.aggregates.</code><code class="descname">add_derived_columns</code><span class="sig-paren">(</span><em>exploded_search_counts</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/search/aggregates.html#add_derived_columns"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.search.aggregates.add_derived_columns" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adds the following columns to the provided dataset:</p>
-<p>type:           One of ‘in-content-sap’, ‘follow-on’, or ‘chrome-sap’.
-addon_version:  The version of the <a class="reference external" href="mailto:followon-search&#37;&#52;&#48;mozilla">followon-search<span>&#64;</span>mozilla</a> addon, or None</p>
+<dl class="docutils">
+<dt>type:           One of ‘in-content-sap’, ‘follow-on’, ‘chrome-sap’,</dt>
+<dd>‘ad-click’ or ‘search-with-ads’.</dd>
+</dl>
+<p>addon_version:  The version of the <a class="reference external" href="mailto:followon-search&#37;&#52;&#48;mozilla">followon-search<span>&#64;</span>mozilla</a> addon, or None</p>
 </dd></dl>
 
 <dl class="function">
@@ -99,8 +102,18 @@ addon_version: The version of the <a class="reference external" href="mailto:fol
 </dd></dl>
 
 <dl class="function">
+<dt id="mozetl.search.aggregates.get_ad_click_count">
+<code class="descclassname">mozetl.search.aggregates.</code><code class="descname">get_ad_click_count</code><span class="sig-paren">(</span><em>ad_click_count</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/search/aggregates.html#get_ad_click_count"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.search.aggregates.get_ad_click_count" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
 <dt id="mozetl.search.aggregates.get_search_addon_version">
 <code class="descclassname">mozetl.search.aggregates.</code><code class="descname">get_search_addon_version</code><span class="sig-paren">(</span><em>active_addons</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/search/aggregates.html#get_search_addon_version"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.search.aggregates.get_search_addon_version" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="mozetl.search.aggregates.get_search_with_ads_count">
+<code class="descclassname">mozetl.search.aggregates.</code><code class="descname">get_search_with_ads_count</code><span class="sig-paren">(</span><em>search_with_ads</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/search/aggregates.html#get_search_with_ads_count"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.search.aggregates.get_search_with_ads_count" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
