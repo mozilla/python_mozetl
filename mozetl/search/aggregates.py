@@ -30,7 +30,8 @@ from pyspark.sql.functions import (
     max,
     lit,
 )
-from pyspark.sql.types import StringType
+from pyspark.sql.types import LongType, ArrayType, StringType, StructType, StructField
+from pyspark.sql.utils import AnalysisException
 from pyspark.sql import SparkSession
 
 from mozetl.constants import SEARCH_SOURCE_WHITELIST
@@ -153,12 +154,25 @@ def agg_search_data(main_summary, grouping_cols, agg_functions):
         aggregated.groupBy(
             [column for column in aggregated.columns if column not in ["type", "count"]]
         )
-        .pivot("type", ["organic", "tagged-sap", "tagged-follow-on", "sap", "unknown"])
+        .pivot(
+            "type",
+            [
+                "organic",
+                "tagged-sap",
+                "tagged-follow-on",
+                "sap",
+                "unknown",
+                "ad-click",
+                "search-with-ads",
+            ],
+        )
         .sum("count")
         # Add convenience columns with underscores instead of hyphens.
         # This makes the table easier to query from Presto.
         .withColumn("tagged_sap", col("tagged-sap"))
         .withColumn("tagged_follow_on", col("tagged-follow-on"))
+        .withColumn("ad_click", col("ad-click"))
+        .withColumn("search_with_ads", col("search-with-ads"))
     )
 
     return pivoted
@@ -172,28 +186,97 @@ def get_search_addon_version(active_addons):
     )
 
 
+def get_ad_click_count(ad_click_count):
+    if ad_click_count:
+        return [
+            {"engine": e, "source": "ad-click:", "count": c}
+            for e, c in ad_click_count.items()
+        ]
+    return []
+
+
+def get_search_with_ads_count(search_with_ads):
+    if search_with_ads:
+        return [
+            {"engine": e, "source": "search-with-ads:", "count": c}
+            for e, c in search_with_ads.items()
+        ]
+    return []
+
+
 def explode_search_counts(main_summary):
-    exploded_col_name = "single_search_count"
-    search_fields = [
-        exploded_col_name + "." + field for field in ["engine", "source", "count"]
-    ]
+    def _get_search_fields(exploded_col_name):
+        return [
+            exploded_col_name + "." + field for field in ["engine", "source", "count"]
+        ]
 
-    exploded_search_counts = (
-        main_summary.withColumn(exploded_col_name, explode(col("search_counts")))
-        .select(["*"] + search_fields)
-        .filter("single_search_count.count < %s" % MAX_CLIENT_SEARCH_COUNT)
-        .drop(exploded_col_name)
-        .drop("search_counts")
-    )
+    def _drop_source_columns(base):
+        derived = base
+        for source_col in [
+            "search_counts",
+            "scalar_parent_browser_search_ad_clicks",
+            "scalar_parent_browser_search_with_ads",
+        ]:
+            derived = derived.drop(source_col)
+        return derived
 
-    zero_search_users = (
+    def _select_counts(main_summary, col_name, count_udf=None):
+        derived = main_summary.withColumn(
+            "single_search_count", explode(col("search_counts"))
+        ).filter("single_search_count.count < %s" % MAX_CLIENT_SEARCH_COUNT)
+        if count_udf is not None:
+            derived = derived.withColumn(col_name, explode(count_udf))
+        derived = _drop_source_columns(
+            derived.select(["*"] + _get_search_fields(col_name)).drop(col_name)
+        )
+        if col_name is not "single_search_count":
+            derived = derived.drop("single_search_count")
+        return derived
+
+    def _get_ad_counts(scalar_name, col_name, udf_function):
+        count_udf = udf(
+            udf_function,
+            ArrayType(
+                StructType(
+                    [
+                        StructField("engine", StringType(), False),
+                        StructField("source", StringType(), False),
+                        StructField("count", LongType(), False),
+                    ]
+                )
+            ),
+        )
+        return _select_counts(main_summary, col_name, count_udf(scalar_name))
+
+    exploded_search_counts = _select_counts(main_summary, "single_search_count")
+
+    try:
+        exploded_search_counts = exploded_search_counts.union(
+            _get_ad_counts(
+                "scalar_parent_browser_search_ad_clicks",
+                "ad_click_count",
+                get_ad_click_count,
+            )
+        )
+        exploded_search_counts = exploded_search_counts.union(
+            _get_ad_counts(
+                "scalar_parent_browser_search_with_ads",
+                "search_with_ads_count",
+                get_search_with_ads_count,
+            )
+        )
+    except AnalysisException:
+        # older generated versions of main_summary may not have the ad click
+        # columns, and that's ok
+        pass
+
+    zero_search_users = _drop_source_columns(
         main_summary.where(col("search_counts").isNull())
         .withColumn("engine", lit(None))
         .withColumn("source", lit(None))
         # Using 0 instead of None for search_count makes many queries easier
         # (e.g. average searche per user)
         .withColumn("count", lit(0))
-        .drop("search_counts")
     )
 
     return exploded_search_counts.union(zero_search_users)
@@ -202,7 +285,8 @@ def explode_search_counts(main_summary):
 def add_derived_columns(exploded_search_counts):
     """Adds the following columns to the provided dataset:
 
-    type:           One of 'in-content-sap', 'follow-on', or 'chrome-sap'.
+    type:           One of 'in-content-sap', 'follow-on', 'chrome-sap',
+                    'ad-click' or 'search-with-ads'.
     addon_version:  The version of the followon-search@mozilla addon, or None
     """
     udf_get_search_addon_version = udf(get_search_addon_version, StringType())
@@ -224,6 +308,8 @@ def add_derived_columns(exploded_search_counts):
                     ("in-content:organic:", "organic"),
                     ("sap:", "tagged-sap"),
                     ("follow-on:", "tagged-follow-on"),
+                    ("ad-click:", "ad-click"),
+                    ("search-with-ads:", "search-with-ads"),
                 ]
             )
         )
