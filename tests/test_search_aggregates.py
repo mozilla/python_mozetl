@@ -300,7 +300,6 @@ def expected_search_dashboard_data(define_dataframe_factory):
                     ("ad_click", None, LongType(), True),
                     ("search_with_ads", None, LongType(), True),
                     ("unknown", None, LongType(), True),
-                    ("client_count", 1, LongType(), True),
                 ],
             )
         )
