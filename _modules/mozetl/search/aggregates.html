@@ -49,9 +49,7 @@
 <span class="kn">import</span> <span class="nn">click</span>
 <span class="kn">import</span> <span class="nn">logging</span>
 <span class="kn">import</span> <span class="nn">datetime</span>
-<span class="kn">from</span> <span class="nn">pyspark_hyperloglog</span> <span class="k">import</span> <span class="n">hll</span>
 <span class="kn">from</span> <span class="nn">pyspark.sql.functions</span> <span class="k">import</span> <span class="p">(</span>
-    <span class="n">expr</span><span class="p">,</span>
     <span class="n">explode</span><span class="p">,</span>
     <span class="n">col</span><span class="p">,</span>
     <span class="n">when</span><span class="p">,</span>
@@ -143,9 +141,8 @@
 
 
 <div class="viewcode-block" id="search_aggregates"><a class="viewcode-back" href="../../../source/mozetl.search.html#mozetl.search.aggregates.search_aggregates">[docs]</a><span class="k">def</span> <span class="nf">search_aggregates</span><span class="p">(</span><span class="n">main_summary</span><span class="p">):</span>
-    <span class="n">hll</span><span class="o">.</span><span class="n">register</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">agg_search_data</span><span class="p">(</span>
-        <span class="n">main_summary</span><span class="o">.</span><span class="n">withColumn</span><span class="p">(</span><span class="s2">&quot;hll&quot;</span><span class="p">,</span> <span class="n">expr</span><span class="p">(</span><span class="s2">&quot;hll_create(client_id, 12)&quot;</span><span class="p">)),</span>
+        <span class="n">main_summary</span><span class="p">,</span>
         <span class="p">[</span>
             <span class="s2">&quot;addon_version&quot;</span><span class="p">,</span>
             <span class="s2">&quot;app_version&quot;</span><span class="p">,</span>
@@ -158,7 +155,7 @@
             <span class="s2">&quot;submission_date&quot;</span><span class="p">,</span>
             <span class="s2">&quot;default_search_engine&quot;</span><span class="p">,</span>
         <span class="p">],</span>
-        <span class="p">[</span><span class="n">expr</span><span class="p">(</span><span class="s2">&quot;hll_cardinality(hll_merge(hll)) as client_count&quot;</span><span class="p">)],</span>
+        <span class="p">[],</span>
     <span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;engine&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">isNotNull</span><span class="p">())</span></div>
 
 
