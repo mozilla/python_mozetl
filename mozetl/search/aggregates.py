@@ -221,22 +221,21 @@ def explode_search_counts(main_summary):
             derived = derived.drop(source_col)
         return derived
 
-    def _select_counts(
-        main_summary, col_name, count_udf=None, get_single_search_count=True
-    ):
-        if get_single_search_count:
+    def _select_counts(main_summary, col_name, count_udf=None):
+        ad_fields = ("ad_click", "search_with_ads")
+        if col_name in ad_fields:
+            # special case for ad click probes
+            derived = main_summary
+        else:
             derived = main_summary.withColumn(
                 "single_search_count", explode(col("search_counts"))
             ).filter("single_search_count.count < %s" % MAX_CLIENT_SEARCH_COUNT)
-        else:
-            # special case for ad-click and search-with-ads probes
-            derived = main_summary
         if count_udf is not None:
             derived = derived.withColumn(col_name, explode(count_udf))
         derived = _drop_source_columns(
             derived.select(["*"] + _get_search_fields(col_name)).drop(col_name)
         )
-        if col_name is not "single_search_count":
+        if col_name is not "single_search_count" or col_name in ad_fields:
             derived = derived.drop("single_search_count")
         return derived
 
@@ -253,12 +252,7 @@ def explode_search_counts(main_summary):
                 )
             ),
         )
-        return _select_counts(
-            main_summary,
-            col_name,
-            count_udf(scalar_name),
-            get_single_search_count=False,
-        )
+        return _select_counts(main_summary, col_name, count_udf(scalar_name))
 
     exploded_search_counts = _select_counts(main_summary, "single_search_count")
 
