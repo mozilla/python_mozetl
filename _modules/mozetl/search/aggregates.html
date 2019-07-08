@@ -258,16 +258,17 @@
         <span class="k">return</span> <span class="n">derived</span>
 
     <span class="k">def</span> <span class="nf">_select_counts</span><span class="p">(</span><span class="n">main_summary</span><span class="p">,</span> <span class="n">col_name</span><span class="p">,</span> <span class="n">count_udf</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="n">derived</span> <span class="o">=</span> <span class="n">main_summary</span><span class="o">.</span><span class="n">withColumn</span><span class="p">(</span>
-            <span class="s2">&quot;single_search_count&quot;</span><span class="p">,</span> <span class="n">explode</span><span class="p">(</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;search_counts&quot;</span><span class="p">))</span>
-        <span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="s2">&quot;single_search_count.count &lt; </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">MAX_CLIENT_SEARCH_COUNT</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">col_name</span> <span class="o">==</span> <span class="s2">&quot;single_search_count&quot;</span><span class="p">:</span>
+            <span class="n">derived</span> <span class="o">=</span> <span class="n">main_summary</span><span class="o">.</span><span class="n">withColumn</span><span class="p">(</span>
+                <span class="s2">&quot;single_search_count&quot;</span><span class="p">,</span> <span class="n">explode</span><span class="p">(</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;search_counts&quot;</span><span class="p">))</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="s2">&quot;single_search_count.count &lt; </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">MAX_CLIENT_SEARCH_COUNT</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">derived</span> <span class="o">=</span> <span class="n">main_summary</span>
         <span class="k">if</span> <span class="n">count_udf</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">derived</span> <span class="o">=</span> <span class="n">derived</span><span class="o">.</span><span class="n">withColumn</span><span class="p">(</span><span class="n">col_name</span><span class="p">,</span> <span class="n">explode</span><span class="p">(</span><span class="n">count_udf</span><span class="p">))</span>
         <span class="n">derived</span> <span class="o">=</span> <span class="n">_drop_source_columns</span><span class="p">(</span>
             <span class="n">derived</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s2">&quot;*&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">_get_search_fields</span><span class="p">(</span><span class="n">col_name</span><span class="p">))</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">col_name</span><span class="p">)</span>
         <span class="p">)</span>
-        <span class="k">if</span> <span class="n">col_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="s2">&quot;single_search_count&quot;</span><span class="p">:</span>
-            <span class="n">derived</span> <span class="o">=</span> <span class="n">derived</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s2">&quot;single_search_count&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">derived</span>
 
     <span class="k">def</span> <span class="nf">_get_ad_counts</span><span class="p">(</span><span class="n">scalar_name</span><span class="p">,</span> <span class="n">col_name</span><span class="p">,</span> <span class="n">udf_function</span><span class="p">):</span>
