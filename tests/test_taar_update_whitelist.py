@@ -3,18 +3,12 @@ whitelist of addons for whitelist Job."""
 
 import json
 
-
 from moto import mock_s3
 import pytest
 import boto3
 from mozetl.taar import taar_update_whitelist
 from mozetl.taar.taar_update_whitelist import LoadError, ShortWhitelistError
 import mock
-
-# from mozetl.taar import taar_utils
-
-
-EDITORIAL_URL = "https://addons.mozilla.org/api/v4/discovery/editorial/"
 
 
 @pytest.fixture
@@ -58,7 +52,7 @@ def mocked_requests_get_404(*args, **kwargs):
 @mock.patch("requests.get", side_effect=mocked_requests_get_404)
 def test_amo_network_failure(mock_get):
     with pytest.raises(LoadError) as err:
-        _ = taar_update_whitelist.load_raw_json("http://some/editorial/url")  # noqa
+        taar_update_whitelist.load_amo_editorial("http://some/editorial/url")  # noqa
     assert (
         err.value.args[0] == "HTTP 404 status loading JSON from AMO editorial endpoint."
     )
