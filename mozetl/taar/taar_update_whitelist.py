@@ -25,8 +25,13 @@ class GUIDError(BaseException):
     pass
 
 
-def load_raw_json(url):
-    r = requests.get(url)
+def load_amo_editorial(url, only_recommended=True):
+    param_dict = {}
+
+    if only_recommended:
+        param_dict["recommended"] = "true"
+
+    r = requests.get(url, params=param_dict)
     if 200 == r.status_code:
         # process stuff here
         json_data = json.loads(r.text)
@@ -74,11 +79,11 @@ def load_etl(transformed_data, date, prefix, bucket):
 @click.command()
 @click.option("--date", required=True)
 @click.option("--url", default=EDITORIAL_URI)
+@click.option("--only-recommended", default=True)
 @click.option("--bucket", default="telemetry-parquet")
 @click.option("--prefix", default="taar/locale/")
 @click.option("--validate_guid", default=False)
-def main(date, url, bucket, prefix, validate_guid):
-
-    data_extract = load_raw_json(url)
+def main(date, url, only_recommended, bucket, prefix, validate_guid):
+    data_extract = load_amo_editorial(url, only_recommended)
     jdata = parse_json(data_extract, False, validate_guid)
     load_etl(jdata, date, prefix, bucket)
