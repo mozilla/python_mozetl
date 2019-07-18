@@ -70,16 +70,16 @@ jobs:
     <<: *test_settings
     parallelism: 4
     docker:
-      - image: python:2.7
+      - image: python:2.7-stretch
   py35:
     <<: *test_settings
     parallelism: 4
     docker:
-      - image: python:3.5
+      - image: python:3.5-stretch
 
   lint:
     docker:
-      - image: python:3.6
+      - image: python:3.6-stretch
     working_directory: ~/python_mozetl
     steps:
       - checkout
@@ -93,7 +93,7 @@ jobs:
 
   docs:
     docker:
-      - image: python:2.7
+      - image: python:2.7-stretch
     working_directory: ~/python_mozetl
     steps:
       - checkout
@@ -110,7 +110,7 @@ jobs:
   # https://github.com/mozilla/python_moztelemetry/blob/master/.circleci/config.yml#L90
   docs-deploy:
     docker:
-      - image: node:8.10.0
+      - image: node:8.10.0-stretch
     steps:
       - checkout
       - attach_workspace:
