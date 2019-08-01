@@ -81,7 +81,7 @@ def load_etl(transformed_data, date, prefix, bucket):
 @click.option("--url", default=EDITORIAL_URI)
 @click.option("--only-recommended", default=True)
 @click.option("--bucket", default="telemetry-parquet")
-@click.option("--prefix", default="taar/locale/")
+@click.option("--prefix", default="telemetry-ml/addon_recommender/")
 @click.option("--validate-guid", default=False)
 @click.option("--allow-shortlist", default=True)
 def main(date, url, only_recommended, bucket, prefix, validate_guid, allow_shortlist):
