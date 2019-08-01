@@ -82,8 +82,9 @@ def load_etl(transformed_data, date, prefix, bucket):
 @click.option("--only-recommended", default=True)
 @click.option("--bucket", default="telemetry-parquet")
 @click.option("--prefix", default="taar/locale/")
-@click.option("--validate_guid", default=False)
-def main(date, url, only_recommended, bucket, prefix, validate_guid):
+@click.option("--validate-guid", default=False)
+@click.option("--allow-shortlist", default=True)
+def main(date, url, only_recommended, bucket, prefix, validate_guid, allow_shortlist):
     data_extract = load_amo_editorial(url, only_recommended)
-    jdata = parse_json(data_extract, False, validate_guid)
+    jdata = parse_json(data_extract, allow_shortlist, validate_guid)
     load_etl(jdata, date, prefix, bucket)
