@@ -38,56 +38,14 @@
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-mozetl.engagement.retention.job">
-<span id="mozetl-engagement-retention-job-module"></span><h2>mozetl.engagement.retention.job module<a class="headerlink" href="#module-mozetl.engagement.retention.job" title="Permalink to this headline">¶</a></h2>
-<p># 1 Day Retention</p>
-<p>This job generates the intermediate dataset used to generate the 1 day retention
-dataset, as outlined in [this proposal][1]. The primary use-case to provide a
-descriptive view of engagement over sub-populations of users over various
-attributes (e.g. channel, version, acquisition attribution) and time. This
-dataset is spun off of the churn dataset, retaining many of the same dimensions.
-This job takes advantage of the new-profile ping that was [added to the
-<cite>churn_v3</cite> job][2]. This data source will become irrelevant if the shutdown
-pingsender is enabled for first sessions.</p>
-<p>This job generally runs with a [2 day latency to account for 95% of pings][3] to
-arrive along the data pipeline using the shutdown ping-sender. This means the
-data is generally only valid for Firefox 55+. If you would like to perform
-engagement analysis on pre-55 data, please refer to <cite>mozetl.engagement.churn</cite>
-for data latency and data sources that would be advantageous.</p>
-<p>This intermediate dataset is aggregated by a job in
-<cite>mozilla/telemetry-batch-view</cite>, which takes advantage of the HyperLogLog
-data structure to count over sets of clients. In addition, a small set of
-engagement metrics have been included for describing cohorts in moore detail.</p>
-<p>See the [<cite>Firefox Telemetry Retention: Dataset Example Usage</cite> Dashboard][4] for
-details on using this dataset.</p>
-<p>[1]: <a class="reference external" href="https://bugzilla.mozilla.org/show_bug.cgi?id=1381840">https://bugzilla.mozilla.org/show_bug.cgi?id=1381840</a>
-[2]: <a class="reference external" href="https://bugzilla.mozilla.org/show_bug.cgi?id=1389231">https://bugzilla.mozilla.org/show_bug.cgi?id=1389231</a>
-[3]: <a class="reference external" href="https://sql.telemetry.mozilla.org/dashboard/telemetry-health">https://sql.telemetry.mozilla.org/dashboard/telemetry-health</a>
-[4]: <a class="reference external" href="https://sql.telemetry.mozilla.org/dashboard/firefox-telemetry-retention-dataset-example-usage">https://sql.telemetry.mozilla.org/dashboard/firefox-telemetry-retention-dataset-example-usage</a></p>
-<dl class="function">
-<dt id="mozetl.engagement.retention.job.save">
-<code class="descclassname">mozetl.engagement.retention.job.</code><code class="descname">save</code><span class="sig-paren">(</span><em>cleaned</em>, <em>path</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/engagement/retention/job.html#save"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.engagement.retention.job.save" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="mozetl.engagement.retention.job.transform">
-<code class="descclassname">mozetl.engagement.retention.job.</code><code class="descname">transform</code><span class="sig-paren">(</span><em>main_summary</em>, <em>start_ds</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/engagement/retention/job.html#transform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.engagement.retention.job.transform" title="Permalink to this definition">¶</a></dt>
-<dd><p>Process a subset of <cite>main_summary</cite> to be used in aggregates.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="mozetl.engagement.retention.job.valid_pcd">
-<code class="descclassname">mozetl.engagement.retention.job.</code><code class="descname">valid_pcd</code><span class="sig-paren">(</span><em>pcd</em>, <em>client_date</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/engagement/retention/job.html#valid_pcd"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.engagement.retention.job.valid_pcd" title="Permalink to this definition">¶</a></dt>
-<dd><p>Determine if the profile creation date column is valid given the date
-reported by the client.</p>
-</dd></dl>
-
+<div class="section" id="mozetl-engagement-retention-job-module">
+<h2>mozetl.engagement.retention.job module<a class="headerlink" href="#mozetl-engagement-retention-job-module" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-mozetl.engagement.retention.schema">
-<span id="mozetl-engagement-retention-schema-module"></span><h2>mozetl.engagement.retention.schema module<a class="headerlink" href="#module-mozetl.engagement.retention.schema" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="mozetl-engagement-retention-schema-module">
+<h2>mozetl.engagement.retention.schema module<a class="headerlink" href="#mozetl-engagement-retention-schema-module" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-mozetl.engagement.retention">
-<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-mozetl.engagement.retention" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-contents">
+<h2>Module contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
 </div>
 </div>
 
