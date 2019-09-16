@@ -23,19 +23,19 @@ def extract_telemetry(sparkSession):
     frame = sparkSession.sql(
         """
     SELECT
-        addon_guid,
+        addon_row.addon_id as addon_guid,
         count(*) as install_count
     FROM
         (SELECT
-            EXPLODE(active_addons[0]) as (addon_guid, addon_row)
+            explode(active_addons) as addon_row
         FROM
-            longitudinal
+            clients_daily
         WHERE
-            normalized_channel='release' AND
-            build IS NOT NULL AND
-            build[0].application_name='Firefox'
+            channel='release' AND
+            app_name='Firefox' and
+            size(active_addons) > 0
         )
-    GROUP BY addon_guid
+        GROUP BY addon_row.addon_id
     """
     )
     return frame

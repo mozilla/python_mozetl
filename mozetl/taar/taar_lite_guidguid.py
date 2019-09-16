@@ -44,12 +44,13 @@ def extract_telemetry(spark):
         # Could scale this up to grab more than what is in
         # longitudinal and see how long it takes to run.
         return (
-            spark.table("longitudinal")  # noqa: E127,E501,E502,E999
+            spark.table("clients_daily")
             .where("active_addons IS NOT null")
-            .where("size(active_addons[0]) > 1")
+            .where("size(active_addons) > 1")
+            .where("channel = 'release'")
             .where("normalized_channel = 'release'")
-            .where("build IS NOT NULL AND build[0].application_name = 'Firefox'")
-            .selectExpr("client_id as client_id", "active_addons[0] as active_addons")
+            .where("app_name = 'Firefox'")
+            .selectExpr("client_id", "active_addons")
         )
 
     def get_addons_per_client(users_df):
