@@ -297,8 +297,8 @@ def main(date, workers, s3_prefix, s3_bucket):
             "Completed uploading s3://%s/%s%s.json"
             % (s3_bucket, s3_prefix, AMO_DUMP_FILENAME)
         )
-    except Exception as e:
-        logger.error("Error uploading data to S3", e)
+    except Exception:
+        logger.exception("Error uploading data to S3")
 
 
 if __name__ == "__main__":
