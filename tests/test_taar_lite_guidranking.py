@@ -14,42 +14,36 @@ Expected schema of co-installation counts dict.
 | | | -- n: long(nullable=true)
 """
 
-MOCK_LONGITUDINAL_SAMPLE = [  # noqa
+MOCK_CLIENTS_DAILY = [  # noqa
     Row(
         active_addons=[
-            {
-                "test-guid-1": {"addon_data_row": "blah"},
-                "test-guid-2": {"addon_data_row": "blah"},
-                "test-guid-3": {"addon_data_row": "blah"},
-                "test-guid-5": {"addon_data_row": "blah"},
-            }
+            {"addon_id": "test-guid-1", "addon_data_row": "blah"},
+            {"addon_id": "test-guid-2", "addon_data_row": "blah"},
+            {"addon_id": "test-guid-3", "addon_data_row": "blah"},
+            {"addon_id": "test-guid-5", "addon_data_row": "blah"},
         ],
-        normalized_channel="release",
-        build=[{"application_name": "Firefox"}],
+        channel="release",
+        app_name="Firefox",
     ),
     Row(
         active_addons=[
-            {
-                "test-guid-5": {"addon_data_row": "blah"},
-                "test-guid-2": {"addon_data_row": "blah"},
-                "test-guid-3": {"addon_data_row": "blah"},
-                "test-guid-4": {"addon_data_row": "blah"},
-            }
+            {"addon_id": "test-guid-5", "addon_data_row": "blah"},
+            {"addon_id": "test-guid-2", "addon_data_row": "blah"},
+            {"addon_id": "test-guid-3", "addon_data_row": "blah"},
+            {"addon_id": "test-guid-4", "addon_data_row": "blah"},
         ],
-        normalized_channel="release",
-        build=[{"application_name": "Firefox"}],
+        channel="release",
+        app_name="Firefox",
     ),
     Row(
         active_addons=[
-            {
-                "test-guid-6": {"addon_data_row": "blah"},
-                "test-guid-2": {"addon_data_row": "blah"},
-                "test-guid-3": {"addon_data_row": "blah"},
-                "test-guid-4": {"addon_data_row": "blah"},
-            }
+            {"addon_id": "test-guid-6", "addon_data_row": "blah"},
+            {"addon_id": "test-guid-2", "addon_data_row": "blah"},
+            {"addon_id": "test-guid-3", "addon_data_row": "blah"},
+            {"addon_id": "test-guid-4", "addon_data_row": "blah"},
         ],
-        normalized_channel="release",
-        build=[{"application_name": "Firefox"}],
+        channel="release",
+        app_name="Firefox",
     ),
 ]
 
@@ -71,8 +65,8 @@ EXPECTED_ADDON_INSTALLATIONS = {
 def test_extract_phase(spark):
 
     # Mock out the longitudinal view
-    df = spark.sparkContext.parallelize(MOCK_LONGITUDINAL_SAMPLE).toDF()
-    df.createOrReplaceTempView("longitudinal")
+    df = spark.sparkContext.parallelize(MOCK_CLIENTS_DAILY).toDF()
+    df.createOrReplaceTempView("clients_daily")
     extract_df = taar_lite_guidranking.extract_telemetry(spark)
 
     def lambda_func(x):
@@ -97,7 +91,6 @@ def test_transform_is_valid(spark):
     data
     """
     # Build a dataframe using the mocked telemetry data sample
-    # rdd = spark.sparkContext.parallelize(MOCK_TELEMETRY_SAMPLE)
     rdd = spark.createDataFrame(MOCK_TELEMETRY_SAMPLE)
 
     result_json = taar_lite_guidranking.transform(rdd)
