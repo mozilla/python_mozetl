@@ -59,19 +59,19 @@
     <span class="n">frame</span> <span class="o">=</span> <span class="n">sparkSession</span><span class="o">.</span><span class="n">sql</span><span class="p">(</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    SELECT</span>
-<span class="sd">        addon_guid,</span>
+<span class="sd">        addon_row.addon_id as addon_guid,</span>
 <span class="sd">        count(*) as install_count</span>
 <span class="sd">    FROM</span>
 <span class="sd">        (SELECT</span>
-<span class="sd">            EXPLODE(active_addons[0]) as (addon_guid, addon_row)</span>
+<span class="sd">            explode(active_addons) as addon_row</span>
 <span class="sd">        FROM</span>
-<span class="sd">            longitudinal</span>
+<span class="sd">            clients_daily</span>
 <span class="sd">        WHERE</span>
-<span class="sd">            normalized_channel=&#39;release&#39; AND</span>
-<span class="sd">            build IS NOT NULL AND</span>
-<span class="sd">            build[0].application_name=&#39;Firefox&#39;</span>
+<span class="sd">            channel=&#39;release&#39; AND</span>
+<span class="sd">            app_name=&#39;Firefox&#39; and</span>
+<span class="sd">            size(active_addons) &gt; 0</span>
 <span class="sd">        )</span>
-<span class="sd">    GROUP BY addon_guid</span>
+<span class="sd">        GROUP BY addon_row.addon_id</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">frame</span></div>

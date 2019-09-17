@@ -80,12 +80,13 @@
         <span class="c1"># Could scale this up to grab more than what is in</span>
         <span class="c1"># longitudinal and see how long it takes to run.</span>
         <span class="k">return</span> <span class="p">(</span>
-            <span class="n">spark</span><span class="o">.</span><span class="n">table</span><span class="p">(</span><span class="s2">&quot;longitudinal&quot;</span><span class="p">)</span>  <span class="c1"># noqa: E127,E501,E502,E999</span>
+            <span class="n">spark</span><span class="o">.</span><span class="n">table</span><span class="p">(</span><span class="s2">&quot;clients_daily&quot;</span><span class="p">)</span>
             <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="s2">&quot;active_addons IS NOT null&quot;</span><span class="p">)</span>
-            <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="s2">&quot;size(active_addons[0]) &gt; 1&quot;</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="s2">&quot;size(active_addons) &gt; 1&quot;</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="s2">&quot;channel = &#39;release&#39;&quot;</span><span class="p">)</span>
             <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="s2">&quot;normalized_channel = &#39;release&#39;&quot;</span><span class="p">)</span>
-            <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="s2">&quot;build IS NOT NULL AND build[0].application_name = &#39;Firefox&#39;&quot;</span><span class="p">)</span>
-            <span class="o">.</span><span class="n">selectExpr</span><span class="p">(</span><span class="s2">&quot;client_id as client_id&quot;</span><span class="p">,</span> <span class="s2">&quot;active_addons[0] as active_addons&quot;</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="s2">&quot;app_name = &#39;Firefox&#39;&quot;</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">selectExpr</span><span class="p">(</span><span class="s2">&quot;client_id&quot;</span><span class="p">,</span> <span class="s2">&quot;active_addons&quot;</span><span class="p">)</span>
         <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">get_addons_per_client</span><span class="p">(</span><span class="n">users_df</span><span class="p">):</span>
