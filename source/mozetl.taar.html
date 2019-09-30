@@ -366,6 +366,31 @@ Firefox webextensions for a sample of the longitudinal telemetry dataset.</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="mozetl.taar.taar_lite_guidguid.get_addons_per_client">
+<code class="descclassname">mozetl.taar.taar_lite_guidguid.</code><code class="descname">get_addons_per_client</code><span class="sig-paren">(</span><em>broadcast_amo_whitelist</em>, <em>users_df</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_lite_guidguid.html#get_addons_per_client"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_lite_guidguid.get_addons_per_client" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extracts a DataFrame that contains one row
+for each client along with the list of active add-on GUIDs.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mozetl.taar.taar_lite_guidguid.get_initial_sample">
+<code class="descclassname">mozetl.taar.taar_lite_guidguid.</code><code class="descname">get_initial_sample</code><span class="sig-paren">(</span><em>spark</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_lite_guidguid.html#get_initial_sample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_lite_guidguid.get_initial_sample" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes an initial sample from the longitudinal dataset
+(randomly sampled from main summary). Coarse filtering on:
+- number of installed addons (greater than 1)
+- corrupt and generally wierd telemetry entries
+- isolating release channel
+- column selection</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mozetl.taar.taar_lite_guidguid.is_valid_addon">
+<code class="descclassname">mozetl.taar.taar_lite_guidguid.</code><code class="descname">is_valid_addon</code><span class="sig-paren">(</span><em>broadcast_amo_whitelist</em>, <em>guid</em>, <em>addon</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_lite_guidguid.html#is_valid_addon"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_lite_guidguid.is_valid_addon" title="Permalink to this definition">¶</a></dt>
+<dd><p>Filter individual addons out to exclude, system addons,
+legacy addons, disabled addons, sideloaded addons.</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="mozetl.taar.taar_lite_guidguid.key_all">
 <code class="descclassname">mozetl.taar.taar_lite_guidguid.</code><code class="descname">key_all</code><span class="sig-paren">(</span><em>a</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_lite_guidguid.html#key_all"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.taar.taar_lite_guidguid.key_all" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return (for each Row) a two column set of Rows that contains each individual

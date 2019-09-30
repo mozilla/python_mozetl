@@ -62,6 +62,71 @@
 <span class="n">ONE_WEEK_AGO</span> <span class="o">=</span> <span class="p">(</span><span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">-</span> <span class="n">dt</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">7</span><span class="p">))</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span>
 
 
+<div class="viewcode-block" id="is_valid_addon"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_lite_guidguid.is_valid_addon">[docs]</a><span class="k">def</span> <span class="nf">is_valid_addon</span><span class="p">(</span><span class="n">broadcast_amo_whitelist</span><span class="p">,</span> <span class="n">guid</span><span class="p">,</span> <span class="n">addon</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Filter individual addons out to exclude, system addons,</span>
+<span class="sd">    legacy addons, disabled addons, sideloaded addons.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="ow">not</span> <span class="p">(</span>
+        <span class="n">addon</span><span class="o">.</span><span class="n">is_system</span>
+        <span class="ow">or</span> <span class="n">addon</span><span class="o">.</span><span class="n">app_disabled</span>
+        <span class="ow">or</span> <span class="n">addon</span><span class="o">.</span><span class="n">type</span> <span class="o">!=</span> <span class="s2">&quot;extension&quot;</span>
+        <span class="ow">or</span> <span class="n">addon</span><span class="o">.</span><span class="n">user_disabled</span>
+        <span class="ow">or</span> <span class="n">addon</span><span class="o">.</span><span class="n">foreign_install</span>
+        <span class="ow">or</span>
+        <span class="c1"># make sure the amo_whitelist has been broadcast to worker nodes.</span>
+        <span class="n">guid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">broadcast_amo_whitelist</span><span class="o">.</span><span class="n">value</span>
+        <span class="ow">or</span>
+        <span class="c1"># Make sure that the Pioneer addon is explicitly</span>
+        <span class="c1"># excluded</span>
+        <span class="n">guid</span> <span class="o">==</span> <span class="s2">&quot;pioneer-opt-in@mozilla.org&quot;</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_addons_per_client"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_lite_guidguid.get_addons_per_client">[docs]</a><span class="k">def</span> <span class="nf">get_addons_per_client</span><span class="p">(</span><span class="n">broadcast_amo_whitelist</span><span class="p">,</span> <span class="n">users_df</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Extracts a DataFrame that contains one row</span>
+<span class="sd">    for each client along with the list of active add-on GUIDs.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Create an add-ons dataset un-nesting the add-on map from each</span>
+    <span class="c1"># user to a list of add-on GUIDs. Also filter undesired add-ons.</span>
+    <span class="n">rdd_list</span> <span class="o">=</span> <span class="n">users_df</span><span class="o">.</span><span class="n">rdd</span><span class="o">.</span><span class="n">map</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="p">(</span>
+            <span class="n">p</span><span class="p">[</span><span class="s2">&quot;client_id&quot;</span><span class="p">],</span>
+            <span class="p">[</span>
+                <span class="n">addon_data</span><span class="o">.</span><span class="n">addon_id</span>
+                <span class="k">for</span> <span class="n">addon_data</span> <span class="ow">in</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;active_addons&quot;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">is_valid_addon</span><span class="p">(</span>
+                    <span class="n">broadcast_amo_whitelist</span><span class="p">,</span> <span class="n">addon_data</span><span class="o">.</span><span class="n">addon_id</span><span class="p">,</span> <span class="n">addon_data</span>
+                <span class="p">)</span>
+            <span class="p">],</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">filtered_rdd</span> <span class="o">=</span> <span class="n">rdd_list</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">filtered_rdd</span><span class="o">.</span><span class="n">toDF</span><span class="p">([</span><span class="s2">&quot;client_id&quot;</span><span class="p">,</span> <span class="s2">&quot;addon_ids&quot;</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">df</span></div>
+
+
+<div class="viewcode-block" id="get_initial_sample"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_lite_guidguid.get_initial_sample">[docs]</a><span class="k">def</span> <span class="nf">get_initial_sample</span><span class="p">(</span><span class="n">spark</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Takes an initial sample from the longitudinal dataset</span>
+<span class="sd">    (randomly sampled from main summary). Coarse filtering on:</span>
+<span class="sd">    - number of installed addons (greater than 1)</span>
+<span class="sd">    - corrupt and generally wierd telemetry entries</span>
+<span class="sd">    - isolating release channel</span>
+<span class="sd">    - column selection</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Could scale this up to grab more than what is in</span>
+    <span class="c1"># longitudinal and see how long it takes to run.</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">spark</span><span class="o">.</span><span class="n">table</span><span class="p">(</span><span class="s2">&quot;clients_daily&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="s2">&quot;active_addons IS NOT null&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="s2">&quot;size(active_addons) &gt; 1&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="s2">&quot;channel = &#39;release&#39;&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="s2">&quot;normalized_channel = &#39;release&#39;&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="s2">&quot;app_name = &#39;Firefox&#39;&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">selectExpr</span><span class="p">(</span><span class="s2">&quot;client_id&quot;</span><span class="p">,</span> <span class="s2">&quot;active_addons&quot;</span><span class="p">)</span>
+    <span class="p">)</span></div>
+
+
 <div class="viewcode-block" id="extract_telemetry"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_lite_guidguid.extract_telemetry">[docs]</a><span class="k">def</span> <span class="nf">extract_telemetry</span><span class="p">(</span><span class="n">spark</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; load some training data from telemetry given a sparkContext</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -69,68 +134,7 @@
 
     <span class="c1"># Define the set of feature names to be used in the donor computations.</span>
 
-    <span class="k">def</span> <span class="nf">get_initial_sample</span><span class="p">():</span>
-        <span class="sd">&quot;&quot;&quot; Takes an initial sample from the longitudinal dataset</span>
-<span class="sd">        (randomly sampled from main summary). Coarse filtering on:</span>
-<span class="sd">        - number of installed addons (greater than 1)</span>
-<span class="sd">        - corrupt and generally wierd telemetry entries</span>
-<span class="sd">        - isolating release channel</span>
-<span class="sd">        - column selection</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Could scale this up to grab more than what is in</span>
-        <span class="c1"># longitudinal and see how long it takes to run.</span>
-        <span class="k">return</span> <span class="p">(</span>
-            <span class="n">spark</span><span class="o">.</span><span class="n">table</span><span class="p">(</span><span class="s2">&quot;clients_daily&quot;</span><span class="p">)</span>
-            <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="s2">&quot;active_addons IS NOT null&quot;</span><span class="p">)</span>
-            <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="s2">&quot;size(active_addons) &gt; 1&quot;</span><span class="p">)</span>
-            <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="s2">&quot;channel = &#39;release&#39;&quot;</span><span class="p">)</span>
-            <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="s2">&quot;normalized_channel = &#39;release&#39;&quot;</span><span class="p">)</span>
-            <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="s2">&quot;app_name = &#39;Firefox&#39;&quot;</span><span class="p">)</span>
-            <span class="o">.</span><span class="n">selectExpr</span><span class="p">(</span><span class="s2">&quot;client_id&quot;</span><span class="p">,</span> <span class="s2">&quot;active_addons&quot;</span><span class="p">)</span>
-        <span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">get_addons_per_client</span><span class="p">(</span><span class="n">users_df</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; Extracts a DataFrame that contains one row</span>
-<span class="sd">        for each client along with the list of active add-on GUIDs.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="k">def</span> <span class="nf">is_valid_addon</span><span class="p">(</span><span class="n">guid</span><span class="p">,</span> <span class="n">addon</span><span class="p">):</span>
-            <span class="sd">&quot;&quot;&quot; Filter individual addons out to exclude, system addons,</span>
-<span class="sd">            legacy addons, disabled addons, sideloaded addons.</span>
-<span class="sd">            &quot;&quot;&quot;</span>
-            <span class="k">return</span> <span class="ow">not</span> <span class="p">(</span>
-                <span class="n">addon</span><span class="o">.</span><span class="n">is_system</span>
-                <span class="ow">or</span> <span class="n">addon</span><span class="o">.</span><span class="n">app_disabled</span>
-                <span class="ow">or</span> <span class="n">addon</span><span class="o">.</span><span class="n">type</span> <span class="o">!=</span> <span class="s2">&quot;extension&quot;</span>
-                <span class="ow">or</span> <span class="n">addon</span><span class="o">.</span><span class="n">user_disabled</span>
-                <span class="ow">or</span> <span class="n">addon</span><span class="o">.</span><span class="n">foreign_install</span>
-                <span class="ow">or</span>
-                <span class="c1"># make sure the amo_whitelist has been broadcast to worker nodes.</span>
-                <span class="n">guid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">broadcast_amo_whitelist</span><span class="o">.</span><span class="n">value</span>
-                <span class="ow">or</span>
-                <span class="c1"># Make sure that the Pioneer addon is explicitly</span>
-                <span class="c1"># excluded</span>
-                <span class="n">guid</span> <span class="o">==</span> <span class="s2">&quot;pioneer-opt-in@mozilla.org&quot;</span>
-            <span class="p">)</span>
-
-        <span class="c1"># Create an add-ons dataset un-nesting the add-on map from each</span>
-        <span class="c1"># user to a list of add-on GUIDs. Also filter undesired add-ons.</span>
-        <span class="k">return</span> <span class="p">(</span>
-            <span class="n">users_df</span><span class="o">.</span><span class="n">rdd</span><span class="o">.</span><span class="n">map</span><span class="p">(</span>
-                <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="p">(</span>
-                    <span class="n">p</span><span class="p">[</span><span class="s2">&quot;client_id&quot;</span><span class="p">],</span>
-                    <span class="p">[</span>
-                        <span class="n">guid</span>
-                        <span class="k">for</span> <span class="n">guid</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;active_addons&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
-                        <span class="k">if</span> <span class="n">is_valid_addon</span><span class="p">(</span><span class="n">guid</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
-                    <span class="p">],</span>
-                <span class="p">)</span>
-            <span class="p">)</span>
-            <span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span>
-            <span class="o">.</span><span class="n">toDF</span><span class="p">([</span><span class="s2">&quot;client_id&quot;</span><span class="p">,</span> <span class="s2">&quot;addon_ids&quot;</span><span class="p">])</span>
-        <span class="p">)</span>
-
-    <span class="n">client_features_frame</span> <span class="o">=</span> <span class="n">get_initial_sample</span><span class="p">()</span>
+    <span class="n">client_features_frame</span> <span class="o">=</span> <span class="n">get_initial_sample</span><span class="p">(</span><span class="n">spark</span><span class="p">)</span>
 
     <span class="n">amo_white_list</span> <span class="o">=</span> <span class="n">taar_utils</span><span class="o">.</span><span class="n">load_amo_external_whitelist</span><span class="p">()</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;AMO White list loaded&quot;</span><span class="p">)</span>
@@ -138,7 +142,9 @@
     <span class="n">broadcast_amo_whitelist</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">broadcast</span><span class="p">(</span><span class="n">amo_white_list</span><span class="p">)</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Broadcast AMO whitelist success&quot;</span><span class="p">)</span>
 
-    <span class="n">addons_info_frame</span> <span class="o">=</span> <span class="n">get_addons_per_client</span><span class="p">(</span><span class="n">client_features_frame</span><span class="p">)</span>
+    <span class="n">addons_info_frame</span> <span class="o">=</span> <span class="n">get_addons_per_client</span><span class="p">(</span>
+        <span class="n">broadcast_amo_whitelist</span><span class="p">,</span> <span class="n">client_features_frame</span>
+    <span class="p">)</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Filtered for valid addons only.&quot;</span><span class="p">)</span>
 
     <span class="n">taar_training</span> <span class="o">=</span> <span class="p">(</span>
