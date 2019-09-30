@@ -4,6 +4,7 @@ import boto3
 from moto import mock_s3
 from mozetl.taar import taar_lite_guidguid
 from pyspark.sql import Row
+from mock import Mock
 
 """
 Expected schema of co-installation counts dict.
@@ -152,6 +153,65 @@ EXPECTED_GUID_GUID_DATA = [
 # Exercise the only part of the ETL job happening outside of spark.
 def test_addon_keying():
     assert taar_lite_guidguid.key_all(MOCK_KEYED_ADDONS) == EXPECTED_ADDON_INSTALLATIONS
+
+
+def test_get_addons_per_client(spark, df_equals):
+    def make_addon_meta(addon_id):
+        return Row(
+            **dict(
+                addon_id=addon_id,
+                is_system=False,
+                type="extension",
+                user_disabled=False,
+                app_disabled=False,
+                foreign_install=False,
+            )
+        )
+
+    MOCK_USERS_DF = [
+        Row(
+            client_id="client-1",
+            active_addons=[
+                make_addon_meta("test-guid-1"),
+                make_addon_meta("test-guid-2"),
+                make_addon_meta("test-guid-3"),
+            ],
+        ),
+        Row(
+            client_id="client_2",
+            active_addons=[
+                make_addon_meta("test-guid-1"),
+                make_addon_meta("test-guid-3"),
+            ],
+        ),
+        Row(
+            client_id="client_3",
+            active_addons=[
+                make_addon_meta("test-guid-1"),
+                make_addon_meta("test-guid-4"),
+            ],
+        ),
+        Row(
+            client_id="client_4",
+            active_addons=[
+                make_addon_meta("test-guid-2"),
+                make_addon_meta("test-guid-5"),
+                make_addon_meta("test-guid-6"),
+            ],
+        ),
+        Row(client_id="client_5", active_addons=[make_addon_meta("test-guid-1")]),
+    ]
+
+    test_users_df = spark.createDataFrame(MOCK_USERS_DF)
+
+    mock_broadcast_amo_whitelist = Mock()
+    mock_broadcast_amo_whitelist.value = Mock()
+    mock_broadcast_amo_whitelist.value.__contains__ = lambda self, x: True
+
+    result = taar_lite_guidguid.get_addons_per_client(
+        mock_broadcast_amo_whitelist, test_users_df
+    )
+    assert len(result.collect()) > 0
 
 
 @mock_s3

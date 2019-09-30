@@ -53,22 +53,21 @@ def get_addons_per_client(broadcast_amo_whitelist, users_df):
 
     # Create an add-ons dataset un-nesting the add-on map from each
     # user to a list of add-on GUIDs. Also filter undesired add-ons.
-    return (
-        users_df.rdd.map(
-            lambda p: (
-                p["client_id"],
-                [
-                    addon_data.addon_id
-                    for addon_data in p["active_addons"]
-                    if is_valid_addon(
-                        broadcast_amo_whitelist, addon_data.addon_id, addon_data
-                    )
-                ],
-            )
+    rdd_list = users_df.rdd.map(
+        lambda p: (
+            p["client_id"],
+            [
+                addon_data.addon_id
+                for addon_data in p["active_addons"]
+                if is_valid_addon(
+                    broadcast_amo_whitelist, addon_data.addon_id, addon_data
+                )
+            ],
         )
-        .filter(lambda p: len(p[1]) > 1)
-        .toDF(["client_id", "addon_ids"])
     )
+    filtered_rdd = rdd_list.filter(lambda p: len(p[1]) > 1)
+    df = filtered_rdd.toDF(["client_id", "addon_ids"])
+    return df
 
 
 def get_initial_sample(spark):
