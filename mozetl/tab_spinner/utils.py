@@ -93,7 +93,7 @@ def bucket_by_short_severity_per_client(spinner_pair):
 
     severity = pd.Series([0, 0, 0, 0, 0, 0, 0, 0], index=named_index)
 
-    if hist is None or hist.empty or long_hist is None or long_hist.empty:
+    if (hist is None or hist.empty) and (long_hist is None or long_hist.empty):
         severity[named_index[0]] = 1
     elif long_hist[long_hist.index >= 1000].sum() > 0:
         severity[named_index[1]] = 1
