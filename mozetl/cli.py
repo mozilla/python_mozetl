@@ -7,7 +7,6 @@ from mozetl.landfill import sampler as landfill_sampler
 from mozetl.maudau import maudau
 from mozetl.search.aggregates import search_aggregates_click, search_clients_daily_click
 from mozetl.sync import bookmark_validation
-from mozetl.tab_spinner import tab_spinner
 from mozetl.taar import (
     taar_locale,
     taar_similarity,
@@ -44,7 +43,6 @@ entry_point.add_command(taar_ensemble.main, "taar_ensemble")
 entry_point.add_command(addon_aggregates.main, "addon_aggregates")
 entry_point.add_command(maudau.main, "engagement_ratio")
 entry_point.add_command(landfill_sampler.main, "landfill_sampler")
-entry_point.add_command(tab_spinner.main, "long_tab_spinners")
 entry_point.add_command(system_check.main, "system_check")
 
 # Kept for backwards compatibility
