@@ -588,7 +588,83 @@ def get_longitudinal_version(date):
     return "longitudinal_v" + next_week.strftime("%Y%m%d")
 
 
-def generate_report(start_date, end_date, spark):
+def get_data_bigquery(spark, chunk_start, chunk_end):
+    raise NotImplementedError
+
+
+def get_data_longitudinal(spark, chunk_start, chunk_end):
+    longitudinal_version = get_longitudinal_version(chunk_end)
+
+    sqlQuery = """
+                SELECT
+                    build,
+                    client_id,
+                    active_plugins,
+                    system_os,
+                    submission_date,
+                    system,
+                    system_gfx,
+                    system_cpu,
+                    normalized_channel
+                FROM
+                    {}
+                WHERE
+                    normalized_channel = 'release'
+                AND
+                    build is not null and build[0].application_name = 'Firefox'
+                """.format(
+        longitudinal_version
+    )
+
+    frame = spark.sql(sqlQuery)
+
+    # The number of all the fetched records (including inactive and broken).
+    records_count = frame.count()
+    logger.info(
+        "Total record count for {}: {}".format(
+            chunk_start.strftime("%Y%m%d"), records_count
+        )
+    )
+
+    # Fetch the data we need.
+    data = frame.rdd.map(
+        lambda r: get_latest_valid_per_client(r, chunk_start, chunk_end)
+    )
+
+    # Filter out broken data.
+    filtered_data = data.filter(
+        lambda r: r not in [REASON_BROKEN_DATA, REASON_INACTIVE]
+    )
+
+    # Count the broken records and inactive records.
+    discarded = data.filter(
+        lambda r: r in [REASON_BROKEN_DATA, REASON_INACTIVE]
+    ).countByValue()
+
+    broken_count = discarded[REASON_BROKEN_DATA]
+    inactive_count = discarded[REASON_INACTIVE]
+    broken_ratio = broken_count / float(records_count)
+    inactive_ratio = inactive_count / float(records_count)
+    logger.info(
+        "Broken pings ratio: {}; Inactive clients ratio: {}".format(
+            broken_ratio, inactive_ratio
+        )
+    )
+
+    # If we're not seeing sane values for the broken or inactive ratios,
+    # bail out early on. There's no point in aggregating.
+    if broken_ratio >= 0.9 or inactive_ratio >= 0.9:
+        raise Exception(
+            "Unexpected ratio of broken pings or inactive clients. Broken ratio: {0},\
+            inactive ratio: {1}".format(
+                broken_ratio, inactive_ratio
+            )
+        )
+
+    return (filtered_data, broken_ratio, inactive_ratio)
+
+
+def generate_report(start_date, end_date, spark, spark_provider='emr'):
     """Generate the hardware survey dataset for the reference timeframe.
 
     If the timeframe is longer than a week, split it in in weekly chunks
@@ -602,6 +678,10 @@ def generate_report(start_date, end_date, spark):
         end_date: The date the marks the end of the reporting period. This only
            makes sense if a |start_date| was provided. If None, this defaults
            to the end of the past week (Saturday).
+        spark: SparkSession.
+        spark_provider: Environment the application is running in. For `emr`,
+           Longitudinal will be used, on `dataproc` data will be loaded from
+           `telemetry.main`.
     """
     # If no start_date was provided, generate a report for the past complete
     # week.
@@ -623,73 +703,11 @@ def generate_report(start_date, end_date, spark):
 
     while chunk_start < date_range[1]:
         chunk_end = chunk_start + dt.timedelta(days=6)
-        longitudinal_version = get_longitudinal_version(chunk_end)
-
-        sqlQuery = """
-                   SELECT
-                      build,
-                      client_id,
-                      active_plugins,
-                      system_os,
-                      submission_date,
-                      system,
-                      system_gfx,
-                      system_cpu,
-                      normalized_channel
-                   FROM
-                      {}
-                   WHERE
-                      normalized_channel = 'release'
-                   AND
-                      build is not null and build[0].application_name = 'Firefox'
-                   """.format(
-            longitudinal_version
-        )
-
-        frame = spark.sql(sqlQuery)
-
-        # The number of all the fetched records (including inactive and broken).
-        records_count = frame.count()
-        logger.info(
-            "Total record count for {}: {}".format(
-                chunk_start.strftime("%Y%m%d"), records_count
-            )
-        )
-
-        # Fetch the data we need.
-        data = frame.rdd.map(
-            lambda r: get_latest_valid_per_client(r, chunk_start, chunk_end)
-        )
-
-        # Filter out broken data.
-        filtered_data = data.filter(
-            lambda r: r not in [REASON_BROKEN_DATA, REASON_INACTIVE]
-        )
-
-        # Count the broken records and inactive records.
-        discarded = data.filter(
-            lambda r: r in [REASON_BROKEN_DATA, REASON_INACTIVE]
-        ).countByValue()
-
-        broken_count = discarded[REASON_BROKEN_DATA]
-        inactive_count = discarded[REASON_INACTIVE]
-        broken_ratio = broken_count / float(records_count)
-        inactive_ratio = inactive_count / float(records_count)
-        logger.info(
-            "Broken pings ratio: {}; Inactive clients ratio: {}".format(
-                broken_ratio, inactive_ratio
-            )
-        )
-
-        # If we're not seeing sane values for the broken or inactive ratios,
-        # bail out early on. There's no point in aggregating.
-        if broken_ratio >= 0.9 or inactive_ratio >= 0.9:
-            raise Exception(
-                "Unexpected ratio of broken pings or inactive clients. Broken ratio: {0},\
-                inactive ratio: {1}".format(
-                    broken_ratio, inactive_ratio
-                )
-            )
+        
+        if spark_provider is "emr":
+            (filtered_data, broken_ratio, inactive_ratio) = get_data_longitudinal(spark, chunk_start, chunk_end)
+        else:
+            (filtered_data, broken_ratio, inactive_ratio) = get_data_bigquery(spark, chunk_start, chunk_end)
 
         # Process the data, transforming it in the form we desire.
         device_map = build_device_map()

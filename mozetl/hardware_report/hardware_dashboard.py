@@ -25,7 +25,10 @@ datetime_type = Datetime(format="%Y%m%d")
     "--end_date", type=datetime_type, default=None, help="End date (e.g. yyyymmdd)"
 )
 @click.option("--bucket", required=True, help="Output bucket for JSON data")
-def main(start_date, end_date, bucket):
+@click.option('--spark-provider', type=click.Choice(['emr', 'dataproc']), default='emr',
+    help="Spark execution platform. This will drive the choice of datasource: longitudinal on AWS (emr), main ping table on GCP ('dataproc')"
+)
+def main(start_date, end_date, bucket, spark_provider):
     """Generate this week's report and append it to previous report."""
     # Set default end date to a week after start date if end date not provided
     if not end_date:
@@ -38,7 +41,7 @@ def main(start_date, end_date, bucket):
     )
 
     # Generate the report for the desired period.
-    report = summarize_json.generate_report(start_date, end_date, spark)
+    report = summarize_json.generate_report(start_date, end_date, spark, spark_provider)
     summarize_json.serialize_results(report)
     # Fetch the previous data from S3 and save it locally.
     summarize_json.fetch_previous_state(
