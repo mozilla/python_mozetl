@@ -25,8 +25,12 @@ datetime_type = Datetime(format="%Y%m%d")
     "--end_date", type=datetime_type, default=None, help="End date (e.g. yyyymmdd)"
 )
 @click.option("--bucket", required=True, help="Output bucket for JSON data")
-@click.option('--spark-provider', type=click.Choice(['emr', 'dataproc']), default='emr',
-    help="Spark execution platform. This will drive the choice of datasource: longitudinal on AWS (emr), main ping table on GCP ('dataproc')"
+@click.option(
+    "--spark-provider",
+    type=click.Choice(["emr", "dataproc"]),
+    default="emr",
+    help="""Spark execution platform. This will drive the choice of datasource:
+            longitudinal on AWS (emr), main ping table on GCP ('dataproc')""",
 )
 def main(start_date, end_date, bucket, spark_provider):
     """Generate this week's report and append it to previous report."""

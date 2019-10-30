@@ -593,6 +593,26 @@ def get_data_bigquery(spark, chunk_start, chunk_end):
 
 
 def get_data_longitudinal(spark, chunk_start, chunk_end):
+    """
+    Returns:
+        * filtered_data - RDD with the following schema:
+            root
+            |-- browser_arch: string (nullable = true)
+            |-- cpu_cores: long (nullable = true)
+            |-- cpu_speed: long (nullable = true)
+            |-- cpu_vendor: string (nullable = true)
+            |-- gfx0_device_id: string (nullable = true)
+            |-- gfx0_vendor_id: string (nullable = true)
+            |-- has_flash: boolean (nullable = true)
+            |-- is_wow64: boolean (nullable = true)
+            |-- memory_mb: long (nullable = true)
+            |-- os_name: string (nullable = true)
+            |-- os_version: string (nullable = true)
+            |-- screen_height: long (nullable = true)
+            |-- screen_width: long (nullable = true)
+        * broken_ratio
+        * inactive_ratio
+    """
     longitudinal_version = get_longitudinal_version(chunk_end)
 
     sqlQuery = """
@@ -664,7 +684,7 @@ def get_data_longitudinal(spark, chunk_start, chunk_end):
     return (filtered_data, broken_ratio, inactive_ratio)
 
 
-def generate_report(start_date, end_date, spark, spark_provider='emr'):
+def generate_report(start_date, end_date, spark, spark_provider="emr"):
     """Generate the hardware survey dataset for the reference timeframe.
 
     If the timeframe is longer than a week, split it in in weekly chunks
@@ -703,11 +723,12 @@ def generate_report(start_date, end_date, spark, spark_provider='emr'):
 
     while chunk_start < date_range[1]:
         chunk_end = chunk_start + dt.timedelta(days=6)
-        
-        if spark_provider is "emr":
-            (filtered_data, broken_ratio, inactive_ratio) = get_data_longitudinal(spark, chunk_start, chunk_end)
-        else:
-            (filtered_data, broken_ratio, inactive_ratio) = get_data_bigquery(spark, chunk_start, chunk_end)
+
+        (filtered_data, broken_ratio, inactive_ratio) = (
+            get_data_longitudinal(spark, chunk_start, chunk_end)
+            if spark_provider is "emr"
+            else get_data_bigquery(spark, chunk_start, chunk_end)
+        )
 
         # Process the data, transforming it in the form we desire.
         device_map = build_device_map()
