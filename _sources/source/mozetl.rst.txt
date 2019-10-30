@@ -18,7 +18,6 @@ Subpackages
     mozetl.shield
     mozetl.sync
     mozetl.taar
-    mozetl.tab_spinner
     mozetl.testpilot
     mozetl.topline
 
