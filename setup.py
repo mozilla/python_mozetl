@@ -27,6 +27,7 @@ setup(
     # PLEASE pin any dependencies to exact versions, otherwise things might unexpectedly break!!
     install_requires=[
         'arrow==0.10.0',
+        'google-cloud-bigquery==1.21.0',
         'boto==2.49.0',
         'boto3==1.9.87',
         'botocore==1.10.84',
