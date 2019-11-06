@@ -2,6 +2,7 @@
 from setuptools import setup, find_packages
 
 test_deps = [
+    'botocore==1.10.84',
     'coverage==4.5.2',
     'pytest-cov==2.6.0',
     'pytest-timeout==1.3.3',
@@ -30,7 +31,6 @@ setup(
         'google-cloud-bigquery==1.21.0',
         'boto==2.49.0',
         'boto3==1.9.87',
-        'botocore==1.10.84',
         'click==6.7',
         'click_datetime==0.2',
         'numpy==1.13.3',
