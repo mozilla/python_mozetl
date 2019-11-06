@@ -4,6 +4,7 @@ from setuptools import setup, find_packages
 test_deps = [
     'botocore==1.10.84',
     'coverage==4.5.2',
+    'google-cloud-bigquery==1.21.0',
     'pytest-cov==2.6.0',
     'pytest-timeout==1.3.3',
     'moto==1.3.6',
@@ -28,7 +29,6 @@ setup(
     # PLEASE pin any dependencies to exact versions, otherwise things might unexpectedly break!!
     install_requires=[
         'arrow==0.10.0',
-        'google-cloud-bigquery==1.21.0',
         'boto==2.49.0',
         'boto3==1.9.87',
         'click==6.7',
