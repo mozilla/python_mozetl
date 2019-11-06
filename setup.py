@@ -30,6 +30,7 @@ setup(
         'google-cloud-bigquery==1.21.0',
         'boto==2.49.0',
         'boto3==1.9.87',
+        'botocore==1.10.84',
         'click==6.7',
         'click_datetime==0.2',
         'numpy==1.13.3',
