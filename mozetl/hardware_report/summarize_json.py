@@ -594,49 +594,54 @@ def get_longitudinal_version(date):
 def get_data_bigquery(spark, chunk_start, chunk_end):
     bq = bigquery.Client()
 
-    filtered_data_sql = """
+    filtered_data_sql = f"""
     WITH
     rank_per_client AS (
+        SELECT
+            *,
+            ROW_NUMBER() OVER (PARTITION BY client_id ORDER BY submission_timestamp DESC) AS rn
+        FROM
+            `moz-fx-data-shared-prod.telemetry_stable.main_v4`
+        WHERE
+            sample_id = 42
+            AND DATE(submission_timestamp)>='{chunk_start.strftime('%Y-%m-%d')}'
+            AND DATE(submission_timestamp)<'{chunk_end.strftime('%Y-%m-%d')}' ),
+        latest_per_client AS(
+        SELECT
+            *
+        FROM
+            rank_per_client
+        WHERE
+            rn=1 )
     SELECT
-        *,
-        ROW_NUMBER() OVER (PARTITION BY client_id ORDER BY submission_timestamp DESC) AS rn
+        environment.build.architecture AS browser_arch,
+        environment.system.os.name AS os_name,
+        environment.system.os.version AS os_version,
+        environment.system.memory_mb,
+        coalesce(environment.system.is_wow64, FALSE) AS is_wow64,
+        environment.system.gfx.adapters[OFFSET(0)].vendor_id AS gfx0_vendor_id,
+        environment.system.gfx.adapters[OFFSET(0)].device_id AS gfx0_device_id,
+        IF(ARRAY_LENGTH(environment.system.gfx.monitors)>0,
+            environment.system.gfx.monitors[OFFSET(0)].screen_width, 0) AS screen_width,
+        IF(ARRAY_LENGTH(environment.system.gfx.monitors)>0,
+            environment.system.gfx.monitors[OFFSET(0)].screen_height, 0) AS screen_height,
+        environment.system.cpu.cores AS cpu_cores,
+        environment.system.cpu.vendor AS cpu_vendor,
+        environment.system.cpu.speed_m_hz AS cpu_speed,
+        'Shockwave Flash' IN (SELECT name FROM UNNEST(environment.addons.active_plugins)) AS has_flash
     FROM
-        `moz-fx-data-shared-prod.telemetry_stable.main_v4`
+        latest_per_client
     WHERE
-        sample_id = 42
-        AND DATE(submission_timestamp)>='2019-10-20'
-        AND DATE(submission_timestamp)<'2019-10-27' ),
-    latest_per_client AS(
-    SELECT
-        *
-    FROM
-        rank_per_client
-    WHERE
-        rn=1 )
-    SELECT
-    environment.build.architecture AS browser_arch,
-    environment.system.os.name AS os_name,
-    environment.system.os.version AS os_version,
-    environment.system.memory_mb,
-    coalesce(environment.system.is_wow64, FALSE) AS is_wow64,
-    environment.system.gfx.adapters[OFFSET(0)].vendor_id AS gfx0_vendor_id,
-    environment.system.gfx.adapters[OFFSET(0)].device_id AS gfx0_device_id,
-    IF(ARRAY_LENGTH(environment.system.gfx.monitors)>0,
-        environment.system.gfx.monitors[OFFSET(0)].screen_width, 0) AS screen_width,
-    IF(ARRAY_LENGTH(environment.system.gfx.monitors)>0,
-        environment.system.gfx.monitors[OFFSET(0)].screen_height, 0) AS screen_height,
-    environment.system.cpu.cores AS cpu_cores,
-    environment.system.cpu.vendor AS cpu_vendor,
-    environment.system.cpu.speed_m_hz AS cpu_speed,
-    'Shockwave Flash' IN (SELECT name FROM UNNEST(environment.addons.active_plugins)) AS has_flash
-    FROM
-    latest_per_client
+        environment.system.cpu.speed_m_hz IS NOT NULL
     """
 
-    dataset_id = "analysis"
-    table_ref = bq.dataset(dataset_id, project="moz-fx-data-derived-datasets").table(
-        "akomar_hardware_report_filtered_data"
-    )
+    print("Query is: " + filtered_data_sql)
+
+    TABLE_PROJECT = "moz-fx-data-derived-datasets"
+    TABLE_DATASET = "analysis"
+    TABLE_NAME = "hardware_report_filtered_data"
+
+    table_ref = bq.dataset(TABLE_DATASET, project=TABLE_PROJECT).table(TABLE_NAME)
     job_config = bigquery.QueryJobConfig()
     job_config.destination = table_ref
     job_config.write_disposition = "WRITE_TRUNCATE"
@@ -648,15 +653,17 @@ def get_data_bigquery(spark, chunk_start, chunk_end):
 
     filtered_data_df = (
         spark.read.format("bigquery")
-        .option("parallelism", 200)
-        .option(
-            "table",
-            "moz-fx-data-derived-datasets.analysis.akomar_hardware_report_filtered_data",
-        )
-        .load()
+            .option("parallelism", 200)
+            .option("table", f"{TABLE_PROJECT}.{TABLE_DATASET}.{TABLE_NAME}")
+            .load()
     )
 
-    return (filtered_data_df.rdd, None, None)
+    # Defined to keep compatibility with AWS implementation,
+    # they're 0 here since these describe longitudinal data quality
+    broken_ratio = 0
+    inactive_ratio = 0
+    return (filtered_data_df.rdd, broken_ratio, inactive_ratio)
+
 
 
 def get_data_longitudinal(spark, chunk_start, chunk_end):
