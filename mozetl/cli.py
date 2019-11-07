@@ -4,7 +4,6 @@ from mozetl.addon_aggregates import addon_aggregates
 from mozetl.clientsdaily import rollup as clientsdaily
 from mozetl.experimentsdaily import rollup as experimentsdaily
 from mozetl.landfill import sampler as landfill_sampler
-from mozetl.maudau import maudau
 from mozetl.search.aggregates import search_aggregates_click, search_clients_daily_click
 from mozetl.sync import bookmark_validation
 from mozetl.taar import (
@@ -41,7 +40,6 @@ entry_point.add_command(taar_amowhitelist.main, "taar_amowhitelist")
 entry_point.add_command(taar_update_whitelist.main, "taar_update_whitelist")
 entry_point.add_command(taar_ensemble.main, "taar_ensemble")
 entry_point.add_command(addon_aggregates.main, "addon_aggregates")
-entry_point.add_command(maudau.main, "engagement_ratio")
 entry_point.add_command(landfill_sampler.main, "landfill_sampler")
 entry_point.add_command(system_check.main, "system_check")
 
