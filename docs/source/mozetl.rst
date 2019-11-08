@@ -13,7 +13,6 @@ Subpackages
     mozetl.experimentsdaily
     mozetl.hardware_report
     mozetl.landfill
-    mozetl.maudau
     mozetl.search
     mozetl.shield
     mozetl.sync
