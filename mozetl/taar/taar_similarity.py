@@ -56,6 +56,14 @@ def get_samples(spark, date_from):
     BUG 1485152: PR include active_addons to clients_daily table:
     https://github.com/mozilla/telemetry-batch-view/pull/490
     """
+    gs_url = "gs://moz-fx-data-derived-datasets-parquet/clients_daily/v6/submission_date_s3={}".format(
+        date_from
+    )
+    parquetFile = spark.read.parquet(gs_url)
+
+    # Use the parquet files to create a temporary view and then used in SQL statements.
+    parquetFile.createOrReplaceTempView("clients_daily")
+
     df = (
         spark.sql("SELECT * FROM clients_daily")
         .where("client_id IS NOT null")
