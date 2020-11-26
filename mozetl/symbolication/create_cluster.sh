@@ -1,7 +1,6 @@
 #!/bin/bash
 
-# This scripts provisions a dataproc cluster to be used for testing
-# An AWS key with write permissions to the telemetry-public-analysis-2 S3 bucket is required
+# Create cluster for testing
 
 if [[ -z $AWS_ACCESS_KEY_ID ]]; then
     echo '$AWS_ACCESS_KEY_ID not defined'
@@ -12,11 +11,11 @@ if [[ -z $AWS_SECRET_ACCESS_KEY ]]; then
     exit 1
 fi
 
-gcloud dataproc clusters create graphics-test-cluster \
+gcloud dataproc clusters create symbolication \
     --image-version=1.5 \
     --region=us-central1 \
-    --metadata='PIP_PACKAGES=python_moztelemetry git+https://github.com/FirefoxGraphics/telemetry.git#egg=pkg&subdirectory=analyses/bigquery_shim boto3==1.16.20 six==1.15.0' \
+    --metadata='PIP_PACKAGES=boto3==1.16.20 scipy==1.5.4' \
     --num-workers=2 \
-    --worker-machine-type=n2-highmem-4 \
+    --worker-machine-type='n2-standard-4' \
     --properties "core:fs.s3.awsAccessKeyId=$AWS_ACCESS_KEY_ID,core:fs.s3.awsSecretAccessKey=$AWS_SECRET_ACCESS_KEY,spark-env:AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID,spark-env:AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" \
     --initialization-actions='gs://dataproc-initialization-actions/python/pip-install.sh'
