@@ -11,24 +11,22 @@ import random
 import re
 import time
 import urllib
-import uuid
 from bisect import bisect
 from datetime import datetime, timedelta
 from io import BytesIO
 
+import boto3
+from boto3.s3.transfer import S3Transfer
 from pyspark import SparkContext
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import array, collect_list
 from pyspark.sql.types import Row
 
-import boto3
-from boto3.s3.transfer import S3Transfer
-
 UNSYMBOLICATED = "<unsymbolicated>"
 SYMBOL_TRUNCATE_LENGTH = 200
 
 sc = SparkContext.getOrCreate()
-sqlContext = SparkSession.builder.appName("graphics-trends").getOrCreate()
+spark = SparkSession.builder.appName("graphics-trends").getOrCreate()
 
 
 def to_struct_of_arrays(a):
@@ -433,12 +431,14 @@ def get_data(sc, sqlContext, config, date, end_date=None):
     date_str = date.strftime("%Y%m%d")
     end_date_str = end_date.strftime("%Y%m%d")
 
-    pings_df = (spark.read.format("bigquery")
-      .option("table", "moz-fx-data-shared-prod.telemetry_stable.bhr_v4")
-      .load()
-      .where("submission_timestamp>=to_date('%s') and submission_timestamp<=to_date('%s')" % (submission_start_str, submission_end_str))
-      .where("normalized_channel='nightly'")
-      .sample(config['sample_size']))
+    pings_df = (
+        sqlContext.read.format("bigquery")
+            .option("table", "moz-fx-data-shared-prod.telemetry_stable.bhr_v4")
+            .load()
+            .where("submission_timestamp>=to_date('%s') and submission_timestamp<=to_date('%s')" % (submission_start_str, submission_end_str))
+            .where("normalized_channel='nightly'")
+            .sample(config['sample_size'])
+    )
     
     print("%d results total" % pings_df.rdd.count())
     pings = pings_df.rdd.map(lambda p: json.loads(p['additional_properties']))
@@ -1176,7 +1176,7 @@ def etl_job_incremental_finalize(_, __, config=None):
         write_file(final_config['hang_profile_out_filename'], profile, final_config)
 
 
-etl_job_daily(sc, sqlContext, {
+etl_job_daily(sc, spark, {
     'start_date': datetime.today() - timedelta(days=3),
     'end_date': datetime.today() - timedelta(days=3),
     'hang_profile_in_filename': 'hangs_main',
