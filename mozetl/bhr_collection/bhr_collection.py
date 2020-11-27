@@ -26,7 +26,7 @@ UNSYMBOLICATED = "<unsymbolicated>"
 SYMBOL_TRUNCATE_LENGTH = 200
 
 sc = SparkContext.getOrCreate()
-spark = SparkSession.builder.appName("graphics-trends").getOrCreate()
+spark = SparkSession.builder.appName("bhr-collection").getOrCreate()
 
 
 def to_struct_of_arrays(a):
