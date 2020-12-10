@@ -28,8 +28,8 @@ setup(
     install_requires=[
         'arrow==0.10.0',
         'boto==2.49.0',
-        'boto3==1.9.87',
-        'botocore==1.10.84',
+        'boto3==1.16.20',
+        'botocore==1.19.20',
         'click==6.7',
         'click_datetime==0.2',
         'numpy==1.13.3',
