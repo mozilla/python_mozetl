@@ -33,7 +33,7 @@ sc = SparkContext.getOrCreate()
 spark = SparkSession.builder.appName("graphics-trends").getOrCreate()
 
 MaxPartitions = sc.defaultParallelism * 4
-StartTime = datetime.datetime.now()
+start_time = datetime.datetime.now()
 
 # Going forward we only care about sessions from Firefox 53+, since it
 # is the first release to not support Windows XP and Vista, which distorts
@@ -119,8 +119,8 @@ def union_pipelines(a, b):
     return a + b
 
 
-def FetchRawPings(**kwargs):
-    timeWindow = kwargs.pop("timeWindow", DefaultTimeWindow)
+def fetch_raw_pings(**kwargs):
+    time_window = kwargs.pop("timeWindow", DefaultTimeWindow)
     fraction = kwargs.pop("fraction", ReleaseFraction)
     channel = kwargs.pop("channel", None)
 
@@ -128,7 +128,7 @@ def FetchRawPings(**kwargs):
     # completely made up number.
     limit = datetime.timedelta(0, 60 * 60 * 4)
     now = datetime.datetime.now()
-    start = now - datetime.timedelta(timeWindow) - limit
+    start = now - datetime.timedelta(time_window) - limit
     end = now - limit
 
     # NOTE: ReleaseFraction is not used in the shim
@@ -151,7 +151,7 @@ def FetchRawPings(**kwargs):
 
 
 # Transform each ping to make it easier to work with in later stages.
-def Validate(p):
+def validate(p):
     name = p.get("environment/system/os/name") or "w"
     version = p.get("environment/system/os/version") or "0"
     if name == "Linux":
@@ -183,12 +183,12 @@ def Validate(p):
     # Verify that we have at least one adapter.
     try:
         adapter = p["environment/system/gfx/adapters"][0]
-    except:
+    except (KeyError, IndexError):
         return p
     if adapter is None or not hasattr(adapter, "__getitem__"):
         return p
 
-    def T(obj, key):
+    def t(obj, key):
         return obj.get(key, None) or "Unknown"
 
     # We store the device ID as a vendor/device string, because the device ID
@@ -196,14 +196,14 @@ def Validate(p):
     #
     # We also merge 'Intel Open Source Technology Center' with the device ID
     # that should be reported, 0x8086, for simplicity.
-    vendorID = T(adapter, "vendorID")
-    if vendorID == "Intel Open Source Technology Center":
+    vendor_id = t(adapter, "vendorID")
+    if vendor_id == "Intel Open Source Technology Center":
         p["vendorID"] = "0x8086"
     else:
-        p["vendorID"] = vendorID
-    p["deviceID"] = "{0}/{1}".format(p["vendorID"], T(adapter, "deviceID"))
-    p["driverVersion"] = "{0}/{1}".format(p["vendorID"], T(adapter, "driverVersion"))
-    p["deviceAndDriver"] = "{0}/{1}".format(p["deviceID"], T(adapter, "driverVersion"))
+        p["vendorID"] = vendor_id
+    p["deviceID"] = "{0}/{1}".format(p["vendorID"], t(adapter, "deviceID"))
+    p["driverVersion"] = "{0}/{1}".format(p["vendorID"], t(adapter, "driverVersion"))
+    p["deviceAndDriver"] = "{0}/{1}".format(p["deviceID"], t(adapter, "driverVersion"))
     p["driverVendor"] = adapter.get("driverVendor", None)
 
     p["valid"] = True
@@ -231,18 +231,18 @@ def reduce_pings(pings):
     )
 
 
-def FormatPings(pings):
+def format_pings(pings):
     pings = pings.map(dashboard.convert_bigquery_results)
     pings = reduce_pings(pings)
     pings = pings.map(snake_case.convert_snake_case_dict)
-    pings = pings.map(Validate)
-    filtered_pings = pings.filter(lambda p: p.get("valid", False) == True)
+    pings = pings.map(validate)
+    filtered_pings = pings.filter(lambda p: p.get("valid", False))
     return filtered_pings.cache()
 
 
-def FetchAndFormat(**kwargs):
-    raw_pings, info = FetchRawPings(**kwargs)
-    return FormatPings(raw_pings), info
+def fetch_and_format(**kwargs):
+    raw_pings, info = fetch_raw_pings(**kwargs)
+    return format_pings(raw_pings), info
 
 
 ##################################################################
@@ -254,16 +254,16 @@ def FetchAndFormat(**kwargs):
 def combiner(a, b):
     result = a
     for key in b:
-        countA = a.get(key, 0)
-        countB = b[key]
-        result[key] = countA + countB
+        count_a = a.get(key, 0)
+        count_b = b[key]
+        result[key] = count_a + count_b
     return result
 
 
 # Helper for reduceByKey => count.
-def map_x_to_count(data, sourceKey):
+def map_x_to_count(data, source_key):
     def extract(p):
-        return (p[sourceKey],)
+        return (p[source_key],)
 
     return data.map(extract).countByKey()
 
@@ -295,7 +295,7 @@ def coalesce_to_n_items(agg, max_items):
 #############################
 
 
-def ApplyPingInfo(obj, **kwargs):
+def apply_ping_info(obj, **kwargs):
     if "pings" not in kwargs:
         return
 
@@ -315,7 +315,7 @@ def ApplyPingInfo(obj, **kwargs):
     }
 
 
-def Export(filename, obj, **kwargs):
+def export(filename, obj, **kwargs):
     full_filename = os.path.join(OUTPUT_PREFIX, f"{filename}.json")
     print("Writing to {0}".format(full_filename))
     # serialize snake case dicts via their underlying dict
@@ -326,17 +326,17 @@ def Export(filename, obj, **kwargs):
     )
 
 
-def TimedExport(filename, callback, **kwargs):
+def timed_export(filename, callback, **kwargs):
     start = datetime.datetime.now()
 
     obj = callback()
-    ApplyPingInfo(obj, **kwargs)
+    apply_ping_info(obj, **kwargs)
 
     end = datetime.datetime.now()
     elapsed = end - start
     obj["phaseTime"] = elapsed.total_seconds()
 
-    Export(filename, obj, **kwargs)
+    export(filename, obj, **kwargs)
     export_time = datetime.datetime.now() - end
 
     print("Computed {0} in {1} seconds.".format(filename, elapsed.total_seconds()))
@@ -374,83 +374,82 @@ def quiet_logs(sc):
 quiet_logs(sc)
 
 # Get a general ping sample across all Firefox channels.
-with Prof("General pings") as px:
-    GeneralPings, GeneralPingInfo = FetchAndFormat()
-    GeneralPings = GeneralPings.cache()
+with Prof("General pings"):
+    general_pings, general_ping_info = fetch_and_format()
+    general_pings = general_pings.cache()
 
     # Windows gets some preferential breakdown treatment.
-    WindowsPings = GeneralPings.filter(lambda p: p["OSName"] == "Windows")
-    WindowsPings = WindowsPings.cache()
+    windows_pings = general_pings.filter(lambda p: p["OSName"] == "Windows")
+    windows_pings = windows_pings.cache()
 
-    MacPings = GeneralPings.filter(lambda p: p["OSName"] == "Darwin")
-    MacPings = repartition(MacPings)
+    mac_pings = general_pings.filter(lambda p: p["OSName"] == "Darwin")
+    mac_pings = repartition(mac_pings)
 
-    LinuxPings = GeneralPings.filter(lambda p: p["OSName"] == "Linux")
-    LinuxPings = repartition(LinuxPings)
+    linux_pings = general_pings.filter(lambda p: p["OSName"] == "Linux")
+    linux_pings = repartition(linux_pings)
 
 # # ANALYSES ARE BELOW
 
 # ## General statistics
 
 # Results by operating system.
-if "__share" not in GeneralPingInfo:
-    GeneralPingInfo["__share"] = map_x_to_count(GeneralPings, "FxVersion")
+if "__share" not in general_ping_info:
+    general_ping_info["__share"] = map_x_to_count(general_pings, "FxVersion")
 
 
-def GetGeneralStatisticsForSubset(subset, windows_subset):
-    OSShare = map_x_to_count(subset, "OSName")
+def get_general_statistics_for_subset(subset, windows_subset):
+    os_share = map_x_to_count(subset, "OSName")
 
     # Results by Windows version.
-    WindowsShare = map_x_to_count(windows_subset, "OSVersion")
+    windows_share = map_x_to_count(windows_subset, "OSVersion")
 
     # Top-level stats.
-    VendorShare = map_x_to_count(subset, "vendorID")
+    vendor_share = map_x_to_count(subset, "vendorID")
 
-    return {"os": OSShare, "windows": WindowsShare, "vendors": VendorShare}
+    return {"os": os_share, "windows": windows_share, "vendors": vendor_share}
 
 
-def GetGeneralStatistics():
+def get_general_statistics():
     obj = {}
-    obj["devices"] = map_x_to_count(GeneralPings, "deviceID")
-    obj["drivers"] = map_x_to_count(GeneralPings, "driverVersion")
+    obj["devices"] = map_x_to_count(general_pings, "deviceID")
+    obj["drivers"] = map_x_to_count(general_pings, "driverVersion")
 
-    byFx = {}
-    with Prof("general stats for all") as px:
-        byFx["all"] = GetGeneralStatisticsForSubset(GeneralPings, WindowsPings)
+    by_fx = {}
+    with Prof("general stats for all"):
+        by_fx["all"] = get_general_statistics_for_subset(general_pings, windows_pings)
 
-    for key in GeneralPingInfo["__share"]:
-        subset = GeneralPings.filter(lambda p: p["FxVersion"] == key)
+    for key in general_ping_info["__share"]:
+        subset = general_pings.filter(lambda p: p["FxVersion"] == key)
         windows = subset.filter(lambda p: p["OSName"] == "Windows")
         subset = repartition(subset)
         windows = repartition(windows)
-        with Prof("general stats for " + key) as px:
-            byFx[key] = GetGeneralStatisticsForSubset(subset, windows)
+        with Prof("general stats for " + key):
+            by_fx[key] = get_general_statistics_for_subset(subset, windows)
 
-    obj["byFx"] = byFx
+    obj["byFx"] = by_fx
     return obj
 
 
-TimedExport(
+timed_export(
     filename="general-statistics",
-    callback=GetGeneralStatistics,
-    pings=(GeneralPings, GeneralPingInfo),
+    callback=get_general_statistics,
+    pings=(general_pings, general_ping_info),
 )
 
 
 # ## Device/driver search database
 
 
-def GetDriverStatistics():
-    obj = {}
-    obj["deviceAndDriver"] = map_x_to_count(GeneralPings, "deviceAndDriver")
+def get_driver_statistics():
+    obj = {"deviceAndDriver": map_x_to_count(general_pings, "deviceAndDriver")}
     return obj
 
 
-TimedExport(
+timed_export(
     filename="device-statistics",
-    callback=GetDriverStatistics,
+    callback=get_driver_statistics,
     save_history=False,  # No demand yet, and too much data.
-    pings=(GeneralPings, GeneralPingInfo),
+    pings=(general_pings, general_ping_info),
 )
 
 
@@ -459,31 +458,31 @@ TimedExport(
 #############################
 # Perform the TDR analysis. #
 #############################
-def GetTDRStatistics():
-    NumTDRReasons = 8
+def get_tdr_statistics():
+    num_tdr_reasons = 8
 
     def ping_has_tdr_for(p, reason):
         return p[DeviceResetReasonKey][reason] > 0
 
     # Specialized version of map_x_to_y, for TDRs. We cast to int because for
     # some reason the values Spark returns do not serialize with JSON.
-    def map_reason_to_vendor(p, reason, destKey):
-        return (int(reason), {p[destKey]: int(p[DeviceResetReasonKey][reason])})
+    def map_reason_to_vendor(p, reason, dest_key):
+        return (int(reason), {p[dest_key]: int(p[DeviceResetReasonKey][reason])})
 
-    def map_vendor_to_reason(p, reason, destKey):
-        return (p[destKey], {int(reason): int(p[DeviceResetReasonKey][reason])})
+    def map_vendor_to_reason(p, reason, dest_key):
+        return (p[dest_key], {int(reason): int(p[DeviceResetReasonKey][reason])})
 
     # Filter out pings that do not have any TDR data. We expect this to be a huge reduction
     # in the sample set, and the resulting partition count gets way off. We repartition
     # immediately for performance.
-    TDRSubset = WindowsPings.filter(
+    tdr_subset = windows_pings.filter(
         lambda p: p.get(DeviceResetReasonKey, None) is not None
     )
-    TDRSubset = TDRSubset.repartition(MaxPartitions)
-    TDRSubset = TDRSubset.cache()
+    tdr_subset = tdr_subset.repartition(MaxPartitions)
+    tdr_subset = tdr_subset.cache()
 
     # Aggregate the device reset data.
-    TDRResults = TDRSubset.map(lambda p: p[DeviceResetReasonKey]).reduce(
+    tdr_results = tdr_subset.map(lambda p: p[DeviceResetReasonKey]).reduce(
         lambda x, y: x + y
     )
 
@@ -491,8 +490,8 @@ def GetTDRStatistics():
     # we combine these into a single series.
     reason_to_vendor_tuples = None
     vendor_to_reason_tuples = None
-    for reason in range(1, NumTDRReasons):
-        subset = TDRSubset.filter(lambda p: ping_has_tdr_for(p, reason))
+    for reason in range(1, num_tdr_reasons):
+        subset = tdr_subset.filter(lambda p: ping_has_tdr_for(p, reason))
         subset = subset.cache()
 
         tuples = subset.map(lambda p: map_reason_to_vendor(p, reason, "vendorID"))
@@ -501,22 +500,22 @@ def GetTDRStatistics():
         tuples = subset.map(lambda p: map_vendor_to_reason(p, reason, "vendorID"))
         vendor_to_reason_tuples = union_pipelines(vendor_to_reason_tuples, tuples)
 
-    TDRReasonToVendor = reason_to_vendor_tuples.reduceByKey(combiner, MaxPartitions)
-    TDRVendorToReason = vendor_to_reason_tuples.reduceByKey(combiner, MaxPartitions)
+    tdr_reason_to_vendor = reason_to_vendor_tuples.reduceByKey(combiner, MaxPartitions)
+    tdr_vendor_to_reason = vendor_to_reason_tuples.reduceByKey(combiner, MaxPartitions)
 
     return {
-        "tdrPings": TDRSubset.count(),
-        "results": [int(value) for value in TDRResults],
-        "reasonToVendor": TDRReasonToVendor.collect(),
-        "vendorToReason": TDRVendorToReason.collect(),
+        "tdrPings": tdr_subset.count(),
+        "results": [int(value) for value in tdr_results],
+        "reasonToVendor": tdr_reason_to_vendor.collect(),
+        "vendorToReason": tdr_vendor_to_reason.collect(),
     }
 
 
 # Write TDR statistics.
-TimedExport(
+timed_export(
     filename="tdr-statistics",
-    callback=GetTDRStatistics,
-    pings=(WindowsPings, GeneralPingInfo),
+    callback=get_tdr_statistics,
+    pings=(windows_pings, general_ping_info),
 )
 
 # ## System Statistics
@@ -528,7 +527,7 @@ CpuKey = "environment/system/cpu"
 MemoryKey = "environment/system/memoryMB"
 
 
-def GetBucketedMemory(pings):
+def get_bucketed_memory(pings):
     def get_bucket(p):
         x = int(p / 1000)
         if x < 1:
@@ -550,7 +549,7 @@ def GetBucketedMemory(pings):
     return memory_rdd.countByKey()
 
 
-def GetCpuFeatures(pings):
+def get_cpu_features(pings):
     cpuid_rdd = pings.map(lambda p: p.get(CpuKey, None))
     cpuid_rdd = cpuid_rdd.filter(lambda p: p is not None)
     cpuid_rdd = cpuid_rdd.map(lambda p: p.get("extensions", None))
@@ -562,30 +561,32 @@ def GetCpuFeatures(pings):
     cpuid_rdd = repartition(cpuid_rdd)
 
     # Count before we blow up the list.
-    with Prof("cpu count for x86") as px:
+    with Prof("cpu count for x86"):
         total = cpuid_rdd.count()
 
     cpuid_rdd = cpuid_rdd.flatMap(lambda p: [(ex, 1) for ex in p])
-    with Prof("cpu features for x86") as px:
+    with Prof("cpu features for x86"):
         feature_map = cpuid_rdd.countByKey()
 
     return {"total": total, "features": feature_map}
 
 
-def GetSystemStatistics():
+def get_system_statistics():
     def get_logical_cores(p):
         cpu = p.get(CpuKey, None)
         if cpu is None:
             return "unknown"
         return cpu.get("count", "unknown")
 
-    with Prof("logical cores") as px:
-        logical_cores = GeneralPings.map(lambda p: (get_logical_cores(p),)).countByKey()
+    with Prof("logical cores"):
+        logical_cores = general_pings.map(
+            lambda p: (get_logical_cores(p),)
+        ).countByKey()
 
-    cpu_features = GetCpuFeatures(GeneralPings)
+    cpu_features = get_cpu_features(general_pings)
 
-    with Prof("memory buckets") as px:
-        memory = GetBucketedMemory(GeneralPings)
+    with Prof("memory buckets"):
+        memory = get_bucketed_memory(general_pings)
 
     def get_os_bits(p):
         arch = p.get(ArchKey, "unknown")
@@ -598,8 +599,8 @@ def GetSystemStatistics():
             return "32"
         return "unknown"
 
-    with Prof("OS bit count") as px:
-        os_bits = WindowsPings.map(lambda p: (get_os_bits(p),)).countByKey()
+    with Prof("OS bit count"):
+        os_bits = windows_pings.map(lambda p: (get_os_bits(p),)).countByKey()
 
     return {
         "logical_cores": logical_cores,
@@ -609,10 +610,10 @@ def GetSystemStatistics():
     }
 
 
-TimedExport(
+timed_export(
     filename="system-statistics",
-    callback=GetSystemStatistics,
-    pings=(GeneralPings, GeneralPingInfo),
+    callback=get_system_statistics,
+    pings=(general_pings, general_ping_info),
 )
 
 # ## Sanity Test Statistics
@@ -652,19 +653,19 @@ def get_sanity_test_result(p):
 #########################
 # Sanity test analysis. #
 #########################
-def GetSanityTestsForSlice(sanity_test_pings):
+def get_sanity_tests_for_slice(sanity_test_pings):
     data = sanity_test_pings.filter(lambda p: get_sanity_test_result(p) is not None)
 
     # Aggregate the sanity test data.
-    with Prof("initial map") as px:
-        SanityTestResults = data.map(
+    with Prof("initial map"):
+        sanity_test_results = data.map(
             lambda p: (get_sanity_test_result(p),)
         ).countByKey()
 
-    with Prof("share resolve") as px:
+    with Prof("share resolve"):
         os_share = map_x_to_count(data, "OSVersion")
 
-    with Prof("ping_count") as px:
+    with Prof("ping_count"):
         sanity_test_count = data.count()
         ping_count = sanity_test_pings.count()
 
@@ -698,56 +699,56 @@ def GetSanityTestsForSlice(sanity_test_pings):
     sanity_test_by_device = repartition(sanity_test_by_device)
     sanity_test_by_driver = repartition(sanity_test_by_driver)
 
-    with Prof("vendor resolve") as px:
-        SanityTestByVendor = sanity_test_by_vendor.reduceByKey(combiner)
-    with Prof("os resolve") as px:
-        SanityTestByOS = sanity_test_by_os.reduceByKey(combiner)
-    with Prof("device resolve") as px:
-        SanityTestByDevice = sanity_test_by_device.reduceByKey(combiner)
-    with Prof("driver resolve") as px:
-        SanityTestByDriver = sanity_test_by_driver.reduceByKey(combiner)
+    with Prof("vendor resolve"):
+        sanity_test_by_vendor = sanity_test_by_vendor.reduceByKey(combiner)
+    with Prof("os resolve"):
+        sanity_test_by_os = sanity_test_by_os.reduceByKey(combiner)
+    with Prof("device resolve"):
+        sanity_test_by_device = sanity_test_by_device.reduceByKey(combiner)
+    with Prof("driver resolve"):
+        sanity_test_by_driver = sanity_test_by_driver.reduceByKey(combiner)
 
     print(
         "Partitions: {0},{1},{2},{3}".format(
-            SanityTestByVendor.getNumPartitions(),
-            SanityTestByOS.getNumPartitions(),
-            SanityTestByDevice.getNumPartitions(),
-            SanityTestByDriver.getNumPartitions(),
+            sanity_test_by_vendor.getNumPartitions(),
+            sanity_test_by_os.getNumPartitions(),
+            sanity_test_by_device.getNumPartitions(),
+            sanity_test_by_driver.getNumPartitions(),
         )
     )
 
-    with Prof("vendor collect") as px:
-        byVendor = SanityTestByVendor.collect()
-    with Prof("os collect") as px:
-        byOS = SanityTestByOS.collect()
-    with Prof("device collect") as px:
-        byDevice = SanityTestByDevice.collect()
-    with Prof("driver collect") as px:
-        byDriver = SanityTestByDriver.collect()
+    with Prof("vendor collect"):
+        by_vendor = sanity_test_by_vendor.collect()
+    with Prof("os collect"):
+        by_os = sanity_test_by_os.collect()
+    with Prof("device collect"):
+        by_device = sanity_test_by_device.collect()
+    with Prof("driver collect"):
+        by_driver = sanity_test_by_driver.collect()
 
     return {
         "sanityTestPings": sanity_test_count,
         "totalPings": ping_count,
-        "results": SanityTestResults,
-        "byVendor": byVendor,
-        "byOS": byOS,
-        "byDevice": coalesce_to_n_items(byDevice, 10),
-        "byDriver": coalesce_to_n_items(byDriver, 10),
+        "results": sanity_test_results,
+        "byVendor": by_vendor,
+        "byOS": by_os,
+        "byDevice": coalesce_to_n_items(by_device, 10),
+        "byDriver": coalesce_to_n_items(by_driver, 10),
         "windows": os_share,
     }
 
 
-def GetSanityTests():
+def get_sanity_tests():
     obj = {}
-    obj["windows"] = GetSanityTestsForSlice(WindowsPings)
+    obj["windows"] = get_sanity_tests_for_slice(windows_pings)
     return obj
 
 
 # Write Sanity Test statistics.
-TimedExport(
+timed_export(
     filename="sanity-test-statistics",
-    callback=GetSanityTests,
-    pings=(WindowsPings, GeneralPingInfo),
+    callback=get_sanity_tests,
+    pings=(windows_pings, general_ping_info),
 )
 
 # ## Startup Crash Guard Statistics
@@ -758,14 +759,14 @@ STARTUP_CRASHED = 2
 STARTUP_ACCEL_DISABLED = 3
 
 
-def GetStartupTests():
-    startup_test_pings = GeneralPings.filter(
+def get_startup_tests():
+    startup_test_pings = general_pings.filter(
         lambda p: p.get(STARTUP_TEST_KEY, None) is not None
     )
     startup_test_pings = startup_test_pings.repartition(MaxPartitions)
     startup_test_pings = startup_test_pings.cache()
 
-    StartupTestResults = startup_test_pings.map(lambda p: p[STARTUP_TEST_KEY]).reduce(
+    startup_test_results = startup_test_pings.map(lambda p: p[STARTUP_TEST_KEY]).reduce(
         lambda x, y: x + y
     )
 
@@ -773,16 +774,16 @@ def GetStartupTests():
 
     return {
         "startupTestPings": startup_test_pings.count(),
-        "results": [int(i) for i in StartupTestResults],
+        "results": [int(i) for i in startup_test_results],
         "windows": os_share,
     }
 
 
 # Write startup test results.
-TimedExport(
+timed_export(
     filename="startup-test-statistics",
-    callback=GetStartupTests,
-    pings=(GeneralPings, GeneralPingInfo),
+    callback=get_startup_tests,
+    pings=(general_pings, general_ping_info),
 )
 
 
@@ -793,7 +794,7 @@ def get_monitor_count(p):
     monitors = p.get(MonitorsKey, None)
     try:
         return len(monitors)
-    except:
+    except TypeError:
         return 0
 
 
@@ -805,11 +806,11 @@ def get_monitor_res(p, i):
     return "{0}x{1}".format(width, height)
 
 
-def GetMonitorStatistics():
+def get_monitor_statistics():
     def get_monitor_rdds_for_index(data, i):
         def get_refresh_rate(p):
-            refreshRate = p[MonitorsKey][i].get("refreshRate", 0)
-            return refreshRate if refreshRate > 1 else "Unknown"
+            refresh_rate = p[MonitorsKey][i].get("refreshRate", 0)
+            return refresh_rate if refresh_rate > 1 else "Unknown"
 
         def get_resolution(p):
             return get_monitor_res(p, i)
@@ -820,42 +821,42 @@ def GetMonitorStatistics():
         resolutions = monitors_at_index.map(lambda p: (get_resolution(p),))
         return refresh_rates, resolutions
 
-    MonitorCounts = WindowsPings.map(lambda p: (get_monitor_count(p),)).countByKey()
-    MonitorCounts.pop(0, None)
+    monitor_counts = windows_pings.map(lambda p: (get_monitor_count(p),)).countByKey()
+    monitor_counts.pop(0, None)
 
     refresh_rates = None
     resolutions = None
-    for monitor_count in MonitorCounts:
+    for monitor_count in monitor_counts:
         rate_subset, res_subset = get_monitor_rdds_for_index(
-            WindowsPings, monitor_count - 1
+            windows_pings, monitor_count - 1
         )
         refresh_rates = union_pipelines(refresh_rates, rate_subset)
         resolutions = union_pipelines(resolutions, res_subset)
 
-    MonitorRefreshRates = refresh_rates.countByKey()
-    MonitorResolutions = resolutions.countByKey()
+    monitor_refresh_rates = refresh_rates.countByKey()
+    monitor_resolutions = resolutions.countByKey()
 
     return {
-        "counts": MonitorCounts,
-        "refreshRates": MonitorRefreshRates,
-        "resolutions": MonitorResolutions,
+        "counts": monitor_counts,
+        "refreshRates": monitor_refresh_rates,
+        "resolutions": monitor_resolutions,
     }
 
 
-TimedExport(
+timed_export(
     filename="monitor-statistics",
-    callback=GetMonitorStatistics,
-    pings=(WindowsPings, GeneralPingInfo),
+    callback=get_monitor_statistics,
+    pings=(windows_pings, general_ping_info),
 )
 
 # ## Mac OS X Statistics
 
-MacPings = GeneralPings.filter(lambda p: p["OSName"] == "Darwin")
-MacPings = repartition(MacPings)
+mac_pings = general_pings.filter(lambda p: p["OSName"] == "Darwin")
+mac_pings = repartition(mac_pings)
 
 
-def GetMacStatistics():
-    version_map = map_x_to_count(MacPings, "OSVersion")
+def get_mac_statistics():
+    version_map = map_x_to_count(mac_pings, "OSVersion")
 
     def get_scale(p):
         monitors = p.get(MonitorsKey, None)
@@ -863,10 +864,10 @@ def GetMacStatistics():
             return "unknown"
         try:
             return monitors[0]["scale"]
-        except:
+        except (KeyError, IndexError):
             "unknown"
 
-    scale_map = MacPings.map(lambda p: (get_scale(p),)).countByKey()
+    scale_map = mac_pings.map(lambda p: (get_scale(p),)).countByKey()
 
     def get_arch(p):
         arch = p.get(ArchKey, "unknown")
@@ -876,15 +877,15 @@ def GetMacStatistics():
             return "32"
         return "unknown"
 
-    arch_map = MacPings.map(lambda p: (get_arch(p),)).countByKey()
+    arch_map = mac_pings.map(lambda p: (get_arch(p),)).countByKey()
 
     return {"versions": version_map, "retina": scale_map, "arch": arch_map}
 
 
-TimedExport(
+timed_export(
     filename="mac-statistics",
-    callback=GetMacStatistics,
-    pings=(MacPings, GeneralPingInfo),
+    callback=get_mac_statistics,
+    pings=(mac_pings, general_ping_info),
 )
 
 
@@ -894,10 +895,10 @@ TimedExport(
 def get_compositor(p):
     compositor = p[FeaturesKey].get("compositor", "none")
     if compositor == "none":
-        userPrefs = p.get(UserPrefsKey, None)
-        if userPrefs is not None:
-            omtc = userPrefs.get("layers.offmainthreadcomposition.enabled", True)
-            if omtc != True:
+        user_prefs = p.get(UserPrefsKey, None)
+        if user_prefs is not None:
+            omtc = user_prefs.get("layers.offmainthreadcomposition.enabled", True)
+            if not omtc:
                 return "disabled"
     elif compositor == "d3d11":
         if advanced_layers_status(p) == "available":
@@ -912,7 +913,7 @@ def get_d3d11_status(p):
     status = d3d11.get("status", "unknown")
     if status != "available":
         return status
-    if d3d11.get("warp", False) == True:
+    if d3d11.get("warp", False):
         return "warp"
     return d3d11.get("version", "unknown")
 
@@ -920,7 +921,7 @@ def get_d3d11_status(p):
 def get_warp_status(p):
     if "blacklisted" not in p[FeaturesKey]["d3d11"]:
         return "unknown"
-    if p[FeaturesKey]["d3d11"]["blacklisted"] == True:
+    if p[FeaturesKey]["d3d11"]["blacklisted"]:
         return "blacklist"
     return "device failure"
 
@@ -943,10 +944,10 @@ def has_working_d3d11(p):
 
 
 def gpu_process_status(p):
-    gpuProc = p[FeaturesKey].get("gpuProcess", None)
-    if gpuProc is None or not gpuProc.get("status", None):
+    gpu_proc = p[FeaturesKey].get("gpuProcess", None)
+    if gpu_proc is None or not gpu_proc.get("status", None):
         return "none"
-    return gpuProc.get("status")
+    return gpu_proc.get("status")
 
 
 def get_texture_sharing_status(p):
@@ -967,51 +968,51 @@ def windows_feature_filter(p):
     return p["OSName"] == "Windows" and p.get(FeaturesKey) is not None
 
 
-WindowsFeatures = WindowsPings.filter(lambda p: p.get(FeaturesKey) is not None)
-WindowsFeatures = WindowsFeatures.cache()
+windows_features = windows_pings.filter(lambda p: p.get(FeaturesKey) is not None)
+windows_features = windows_features.cache()
 
 # We skip certain windows versions in detail lists since this phase is
 # very expensive to compute.
-ImportantWindowsVersions = ("6.1.0", "6.1.1", "6.2.0", "6.3.0", "10.0.0")
+important_windows_versions = ("6.1.0", "6.1.1", "6.2.0", "6.3.0", "10.0.0")
 
 
-def GetWindowsFeatures():
-    WindowsCompositorMap = WindowsFeatures.map(
+def get_windows_features():
+    windows_compositor_map = windows_features.map(
         lambda p: (get_compositor(p),)
     ).countByKey()
-    D3D11StatusMap = WindowsFeatures.map(lambda p: (get_d3d11_status(p),)).countByKey()
-    D2DStatusMap = WindowsFeatures.map(get_d2d_status).countByKey()
+    d3d11_status_map = windows_features.map(
+        lambda p: (get_d3d11_status(p),)
+    ).countByKey()
+    d2d_status_map = windows_features.map(get_d2d_status).countByKey()
 
     def get_content_backends(rdd):
         rdd = rdd.filter(lambda p: p[GfxKey].get("ContentBackend") is not None)
         rdd = rdd.map(lambda p: (p[GfxKey]["ContentBackend"],))
         return rdd.countByKey()
 
-    content_backends = get_content_backends(WindowsFeatures)
+    content_backends = get_content_backends(windows_features)
 
-    warp_pings = WindowsFeatures.filter(lambda p: get_d3d11_status(p) == "warp")
+    warp_pings = windows_features.filter(lambda p: get_d3d11_status(p) == "warp")
     warp_pings = repartition(warp_pings)
-    WarpStatusMap = warp_pings.map(lambda p: (get_warp_status(p),)).countByKey()
+    warp_status_map = warp_pings.map(lambda p: (get_warp_status(p),)).countByKey()
 
-    TextureSharingMap = (
-        WindowsFeatures.filter(has_working_d3d11)
+    texture_sharing_map = (
+        windows_features.filter(has_working_d3d11)
         .map(get_texture_sharing_status)
         .countByKey()
     )
 
-    blacklisted_pings = WindowsFeatures.filter(
+    blacklisted_pings = windows_features.filter(
         lambda p: get_d3d11_status(p) == "blacklisted"
     )
     blacklisted_pings = repartition(blacklisted_pings)
     blacklisted_devices = map_x_to_count(blacklisted_pings, "deviceID")
     blacklisted_drivers = map_x_to_count(blacklisted_pings, "driverVersion")
     blacklisted_os = map_x_to_count(blacklisted_pings, "OSVersion")
-    blacklisted_pings = None
 
-    blocked_pings = WindowsFeatures.filter(lambda p: get_d3d11_status(p) == "blocked")
+    blocked_pings = windows_features.filter(lambda p: get_d3d11_status(p) == "blocked")
     blocked_pings = repartition(blocked_pings)
     blocked_vendors = map_x_to_count(blocked_pings, "vendorID")
-    blocked_pings = None
 
     # Plugin models.
     def aggregate_plugin_models(rdd):
@@ -1020,7 +1021,7 @@ def GetWindowsFeatures():
         result = rdd.reduce(lambda x, y: x + y)
         return [int(count) for count in result]
 
-    plugin_models = aggregate_plugin_models(WindowsFeatures)
+    plugin_models = aggregate_plugin_models(windows_features)
 
     # Media decoder backends.
     def get_media_decoders(rdd):
@@ -1028,7 +1029,7 @@ def GetWindowsFeatures():
         decoders = rdd.map(lambda p: p.get(MediaDecoderKey)).reduce(lambda x, y: x + y)
         return [int(i) for i in decoders]
 
-    media_decoders = get_media_decoders(WindowsFeatures)
+    media_decoders = get_media_decoders(windows_features)
 
     def gpu_process_map(rdd):
         return rdd.map(lambda p: (gpu_process_status(p),)).countByKey()
@@ -1037,12 +1038,12 @@ def GetWindowsFeatures():
         return rdd.map(lambda p: (advanced_layers_status(p),)).countByKey()
 
     # Now, build the same data except per version.
-    feature_pings_by_os = map_x_to_count(WindowsFeatures, "OSVersion")
-    WindowsFeaturesByVersion = {}
+    feature_pings_by_os = map_x_to_count(windows_features, "OSVersion")
+    windows_features_by_version = {}
     for os_version in feature_pings_by_os:
-        if os_version not in ImportantWindowsVersions:
+        if os_version not in important_windows_versions:
             continue
-        subset = WindowsFeatures.filter(lambda p: p["OSVersion"] == os_version)
+        subset = windows_features.filter(lambda p: p["OSVersion"] == os_version)
         subset = repartition(subset)
 
         results = {
@@ -1065,28 +1066,28 @@ def GetWindowsFeatures():
                 results["warp"] = warp_pings.map(
                     lambda p: (get_warp_status(p),)
                 ).countByKey()
-        except:
+        except Exception:
             pass
         finally:
             # Free resources.
             warp_pings = None
             subset = None
-        WindowsFeaturesByVersion[os_version] = results
+        windows_features_by_version[os_version] = results
 
     return {
         "all": {
-            "compositors": WindowsCompositorMap,
+            "compositors": windows_compositor_map,
             "content_backends": content_backends,
-            "d3d11": D3D11StatusMap,
-            "d2d": D2DStatusMap,
-            "textureSharing": TextureSharingMap,
-            "warp": WarpStatusMap,
+            "d3d11": d3d11_status_map,
+            "d2d": d2d_status_map,
+            "textureSharing": texture_sharing_map,
+            "warp": warp_status_map,
             "plugin_models": plugin_models,
             "media_decoders": media_decoders,
-            "gpu_process": gpu_process_map(WindowsFeatures),
-            "advanced_layers": advanced_layers_map(WindowsFeatures),
+            "gpu_process": gpu_process_map(windows_features),
+            "advanced_layers": advanced_layers_map(windows_features),
         },
-        "byVersion": WindowsFeaturesByVersion,
+        "byVersion": windows_features_by_version,
         "d3d11_blacklist": {
             "devices": blacklisted_devices,
             "drivers": blacklisted_drivers,
@@ -1096,48 +1097,49 @@ def GetWindowsFeatures():
     }
 
 
-TimedExport(
+timed_export(
     filename="windows-features",
-    callback=GetWindowsFeatures,
-    pings=(WindowsFeatures, GeneralPingInfo),
+    callback=get_windows_features,
+    pings=(windows_features, general_ping_info),
 )
 
-WindowsFeatures = None
+windows_features = None
 
 # ## Linux
 
-LinuxPings = GeneralPings.filter(lambda p: p["OSName"] == "Linux")
-LinuxPings = repartition(LinuxPings)
+linux_pings = general_pings.filter(lambda p: p["OSName"] == "Linux")
+linux_pings = repartition(linux_pings)
 
 
-def GetLinuxStatistics():
-    pings = LinuxPings.filter(lambda p: p["driverVendor"] is not None)
+def get_linux_statistics():
+    pings = linux_pings.filter(lambda p: p["driverVendor"] is not None)
     driver_vendor_map = map_x_to_count(pings, "driverVendor")
 
-    pings = LinuxPings.filter(lambda p: p.get(FeaturesKey) is not None)
+    pings = linux_pings.filter(lambda p: p.get(FeaturesKey) is not None)
     compositor_map = pings.map(lambda p: (get_compositor(p),)).countByKey()
 
     return {"driverVendors": driver_vendor_map, "compositors": compositor_map}
 
 
-TimedExport(
+timed_export(
     filename="linux-statistics",
-    callback=GetLinuxStatistics,
-    pings=(LinuxPings, GeneralPingInfo),
+    callback=get_linux_statistics,
+    pings=(linux_pings, general_ping_info),
 )
 
 
 # ## WebGL Statistics
-# _Note, this depends on running the "Helpers for Compositor/Acceleration fields" a few blocks above._
+# Note, this depends on running the
+# "Helpers for Compositor/Acceleration fields" a few blocks above.
 
 
-def GetGLStatistics():
-    webgl_status_rdd = GeneralPings.filter(
+def get_gl_statistics():
+    webgl_status_rdd = general_pings.filter(
         lambda p: p.get(WebGLFailureKey, None) is not None
     )
     webgl_status_rdd = webgl_status_rdd.map(lambda p: p[WebGLFailureKey])
     webgl_status_map = webgl_status_rdd.reduce(combiner)
-    webgl_accl_status_rdd = GeneralPings.filter(
+    webgl_accl_status_rdd = general_pings.filter(
         lambda p: p.get(WebGLAcclFailureKey, None) is not None
     )
     webgl_accl_status_rdd = webgl_accl_status_rdd.map(lambda p: p[WebGLAcclFailureKey])
@@ -1150,8 +1152,8 @@ def GetGLStatistics():
     }
 
 
-def WebGLStatisticsForKey(key):
-    histogram_pings = GeneralPings.filter(lambda p: p.get(key) is not None)
+def web_gl_statistics_for_key(key):
+    histogram_pings = general_pings.filter(lambda p: p.get(key) is not None)
     histogram_pings = repartition(histogram_pings)
 
     # Note - we're counting sessions where WebGL succeeded or failed,
@@ -1194,28 +1196,28 @@ def WebGLStatisticsForKey(key):
     }
 
 
-def GetWebGLStatistics():
+def get_web_gl_statistics():
     return {
-        "webgl1": WebGLStatisticsForKey(WebGLSuccessKey),
-        "webgl2": WebGLStatisticsForKey(WebGL2SuccessKey),
-        "general": GetGLStatistics(),
+        "webgl1": web_gl_statistics_for_key(WebGLSuccessKey),
+        "webgl2": web_gl_statistics_for_key(WebGL2SuccessKey),
+        "general": get_gl_statistics(),
     }
 
 
-TimedExport(
+timed_export(
     filename="webgl-statistics",
-    callback=GetWebGLStatistics,
-    pings=(GeneralPings, GeneralPingInfo),
+    callback=get_web_gl_statistics,
+    pings=(general_pings, general_ping_info),
 )
 
 
-def GetLayersStatus():
-    d3d11_status_rdd = GeneralPings.filter(
+def get_layers_status():
+    d3d11_status_rdd = general_pings.filter(
         lambda p: p.get(LayersD3D11FailureKey, None) is not None
     )
     d3d11_status_rdd = d3d11_status_rdd.map(lambda p: p[LayersD3D11FailureKey])
     d3d11_status_map = d3d11_status_rdd.reduce(combiner)
-    ogl_status_rdd = GeneralPings.filter(
+    ogl_status_rdd = general_pings.filter(
         lambda p: p.get(LayersOGLFailureKey, None) is not None
     )
     ogl_status_rdd = ogl_status_rdd.map(lambda p: p[LayersOGLFailureKey])
@@ -1225,17 +1227,17 @@ def GetLayersStatus():
     return {"layers": {"d3d11": d3d11_status_map, "opengl": ogl_status_map}}
 
 
-def GetLayersStatistics():
-    return {"general": GetLayersStatus()}
+def get_layers_statistics():
+    return {"general": get_layers_status()}
 
 
-TimedExport(
+timed_export(
     filename="layers-failureid-statistics",
-    callback=GetLayersStatistics,
-    pings=(GeneralPings, GeneralPingInfo),
+    callback=get_layers_statistics,
+    pings=(general_pings, general_ping_info),
 )
 
-EndTime = datetime.datetime.now()
-TotalElapsed = (EndTime - StartTime).total_seconds()
+end_time = datetime.datetime.now()
+total_elapsed = (end_time - start_time).total_seconds()
 
-print("Total time: {0}".format(TotalElapsed))
+print("Total time: {0}".format(total_elapsed))

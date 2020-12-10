@@ -84,21 +84,21 @@ quiet_logs(sc)
 
 
 # This is the entry-point to grabbing reduced, preformatted pings.
-def FetchAndFormat(start_date, end_date):
-    pings = GetRawPings(start_date, end_date)
+def fetch_and_format(start_date, end_date):
+    pings = get_raw_pings(start_date, end_date)
     pings = get_one_ping_per_client(pings)
-    pings = pings.map(Validate)
+    pings = pings.map(validate)
     pings = pings.filter(lambda p: p.get("valid", False))
     return pings.cache()
 
 
-def GetRawPings(start_date, end_date):
+def get_raw_pings(start_date, end_date):
     # WeeklyFraction ignored and baked into the included query
     return trends.fetch_results(spark, start_date, end_date)
 
 
 # Transform each ping to make it easier to work with in later stages.
-def Validate(p):
+def validate(p):
     try:
         name = p.get(OSNameKey) or "w"
         version = p.get(OSVersionKey) or "0"
@@ -119,7 +119,7 @@ def Validate(p):
             p["OSVersion"] = version
             p["OS"] = "{0}-{1}".format(name, version)
             p["OSName"] = name
-    except:
+    except Exception:
         return p
 
     p["valid"] = True
@@ -154,17 +154,17 @@ class Prof(object):
 
 
 # Helpers.
-def fix_vendor(vendorID):
-    if vendorID == u"Intel Open Source Technology Center":
+def fix_vendor(vendor_id):
+    if vendor_id == u"Intel Open Source Technology Center":
         return u"0x8086"
-    return vendorID
+    return vendor_id
 
 
 def get_vendor(ping):
     try:
         adapter = ping[GfxAdaptersKey][0]
         return fix_vendor(adapter["vendorID"])
-    except:
+    except Exception:
         return "unknown"
 
 
@@ -181,10 +181,10 @@ def get_os_bits(ping):
 
 def get_gen(ping, vendor_block):
     adapter = ping[GfxAdaptersKey][0]
-    deviceID = adapter.get("deviceID", "unknown")
-    if deviceID not in vendor_block:
+    device_id = adapter.get("deviceID", "unknown")
+    if device_id not in vendor_block:
         return "unknown"
-    return vendor_block[deviceID][0]
+    return vendor_block[device_id][0]
 
 
 def get_d3d11(ping):
@@ -195,7 +195,7 @@ def get_d3d11(ping):
         if d3d11.get("warp", False):
             return "warp"
         return d3d11["version"]
-    except:
+    except Exception:
         return "unknown"
 
 
@@ -205,7 +205,7 @@ def get_d2d(ping):
         if status != "available":
             return status
         return ping[GfxFeaturesKey]["d2d"]["version"]
-    except:
+    except Exception:
         return "unknown"
 
 
@@ -241,7 +241,7 @@ class TrendBase(object):
 
     # Called before querying pings for the week for the given date. Return
     # false to indicate that this should no longer receive updates.
-    def willUpdate(self, date):
+    def will_update(self, date):
         raise Exception("Return true or false")
 
     def update(self, pings, **kwargs):
@@ -253,25 +253,25 @@ class TrendBase(object):
 
 # Given a list of trend objects, query weeks from the last sunday
 # and iterating backwards until no trend object requires an update.
-def DoUpdate(trends):
+def do_update(trends):
     root = TrendGroup("root", trends)
     root.prepare()
 
     # Start each analysis slice on a Sunday.
-    latest = MostRecentSunday()
+    latest = most_recent_sunday()
     end = latest
 
     while True:
         start = end - datetime.timedelta(7)
         assert latest.weekday() == 6
 
-        if not root.willUpdate(start):
+        if not root.will_update(start):
             break
 
         try:
             with Prof("fetch {0}".format(start)) as _:
-                pings = FetchAndFormat(start, end)
-        except:
+                pings = fetch_and_format(start, end)
+        except Exception:
             if not ForceMaxBackfill:
                 raise
 
@@ -284,7 +284,7 @@ def DoUpdate(trends):
     root.finish()
 
 
-def MostRecentSunday():
+def most_recent_sunday():
     now = datetime.datetime.utcnow()
     this_morning = datetime.datetime(now.year, now.month, now.day)
     if this_morning.weekday() == 6:
@@ -313,8 +313,8 @@ class TrendGroup(TrendBase):
         self.active = self.trends[:]
         return len(self.trends) > 0
 
-    def willUpdate(self, date):
-        self.active = [trend for trend in self.active if trend.willUpdate(date)]
+    def will_update(self, date):
+        self.active = [trend for trend in self.active if trend.will_update(date)]
         return len(self.active) > 0
 
     def update(self, pings, **kwargs):
@@ -344,7 +344,7 @@ class Trend(TrendBase):
     def query(self, pings):
         raise Exception("NYI")
 
-    def willUpdate(self, date):
+    def will_update(self, date):
         if date < FirstValidDate:
             return False
         if self.lastFullWeek is not None and date <= self.lastFullWeek:
@@ -361,32 +361,34 @@ class Trend(TrendBase):
         self.cache["trend"] = sorted(self.cache["trend"], key=lambda o: o["start"])
 
         if len(self.cache["trend"]) and not ForceMaxBackfill:
-            lastDataPoint = self.cache["trend"][-1]
-            lastDataPointStart = datetime.datetime.utcfromtimestamp(
-                lastDataPoint["start"]
+            last_data_point = self.cache["trend"][-1]
+            last_data_point_start = datetime.datetime.utcfromtimestamp(
+                last_data_point["start"]
             )
-            lastDataPointEnd = datetime.datetime.utcfromtimestamp(lastDataPoint["end"])
-            print(lastDataPoint, lastDataPointStart, lastDataPointEnd)
-            if lastDataPointEnd - lastDataPointStart < datetime.timedelta(7):
+            last_data_point_end = datetime.datetime.utcfromtimestamp(
+                last_data_point["end"]
+            )
+            print(last_data_point, last_data_point_start, last_data_point_end)
+            if last_data_point_end - last_data_point_start < datetime.timedelta(7):
                 # The last data point had less than a full week, so we stop at the
                 # previous week, and remove the incomplete datapoint.
-                self.lastFullWeek = lastDataPointStart - datetime.timedelta(7)
+                self.lastFullWeek = last_data_point_start - datetime.timedelta(7)
                 self.cache["trend"].pop()
             else:
                 # The last data point covered a full week, so that's our stopping
                 # point.
-                self.lastFullWeek = lastDataPointStart
+                self.lastFullWeek = last_data_point_start
                 print(self.lastFullWeek)
 
         return True
 
     # Optional hook - transform pings before querying.
-    def transformPings(self, pings):
+    def transform_pings(self, pings):
         return pings
 
     def update(self, pings, start_date, end_date, **kwargs):
         with Prof("count {0}".format(self.name)):
-            pings = self.transformPings(pings)
+            pings = self.transform_pings(pings)
             count = pings.count()
         if count == 0:
             print("WARNING: no pings in RDD")
@@ -409,14 +411,14 @@ class Trend(TrendBase):
         # If we're doing a maximum backfill, remove points from the cache that are
         # after the least recent data point that we newly queried.
         if ForceMaxBackfill and len(self.newDataPoints):
-            stopAt = self.newDataPoints[-1]["start"]
-            lastIndex = None
+            stop_at = self.newDataPoints[-1]["start"]
+            last_index = None
             for index, entry in enumerate(self.cache["trend"]):
-                if entry["start"] >= stopAt:
-                    lastIndex = index
+                if entry["start"] >= stop_at:
+                    last_index = index
                     break
-            if lastIndex is not None:
-                self.cache["trend"] = self.cache["trend"][:lastIndex]
+            if last_index is not None:
+                self.cache["trend"] = self.cache["trend"][:last_index]
 
         # Note: the backfill algorithm in DoUpdate() walks in reverse, so dates
         # will be accumulated in descending order. The final list should be in
@@ -458,7 +460,7 @@ class Trend(TrendBase):
             try:
                 with open(self.local_path, "r") as fp:
                     return json.load(fp)
-            except:
+            except Exception:
                 pass
         return None
 
@@ -492,11 +494,11 @@ class WinCompositorTrend(Trend):
     def __init__(self):
         super(WinCompositorTrend, self).__init__("trend-windows-compositors")
 
-    def willUpdate(self, date):
+    def will_update(self, date):
         # This metric didn't ship until Firefox 43.
         if date < datetime.datetime(2015, 11, 15):
             return False
-        return super(WinCompositorTrend, self).willUpdate(date)
+        return super(WinCompositorTrend, self).will_update(date)
 
     def query(self, pings):
         return pings.map(lambda p: (get_compositor(p),)).countByKey()
@@ -528,11 +530,11 @@ class Direct2DTrend(Trend):
     def query(self, pings):
         return pings.map(lambda p: (get_d2d(p),)).countByKey()
 
-    def willUpdate(self, date):
+    def will_update(self, date):
         # This metric didn't ship until Firefox 43.
         if date < datetime.datetime(2015, 11, 15):
             return False
-        return super(Direct2DTrend, self).willUpdate(date)
+        return super(Direct2DTrend, self).will_update(date)
 
 
 class Direct3D11Trend(Trend):
@@ -542,11 +544,11 @@ class Direct3D11Trend(Trend):
     def query(self, pings):
         return pings.map(lambda p: (get_d3d11(p),)).countByKey()
 
-    def willUpdate(self, date):
+    def will_update(self, date):
         # This metric didn't ship until Firefox 43.
         if date < datetime.datetime(2015, 11, 15):
             return False
-        return super(Direct3D11Trend, self).willUpdate(date)
+        return super(Direct3D11Trend, self).will_update(date)
 
 
 class WindowsVendorTrend(Trend):
@@ -560,24 +562,24 @@ class WindowsVendorTrend(Trend):
 # Device generation trend - a little more complicated, since we download
 # the generation database to produce a mapping.
 class DeviceGenTrend(Trend):
-    deviceMap = None
+    device_map = None
 
-    def __init__(self, vendor, vendorName):
+    def __init__(self, vendor, vendor_name):
         super(DeviceGenTrend, self).__init__(
-            "trend-windows-device-gen-{0}".format(vendorName)
+            "trend-windows-device-gen-{0}".format(vendor_name)
         )
         self.vendorBlock = None
         self.vendorID = vendor
 
     def prepare(self):
         # Grab the vendor -> device -> gen map.
-        if not DeviceGenTrend.deviceMap:
+        if not DeviceGenTrend.device_map:
             resp = requests.get("{0}/master/www/gfxdevices.json".format(GITHUB_REPO))
-            DeviceGenTrend.deviceMap = resp.json()
-        self.vendorBlock = DeviceGenTrend.deviceMap[self.vendorID]
+            DeviceGenTrend.device_map = resp.json()
+        self.vendorBlock = DeviceGenTrend.device_map[self.vendorID]
         return super(DeviceGenTrend, self).prepare()
 
-    def transformPings(self, pings):
+    def transform_pings(self, pings):
         vendor_id = self.vendorID
         return pings.filter(lambda p: get_vendor(p) == vendor_id)
 
@@ -609,7 +611,7 @@ if __name__ == "__main__":
     MaxHistoryInDays = datetime.timedelta(days=args.max_history_in_days)
     BrandNewJobs = args.brand_new_jobs
 
-    DoUpdate(
+    do_update(
         [
             FirefoxTrend(),
             WindowsGroup(
