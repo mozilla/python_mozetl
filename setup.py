@@ -5,7 +5,7 @@ test_deps = [
     'coverage==4.5.2',
     'pytest-cov==2.6.0',
     'pytest-timeout==1.3.3',
-    'moto==1.3.6',
+    'moto==1.3.16',
     'mock==2.0.0',
     'pytest==3.10.1',
     'flake8==3.6.0'
