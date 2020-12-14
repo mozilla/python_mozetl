@@ -7,7 +7,14 @@
 
 # Example Usage: ./mozetl-submit-dataproc graphics-test-cluster mozetl/graphics/graphics_telemetry_dashboard.py
 
-cd "$(dirname "$0")/.."
+if [[ -z $1 ]]; then
+    echo '$1 (cluster name) not defined'
+    exit 1
+fi
+if [[ -z $2 ]]; then
+    echo '$2 (job path) not defined'
+    exit 1
+fi
 
 gcloud dataproc jobs submit pyspark $2 \
     --cluster=$1 \

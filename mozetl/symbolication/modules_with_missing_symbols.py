@@ -2,13 +2,44 @@
 # pip install:
 # boto3==1.16.20
 
+import argparse
 import os
+import sys
 from datetime import datetime, timedelta
 from urllib.parse import urljoin
 
 import boto3
 import requests
 from pyspark.sql import functions, SparkSession
+
+
+# workaround airflow not able to different schedules for tasks in a dag
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--run-on-days",
+        nargs="+",
+        type=int,
+        required=True,
+        help="Only run job on given days (0 is sunday)",
+    )
+    parser.add_argument(
+        "--date",
+        type=datetime.fromisoformat,
+        default=datetime.utcnow(),
+        help="Run date, defaults to current dat",
+    )
+    return parser.parse_args()
+
+
+args = parse_args()
+
+if args.date.isoweekday() not in args.run_on_days:
+    print(
+        f"Skipping because run date day of week"
+        f" {args.date} is not in {args.run_on_days}"
+    )
+    sys.exit(0)
 
 os.system("git clone https://github.com/marco-c/missing_symbols.git")
 
