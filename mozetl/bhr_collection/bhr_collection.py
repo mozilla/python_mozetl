@@ -11,6 +11,7 @@ import random
 import re
 import time
 import urllib
+import uuid
 from bisect import bisect
 from datetime import datetime, timedelta
 from io import BytesIO
@@ -201,7 +202,7 @@ class ProfileProcessor(object):
         self.thread_table = UniqueKeyedTable(default_thread_closure)
         self.usage_hours_by_date = {}
 
-    def debugDump(self, dump_str):
+    def debug_dump(self, dump_str):
         if self.config["print_debug_info"]:
             print(dump_str)
 
@@ -272,7 +273,8 @@ class ProfileProcessor(object):
 
     def pre_ingest_row(self, row):
         # pylint: disable=unused-variable
-        stack, runnable_name, thread_name, build_date, pending_input, platform, hang_ms, hang_count = (
+        (stack, runnable_name, thread_name, build_date, pending_input,
+         platform, hang_ms, hang_count) = (
             row
         )
 
@@ -291,7 +293,8 @@ class ProfileProcessor(object):
 
     def ingest_row(self, row):
         # pylint: disable=unused-variable
-        stack, runnable_name, thread_name, build_date, pending_input, platform, hang_ms, hang_count = (
+        (stack, runnable_name, thread_name, build_date, pending_input,
+         platform, hang_ms, hang_count) = (
             row
         )
 
@@ -300,11 +303,11 @@ class ProfileProcessor(object):
         sample_table = thread["sampleTable"]
         dates = thread["dates"]
         prune_stack_cache = thread["pruneStackCache"]
-        root_stack = prune_stack_cache.key_to_item(("(root)", None, None))
+        # root_stack = prune_stack_cache.key_to_item(("(root)", None, None))
 
         last_stack = 0
         last_cache_item_index = 0
-        last_lib_name = None
+        # last_lib_name = None
         for (func_name, lib_name) in stack:
             cache_item_index = prune_stack_cache.key_to_index(
                 (func_name, lib_name, last_cache_item_index)
@@ -315,15 +318,15 @@ class ProfileProcessor(object):
                 cache_item[0] / parent_cache_item[0]
                 > self.config["stack_acceptance_threshold"]
             ):
-                last_lib_name = lib_name
+                # last_lib_name = lib_name
                 last_stack = stack_table.key_to_index((func_name, lib_name, last_stack))
                 last_cache_item_index = cache_item_index
             else:
                 # If we're below the acceptance threshold, just lump it under (other) below
                 # its parent.
-                last_lib_name = lib_name
+                # last_lib_name = lib_name
                 last_stack = stack_table.key_to_index(("(other)", lib_name, last_stack))
-                last_cache_item_index = cache_item_index
+                # last_cache_item_index = cache_item_index
                 break
 
         if (
@@ -474,20 +477,20 @@ def get_ping_properties(ping, properties):
     return result
 
 
-def get_data(sc, sqlContext, config, date, end_date=None):
-    sqlContext.sql("set spark.sql.shuffle.partitions={}".format(sc.defaultParallelism))
+def get_data(sc, sql_context, config, date, end_date=None):
+    sql_context.sql("set spark.sql.shuffle.partitions={}".format(sc.defaultParallelism))
 
     if end_date is None:
         end_date = date
 
-    submission_start_str = date - timedelta(days=5)
-    submission_end_str = end_date + timedelta(days=5)
+    submission_start_str = date - timedelta(days=1)
+    submission_end_str = end_date + timedelta(days=1)
 
     date_str = date.strftime("%Y%m%d")
     end_date_str = end_date.strftime("%Y%m%d")
 
     pings_df = (
-        sqlContext.read.format("bigquery")
+        sql_context.read.format("bigquery")
         .option("table", "moz-fx-data-shared-prod.telemetry_stable.bhr_v4")
         .load()
         .where(
@@ -525,8 +528,7 @@ def get_data(sc, sqlContext, config, date, end_date=None):
 
     try:
         result = mapped.filter(
-            lambda p: p["application/buildId"][:8] >= date_str
-            and p["application/buildId"][:8] <= end_date_str
+            lambda p: date_str <= p["application/buildId"][:8] <= end_date_str
         )
         print("%d results after first filter" % result.count())
         return result
@@ -584,8 +586,8 @@ def filter_hang(hang):
 def process_hangs(ping):
     build_date = ping["application/buildId"][:8]  # "YYYYMMDD" : 8 characters
 
-    os_version_split = ping["environment/system/os/version"].split(".")
-    os_version = os_version_split[0] if len(os_version_split) > 0 else ""
+    # os_version_split = ping["environment/system/os/version"].split(".")
+    # os_version = os_version_split[0] if len(os_version_split) > 0 else ""
     platform = "{}".format(ping["environment/system/os/name"])
 
     modules = ping.get("payload/modules", [])
@@ -879,7 +881,7 @@ def make_sym_map(data):
     return sorted(sym_map), sym_map
 
 
-def get_file_URL(module, config):
+def get_file_url(module, config):
     lib_name, breakpad_id = module
     if lib_name is None or breakpad_id is None:
         return None
@@ -912,10 +914,10 @@ def process_module(module, offsets, config):
             ((module, offset), ("" if offset is None else offset, ""))
             for offset in offsets
         ]
-    file_URL = get_file_URL(module, config)
+    file_url = get_file_url(module, config)
     module_name = module[0]
-    if file_URL:
-        success, response = fetch_URL(file_URL)
+    if file_url:
+        success, response = fetch_url(file_url)
     else:
         success = False
 
@@ -990,15 +992,15 @@ def transform_pings(_, pings, config):
     return result, usage_hours_by_date
 
 
-def fetch_URL(url):
+def fetch_url(url):
     result = False, ""
     try:
         with contextlib.closing(urllib.request.urlopen(url)) as response:
             # pylint: disable=no-member
-            responseCode = response.getcode()
-            if responseCode == 404:
+            response_code = response.getcode()
+            if response_code == 404:
                 return False, ""
-            if responseCode != 200:
+            if response_code != 200:
                 result = False, ""
             return True, decode_response(response)
     except IOError:
@@ -1008,10 +1010,10 @@ def fetch_URL(url):
         try:
             with contextlib.closing(urllib.request.urlopen(url)) as response:
                 # pylint: disable=no-member
-                responseCode = response.getcode()
-                if responseCode == 404:
+                response_code = response.getcode()
+                if response_code == 404:
                     return False, ""
-                if responseCode != 200:
+                if response_code != 200:
                     result = False, ""
                 return True, decode_response(response)
         except IOError:
@@ -1043,7 +1045,7 @@ def read_file(name, config):
     if config["read_files_from_network"]:
         s3_key = "bhr/data/hang_aggregates/" + name + ".json"
         url = config["analysis_output_url"] + s3_key
-        success, response = fetch_URL(url)
+        success, response = fetch_url(url)
         if not success:
             raise Exception("Could not find file at url: " + url)
         return json.loads(response)
@@ -1084,7 +1086,7 @@ def write_file(name, stuff, config):
             s3_uuid_key = (
                 "bhr/data/hang_aggregates/" + name + "_" + config["uuid"] + ".json"
             )
-            transfer.upload_file(gzfilename, bucket, s3_uuid_key, extra_args=extra_args)
+            # transfer.upload_file(gzfilename, bucket, s3_uuid_key, extra_args=extra_args)
 
 
 default_config = {
@@ -1092,7 +1094,8 @@ default_config = {
     "end_date": datetime.today() - timedelta(days=1),
     "use_s3": True,
     "sample_size": 0.50,
-    "symbol_server_url": "https://s3-us-west-2.amazonaws.com/org.mozilla.crash-stats.symbols-public/v1/",
+    "symbol_server_url": "https://s3-us-west-2.amazonaws.com/"
+                         "org.mozilla.crash-stats.symbols-public/v1/",
     "hang_profile_in_filename": "hang_profile_128_16000",
     "hang_profile_out_filename": None,
     "print_debug_info": False,
@@ -1127,7 +1130,7 @@ def print_progress(
     print("Job should finish in {}".format(timedelta(seconds=remaining)))
 
 
-def etl_job(sc, sqlContext, config=None):
+def etl_job(sc, sql_context, config=None):
     """This is the function that will be executed on the cluster"""
 
     final_config = {}
@@ -1154,7 +1157,7 @@ def etl_job(sc, sqlContext, config=None):
         iteration_start = time.time()
         current_date = final_config["start_date"] + timedelta(days=x)
         data = time_code(
-            "Getting data", lambda: get_data(sc, sqlContext, final_config, current_date)
+            "Getting data", lambda: get_data(sc, sql_context, final_config, current_date)
         )
         if data is None:
             print("No data")
@@ -1173,7 +1176,7 @@ def etl_job(sc, sqlContext, config=None):
     write_file(final_config["hang_profile_out_filename"], profile, final_config)
 
 
-def etl_job_incremental_write(sc, sqlContext, config=None):
+def etl_job_incremental_write(sc, sql_context, config=None):
     final_config = {}
     final_config.update(default_config)
 
@@ -1195,7 +1198,7 @@ def etl_job_incremental_write(sc, sqlContext, config=None):
         current_date = final_config["start_date"] + timedelta(days=x)
         date_str = current_date.strftime("%Y%m%d")
         data = time_code(
-            "Getting data", lambda: get_data(sc, sqlContext, final_config, current_date)
+            "Getting data", lambda: get_data(sc, sql_context, final_config, current_date)
         )
         if data is None:
             print("No data")
@@ -1214,7 +1217,7 @@ def etl_job_incremental_write(sc, sqlContext, config=None):
         print_progress(job_start, iterations, x, iteration_start, date_str)
 
 
-def etl_job_daily(sc, sqlContext, config=None):
+def etl_job_daily(sc, sql_context, config=None):
     final_config = {}
     final_config.update(default_config)
 
@@ -1236,7 +1239,7 @@ def etl_job_daily(sc, sqlContext, config=None):
         current_date = final_config["start_date"] + timedelta(days=x)
         date_str = current_date.strftime("%Y%m%d")
         data = time_code(
-            "Getting data", lambda: get_data(sc, sqlContext, final_config, current_date)
+            "Getting data", lambda: get_data(sc, sql_context, final_config, current_date)
         )
         if data is None:
             print("No data")
