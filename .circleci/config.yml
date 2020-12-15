@@ -75,11 +75,11 @@ jobs:
     <<: *test_settings
     parallelism: 4
     docker:
-      - image: python:3.8-stretch
+      - image: python:3.8-buster
 
   lint:
     docker:
-      - image: python:3.8-stretch
+      - image: python:3.8-buster
     working_directory: ~/python_mozetl
     steps:
       - checkout
