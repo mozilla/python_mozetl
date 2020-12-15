@@ -138,7 +138,7 @@ workflows:
   build:
     jobs:
       - py27
-      - py35
+      - py38
       - lint
       - docs
       - docs-deploy:
