@@ -223,4 +223,4 @@ client.send_email(
         "Subject": {"Data": subject, "Charset": "UTF-8"},
         "Body": {"Html": {"Data": body, "Charset": "UTF-8"}},
     },
-)["MessageId"]
+)
