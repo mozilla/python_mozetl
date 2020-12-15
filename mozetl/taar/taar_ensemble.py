@@ -78,7 +78,7 @@ def get_df(spark, date_from):
 
 
 def get_addons_per_client(users_df, minimum_addons_count):
-    """ Extracts a DataFrame that contains one row
+    """Extracts a DataFrame that contains one row
     for each client along with the list of active add-on GUIDs.
     """
 
@@ -328,8 +328,7 @@ def today_minus_7_days():
 
 
 def verify_valid_coefs(coefs):
-    """ verify that the model has proper floating point values (> 0)
-    """
+    """verify that the model has proper floating point values (> 0)"""
 
     assert "ensemble_weights" in coefs
     weights = coefs["ensemble_weights"]
@@ -362,9 +361,9 @@ def verify_valid_coefs(coefs):
 
 
 class CostLLR:
-    """ based on Niko Brummer's original implementation:
-        Niko Brummer and Johan du Preez, Application-Independent Evaluation of Speaker Detection"
-        Computer Speech and Language, 2005
+    """based on Niko Brummer's original implementation:
+    Niko Brummer and Johan du Preez, Application-Independent Evaluation of Speaker Detection"
+    Computer Speech and Language, 2005
     """
 
     def __init__(self):
@@ -417,8 +416,8 @@ class CostLLR:
 
 def cross_validation_split(dataset, k_folds):
     """
-  Splits dataframe into k_folds, returning array of dataframes
-  """
+    Splits dataframe into k_folds, returning array of dataframes
+    """
     dataset_split = []
     h = 1.0 / k_folds
     df = dataset.select("*", rand().alias("rand"))

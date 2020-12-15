@@ -75,7 +75,7 @@ jobs:
     <<: *test_settings
     parallelism: 4
     docker:
-      - image: python:3.5-stretch
+      - image: python:3.6-stretch
 
   lint:
     docker:

@@ -155,8 +155,8 @@ class Prof(object):
 
 # Helpers.
 def fix_vendor(vendor_id):
-    if vendor_id == u"Intel Open Source Technology Center":
-        return u"0x8086"
+    if vendor_id == "Intel Open Source Technology Center":
+        return "0x8086"
     return vendor_id
 
 
@@ -427,7 +427,7 @@ class Trend(TrendBase):
 
         text = json.dumps(self.cache)
 
-        print("Writing file {0}".format(self.local_path, text))
+        print("Writing file {0}".format(self.local_path))
         with open(self.local_path, "w") as fp:
             fp.write(text)
 
@@ -621,9 +621,9 @@ if __name__ == "__main__":
                     WinArchTrend(),
                     WindowsVendorTrend(),
                     WindowsVistaPlusGroup([Direct2DTrend(), Direct3D11Trend()]),
-                    DeviceGenTrend(u"0x8086", "intel"),
-                    DeviceGenTrend(u"0x10de", "nvidia"),
-                    DeviceGenTrend(u"0x1002", "amd"),
+                    DeviceGenTrend("0x8086", "intel"),
+                    DeviceGenTrend("0x10de", "nvidia"),
+                    DeviceGenTrend("0x1002", "amd"),
                 ]
             ),
         ]

@@ -27,7 +27,7 @@ ONE_WEEK_AGO = (dt.datetime.now() - dt.timedelta(days=7)).strftime("%Y%m%d")
 
 
 def is_valid_addon(broadcast_amo_whitelist, guid, addon):
-    """ Filter individual addons out to exclude, system addons,
+    """Filter individual addons out to exclude, system addons,
     legacy addons, disabled addons, sideloaded addons.
     """
     return not (
@@ -47,7 +47,7 @@ def is_valid_addon(broadcast_amo_whitelist, guid, addon):
 
 
 def get_addons_per_client(broadcast_amo_whitelist, users_df):
-    """ Extracts a DataFrame that contains one row
+    """Extracts a DataFrame that contains one row
     for each client along with the list of active add-on GUIDs.
     """
 
@@ -71,7 +71,7 @@ def get_addons_per_client(broadcast_amo_whitelist, users_df):
 
 
 def get_initial_sample(spark):
-    """ Takes an initial sample from the longitudinal dataset
+    """Takes an initial sample from the longitudinal dataset
     (randomly sampled from main summary). Coarse filtering on:
     - number of installed addons (greater than 1)
     - corrupt and generally wierd telemetry entries
@@ -92,8 +92,7 @@ def get_initial_sample(spark):
 
 
 def extract_telemetry(spark):
-    """ load some training data from telemetry given a sparkContext
-    """
+    """load some training data from telemetry given a sparkContext"""
     sc = spark.sparkContext
 
     # Define the set of feature names to be used in the donor computations.
