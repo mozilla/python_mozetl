@@ -15,7 +15,7 @@ install_dependencies: &install_dependencies
   name: install dependencies
   command: |
     apt update
-    apt install -y libsnappy-dev
+    apt install -y libsnappy-dev openjdk-8-jre-headless
     pip install tox coverage
 
 save_cache_settings: &save_cache_settings
@@ -75,11 +75,11 @@ jobs:
     <<: *test_settings
     parallelism: 4
     docker:
-      - image: python:3.8-buster
+      - image: python:3.7-stretch
 
   lint:
     docker:
-      - image: python:3.8-buster
+      - image: python:3.7-stretch
     working_directory: ~/python_mozetl
     steps:
       - checkout
@@ -93,7 +93,7 @@ jobs:
 
   docs:
     docker:
-      - image: python:3.8-buster
+      - image: python:3.7-stretch
     working_directory: ~/python_mozetl
     steps:
       - checkout
