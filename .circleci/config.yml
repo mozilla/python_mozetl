@@ -140,4 +140,4 @@ workflows:
             - docs
           filters:
             branches:
-              only: master
+              only: main
