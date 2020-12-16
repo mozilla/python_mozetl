@@ -80,7 +80,12 @@ def test_write_csv_to_s3(generate_data):
     key = "test.csv"
 
     conn = boto3.resource("s3", region_name="us-west-2")
-    conn.create_bucket(Bucket=bucket)
+    conn.create_bucket(
+        Bucket=bucket,
+        CreateBucketConfiguration={
+            "LocationConstraint": "us-west-2",
+        },
+    )
 
     utils.write_csv_to_s3(generate_data(["foo"]), bucket, key)
 
@@ -96,7 +101,12 @@ def test_write_csv_to_s3_no_header(generate_data):
     key = "test.csv"
 
     conn = boto3.resource("s3", region_name="us-west-2")
-    conn.create_bucket(Bucket=bucket)
+    conn.create_bucket(
+        Bucket=bucket,
+        CreateBucketConfiguration={
+            "LocationConstraint": "us-west-2",
+        },
+    )
 
     utils.write_csv_to_s3(generate_data(), bucket, key, header=False)
 
@@ -111,7 +121,12 @@ def test_write_csv_to_s3_existing(generate_data):
     key = "test.csv"
 
     conn = boto3.resource("s3", region_name="us-west-2")
-    conn.create_bucket(Bucket=bucket)
+    conn.create_bucket(
+        Bucket=bucket,
+        CreateBucketConfiguration={
+            "LocationConstraint": "us-west-2",
+        },
+    )
 
     utils.write_csv_to_s3(generate_data(["foo"]), bucket, key)
     utils.write_csv_to_s3(generate_data(["foo", "bar"]), bucket, key)

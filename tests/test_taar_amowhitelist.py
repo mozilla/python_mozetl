@@ -244,7 +244,12 @@ def s3_fixture():
     mock_s3().start()
 
     conn = boto3.resource("s3", region_name="us-west-2")
-    conn.create_bucket(Bucket=taar_amowhitelist.AMO_DUMP_BUCKET)
+    conn.create_bucket(
+        Bucket=taar_amowhitelist.AMO_DUMP_BUCKET,
+        CreateBucketConfiguration={
+            "LocationConstraint": "us-west-2",
+        },
+    )
     taar_utils.store_json_to_s3(
         json.dumps(SAMPLE_DATA),
         taar_amowhitelist.AMO_DUMP_BASE_FILENAME,

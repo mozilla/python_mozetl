@@ -50,7 +50,12 @@ def test_read_from_s3():
     s3_json_fname = "test.json"
 
     conn = boto3.resource("s3", region_name="us-west-2")
-    conn.create_bucket(Bucket=bucket)
+    conn.create_bucket(
+        Bucket=bucket,
+        CreateBucketConfiguration={
+            "LocationConstraint": "us-west-2",
+        },
+    )
 
     with NamedTemporaryFile("w") as json_file:
         json.dump(SAMPLE_DATA, json_file)
@@ -71,7 +76,12 @@ def test_write_to_s3():
     dest_filename = "test.json"
 
     conn = boto3.resource("s3", region_name="us-west-2")
-    bucket_obj = conn.create_bucket(Bucket=bucket)
+    bucket_obj = conn.create_bucket(
+        Bucket=bucket,
+        CreateBucketConfiguration={
+            "LocationConstraint": "us-west-2",
+        },
+    )
 
     with NamedTemporaryFile("w") as json_file:
         json.dump(SAMPLE_DATA, json_file)
@@ -102,7 +112,12 @@ def test_write_json_s3():
     content = {"it-IT": ["firefox@getpocket.com"]}
 
     conn = boto3.resource("s3", region_name="us-west-2")
-    bucket_obj = conn.create_bucket(Bucket=bucket)
+    bucket_obj = conn.create_bucket(
+        Bucket=bucket,
+        CreateBucketConfiguration={
+            "LocationConstraint": "us-west-2",
+        },
+    )
 
     # Store the data in the mocked bucket.
     taar_utils.store_json_to_s3(
@@ -123,7 +138,12 @@ def test_write_json_s3():
 @mock_s3
 def test_load_amo_external_whitelist():
     conn = boto3.resource("s3", region_name="us-west-2")
-    conn.create_bucket(Bucket=taar_utils.AMO_DUMP_BUCKET)
+    conn.create_bucket(
+        Bucket=taar_utils.AMO_DUMP_BUCKET,
+        CreateBucketConfiguration={
+            "LocationConstraint": "us-west-2",
+        },
+    )
 
     # Make sure that whitelist loading fails before mocking the S3 file.
     EXCEPTION_MSG = "Empty AMO whitelist detected"

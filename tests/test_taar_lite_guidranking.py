@@ -106,7 +106,12 @@ def test_load_s3(spark):
 
     # Create the bucket before we upload
     conn = boto3.resource("s3", region_name="us-west-2")
-    bucket_obj = conn.create_bucket(Bucket=BUCKET)
+    bucket_obj = conn.create_bucket(
+        Bucket=BUCKET,
+        CreateBucketConfiguration={
+            "LocationConstraint": "us-west-2",
+        },
+    )
 
     rdd = spark.createDataFrame(MOCK_TELEMETRY_SAMPLE)
     result_json = taar_lite_guidranking.transform(rdd)

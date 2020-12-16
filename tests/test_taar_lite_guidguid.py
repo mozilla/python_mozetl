@@ -227,7 +227,12 @@ def test_load_s3(spark):
 
     # Create the bucket before we upload
     conn = boto3.resource("s3", region_name="us-west-2")
-    bucket_obj = conn.create_bucket(Bucket=BUCKET)
+    bucket_obj = conn.create_bucket(
+        Bucket=BUCKET,
+        CreateBucketConfiguration={
+            "LocationConstraint": "us-west-2",
+        },
+    )
 
     load_df = spark.createDataFrame(EXPECTED_GUID_GUID_DATA)
     taar_lite_guidguid.load_s3(load_df, "20180301", PREFIX, BUCKET)
