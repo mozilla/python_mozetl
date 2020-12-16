@@ -16,7 +16,7 @@ install_dependencies: &install_dependencies
   command: |
     apt update
     apt install -y libsnappy-dev openjdk-8-jre-headless
-    pip install tox coverage
+    pip install tox coverage==5.3
 
 save_cache_settings: &save_cache_settings
   key: v1-python_mozetl-{{ checksum "setup.py" }}
