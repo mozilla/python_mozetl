@@ -16,7 +16,7 @@ install_dependencies: &install_dependencies
   command: |
     apt update
     apt install -y libsnappy-dev openjdk-8-jre-headless
-    pip install tox coverage
+    pip install tox coverage==5.3
 
 save_cache_settings: &save_cache_settings
   key: v1-python_mozetl-{{ checksum "setup.py" }}
@@ -66,20 +66,15 @@ test_settings: &test_settings
 
 version: 2
 jobs:
-  py27:
+  py37:
     <<: *test_settings
     parallelism: 4
     docker:
-      - image: python:2.7-stretch
-  py35:
-    <<: *test_settings
-    parallelism: 4
-    docker:
-      - image: python:3.5-stretch
+      - image: python:3.7-stretch
 
   lint:
     docker:
-      - image: python:3.6-stretch
+      - image: python:3.7-stretch
     working_directory: ~/python_mozetl
     steps:
       - checkout
@@ -93,7 +88,7 @@ jobs:
 
   docs:
     docker:
-      - image: python:2.7-stretch
+      - image: python:3.7-stretch
     working_directory: ~/python_mozetl
     steps:
       - checkout
@@ -137,8 +132,7 @@ workflows:
   version: 2
   build:
     jobs:
-      - py27
-      - py35
+      - py37
       - lint
       - docs
       - docs-deploy:

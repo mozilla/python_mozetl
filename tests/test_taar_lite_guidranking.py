@@ -55,10 +55,10 @@ MOCK_TELEMETRY_SAMPLE = [
 ]
 
 EXPECTED_ADDON_INSTALLATIONS = {
-    u"test-guid-1": 100,
-    u"test-guid-2": 200,
-    u"test-guid-3": 300,
-    u"test-guid-4": 400,
+    "test-guid-1": 100,
+    "test-guid-2": 200,
+    "test-guid-3": 300,
+    "test-guid-4": 400,
 }
 
 
@@ -74,12 +74,12 @@ def test_extract_phase(spark):
 
     output = dict(extract_df.rdd.map(lambda_func).collect())
     EXPECTED = {
-        u"test-guid-1": 1,
-        u"test-guid-2": 3,
-        u"test-guid-3": 3,
-        u"test-guid-4": 2,
-        u"test-guid-5": 2,
-        u"test-guid-6": 1,
+        "test-guid-1": 1,
+        "test-guid-2": 3,
+        "test-guid-3": 3,
+        "test-guid-4": 2,
+        "test-guid-5": 2,
+        "test-guid-6": 1,
     }
     assert EXPECTED == output
 
@@ -106,7 +106,12 @@ def test_load_s3(spark):
 
     # Create the bucket before we upload
     conn = boto3.resource("s3", region_name="us-west-2")
-    bucket_obj = conn.create_bucket(Bucket=BUCKET)
+    bucket_obj = conn.create_bucket(
+        Bucket=BUCKET,
+        CreateBucketConfiguration={
+            "LocationConstraint": "us-west-2",
+        },
+    )
 
     rdd = spark.createDataFrame(MOCK_TELEMETRY_SAMPLE)
     result_json = taar_lite_guidranking.transform(rdd)

@@ -85,7 +85,12 @@ def test_load(mock_transformed_data):
     date = "20190105"
 
     conn = boto3.resource("s3", region_name="us-west-2")
-    conn.create_bucket(Bucket=bucket)
+    conn.create_bucket(
+        Bucket=bucket,
+        CreateBucketConfiguration={
+            "LocationConstraint": "us-west-2",
+        },
+    )
 
     taar_update_whitelist.load_etl(mock_transformed_data, date, prefix, bucket)
 

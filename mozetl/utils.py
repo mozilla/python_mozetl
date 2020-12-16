@@ -44,7 +44,7 @@ def generate_filter_parameters(end_date, days_back):
 
 
 def write_csv(dataframe, path, header=True):
-    """ Write a dataframe to local disk.
+    """Write a dataframe to local disk.
 
     Disclaimer: Do not write csv files larger than driver memory. This
     is ~15GB for ec2 c3.xlarge (due to caching overhead).

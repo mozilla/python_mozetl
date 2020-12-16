@@ -2,13 +2,13 @@
 from setuptools import setup, find_packages
 
 test_deps = [
-    'coverage==4.5.2',
+    'coverage==5.3',
     'pytest-cov==2.6.0',
     'pytest-timeout==1.3.3',
     'moto==1.3.16',
     'mock==2.0.0',
     'pytest==3.10.1',
-    'flake8==3.6.0'
+    'flake8==3.8.4'
 ]
 
 extras = {
@@ -30,17 +30,17 @@ setup(
         'boto==2.49.0',
         'boto3==1.16.20',
         'botocore==1.19.20',
-        'click==6.7',
+        'click==7.1.2',
         'click_datetime==0.2',
-        'numpy==1.13.3',
-        'pandas==0.23.4',
+        'numpy==1.19.4',
+        'pandas==1.1.4',
         'pyspark==2.3.2',
         'python_moztelemetry==0.10.2',
-        'requests-toolbelt==0.8.0',
-        'requests==2.20.1',
-        'scipy==1.0.0rc1',
+        'requests-toolbelt==0.9.1',
+        'requests==2.25.0',
+        'scipy==1.5.4',
         'typing==3.6.4',
-        'six==1.11.0',
+        'six==1.15.0',
     ],
     tests_require=test_deps,
     extras_require=extras,

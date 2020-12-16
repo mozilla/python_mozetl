@@ -10,7 +10,7 @@ from pyspark.sql.types import ArrayType, LongType, StringType, StructField, Stru
 
 @pytest.fixture()
 def sync_summary_schema():
-    """"Generate a schema for sync_summary. This subset contains enough
+    """Generate a schema for sync_summary. This subset contains enough
     structure for testing bookmark validation. The schema is derived from
     [`telemetry-batch-view`][1].
 

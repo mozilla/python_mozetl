@@ -241,10 +241,16 @@ EXPECTED_FINAL_JDATA = {
 
 @pytest.yield_fixture(scope="function")
 def s3_fixture():
-    mock_s3().start()
+    s3 = mock_s3()
+    s3.start()
 
     conn = boto3.resource("s3", region_name="us-west-2")
-    conn.create_bucket(Bucket=taar_amowhitelist.AMO_DUMP_BUCKET)
+    conn.create_bucket(
+        Bucket=taar_amowhitelist.AMO_DUMP_BUCKET,
+        CreateBucketConfiguration={
+            "LocationConstraint": "us-west-2",
+        },
+    )
     taar_utils.store_json_to_s3(
         json.dumps(SAMPLE_DATA),
         taar_amowhitelist.AMO_DUMP_BASE_FILENAME,
@@ -253,7 +259,7 @@ def s3_fixture():
         taar_amowhitelist.AMO_DUMP_BUCKET,
     )
     yield conn, SAMPLE_DATA
-    mock_s3().stop()
+    s3.stop()
 
 
 def test_extract(s3_fixture):

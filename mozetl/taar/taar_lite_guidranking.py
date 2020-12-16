@@ -18,8 +18,7 @@ OUTPUT_BASE_FILENAME = "guid_install_ranking"
 
 
 def extract_telemetry(sparkSession):
-    """ Load some training data from telemetry given a sparkContext
-    """
+    """Load some training data from telemetry given a sparkContext"""
     frame = sparkSession.sql(
         """
     SELECT
@@ -42,7 +41,7 @@ def extract_telemetry(sparkSession):
 
 
 def transform(frame):
-    """ Convert the dataframe to JSON and augment each record to
+    """Convert the dataframe to JSON and augment each record to
     include the install count for each addon.
     """
 

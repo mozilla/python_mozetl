@@ -86,7 +86,7 @@ def get_samples(spark, date_from):
 
 
 def get_addons_per_client(users_df, addon_whitelist, minimum_addons_count):
-    """ Extracts a DataFrame that contains one row
+    """Extracts a DataFrame that contains one row
     for each client along with the list of active add-on GUIDs.
     """
 
@@ -125,8 +125,7 @@ def get_addons_per_client(users_df, addon_whitelist, minimum_addons_count):
 
 
 def compute_clusters(addons_df, num_clusters, random_seed):
-    """ Performs user clustering by using add-on ids as features.
-    """
+    """Performs user clustering by using add-on ids as features."""
 
     # Build the stages of the pipeline. We need hashing to make the next
     # steps work.
@@ -145,8 +144,7 @@ def compute_clusters(addons_df, num_clusters, random_seed):
 
 
 def get_donor_pools(users_df, clusters_df, num_donors, random_seed=None):
-    """ Samples users from each cluster.
-    """
+    """Samples users from each cluster."""
     cluster_population = clusters_df.groupBy("prediction").count().collect()
     clusters_histogram = [(x["prediction"], x["count"]) for x in cluster_population]
 
@@ -216,7 +214,7 @@ def format_donors_dictionary(donors_df):
 
 
 def similarity_function(x, y):
-    """ Similarity function for comparing user features.
+    """Similarity function for comparing user features.
 
     This actually really should be implemented in taar.similarity_recommender
     and then imported here for consistency.
@@ -260,7 +258,7 @@ def generate_non_cartesian_pairs(first_rdd, second_rdd):
 def get_lr_curves(
     spark, features_df, cluster_ids, kernel_bandwidth, num_pdf_points, random_seed=None
 ):
-    """ Compute the likelihood ratio curves for clustered clients.
+    """Compute the likelihood ratio curves for clustered clients.
 
     Work-flow followed in this function is as follows:
 

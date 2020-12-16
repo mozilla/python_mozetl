@@ -372,7 +372,7 @@ def search_aggregates_etl(submission_date, bucket, prefix, **kwargs):
         prefix,
         SEARCH_AGGREGATES_VERSION,
         search_aggregates,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -384,7 +384,7 @@ def search_clients_daily_etl(submission_date, bucket, prefix, **kwargs):
         SEARCH_CLIENTS_DAILY_VERSION,
         search_clients_daily,
         orderBy=["sample_id"],
-        **kwargs
+        **kwargs,
     )
 
 

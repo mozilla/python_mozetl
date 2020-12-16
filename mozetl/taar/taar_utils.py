@@ -88,7 +88,7 @@ def store_json_to_s3(json_data, base_filename, date, prefix, bucket):
 
 
 def load_amo_external_whitelist():
-    """ Download and parse the AMO add-on whitelist.
+    """Download and parse the AMO add-on whitelist.
 
     :raises RuntimeError: the AMO whitelist file cannot be downloaded or contains
                           no valid add-ons.
@@ -133,8 +133,8 @@ def load_amo_curated_whitelist():
 
 def hash_telemetry_id(telemetry_id):
     """
-        This hashing function is a reference implementation based on :
-            https://phabricator.services.mozilla.com/D8311
+    This hashing function is a reference implementation based on :
+        https://phabricator.services.mozilla.com/D8311
 
     """
     return hashlib.sha256(telemetry_id.encode("utf8")).hexdigest()

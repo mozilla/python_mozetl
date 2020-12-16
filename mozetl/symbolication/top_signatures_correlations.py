@@ -24,12 +24,12 @@ spark = SparkSession.builder.appName("modules-with-missing-symbols").getOrCreate
 
 sc.addPyFile("stemming-1.0.1/stemming/porter2.py")
 
-from crashcorrelations import (
+from crashcorrelations import (  # noqa E402
     utils,
     download_data,
     crash_deviations,
     comments,
-)  # noqa E402
+)
 
 
 # workaround airflow not able to different schedules for tasks in a dag

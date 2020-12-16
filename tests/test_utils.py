@@ -31,7 +31,9 @@ def test_write_csv_ascii(generate_data, tmpdir):
     with open(path, "rb") as f:
         data = f.read()
 
-    assert [l.decode("utf-8") for l in data.rstrip().split(b"\r\n")[1:]] == test_data
+    assert [
+        line.decode("utf-8") for line in data.rstrip().split(b"\r\n")[1:]
+    ] == test_data
 
 
 def test_generate_filter_parameters():
@@ -58,7 +60,7 @@ def test_generate_filter_parameters():
 
 
 def test_write_csv_valid_unicode(generate_data, tmpdir):
-    test_data = [u"∆", u"∫", u"∬"]
+    test_data = ["∆", "∫", "∬"]
     df = generate_data(test_data)
 
     path = str(tmpdir.join("test_data.csv"))
@@ -67,7 +69,9 @@ def test_write_csv_valid_unicode(generate_data, tmpdir):
     with open(path, "rb") as f:
         data = f.read()
 
-    assert [l.decode("utf-8") for l in data.rstrip().split(b"\r\n")[1:]] == test_data
+    assert [
+        line.decode("utf-8") for line in data.rstrip().split(b"\r\n")[1:]
+    ] == test_data
 
 
 @mock_s3
@@ -76,7 +80,12 @@ def test_write_csv_to_s3(generate_data):
     key = "test.csv"
 
     conn = boto3.resource("s3", region_name="us-west-2")
-    conn.create_bucket(Bucket=bucket)
+    conn.create_bucket(
+        Bucket=bucket,
+        CreateBucketConfiguration={
+            "LocationConstraint": "us-west-2",
+        },
+    )
 
     utils.write_csv_to_s3(generate_data(["foo"]), bucket, key)
 
@@ -92,7 +101,12 @@ def test_write_csv_to_s3_no_header(generate_data):
     key = "test.csv"
 
     conn = boto3.resource("s3", region_name="us-west-2")
-    conn.create_bucket(Bucket=bucket)
+    conn.create_bucket(
+        Bucket=bucket,
+        CreateBucketConfiguration={
+            "LocationConstraint": "us-west-2",
+        },
+    )
 
     utils.write_csv_to_s3(generate_data(), bucket, key, header=False)
 
@@ -107,7 +121,12 @@ def test_write_csv_to_s3_existing(generate_data):
     key = "test.csv"
 
     conn = boto3.resource("s3", region_name="us-west-2")
-    conn.create_bucket(Bucket=bucket)
+    conn.create_bucket(
+        Bucket=bucket,
+        CreateBucketConfiguration={
+            "LocationConstraint": "us-west-2",
+        },
+    )
 
     utils.write_csv_to_s3(generate_data(["foo"]), bucket, key)
     utils.write_csv_to_s3(generate_data(["foo", "bar"]), bucket, key)

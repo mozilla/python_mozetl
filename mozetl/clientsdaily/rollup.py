@@ -81,7 +81,7 @@ def extract_search_counts(frame):
     extracted = grouped.select(
         "did",
         F.col("sum(search_count_atom)").alias("search_count_all"),
-        *[F.col("sum({})".format(c)).alias(c) for c in SEARCH_ACCESS_COLUMNS]
+        *[F.col("sum({})".format(c)).alias(c) for c in SEARCH_ACCESS_COLUMNS],
     )
     # Create a homologous output row for each input row
     # where search_counts is NULL.
@@ -91,7 +91,7 @@ def extract_search_counts(frame):
         .select(
             "did",
             F.lit(0).alias("search_count_all"),
-            *[F.lit(0).alias(c) for c in SEARCH_ACCESS_COLUMNS]
+            *[F.lit(0).alias(c) for c in SEARCH_ACCESS_COLUMNS],
         )
     )
     intermediate = extracted.unionAll(nulls)
