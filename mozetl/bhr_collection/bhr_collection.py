@@ -719,9 +719,16 @@ def symbolicate_stacks(stack, processed_modules):
 
 
 def map_to_hang_data(hang, config):
-    stack, duration, thread, runnable_name, process, annotations, build_date, platform = (
-        hang
-    )
+    (
+        stack,
+        duration,
+        thread,
+        runnable_name,
+        process,
+        annotations,
+        build_date,
+        platform,
+    ) = hang
     result = []
     if duration < config["hang_lower_bound"]:
         return result
