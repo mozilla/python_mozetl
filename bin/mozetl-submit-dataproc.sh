@@ -19,4 +19,5 @@ fi
 gcloud dataproc jobs submit pyspark $2 \
     --cluster=$1 \
     --region=us-central1 \
-    --jars 'gs://spark-lib/bigquery/spark-bigquery-latest_2.12.jar'
+    --jars 'gs://spark-lib/bigquery/spark-bigquery-latest_2.12.jar' \
+    -- ${@:3:$#}
