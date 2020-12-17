@@ -272,10 +272,16 @@ class ProfileProcessor(object):
         )
 
     def pre_ingest_row(self, row):
-        (stack, runnable_name, thread_name, build_date, pending_input,
-         platform, hang_ms, hang_count) = (
-            row
-        )
+        (
+            stack,
+            runnable_name,
+            thread_name,
+            build_date,
+            pending_input,
+            platform,
+            hang_ms,
+            hang_count,
+        ) = row
 
         thread = self.thread_table.key_to_item(thread_name)
         prune_stack_cache = thread["pruneStackCache"]
@@ -291,21 +297,26 @@ class ProfileProcessor(object):
             cache_item[0] += hang_ms
 
     def ingest_row(self, row):
-        (stack, runnable_name, thread_name, build_date, pending_input,
-         platform, hang_ms, hang_count) = (
-            row
-        )
+        (
+            stack,
+            runnable_name,
+            thread_name,
+            build_date,
+            pending_input,
+            platform,
+            hang_ms,
+            hang_count,
+        ) = row
 
         thread = self.thread_table.key_to_item(thread_name)
         stack_table = thread["stackTable"]
         sample_table = thread["sampleTable"]
         dates = thread["dates"]
         prune_stack_cache = thread["pruneStackCache"]
-        root_stack = prune_stack_cache.key_to_item(("(root)", None, None))
+        prune_stack_cache.key_to_item(("(root)", None, None))
 
         last_stack = 0
         last_cache_item_index = 0
-        last_lib_name = None
         for (func_name, lib_name) in stack:
             cache_item_index = prune_stack_cache.key_to_index(
                 (func_name, lib_name, last_cache_item_index)
@@ -316,15 +327,12 @@ class ProfileProcessor(object):
                 cache_item[0] / parent_cache_item[0]
                 > self.config["stack_acceptance_threshold"]
             ):
-                last_lib_name = lib_name
                 last_stack = stack_table.key_to_index((func_name, lib_name, last_stack))
                 last_cache_item_index = cache_item_index
             else:
                 # If we're below the acceptance threshold, just lump it under (other) below
                 # its parent.
-                last_lib_name = lib_name
                 last_stack = stack_table.key_to_index(("(other)", lib_name, last_stack))
-                last_cache_item_index = cache_item_index
                 break
 
         if (
@@ -583,17 +591,13 @@ def process_frame(frame, modules):
         if module_index is None or module_index < 0 or module_index >= len(modules):
             return (None, offset)
         debug_name, breakpad_id = modules[module_index]
-        return ((debug_name, breakpad_id), offset)
+        return (debug_name, breakpad_id), offset
     else:
-        return (("pseudo", None), frame)
+        return ("pseudo", None), frame
 
 
 def filter_hang(hang):
-    return (
-        hang["thread"] == "Gecko"
-        and len(hang["stack"]) > 0
-        and len(hang["stack"]) < 300
-    )
+    return hang["thread"] == "Gecko" and 0 < len(hang["stack"]) < 300
 
 
 def process_hang(hang):
@@ -605,8 +609,6 @@ def process_hang(hang):
 def process_hangs(ping):
     build_date = ping["application/build_id"][:8]  # "YYYYMMDD" : 8 characters
 
-    os_version_split = ping["environment/system/os/version"].split(".")
-    os_version = os_version_split[0] if len(os_version_split) > 0 else ""
     platform = "{}".format(ping["environment/system/os/name"])
 
     modules = ping["payload/modules"]
@@ -1099,7 +1101,7 @@ def write_file(name, stuff, config):
             s3_uuid_key = (
                 "bhr/data/hang_aggregates/" + name + "_" + config["uuid"] + ".json"
             )
-            #transfer.upload_file(gzfilename, bucket, s3_uuid_key, extra_args=extra_args)
+            transfer.upload_file(gzfilename, bucket, s3_uuid_key, extra_args=extra_args)
 
 
 default_config = {
@@ -1108,7 +1110,7 @@ default_config = {
     "use_s3": True,
     "sample_size": 0.50,
     "symbol_server_url": "https://s3-us-west-2.amazonaws.com/"
-                         "org.mozilla.crash-stats.symbols-public/v1/",
+    "org.mozilla.crash-stats.symbols-public/v1/",
     "hang_profile_in_filename": "hang_profile_128_16000",
     "hang_profile_out_filename": None,
     "print_debug_info": False,
@@ -1169,7 +1171,8 @@ def etl_job(sc, sql_context, config=None):
         iteration_start = time.time()
         current_date = final_config["start_date"] + timedelta(days=x)
         data = time_code(
-            "Getting data", lambda: get_data(sc, sql_context, final_config, current_date)
+            "Getting data",
+            lambda: get_data(sc, sql_context, final_config, current_date),
         )
         if data is None:
             print("No data")
@@ -1210,7 +1213,8 @@ def etl_job_incremental_write(sc, sql_context, config=None):
         current_date = final_config["start_date"] + timedelta(days=x)
         date_str = current_date.strftime("%Y%m%d")
         data = time_code(
-            "Getting data", lambda: get_data(sc, sql_context, final_config, current_date)
+            "Getting data",
+            lambda: get_data(sc, sql_context, final_config, current_date),
         )
         if data is None:
             print("No data")
@@ -1251,7 +1255,8 @@ def etl_job_daily(sc, sql_context, config=None):
         current_date = final_config["start_date"] + timedelta(days=x)
         date_str = current_date.strftime("%Y%m%d")
         data = time_code(
-            "Getting data", lambda: get_data(sc, sql_context, final_config, current_date)
+            "Getting data",
+            lambda: get_data(sc, sql_context, final_config, current_date),
         )
         if data is None:
             print("No data")
