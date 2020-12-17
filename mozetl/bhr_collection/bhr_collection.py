@@ -1,6 +1,7 @@
 # Migrated from Databricks to run on dataproc
 # pip install:
 # boto3==1.16.20
+# click==7.1.2
 
 import contextlib
 import gc
@@ -17,6 +18,7 @@ from datetime import datetime, timedelta
 from io import BytesIO
 
 import boto3
+import click
 from boto3.s3.transfer import S3Transfer
 from pyspark import SparkContext
 from pyspark.sql import SparkSession
@@ -1322,16 +1324,29 @@ def etl_job_incremental_finalize(_, __, config=None):
         write_file(final_config["hang_profile_out_filename"], profile, final_config)
 
 
-etl_job_daily(
-    sc,
-    spark,
-    {
-        "start_date": datetime.today() - timedelta(days=3),
-        "end_date": datetime.today() - timedelta(days=3),
-        "hang_profile_in_filename": "hangs_main",
-        "hang_profile_out_filename": "hangs_main",
-        "hang_lower_bound": 128,
-        "hang_upper_bound": 65536,
-        "sample_size": 0.5,
-    },
+@click.command()
+@click.option(
+    "--sample-size",
+    type=float,
+    default=0.5,
+    help="Proportion of pings to use (1.0 is 100%)",
 )
+def start_job(sample_size):
+    print(f"Using sample size {sample_size}")
+    etl_job_daily(
+        sc,
+        spark,
+        {
+            "start_date": datetime.today() - timedelta(days=3),
+            "end_date": datetime.today() - timedelta(days=3),
+            "hang_profile_in_filename": "hangs_main",
+            "hang_profile_out_filename": "hangs_main",
+            "hang_lower_bound": 128,
+            "hang_upper_bound": 65536,
+            "sample_size": sample_size,
+        },
+    )
+
+
+if __name__ == "__main__":
+    start_job()
