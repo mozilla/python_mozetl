@@ -160,7 +160,7 @@ def parse_arguments():
         help="The URL to the git repository e.g. https://github.com/mozilla/python_mozetl.git",
     )
     parser.add_argument(
-        "--git-branch", type=str, default="master", help="The branch to run e.g. master"
+        "--git-branch", type=str, default="main", help="The branch to run e.g. main"
     )
     parser.add_argument(
         "--node-type-id", type=str, default="c3.4xlarge", help="EC2 Node type"

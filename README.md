@@ -1,7 +1,7 @@
 # Firefox Telemetry Python ETL
 
 [![CircleCI](https://circleci.com/gh/mozilla/python_mozetl.svg?style=svg)](https://circleci.com/gh/mozilla/python_mozetl)
-[![codecov](https://codecov.io/gh/mozilla/python_mozetl/branch/master/graph/badge.svg)](https://codecov.io/gh/mozilla/python_mozetl)
+[![codecov](https://codecov.io/gh/mozilla/python_mozetl/branch/main/graph/badge.svg)](https://codecov.io/gh/mozilla/python_mozetl)
 
 This repository is a collection of ETL jobs for Firefox Telemetry.
 
@@ -47,7 +47,7 @@ It may be used with [ATMO](https://analysis.telemetry.mozilla.org/) to manually 
 
 In an SSH session with an ATMO cluster, grab a copy of the script:
 ```
-$ wget https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh
+$ wget https://raw.githubusercontent.com/mozilla/python_mozetl/main/bin/mozetl-submit.sh
 ```
 Push your code to your own fork, where the job has been added to `mozetl.cli`. Then run it.
 
