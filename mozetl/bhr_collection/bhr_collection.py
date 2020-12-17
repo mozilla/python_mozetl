@@ -272,7 +272,6 @@ class ProfileProcessor(object):
         )
 
     def pre_ingest_row(self, row):
-        # pylint: disable=unused-variable
         (stack, runnable_name, thread_name, build_date, pending_input,
          platform, hang_ms, hang_count) = (
             row
@@ -292,7 +291,6 @@ class ProfileProcessor(object):
             cache_item[0] += hang_ms
 
     def ingest_row(self, row):
-        # pylint: disable=unused-variable
         (stack, runnable_name, thread_name, build_date, pending_input,
          platform, hang_ms, hang_count) = (
             row
@@ -303,11 +301,11 @@ class ProfileProcessor(object):
         sample_table = thread["sampleTable"]
         dates = thread["dates"]
         prune_stack_cache = thread["pruneStackCache"]
-        # root_stack = prune_stack_cache.key_to_item(("(root)", None, None))
+        root_stack = prune_stack_cache.key_to_item(("(root)", None, None))
 
         last_stack = 0
         last_cache_item_index = 0
-        # last_lib_name = None
+        last_lib_name = None
         for (func_name, lib_name) in stack:
             cache_item_index = prune_stack_cache.key_to_index(
                 (func_name, lib_name, last_cache_item_index)
@@ -318,15 +316,15 @@ class ProfileProcessor(object):
                 cache_item[0] / parent_cache_item[0]
                 > self.config["stack_acceptance_threshold"]
             ):
-                # last_lib_name = lib_name
+                last_lib_name = lib_name
                 last_stack = stack_table.key_to_index((func_name, lib_name, last_stack))
                 last_cache_item_index = cache_item_index
             else:
                 # If we're below the acceptance threshold, just lump it under (other) below
                 # its parent.
-                # last_lib_name = lib_name
+                last_lib_name = lib_name
                 last_stack = stack_table.key_to_index(("(other)", lib_name, last_stack))
-                # last_cache_item_index = cache_item_index
+                last_cache_item_index = cache_item_index
                 break
 
         if (
@@ -465,16 +463,30 @@ def time_code(name, callback):
     return result
 
 
+def get_prop(val, prop):
+    if val is None:
+        return None
+
+    for key in prop.split("/"):
+        val = val[key]
+        if val is None:
+            return None
+    return val
+
+
 def get_ping_properties(ping, properties):
     result = {}
     for prop in properties:
-        val = ping
-        for key in prop.split("/"):
-            val = val.get(key, None)
-            if not isinstance(val, dict):
-                break
-        result[prop] = val
+        result[prop] = get_prop(ping, prop)
     return result
+
+
+def properties_are_not_none(ping, properties):
+    for prop in properties:
+        if ping[prop] is None:
+            return False
+
+    return True
 
 
 def get_data(sc, sql_context, config, date, end_date=None):
@@ -483,14 +495,14 @@ def get_data(sc, sql_context, config, date, end_date=None):
     if end_date is None:
         end_date = date
 
-    submission_start_str = date - timedelta(days=1)
-    submission_end_str = end_date + timedelta(days=1)
+    submission_start_str = date - timedelta(days=5)
+    submission_end_str = end_date + timedelta(days=5)
 
     date_str = date.strftime("%Y%m%d")
     end_date_str = end_date.strftime("%Y%m%d")
 
     pings_df = (
-        sql_context.read.format("bigquery")
+        spark.read.format("bigquery")
         .option("table", "moz-fx-data-shared-prod.telemetry_stable.bhr_v4")
         .load()
         .where(
@@ -501,34 +513,35 @@ def get_data(sc, sql_context, config, date, end_date=None):
         .sample(config["sample_size"])
     )
 
-    print("%d results total" % pings_df.rdd.count())
-    pings = pings_df.rdd.map(lambda p: json.loads(p["additional_properties"]))
-
     if config["exclude_modules"]:
         properties = [
             "environment/system/os/name",
             "environment/system/os/version",
             "application/architecture",
-            "application/buildId",
+            "application/build_id",
             "payload/hangs",
-            "payload/timeSinceLastPing",
+            "payload/time_since_last_ping",
         ]
     else:
         properties = [
             "environment/system/os/name",
             "environment/system/os/version",
             "application/architecture",
-            "application/buildId",
+            "application/build_id",
             "payload/modules",
             "payload/hangs",
-            "payload/timeSinceLastPing",
+            "payload/time_since_last_ping",
         ]
 
-    mapped = pings.map(lambda p: get_ping_properties(p, properties))
+    print("%d results total" % pings_df.rdd.count())
+    mapped = pings_df.rdd.map(lambda p: get_ping_properties(p, properties)).filter(
+        lambda p: properties_are_not_none(p, properties)
+    )
 
     try:
         result = mapped.filter(
-            lambda p: date_str <= p["application/buildId"][:8] <= end_date_str
+            lambda p: p["application/build_id"][:8] >= date_str
+            and p["application/build_id"][:8] <= end_date_str
         )
         print("%d results after first filter" % result.count())
         return result
@@ -541,9 +554,9 @@ def ping_is_valid(ping):
         return False
     if not isinstance(ping["environment/system/os/name"], str):
         return False
-    if not isinstance(ping["application/buildId"], str):
+    if not isinstance(ping["application/build_id"], str):
         return False
-    if not isinstance(ping["payload/timeSinceLastPing"], int):
+    if not isinstance(ping["payload/time_since_last_ping"], int):
         return False
 
     return True
@@ -583,15 +596,21 @@ def filter_hang(hang):
     )
 
 
-def process_hangs(ping):
-    build_date = ping["application/buildId"][:8]  # "YYYYMMDD" : 8 characters
+def process_hang(hang):
+    result = hang.asDict()
+    result["stack"] = json.loads(hang["stack"])
+    return result
 
-    # os_version_split = ping["environment/system/os/version"].split(".")
-    # os_version = os_version_split[0] if len(os_version_split) > 0 else ""
+
+def process_hangs(ping):
+    build_date = ping["application/build_id"][:8]  # "YYYYMMDD" : 8 characters
+
+    os_version_split = ping["environment/system/os/version"].split(".")
+    os_version = os_version_split[0] if len(os_version_split) > 0 else ""
     platform = "{}".format(ping["environment/system/os/name"])
 
-    modules = ping.get("payload/modules", [])
-    hangs = ping["payload/hangs"]
+    modules = ping["payload/modules"]
+    hangs = [process_hang(h) for h in ping["payload/hangs"]]
     if hangs is None:
         return []
 
@@ -696,7 +715,6 @@ def symbolicate_stacks(stack, processed_modules):
 
 
 def map_to_hang_data(hang, config):
-    # pylint: disable=unused-variable
     stack, duration, thread, runnable_name, process, annotations, build_date, platform = (
         hang
     )
@@ -736,7 +754,6 @@ def process_hang_key(key, processed_modules):
 
 
 def process_hang_value(key, val, usage_hours_by_date):
-    # pylint: disable=unused-variable
     stack, runnable_name, thread, build_date, pending_input, platform = key
     return (
         val[0] / usage_hours_by_date[build_date],
@@ -831,9 +848,9 @@ def get_grouped_sums_and_counts(hangs, usage_hours_by_date, config):
 
 
 def get_usage_hours(ping):
-    build_date = ping["application/buildId"][:8]  # "YYYYMMDD" : 8 characters
-    usage_hours = float(ping["payload/timeSinceLastPing"]) / 3600000.0
-    return (build_date, usage_hours)
+    build_date = ping["application/build_id"][:8]  # "YYYYMMDD" : 8 characters
+    usage_hours = float(ping["payload/time_since_last_ping"]) / 3600000.0
+    return build_date, usage_hours
 
 
 def merge_usage_hours(a, b):
@@ -996,7 +1013,6 @@ def fetch_url(url):
     result = False, ""
     try:
         with contextlib.closing(urllib.request.urlopen(url)) as response:
-            # pylint: disable=no-member
             response_code = response.getcode()
             if response_code == 404:
                 return False, ""
@@ -1009,7 +1025,6 @@ def fetch_url(url):
     if not result[0]:
         try:
             with contextlib.closing(urllib.request.urlopen(url)) as response:
-                # pylint: disable=no-member
                 response_code = response.getcode()
                 if response_code == 404:
                     return False, ""
@@ -1031,9 +1046,7 @@ def decode_response(response):
                 with gzip.GzipFile(fileobj=data_stream) as f:
                     return f.read()
             except EnvironmentError:
-                # pylint: disable=no-member
                 data_stream.seek(0)
-                # pylint: disable=no-member
                 return data_stream.read().decode("zlib")
     return response.read()
 
@@ -1086,7 +1099,7 @@ def write_file(name, stuff, config):
             s3_uuid_key = (
                 "bhr/data/hang_aggregates/" + name + "_" + config["uuid"] + ".json"
             )
-            # transfer.upload_file(gzfilename, bucket, s3_uuid_key, extra_args=extra_args)
+            #transfer.upload_file(gzfilename, bucket, s3_uuid_key, extra_args=extra_args)
 
 
 default_config = {
@@ -1132,7 +1145,6 @@ def print_progress(
 
 def etl_job(sc, sql_context, config=None):
     """This is the function that will be executed on the cluster"""
-
     final_config = {}
     final_config.update(default_config)
 
