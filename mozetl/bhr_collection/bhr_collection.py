@@ -20,7 +20,6 @@ from io import BytesIO
 import boto3
 import click
 from boto3.s3.transfer import S3Transfer
-from pyspark import SparkContext
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import array, collect_list
 from pyspark.sql.types import Row
@@ -28,8 +27,8 @@ from pyspark.sql.types import Row
 UNSYMBOLICATED = "<unsymbolicated>"
 SYMBOL_TRUNCATE_LENGTH = 200
 
-sc = SparkContext.getOrCreate()
 spark = SparkSession.builder.appName("bhr-collection").getOrCreate()
+sc = spark.sparkContext
 
 
 def to_struct_of_arrays(a):
@@ -975,10 +974,6 @@ def process_modules(frames_by_module, config):
     return frames_by_module.flatMap(lambda x: process_module(x[0], x[1], config))
 
 
-def reduce_histograms(a, b):
-    return [a_bucket + b_bucket for a_bucket, b_bucket in zip(a, b)]
-
-
 def debug_print_rdd_count(rdd, really=False):
     if really:
         print("RDD count:{}".format(rdd.count()))
@@ -1154,94 +1149,6 @@ def print_progress(
     print("Job should finish in {}".format(timedelta(seconds=remaining)))
 
 
-def etl_job(sc, sql_context, config=None):
-    """This is the function that will be executed on the cluster"""
-    final_config = {}
-    final_config.update(default_config)
-
-    if config is not None:
-        final_config.update(config)
-
-    if final_config["hang_profile_out_filename"] is None:
-        final_config["hang_profile_out_filename"] = final_config[
-            "hang_profile_in_filename"
-        ]
-
-    profile_processor = ProfileProcessor(final_config)
-
-    iterations = (final_config["end_date"] - final_config["start_date"]).days + 1
-    job_start = time.time()
-    current_date = None
-    transformed = None
-    usage_hours = None
-    # We were OOMing trying to allocate a contiguous array for all of this. Pass it in
-    # bit by bit to the profile processor and hope it can handle it.
-    for x in range(0, iterations):
-        iteration_start = time.time()
-        current_date = final_config["start_date"] + timedelta(days=x)
-        data = time_code(
-            "Getting data",
-            lambda: get_data(sc, sql_context, final_config, current_date),
-        )
-        if data is None:
-            print("No data")
-            continue
-        transformed, usage_hours = transform_pings(sc, data, final_config)
-        time_code(
-            "Passing stacks to processor",
-            lambda: profile_processor.ingest(transformed, usage_hours),
-        )
-        # Run a collection to ensure that any references to any RDDs are cleaned up,
-        # allowing the JVM to clean them up on its end.
-        gc.collect()
-        print_progress(job_start, iterations, x, iteration_start, x)
-
-    profile = profile_processor.process_into_profile()
-    write_file(final_config["hang_profile_out_filename"], profile, final_config)
-
-
-def etl_job_incremental_write(sc, sql_context, config=None):
-    final_config = {}
-    final_config.update(default_config)
-
-    if config is not None:
-        final_config.update(config)
-
-    if final_config["hang_profile_out_filename"] is None:
-        final_config["hang_profile_out_filename"] = final_config[
-            "hang_profile_in_filename"
-        ]
-
-    iterations = (final_config["end_date"] - final_config["start_date"]).days + 1
-    job_start = time.time()
-    current_date = None
-    transformed = None
-    usage_hours = None
-    for x in range(iterations):
-        iteration_start = time.time()
-        current_date = final_config["start_date"] + timedelta(days=x)
-        date_str = current_date.strftime("%Y%m%d")
-        data = time_code(
-            "Getting data",
-            lambda: get_data(sc, sql_context, final_config, current_date),
-        )
-        if data is None:
-            print("No data")
-            continue
-        transformed, usage_hours = transform_pings(sc, data, final_config)
-        profile_processor = ProfileProcessor(final_config)
-        profile_processor.ingest(transformed, usage_hours)
-        profile = profile_processor.process_into_profile()
-        filepath = "%s_incremental_%s" % (
-            final_config["hang_profile_out_filename"],
-            date_str,
-        )
-        print("writing file %s" % filepath)
-        write_file(filepath, profile, final_config)
-        gc.collect()
-        print_progress(job_start, iterations, x, iteration_start, date_str)
-
-
 def etl_job_daily(sc, sql_context, config=None):
     final_config = {}
     final_config.update(default_config)
@@ -1284,68 +1191,23 @@ def etl_job_daily(sc, sql_context, config=None):
         print_progress(job_start, iterations, x, iteration_start, date_str)
 
 
-def etl_job_incremental_finalize(_, __, config=None):
-    final_config = {}
-    final_config.update(default_config)
-
-    if config is not None:
-        final_config.update(config)
-
-    if final_config["hang_profile_out_filename"] is None:
-        final_config["hang_profile_out_filename"] = final_config[
-            "hang_profile_in_filename"
-        ]
-
-    profile_processor = ProfileProcessor(final_config)
-    iterations = (final_config["end_date"] - final_config["start_date"]).days + 1
-    job_start = time.time()
-    current_date = None
-    for x in range(iterations):
-        iteration_start = time.time()
-        current_date = final_config["start_date"] + timedelta(days=x)
-        date_str = current_date.strftime("%Y%m%d")
-        profile = read_file(
-            "%s_incremental_%s" % (final_config["hang_profile_in_filename"], date_str),
-            final_config,
-        )
-        profile_processor.ingest_processed_profile(profile)
-        gc.collect()
-        print_progress(job_start, iterations, x, iteration_start, date_str)
-
-    if final_config["split_threads_in_out_file"]:
-        profile = profile_processor.process_into_split_profile()
-        for files in profile["file_data"]:
-            for name, data in files:
-                write_file(
-                    final_config["hang_profile_out_filename"] + "_" + name,
-                    data,
-                    final_config,
-                )
-        write_file(
-            final_config["hang_profile_out_filename"],
-            profile["main_payload"],
-            final_config,
-        )
-    else:
-        profile = profile_processor.process_into_profile()
-        write_file(final_config["hang_profile_out_filename"], profile, final_config)
-
-
 @click.command()
+@click.option("--date", type=datetime.fromisoformat, required=True)
 @click.option(
     "--sample-size",
     type=float,
     default=0.5,
     help="Proportion of pings to use (1.0 is 100%)",
 )
-def start_job(sample_size):
+def start_job(date, sample_size):
+    print(f"Running for {date}")
     print(f"Using sample size {sample_size}")
     etl_job_daily(
         sc,
         spark,
         {
-            "start_date": datetime.today() - timedelta(days=3),
-            "end_date": datetime.today() - timedelta(days=3),
+            "start_date": date - timedelta(days=3),
+            "end_date": date - timedelta(days=3),
             "hang_profile_in_filename": "hangs_main",
             "hang_profile_out_filename": "hangs_main",
             "hang_lower_bound": 128,
