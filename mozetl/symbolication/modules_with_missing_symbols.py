@@ -34,7 +34,7 @@ def parse_args():
 
 args = parse_args()
 
-if args.date.isoweekday() not in args.run_on_days:
+if args.date.isoweekday() % 7 not in args.run_on_days:
     print(
         f"Skipping because run date day of week"
         f" {args.date} is not in {args.run_on_days}"
