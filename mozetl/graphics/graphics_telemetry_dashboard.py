@@ -133,7 +133,12 @@ def fetch_raw_pings(**kwargs):
 
     # NOTE: ReleaseFraction is not used in the shim
     pings = dashboard.fetch_results(
-        spark, start, end, channel=channel, min_firefox_version=MinFirefoxVersion
+        spark,
+        start,
+        end,
+        project_id="mozdata",
+        channel=channel,
+        min_firefox_version=MinFirefoxVersion,
     )
 
     metadata = [
