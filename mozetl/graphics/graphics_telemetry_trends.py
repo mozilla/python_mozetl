@@ -94,7 +94,7 @@ def fetch_and_format(start_date, end_date):
 
 def get_raw_pings(start_date, end_date):
     # WeeklyFraction ignored and baked into the included query
-    return trends.fetch_results(spark, start_date, end_date)
+    return trends.fetch_results(spark, start_date, end_date, project_id="mozdata")
 
 
 # Transform each ping to make it easier to work with in later stages.
