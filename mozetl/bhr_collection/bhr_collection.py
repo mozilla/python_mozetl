@@ -1229,8 +1229,8 @@ def start_job(date, sample_size):
         sc,
         spark,
         {
-            "start_date": date - timedelta(days=3),
-            "end_date": date - timedelta(days=3),
+            "start_date": date - timedelta(days=4),
+            "end_date": date - timedelta(days=4),
             "hang_profile_in_filename": "hangs_main",
             "hang_profile_out_filename": "hangs_main",
             "hang_lower_bound": 128,
