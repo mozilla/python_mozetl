@@ -126,6 +126,14 @@ def get_default_thread(name, minimal_sample_table):
         lambda key: (key[2], func_table.key_to_index((key[0], key[1]))),
         ("prefix", "func"),
     )
+    annotations_table = UniqueKeyedTable(
+        lambda key: (
+            key[0],
+            strings_table.key_to_index(key[1]),
+            strings_table.key_to_index(key[2]),
+        ),
+        ("prefix", "name", "value"),
+    )
     if minimal_sample_table:
         sample_table = UniqueKeyedTable(
             lambda key: (
@@ -144,7 +152,7 @@ def get_default_thread(name, minimal_sample_table):
                 key[2],
                 strings_table.key_to_index(key[3]),
             ),
-            ("stack", "runnable", "userInteracting", "platform"),
+            ("stack", "runnable", "annotations", "platform"),
         )
 
     stack_table.key_to_index(("(root)", None, None))
@@ -157,6 +165,7 @@ def get_default_thread(name, minimal_sample_table):
         "libs": libs,
         "funcTable": func_table,
         "stackTable": stack_table,
+        "annotationsTable": annotations_table,
         "pruneStackCache": prune_stack_cache,
         "sampleTable": sample_table,
         "stringArray": strings_table,
@@ -236,7 +245,7 @@ class ProfileProcessor(object):
                             other["stringArray"][other_samples["runnable"][i]],
                             other["name"],
                             build_date,
-                            other_samples["userInteracting"][i],
+                            other_samples["annotations"][i],
                             other["stringArray"][other_samples["platform"][i]],
                             date["sampleHangMs"][i],
                             date["sampleHangCount"][i],
@@ -261,7 +270,7 @@ class ProfileProcessor(object):
                                 other["stringArray"][other_samples["runnable"][i]],
                                 other["name"],
                                 build_date,
-                                other_samples["userInteracting"][i],
+                                other_samples["annotations"][i],
                                 other["stringArray"][other_samples["platform"][i]],
                                 date["sampleHangMs"][i],
                                 date["sampleHangCount"][i],
@@ -278,7 +287,7 @@ class ProfileProcessor(object):
             runnable_name,
             thread_name,
             build_date,
-            pending_input,
+            annotations,
             platform,
             hang_ms,
             hang_count,
@@ -303,7 +312,7 @@ class ProfileProcessor(object):
             runnable_name,
             thread_name,
             build_date,
-            pending_input,
+            annotations,
             platform,
             hang_ms,
             hang_count,
@@ -311,10 +320,16 @@ class ProfileProcessor(object):
 
         thread = self.thread_table.key_to_item(thread_name)
         stack_table = thread["stackTable"]
+        annotations_table = thread["annotationsTable"]
         sample_table = thread["sampleTable"]
         dates = thread["dates"]
         prune_stack_cache = thread["pruneStackCache"]
-        prune_stack_cache.key_to_item(("(root)", None, None))
+
+        last_annotation = None
+        for (name, value) in annotations:
+            last_annotation = annotations_table.key_to_index(
+                (last_annotation, name, value)
+            )
 
         last_stack = 0
         last_cache_item_index = 0
@@ -336,15 +351,11 @@ class ProfileProcessor(object):
                 last_stack = stack_table.key_to_index(("(other)", lib_name, last_stack))
                 break
 
-        if (
-            self.config["use_minimal_sample_table"]
-            and thread_name == "Gecko_Child"
-            and not pending_input
-        ):
+        if self.config["use_minimal_sample_table"] and thread_name == "Gecko_Child":
             return
 
         sample_index = sample_table.key_to_index(
-            (last_stack, runnable_name, pending_input, platform)
+            (last_stack, runnable_name, last_annotation, platform)
         )
 
         date = dates.key_to_item(build_date)
@@ -379,13 +390,17 @@ class ProfileProcessor(object):
 
     def process_date(self, date):
         if self.config["use_minimal_sample_table"]:
-            return {"date": date["date"], "sampleHangCount": date["sampleHangCount"]}
+            return {
+                "date": date["date"],
+                "sampleHangCount": date["sampleHangCount"],
+            }
         return date
 
     def process_thread(self, thread):
         string_array = thread["stringArray"]
         func_table = thread["funcTable"].struct_of_arrays()
         stack_table = thread["stackTable"].struct_of_arrays()
+        annotations_table = thread["annotationsTable"].struct_of_arrays()
         sample_table = thread["sampleTable"].struct_of_arrays()
 
         return {
@@ -394,6 +409,7 @@ class ProfileProcessor(object):
             "libs": thread["libs"].get_items(),
             "funcTable": func_table,
             "stackTable": stack_table,
+            "annotationsTable": annotations_table,
             "sampleTable": sample_table,
             "stringArray": string_array.get_items(),
             "dates": [self.process_date(d) for d in thread["dates"].get_items()],
@@ -592,13 +608,17 @@ def process_frame(frame, modules):
         if module_index is None or module_index < 0 or module_index >= len(modules):
             return (None, offset)
         debug_name, breakpad_id = modules[module_index]
-        return (debug_name, breakpad_id), offset
+        return ((debug_name, breakpad_id), offset)
     else:
-        return ("pseudo", None), frame
+        return (("pseudo", None), frame)
 
 
 def filter_hang(hang):
-    return hang["thread"] == "Gecko" and 0 < len(hang["stack"]) < 300
+    return (
+        hang["thread"] == "Gecko"
+        and len(hang["stack"]) > 0
+        and len(hang["stack"]) < 300
+    )
 
 
 def process_hang(hang):
@@ -628,7 +648,7 @@ def process_hangs(ping):
             h["thread"],
             "",
             h["process"],
-            {},
+            h["annotations"],
             build_date,
             platform,
         )
@@ -717,6 +737,10 @@ def symbolicate_stacks(stack, processed_modules):
     return symbolicated
 
 
+def tupleize_annotation_list(d):
+    return tuple((k, v) for k, v in sorted(d, key=lambda x: x[0]))
+
+
 def map_to_hang_data(hang, config):
     (
         stack,
@@ -734,16 +758,12 @@ def map_to_hang_data(hang, config):
     if duration >= config["hang_upper_bound"]:
         return result
 
-    pending_input = False
-    if "PendingInput" in annotations:
-        pending_input = True
-
     key = (
         tuple((a, b) for a, b in stack),
         runnable_name,
         thread,
         build_date,
-        pending_input,
+        tupleize_annotation_list(annotations),
         platform,
     )
 
@@ -753,7 +773,10 @@ def map_to_hang_data(hang, config):
 
 
 def merge_hang_data(a, b):
-    return (a[0] + b[0], a[1] + b[1])
+    return (
+        a[0] + b[0],
+        a[1] + b[1],
+    )
 
 
 def process_hang_key(key, processed_modules):
@@ -764,7 +787,7 @@ def process_hang_key(key, processed_modules):
 
 
 def process_hang_value(key, val, usage_hours_by_date):
-    stack, runnable_name, thread, build_date, pending_input, platform = key
+    stack, runnable_name, thread, build_date, annotations, platform = key
     return (
         val[0] / usage_hours_by_date[build_date],
         val[1] / usage_hours_by_date[build_date],
@@ -860,7 +883,7 @@ def get_grouped_sums_and_counts(hangs, usage_hours_by_date, config):
 def get_usage_hours(ping):
     build_date = ping["application/build_id"][:8]  # "YYYYMMDD" : 8 characters
     usage_hours = float(ping["payload/time_since_last_ping"]) / 3600000.0
-    return build_date, usage_hours
+    return (build_date, usage_hours)
 
 
 def merge_usage_hours(a, b):
@@ -1206,8 +1229,8 @@ def start_job(date, sample_size):
         sc,
         spark,
         {
-            "start_date": date - timedelta(days=3),
-            "end_date": date - timedelta(days=3),
+            "start_date": date - timedelta(days=4),
+            "end_date": date - timedelta(days=4),
             "hang_profile_in_filename": "hangs_main",
             "hang_profile_out_filename": "hangs_main",
             "hang_lower_bound": 128,
