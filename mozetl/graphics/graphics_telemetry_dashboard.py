@@ -1032,6 +1032,7 @@ def get_windows_features():
     def get_media_decoders(rdd):
         rdd = rdd.filter(lambda p: p.get(MediaDecoderKey, None) is not None)
         if rdd.count() == 0:
+            # These three values correspond to WMF Software, DXVA D3D11, and DXVA D3D9
             return [0, 0, 0]
         decoders = rdd.map(lambda p: p.get(MediaDecoderKey)).reduce(lambda x, y: x + y)
         return [int(i) for i in decoders]
