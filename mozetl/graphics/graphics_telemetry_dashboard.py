@@ -1031,6 +1031,8 @@ def get_windows_features():
     # Media decoder backends.
     def get_media_decoders(rdd):
         rdd = rdd.filter(lambda p: p.get(MediaDecoderKey, None) is not None)
+        if rdd.count() == 0:
+            return [0, 0, 0]
         decoders = rdd.map(lambda p: p.get(MediaDecoderKey)).reduce(lambda x, y: x + y)
         return [int(i) for i in decoders]
 
