@@ -119,8 +119,25 @@ for version, date in firefox_versions.items():
 
 
 def is_old_firefox_module(module_info):
-    name, (version, _, _), _ = module_info
-    if name.lower() not in firefox_modules:
+    """Returns whether this is considered an old firefox module
+
+    Our symbols server expires debug information after 2 years. We don't want
+    to be notified of old firefox modules because it's likely they've expired
+    out of our system.
+
+    :param module_info: some module information structure consisting of
+        (name, (major, minor, rev), count)
+
+    :returns: true if this is an old firefox module, false if either this isn't
+        a firefox module or we don't have version information
+
+    """
+
+    name, (version, _, _), count = module_info
+
+    # If this isn't a firefox module or there's no version information (null or
+    # empty string), then it's not considered an old firefox module
+    if name.lower() not in firefox_modules or not version:
         return False
 
     return any(version.startswith(v + ".") for v in old_firefox_versions)
