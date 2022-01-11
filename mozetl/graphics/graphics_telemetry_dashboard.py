@@ -188,7 +188,7 @@ def validate(p):
     # Verify that we have at least one adapter.
     try:
         adapter = p["environment/system/gfx/adapters"][0]
-    except (KeyError, IndexError):
+    except (KeyError, IndexError, TypeError):
         return p
     if adapter is None or not hasattr(adapter, "__getitem__"):
         return p
