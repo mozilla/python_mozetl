@@ -114,11 +114,11 @@ jobs:
       # see https://circleci.com/docs/2.0/gh-bb-integration/#deployment-keys-and-user-keys
       - add_ssh_keys:
           fingerprints:
-            - "89:00:8c:0c:b4:28:30:69:76:a7:6f:63:cf:5d:ea:f2"
+            - "68:ba:7a:c1:36:9a:9e:70:24:b1:c1:20:47:34:d0:43"
       - run:
           name: Deploy docs to gh-pages branch
           command: |
-            git config user.email "fx-data-platform@mozilla.com"
+            git config user.email "dataops+ci-bot@mozilla.com"
             git config user.name "CircleCI docs-deploy job"
             npm install -g --silent gh-pages@2.0.1
             gh-pages --dotfiles --message "[skip ci] Updates" --dist .tox/docs_out
