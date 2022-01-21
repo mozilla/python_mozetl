@@ -1,0 +1,21 @@
+mozetl.bhr\_collection package
+==============================
+
+Submodules
+----------
+
+mozetl.bhr\_collection.bhr\_collection module
+---------------------------------------------
+
+.. automodule:: mozetl.bhr_collection.bhr_collection
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Module contents
+---------------
+
+.. automodule:: mozetl.bhr_collection
+   :members:
+   :undoc-members:
+   :show-inheritance:

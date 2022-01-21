@@ -1,0 +1,1349 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>mozetl.bhr_collection.bhr_collection &#8212; python_mozetl 0.1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for mozetl.bhr_collection.bhr_collection</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Migrated from Databricks to run on dataproc</span>
+<span class="c1"># pip install:</span>
+<span class="c1"># boto3==1.16.20</span>
+<span class="c1"># click==7.1.2</span>
+
+<span class="kn">import</span> <span class="nn">contextlib</span>
+<span class="kn">import</span> <span class="nn">gc</span>
+<span class="kn">import</span> <span class="nn">gzip</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">urllib</span>
+<span class="kn">import</span> <span class="nn">uuid</span>
+<span class="kn">from</span> <span class="nn">bisect</span> <span class="kn">import</span> <span class="n">bisect</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span>
+<span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">BytesIO</span>
+
+<span class="kn">import</span> <span class="nn">boto3</span>
+<span class="kn">import</span> <span class="nn">click</span>
+<span class="kn">from</span> <span class="nn">boto3.s3.transfer</span> <span class="kn">import</span> <span class="n">S3Transfer</span>
+<span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="kn">import</span> <span class="n">SparkSession</span>
+<span class="kn">from</span> <span class="nn">pyspark.sql.functions</span> <span class="kn">import</span> <span class="n">array</span><span class="p">,</span> <span class="n">collect_list</span>
+<span class="kn">from</span> <span class="nn">pyspark.sql.types</span> <span class="kn">import</span> <span class="n">Row</span>
+
+<span class="n">UNSYMBOLICATED</span> <span class="o">=</span> <span class="s2">&quot;&lt;unsymbolicated&gt;&quot;</span>
+<span class="n">SYMBOL_TRUNCATE_LENGTH</span> <span class="o">=</span> <span class="mi">200</span>
+
+<span class="n">spark</span> <span class="o">=</span> <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">appName</span><span class="p">(</span><span class="s2">&quot;bhr-collection&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
+<span class="n">sc</span> <span class="o">=</span> <span class="n">spark</span><span class="o">.</span><span class="n">sparkContext</span>
+
+
+<div class="viewcode-block" id="to_struct_of_arrays"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.to_struct_of_arrays">[docs]</a><span class="k">def</span> <span class="nf">to_struct_of_arrays</span><span class="p">(</span><span class="n">a</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Need at least one item in array for this to work.&quot;</span><span class="p">)</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="p">[</span><span class="n">e</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">a</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()}</span>
+    <span class="n">result</span><span class="p">[</span><span class="s2">&quot;length&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="UniqueKeyedTable"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.UniqueKeyedTable">[docs]</a><span class="k">class</span> <span class="nc">UniqueKeyedTable</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">get_default_from_key</span><span class="p">,</span> <span class="n">key_names</span><span class="o">=</span><span class="p">()):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_default_from_key</span> <span class="o">=</span> <span class="n">get_default_from_key</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key_to_index_map</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key_names</span> <span class="o">=</span> <span class="n">key_names</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">items</span> <span class="o">=</span> <span class="p">[]</span>
+
+<div class="viewcode-block" id="UniqueKeyedTable.key_to_index"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.UniqueKeyedTable.key_to_index">[docs]</a>    <span class="k">def</span> <span class="nf">key_to_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">key_to_index_map</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">key_to_index_map</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+        <span class="n">index</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_default_from_key</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key_to_index_map</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">index</span>
+        <span class="k">return</span> <span class="n">index</span></div>
+
+<div class="viewcode-block" id="UniqueKeyedTable.key_to_item"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.UniqueKeyedTable.key_to_item">[docs]</a>    <span class="k">def</span> <span class="nf">key_to_item</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">key_to_index</span><span class="p">(</span><span class="n">key</span><span class="p">)]</span></div>
+
+<div class="viewcode-block" id="UniqueKeyedTable.index_to_item"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.UniqueKeyedTable.index_to_item">[docs]</a>    <span class="k">def</span> <span class="nf">index_to_item</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">index</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="UniqueKeyedTable.get_items"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.UniqueKeyedTable.get_items">[docs]</a>    <span class="k">def</span> <span class="nf">get_items</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span></div>
+
+<div class="viewcode-block" id="UniqueKeyedTable.inner_struct_of_arrays"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.UniqueKeyedTable.inner_struct_of_arrays">[docs]</a>    <span class="k">def</span> <span class="nf">inner_struct_of_arrays</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">items</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Need at least one item in array for this to work.&quot;</span><span class="p">)</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">num_keys</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key_names</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_keys</span><span class="p">):</span>
+            <span class="n">result</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">key_names</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">items</span><span class="p">]</span>
+
+        <span class="n">result</span><span class="p">[</span><span class="s2">&quot;length&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="UniqueKeyedTable.struct_of_arrays"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.UniqueKeyedTable.struct_of_arrays">[docs]</a>    <span class="k">def</span> <span class="nf">struct_of_arrays</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">inner_struct_of_arrays</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="UniqueKeyedTable.sorted_struct_of_arrays"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.UniqueKeyedTable.sorted_struct_of_arrays">[docs]</a>    <span class="k">def</span> <span class="nf">sorted_struct_of_arrays</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">inner_struct_of_arrays</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">))</span></div></div>
+
+
+<div class="viewcode-block" id="GrowToFitList"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.GrowToFitList">[docs]</a><span class="k">class</span> <span class="nc">GrowToFitList</span><span class="p">(</span><span class="nb">list</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">index</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="n">to_grow</span> <span class="o">=</span> <span class="n">index</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">to_grow</span><span class="p">)</span>
+        <span class="nb">list</span><span class="o">.</span><span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">index</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="hexify"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.hexify">[docs]</a><span class="k">def</span> <span class="nf">hexify</span><span class="p">(</span><span class="n">num</span><span class="p">):</span>
+    <span class="k">return</span> <span class="s2">&quot;{0:#0</span><span class="si">{1}</span><span class="s2">x}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">num</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_default_lib"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.get_default_lib">[docs]</a><span class="k">def</span> <span class="nf">get_default_lib</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\.pdb$&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">),</span>
+        <span class="s2">&quot;offset&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;debugName&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span>
+        <span class="s2">&quot;debugPath&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span>
+        <span class="s2">&quot;arch&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+    <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="get_default_thread"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.get_default_thread">[docs]</a><span class="k">def</span> <span class="nf">get_default_thread</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">minimal_sample_table</span><span class="p">):</span>
+    <span class="n">strings_table</span> <span class="o">=</span> <span class="n">UniqueKeyedTable</span><span class="p">(</span><span class="k">lambda</span> <span class="nb">str</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span>
+    <span class="n">libs</span> <span class="o">=</span> <span class="n">UniqueKeyedTable</span><span class="p">(</span><span class="n">get_default_lib</span><span class="p">)</span>
+    <span class="n">func_table</span> <span class="o">=</span> <span class="n">UniqueKeyedTable</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="n">key</span><span class="p">:</span> <span class="p">(</span>
+            <span class="n">strings_table</span><span class="o">.</span><span class="n">key_to_index</span><span class="p">(</span><span class="n">key</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+            <span class="kc">None</span> <span class="k">if</span> <span class="n">key</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">libs</span><span class="o">.</span><span class="n">key_to_index</span><span class="p">(</span><span class="n">key</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
+        <span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;lib&quot;</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">stack_table</span> <span class="o">=</span> <span class="n">UniqueKeyedTable</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="n">key</span><span class="p">:</span> <span class="p">(</span><span class="n">key</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">func_table</span><span class="o">.</span><span class="n">key_to_index</span><span class="p">((</span><span class="n">key</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">key</span><span class="p">[</span><span class="mi">1</span><span class="p">]))),</span>
+        <span class="p">(</span><span class="s2">&quot;prefix&quot;</span><span class="p">,</span> <span class="s2">&quot;func&quot;</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">annotations_table</span> <span class="o">=</span> <span class="n">UniqueKeyedTable</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="n">key</span><span class="p">:</span> <span class="p">(</span>
+            <span class="n">key</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+            <span class="n">strings_table</span><span class="o">.</span><span class="n">key_to_index</span><span class="p">(</span><span class="n">key</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
+            <span class="n">strings_table</span><span class="o">.</span><span class="n">key_to_index</span><span class="p">(</span><span class="n">key</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span>
+        <span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;prefix&quot;</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">minimal_sample_table</span><span class="p">:</span>
+        <span class="n">sample_table</span> <span class="o">=</span> <span class="n">UniqueKeyedTable</span><span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">key</span><span class="p">:</span> <span class="p">(</span>
+                <span class="n">key</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                <span class="n">strings_table</span><span class="o">.</span><span class="n">key_to_index</span><span class="p">(</span><span class="n">key</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
+                <span class="n">key</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                <span class="n">strings_table</span><span class="o">.</span><span class="n">key_to_index</span><span class="p">(</span><span class="n">key</span><span class="p">[</span><span class="mi">3</span><span class="p">]),</span>
+            <span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;stack&quot;</span><span class="p">,</span> <span class="s2">&quot;platform&quot;</span><span class="p">),</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">sample_table</span> <span class="o">=</span> <span class="n">UniqueKeyedTable</span><span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">key</span><span class="p">:</span> <span class="p">(</span>
+                <span class="n">key</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                <span class="n">strings_table</span><span class="o">.</span><span class="n">key_to_index</span><span class="p">(</span><span class="n">key</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
+                <span class="n">key</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                <span class="n">strings_table</span><span class="o">.</span><span class="n">key_to_index</span><span class="p">(</span><span class="n">key</span><span class="p">[</span><span class="mi">3</span><span class="p">]),</span>
+            <span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;stack&quot;</span><span class="p">,</span> <span class="s2">&quot;runnable&quot;</span><span class="p">,</span> <span class="s2">&quot;annotations&quot;</span><span class="p">,</span> <span class="s2">&quot;platform&quot;</span><span class="p">),</span>
+        <span class="p">)</span>
+
+    <span class="n">stack_table</span><span class="o">.</span><span class="n">key_to_index</span><span class="p">((</span><span class="s2">&quot;(root)&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+
+    <span class="n">prune_stack_cache</span> <span class="o">=</span> <span class="n">UniqueKeyedTable</span><span class="p">(</span><span class="k">lambda</span> <span class="n">key</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">])</span>
+    <span class="n">prune_stack_cache</span><span class="o">.</span><span class="n">key_to_index</span><span class="p">((</span><span class="s2">&quot;(root)&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span>
+        <span class="s2">&quot;libs&quot;</span><span class="p">:</span> <span class="n">libs</span><span class="p">,</span>
+        <span class="s2">&quot;funcTable&quot;</span><span class="p">:</span> <span class="n">func_table</span><span class="p">,</span>
+        <span class="s2">&quot;stackTable&quot;</span><span class="p">:</span> <span class="n">stack_table</span><span class="p">,</span>
+        <span class="s2">&quot;annotationsTable&quot;</span><span class="p">:</span> <span class="n">annotations_table</span><span class="p">,</span>
+        <span class="s2">&quot;pruneStackCache&quot;</span><span class="p">:</span> <span class="n">prune_stack_cache</span><span class="p">,</span>
+        <span class="s2">&quot;sampleTable&quot;</span><span class="p">:</span> <span class="n">sample_table</span><span class="p">,</span>
+        <span class="s2">&quot;stringArray&quot;</span><span class="p">:</span> <span class="n">strings_table</span><span class="p">,</span>
+        <span class="s2">&quot;processType&quot;</span><span class="p">:</span> <span class="s2">&quot;tab&quot;</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;Gecko_Child&quot;</span> <span class="ow">or</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;Gecko_Child_ForcePaint&quot;</span>
+        <span class="k">else</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;dates&quot;</span><span class="p">:</span> <span class="n">UniqueKeyedTable</span><span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">date</span><span class="p">:</span> <span class="p">(</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;date&quot;</span><span class="p">:</span> <span class="n">date</span><span class="p">,</span>
+                    <span class="s2">&quot;sampleHangMs&quot;</span><span class="p">:</span> <span class="n">GrowToFitList</span><span class="p">(),</span>
+                    <span class="s2">&quot;sampleHangCount&quot;</span><span class="p">:</span> <span class="n">GrowToFitList</span><span class="p">(),</span>
+                <span class="p">}</span>
+            <span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;date&quot;</span><span class="p">,</span> <span class="s2">&quot;sampleHangMs&quot;</span><span class="p">,</span> <span class="s2">&quot;sampleHangCount&quot;</span><span class="p">),</span>
+        <span class="p">),</span>
+    <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="reconstruct_stack"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.reconstruct_stack">[docs]</a><span class="k">def</span> <span class="nf">reconstruct_stack</span><span class="p">(</span><span class="n">string_array</span><span class="p">,</span> <span class="n">func_table</span><span class="p">,</span> <span class="n">stack_table</span><span class="p">,</span> <span class="n">lib_table</span><span class="p">,</span> <span class="n">stack_index</span><span class="p">):</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">while</span> <span class="n">stack_index</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">func_index</span> <span class="o">=</span> <span class="n">stack_table</span><span class="p">[</span><span class="s2">&quot;func&quot;</span><span class="p">][</span><span class="n">stack_index</span><span class="p">]</span>
+        <span class="n">prefix</span> <span class="o">=</span> <span class="n">stack_table</span><span class="p">[</span><span class="s2">&quot;prefix&quot;</span><span class="p">][</span><span class="n">stack_index</span><span class="p">]</span>
+        <span class="n">func_name</span> <span class="o">=</span> <span class="n">string_array</span><span class="p">[</span><span class="n">func_table</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">][</span><span class="n">func_index</span><span class="p">]]</span>
+        <span class="n">lib_name</span> <span class="o">=</span> <span class="n">lib_table</span><span class="p">[</span><span class="n">func_table</span><span class="p">[</span><span class="s2">&quot;lib&quot;</span><span class="p">][</span><span class="n">func_index</span><span class="p">]][</span><span class="s2">&quot;debugName&quot;</span><span class="p">]</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">func_name</span><span class="p">,</span> <span class="n">lib_name</span><span class="p">))</span>
+        <span class="n">stack_index</span> <span class="o">=</span> <span class="n">prefix</span>
+    <span class="k">return</span> <span class="n">result</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="merge_number_dicts"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.merge_number_dicts">[docs]</a><span class="k">def</span> <span class="nf">merge_number_dicts</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="n">keys</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">a</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">+</span> <span class="n">b</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="ProfileProcessor"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.ProfileProcessor">[docs]</a><span class="k">class</span> <span class="nc">ProfileProcessor</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
+
+        <span class="k">def</span> <span class="nf">default_thread_closure</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">get_default_thread</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;use_minimal_sample_table&quot;</span><span class="p">])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">thread_table</span> <span class="o">=</span> <span class="n">UniqueKeyedTable</span><span class="p">(</span><span class="n">default_thread_closure</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">usage_hours_by_date</span> <span class="o">=</span> <span class="p">{}</span>
+
+<div class="viewcode-block" id="ProfileProcessor.debug_dump"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.ProfileProcessor.debug_dump">[docs]</a>    <span class="k">def</span> <span class="nf">debug_dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dump_str</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;print_debug_info&quot;</span><span class="p">]:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">dump_str</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ProfileProcessor.ingest_processed_profile"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.ProfileProcessor.ingest_processed_profile">[docs]</a>    <span class="k">def</span> <span class="nf">ingest_processed_profile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">profile</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">existing_thread</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">thread_table</span><span class="o">.</span><span class="n">get_items</span><span class="p">():</span>
+            <span class="n">prune_stack_cache</span> <span class="o">=</span> <span class="n">UniqueKeyedTable</span><span class="p">(</span><span class="k">lambda</span> <span class="n">key</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">])</span>
+            <span class="n">prune_stack_cache</span><span class="o">.</span><span class="n">key_to_index</span><span class="p">((</span><span class="s2">&quot;(root)&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+            <span class="n">existing_thread</span><span class="p">[</span><span class="s2">&quot;pruneStackCache&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prune_stack_cache</span>
+
+        <span class="n">sample_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;post_sample_size&quot;</span><span class="p">]</span>
+        <span class="n">threads</span> <span class="o">=</span> <span class="n">profile</span><span class="p">[</span><span class="s2">&quot;threads&quot;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">other</span> <span class="ow">in</span> <span class="n">threads</span><span class="p">:</span>
+            <span class="n">other_samples</span> <span class="o">=</span> <span class="n">other</span><span class="p">[</span><span class="s2">&quot;sampleTable&quot;</span><span class="p">]</span>
+            <span class="n">other_dates</span> <span class="o">=</span> <span class="n">other</span><span class="p">[</span><span class="s2">&quot;dates&quot;</span><span class="p">]</span>
+
+            <span class="k">for</span> <span class="n">date</span> <span class="ow">in</span> <span class="n">other_dates</span><span class="p">:</span>
+                <span class="n">build_date</span> <span class="o">=</span> <span class="n">date</span><span class="p">[</span><span class="s2">&quot;date&quot;</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">date</span><span class="p">[</span><span class="s2">&quot;sampleHangCount&quot;</span><span class="p">])):</span>
+                    <span class="n">stack_index</span> <span class="o">=</span> <span class="n">other_samples</span><span class="p">[</span><span class="s2">&quot;stack&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+                    <span class="n">stack</span> <span class="o">=</span> <span class="n">reconstruct_stack</span><span class="p">(</span>
+                        <span class="n">other</span><span class="p">[</span><span class="s2">&quot;stringArray&quot;</span><span class="p">],</span>
+                        <span class="n">other</span><span class="p">[</span><span class="s2">&quot;funcTable&quot;</span><span class="p">],</span>
+                        <span class="n">other</span><span class="p">[</span><span class="s2">&quot;stackTable&quot;</span><span class="p">],</span>
+                        <span class="n">other</span><span class="p">[</span><span class="s2">&quot;libs&quot;</span><span class="p">],</span>
+                        <span class="n">stack_index</span><span class="p">,</span>
+                    <span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">pre_ingest_row</span><span class="p">(</span>
+                        <span class="p">(</span>
+                            <span class="n">stack</span><span class="p">,</span>
+                            <span class="n">other</span><span class="p">[</span><span class="s2">&quot;stringArray&quot;</span><span class="p">][</span><span class="n">other_samples</span><span class="p">[</span><span class="s2">&quot;runnable&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">]],</span>
+                            <span class="n">other</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">],</span>
+                            <span class="n">build_date</span><span class="p">,</span>
+                            <span class="n">other_samples</span><span class="p">[</span><span class="s2">&quot;annotations&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
+                            <span class="n">other</span><span class="p">[</span><span class="s2">&quot;stringArray&quot;</span><span class="p">][</span><span class="n">other_samples</span><span class="p">[</span><span class="s2">&quot;platform&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">]],</span>
+                            <span class="n">date</span><span class="p">[</span><span class="s2">&quot;sampleHangMs&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
+                            <span class="n">date</span><span class="p">[</span><span class="s2">&quot;sampleHangCount&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
+                        <span class="p">)</span>
+                    <span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">date</span> <span class="ow">in</span> <span class="n">other_dates</span><span class="p">:</span>
+                <span class="n">build_date</span> <span class="o">=</span> <span class="n">date</span><span class="p">[</span><span class="s2">&quot;date&quot;</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">date</span><span class="p">[</span><span class="s2">&quot;sampleHangCount&quot;</span><span class="p">])):</span>
+                    <span class="n">stack_index</span> <span class="o">=</span> <span class="n">other_samples</span><span class="p">[</span><span class="s2">&quot;stack&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+                    <span class="n">stack</span> <span class="o">=</span> <span class="n">reconstruct_stack</span><span class="p">(</span>
+                        <span class="n">other</span><span class="p">[</span><span class="s2">&quot;stringArray&quot;</span><span class="p">],</span>
+                        <span class="n">other</span><span class="p">[</span><span class="s2">&quot;funcTable&quot;</span><span class="p">],</span>
+                        <span class="n">other</span><span class="p">[</span><span class="s2">&quot;stackTable&quot;</span><span class="p">],</span>
+                        <span class="n">other</span><span class="p">[</span><span class="s2">&quot;libs&quot;</span><span class="p">],</span>
+                        <span class="n">stack_index</span><span class="p">,</span>
+                    <span class="p">)</span>
+                    <span class="k">if</span> <span class="n">sample_size</span> <span class="o">==</span> <span class="mf">1.0</span> <span class="ow">or</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;=</span> <span class="n">sample_size</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">ingest_row</span><span class="p">(</span>
+                            <span class="p">(</span>
+                                <span class="n">stack</span><span class="p">,</span>
+                                <span class="n">other</span><span class="p">[</span><span class="s2">&quot;stringArray&quot;</span><span class="p">][</span><span class="n">other_samples</span><span class="p">[</span><span class="s2">&quot;runnable&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">]],</span>
+                                <span class="n">other</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">],</span>
+                                <span class="n">build_date</span><span class="p">,</span>
+                                <span class="n">other_samples</span><span class="p">[</span><span class="s2">&quot;annotations&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
+                                <span class="n">other</span><span class="p">[</span><span class="s2">&quot;stringArray&quot;</span><span class="p">][</span><span class="n">other_samples</span><span class="p">[</span><span class="s2">&quot;platform&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">]],</span>
+                                <span class="n">date</span><span class="p">[</span><span class="s2">&quot;sampleHangMs&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
+                                <span class="n">date</span><span class="p">[</span><span class="s2">&quot;sampleHangCount&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
+                            <span class="p">)</span>
+                        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">usage_hours_by_date</span> <span class="o">=</span> <span class="n">merge_number_dicts</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">usage_hours_by_date</span><span class="p">,</span> <span class="n">profile</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;usageHoursByDate&quot;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="ProfileProcessor.pre_ingest_row"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.ProfileProcessor.pre_ingest_row">[docs]</a>    <span class="k">def</span> <span class="nf">pre_ingest_row</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">):</span>
+        <span class="p">(</span>
+            <span class="n">stack</span><span class="p">,</span>
+            <span class="n">runnable_name</span><span class="p">,</span>
+            <span class="n">thread_name</span><span class="p">,</span>
+            <span class="n">build_date</span><span class="p">,</span>
+            <span class="n">annotations</span><span class="p">,</span>
+            <span class="n">platform</span><span class="p">,</span>
+            <span class="n">hang_ms</span><span class="p">,</span>
+            <span class="n">hang_count</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">=</span> <span class="n">row</span>
+
+        <span class="n">thread</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">thread_table</span><span class="o">.</span><span class="n">key_to_item</span><span class="p">(</span><span class="n">thread_name</span><span class="p">)</span>
+        <span class="n">prune_stack_cache</span> <span class="o">=</span> <span class="n">thread</span><span class="p">[</span><span class="s2">&quot;pruneStackCache&quot;</span><span class="p">]</span>
+        <span class="n">root_stack</span> <span class="o">=</span> <span class="n">prune_stack_cache</span><span class="o">.</span><span class="n">key_to_item</span><span class="p">((</span><span class="s2">&quot;(root)&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+        <span class="n">root_stack</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="n">hang_ms</span>
+
+        <span class="n">last_stack</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">func_name</span><span class="p">,</span> <span class="n">lib_name</span><span class="p">)</span> <span class="ow">in</span> <span class="n">stack</span><span class="p">:</span>
+            <span class="n">last_stack</span> <span class="o">=</span> <span class="n">prune_stack_cache</span><span class="o">.</span><span class="n">key_to_index</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">func_name</span><span class="p">,</span> <span class="n">lib_name</span><span class="p">,</span> <span class="n">last_stack</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">cache_item</span> <span class="o">=</span> <span class="n">prune_stack_cache</span><span class="o">.</span><span class="n">index_to_item</span><span class="p">(</span><span class="n">last_stack</span><span class="p">)</span>
+            <span class="n">cache_item</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="n">hang_ms</span></div>
+
+<div class="viewcode-block" id="ProfileProcessor.ingest_row"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.ProfileProcessor.ingest_row">[docs]</a>    <span class="k">def</span> <span class="nf">ingest_row</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">):</span>
+        <span class="p">(</span>
+            <span class="n">stack</span><span class="p">,</span>
+            <span class="n">runnable_name</span><span class="p">,</span>
+            <span class="n">thread_name</span><span class="p">,</span>
+            <span class="n">build_date</span><span class="p">,</span>
+            <span class="n">annotations</span><span class="p">,</span>
+            <span class="n">platform</span><span class="p">,</span>
+            <span class="n">hang_ms</span><span class="p">,</span>
+            <span class="n">hang_count</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">=</span> <span class="n">row</span>
+
+        <span class="n">thread</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">thread_table</span><span class="o">.</span><span class="n">key_to_item</span><span class="p">(</span><span class="n">thread_name</span><span class="p">)</span>
+        <span class="n">stack_table</span> <span class="o">=</span> <span class="n">thread</span><span class="p">[</span><span class="s2">&quot;stackTable&quot;</span><span class="p">]</span>
+        <span class="n">annotations_table</span> <span class="o">=</span> <span class="n">thread</span><span class="p">[</span><span class="s2">&quot;annotationsTable&quot;</span><span class="p">]</span>
+        <span class="n">sample_table</span> <span class="o">=</span> <span class="n">thread</span><span class="p">[</span><span class="s2">&quot;sampleTable&quot;</span><span class="p">]</span>
+        <span class="n">dates</span> <span class="o">=</span> <span class="n">thread</span><span class="p">[</span><span class="s2">&quot;dates&quot;</span><span class="p">]</span>
+        <span class="n">prune_stack_cache</span> <span class="o">=</span> <span class="n">thread</span><span class="p">[</span><span class="s2">&quot;pruneStackCache&quot;</span><span class="p">]</span>
+
+        <span class="n">last_annotation</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="ow">in</span> <span class="n">annotations</span><span class="p">:</span>
+            <span class="n">last_annotation</span> <span class="o">=</span> <span class="n">annotations_table</span><span class="o">.</span><span class="n">key_to_index</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">last_annotation</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="n">last_stack</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">last_cache_item_index</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">func_name</span><span class="p">,</span> <span class="n">lib_name</span><span class="p">)</span> <span class="ow">in</span> <span class="n">stack</span><span class="p">:</span>
+            <span class="n">cache_item_index</span> <span class="o">=</span> <span class="n">prune_stack_cache</span><span class="o">.</span><span class="n">key_to_index</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">func_name</span><span class="p">,</span> <span class="n">lib_name</span><span class="p">,</span> <span class="n">last_cache_item_index</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">cache_item</span> <span class="o">=</span> <span class="n">prune_stack_cache</span><span class="o">.</span><span class="n">index_to_item</span><span class="p">(</span><span class="n">cache_item_index</span><span class="p">)</span>
+            <span class="n">parent_cache_item</span> <span class="o">=</span> <span class="n">prune_stack_cache</span><span class="o">.</span><span class="n">index_to_item</span><span class="p">(</span><span class="n">last_cache_item_index</span><span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="n">cache_item</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">parent_cache_item</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;stack_acceptance_threshold&quot;</span><span class="p">]</span>
+            <span class="p">):</span>
+                <span class="n">last_stack</span> <span class="o">=</span> <span class="n">stack_table</span><span class="o">.</span><span class="n">key_to_index</span><span class="p">((</span><span class="n">func_name</span><span class="p">,</span> <span class="n">lib_name</span><span class="p">,</span> <span class="n">last_stack</span><span class="p">))</span>
+                <span class="n">last_cache_item_index</span> <span class="o">=</span> <span class="n">cache_item_index</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># If we&#39;re below the acceptance threshold, just lump it under (other) below</span>
+                <span class="c1"># its parent.</span>
+                <span class="n">last_stack</span> <span class="o">=</span> <span class="n">stack_table</span><span class="o">.</span><span class="n">key_to_index</span><span class="p">((</span><span class="s2">&quot;(other)&quot;</span><span class="p">,</span> <span class="n">lib_name</span><span class="p">,</span> <span class="n">last_stack</span><span class="p">))</span>
+                <span class="k">break</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;use_minimal_sample_table&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">thread_name</span> <span class="o">==</span> <span class="s2">&quot;Gecko_Child&quot;</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="n">sample_index</span> <span class="o">=</span> <span class="n">sample_table</span><span class="o">.</span><span class="n">key_to_index</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">last_stack</span><span class="p">,</span> <span class="n">runnable_name</span><span class="p">,</span> <span class="n">last_annotation</span><span class="p">,</span> <span class="n">platform</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="n">date</span> <span class="o">=</span> <span class="n">dates</span><span class="o">.</span><span class="n">key_to_item</span><span class="p">(</span><span class="n">build_date</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">date</span><span class="p">[</span><span class="s2">&quot;sampleHangCount&quot;</span><span class="p">][</span><span class="n">sample_index</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">date</span><span class="p">[</span><span class="s2">&quot;sampleHangCount&quot;</span><span class="p">][</span><span class="n">sample_index</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="n">date</span><span class="p">[</span><span class="s2">&quot;sampleHangMs&quot;</span><span class="p">][</span><span class="n">sample_index</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+        <span class="n">date</span><span class="p">[</span><span class="s2">&quot;sampleHangCount&quot;</span><span class="p">][</span><span class="n">sample_index</span><span class="p">]</span> <span class="o">+=</span> <span class="n">hang_count</span>
+        <span class="n">date</span><span class="p">[</span><span class="s2">&quot;sampleHangMs&quot;</span><span class="p">][</span><span class="n">sample_index</span><span class="p">]</span> <span class="o">+=</span> <span class="n">hang_ms</span></div>
+
+<div class="viewcode-block" id="ProfileProcessor.ingest"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.ProfileProcessor.ingest">[docs]</a>    <span class="k">def</span> <span class="nf">ingest</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">usage_hours_by_date</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> unfiltered samples in data&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)))</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">x</span>
+            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">data</span>
+            <span class="c1"># x[6] should be hang_ms</span>
+            <span class="k">if</span> <span class="n">x</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">0.0</span>
+        <span class="p">]</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> filtered samples in data&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)))</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Preprocessing stacks for prune cache...&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pre_ingest_row</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Processing stacks...&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ingest_row</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">usage_hours_by_date</span> <span class="o">=</span> <span class="n">merge_number_dicts</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">usage_hours_by_date</span><span class="p">,</span> <span class="n">usage_hours_by_date</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="ProfileProcessor.process_date"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.ProfileProcessor.process_date">[docs]</a>    <span class="k">def</span> <span class="nf">process_date</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">date</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;use_minimal_sample_table&quot;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s2">&quot;date&quot;</span><span class="p">:</span> <span class="n">date</span><span class="p">[</span><span class="s2">&quot;date&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;sampleHangCount&quot;</span><span class="p">:</span> <span class="n">date</span><span class="p">[</span><span class="s2">&quot;sampleHangCount&quot;</span><span class="p">],</span>
+            <span class="p">}</span>
+        <span class="k">return</span> <span class="n">date</span></div>
+
+<div class="viewcode-block" id="ProfileProcessor.process_thread"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.ProfileProcessor.process_thread">[docs]</a>    <span class="k">def</span> <span class="nf">process_thread</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thread</span><span class="p">):</span>
+        <span class="n">string_array</span> <span class="o">=</span> <span class="n">thread</span><span class="p">[</span><span class="s2">&quot;stringArray&quot;</span><span class="p">]</span>
+        <span class="n">func_table</span> <span class="o">=</span> <span class="n">thread</span><span class="p">[</span><span class="s2">&quot;funcTable&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">struct_of_arrays</span><span class="p">()</span>
+        <span class="n">stack_table</span> <span class="o">=</span> <span class="n">thread</span><span class="p">[</span><span class="s2">&quot;stackTable&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">struct_of_arrays</span><span class="p">()</span>
+        <span class="n">annotations_table</span> <span class="o">=</span> <span class="n">thread</span><span class="p">[</span><span class="s2">&quot;annotationsTable&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">struct_of_arrays</span><span class="p">()</span>
+        <span class="n">sample_table</span> <span class="o">=</span> <span class="n">thread</span><span class="p">[</span><span class="s2">&quot;sampleTable&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">struct_of_arrays</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">thread</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;processType&quot;</span><span class="p">:</span> <span class="n">thread</span><span class="p">[</span><span class="s2">&quot;processType&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;libs&quot;</span><span class="p">:</span> <span class="n">thread</span><span class="p">[</span><span class="s2">&quot;libs&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get_items</span><span class="p">(),</span>
+            <span class="s2">&quot;funcTable&quot;</span><span class="p">:</span> <span class="n">func_table</span><span class="p">,</span>
+            <span class="s2">&quot;stackTable&quot;</span><span class="p">:</span> <span class="n">stack_table</span><span class="p">,</span>
+            <span class="s2">&quot;annotationsTable&quot;</span><span class="p">:</span> <span class="n">annotations_table</span><span class="p">,</span>
+            <span class="s2">&quot;sampleTable&quot;</span><span class="p">:</span> <span class="n">sample_table</span><span class="p">,</span>
+            <span class="s2">&quot;stringArray&quot;</span><span class="p">:</span> <span class="n">string_array</span><span class="o">.</span><span class="n">get_items</span><span class="p">(),</span>
+            <span class="s2">&quot;dates&quot;</span><span class="p">:</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">process_date</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">thread</span><span class="p">[</span><span class="s2">&quot;dates&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get_items</span><span class="p">()],</span>
+        <span class="p">}</span></div>
+
+<div class="viewcode-block" id="ProfileProcessor.process_into_split_profile"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.ProfileProcessor.process_into_split_profile">[docs]</a>    <span class="k">def</span> <span class="nf">process_into_split_profile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;main_payload&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;splitFiles&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="n">t</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]:</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">t</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s2">&quot;name&quot;</span><span class="p">]</span>
+                    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">thread_table</span><span class="o">.</span><span class="n">get_items</span><span class="p">()</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;usageHoursByDate&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">usage_hours_by_date</span><span class="p">,</span>
+                <span class="s2">&quot;uuid&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;uuid&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;isSplit&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;file_data&quot;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="p">[</span>
+                    <span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">process_thread</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s2">&quot;name&quot;</span>
+                <span class="p">]</span>
+                <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">thread_table</span><span class="o">.</span><span class="n">get_items</span><span class="p">()</span>
+            <span class="p">],</span>
+        <span class="p">}</span></div>
+
+<div class="viewcode-block" id="ProfileProcessor.process_into_profile"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.ProfileProcessor.process_into_profile">[docs]</a>    <span class="k">def</span> <span class="nf">process_into_profile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Processing into final format...&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;split_threads_in_out_file&quot;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="p">[</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">t</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;threads&quot;</span><span class="p">:</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">process_thread</span><span class="p">(</span><span class="n">t</span><span class="p">)],</span>
+                    <span class="s2">&quot;usageHoursByDate&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">usage_hours_by_date</span><span class="p">,</span>
+                    <span class="s2">&quot;uuid&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;uuid&quot;</span><span class="p">],</span>
+                <span class="p">}</span>
+                <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">thread_table</span><span class="o">.</span><span class="n">get_items</span><span class="p">()</span>
+            <span class="p">]</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;threads&quot;</span><span class="p">:</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">process_thread</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">thread_table</span><span class="o">.</span><span class="n">get_items</span><span class="p">()],</span>
+            <span class="s2">&quot;usageHoursByDate&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">usage_hours_by_date</span><span class="p">,</span>
+            <span class="s2">&quot;uuid&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;uuid&quot;</span><span class="p">],</span>
+        <span class="p">}</span></div></div>
+
+
+<div class="viewcode-block" id="deep_merge"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.deep_merge">[docs]</a><span class="k">def</span> <span class="nf">deep_merge</span><span class="p">(</span><span class="n">original</span><span class="p">,</span> <span class="n">overrides</span><span class="p">):</span>
+    <span class="n">original_copy</span> <span class="o">=</span> <span class="n">original</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">overrides</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">original_copy</span>
+            <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">original_copy</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="nb">dict</span><span class="p">)</span>
+        <span class="p">):</span>
+            <span class="n">original_copy</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">deep_merge</span><span class="p">(</span><span class="n">original_copy</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">v</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">original_copy</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+    <span class="k">return</span> <span class="n">original_copy</span></div>
+
+
+<div class="viewcode-block" id="shallow_merge"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.shallow_merge">[docs]</a><span class="k">def</span> <span class="nf">shallow_merge</span><span class="p">(</span><span class="n">original</span><span class="p">,</span> <span class="n">overrides</span><span class="p">):</span>
+    <span class="n">original_copy</span> <span class="o">=</span> <span class="n">original</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">overrides</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+        <span class="n">original_copy</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+    <span class="k">return</span> <span class="n">original_copy</span></div>
+
+
+<div class="viewcode-block" id="time_code"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.time_code">[docs]</a><span class="k">def</span> <span class="nf">time_code</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">callback</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">...&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">callback</span><span class="p">()</span>
+    <span class="n">end</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">delta</span> <span class="o">=</span> <span class="n">end</span> <span class="o">-</span> <span class="n">start</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> took </span><span class="si">{}</span><span class="s2">ms to complete&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">delta</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">))))</span>
+    <span class="n">debug_print_rdd_count</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="get_prop"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.get_prop">[docs]</a><span class="k">def</span> <span class="nf">get_prop</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">prop</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">prop</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">):</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">val</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">val</span></div>
+
+
+<div class="viewcode-block" id="get_ping_properties"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.get_ping_properties">[docs]</a><span class="k">def</span> <span class="nf">get_ping_properties</span><span class="p">(</span><span class="n">ping</span><span class="p">,</span> <span class="n">properties</span><span class="p">):</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">properties</span><span class="p">:</span>
+        <span class="n">result</span><span class="p">[</span><span class="n">prop</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_prop</span><span class="p">(</span><span class="n">ping</span><span class="p">,</span> <span class="n">prop</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="properties_are_not_none"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.properties_are_not_none">[docs]</a><span class="k">def</span> <span class="nf">properties_are_not_none</span><span class="p">(</span><span class="n">ping</span><span class="p">,</span> <span class="n">properties</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">properties</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">ping</span><span class="p">[</span><span class="n">prop</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="get_data"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.get_data">[docs]</a><span class="k">def</span> <span class="nf">get_data</span><span class="p">(</span><span class="n">sc</span><span class="p">,</span> <span class="n">sql_context</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">date</span><span class="p">,</span> <span class="n">end_date</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">sql_context</span><span class="o">.</span><span class="n">sql</span><span class="p">(</span><span class="s2">&quot;set spark.sql.shuffle.partitions=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sc</span><span class="o">.</span><span class="n">defaultParallelism</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">end_date</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">end_date</span> <span class="o">=</span> <span class="n">date</span>
+
+    <span class="n">submission_start_str</span> <span class="o">=</span> <span class="n">date</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+    <span class="n">submission_end_str</span> <span class="o">=</span> <span class="n">end_date</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+
+    <span class="n">date_str</span> <span class="o">=</span> <span class="n">date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">end_date_str</span> <span class="o">=</span> <span class="n">end_date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">pings_df</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">spark</span><span class="o">.</span><span class="n">read</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;bigquery&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;table&quot;</span><span class="p">,</span> <span class="s2">&quot;moz-fx-data-shared-prod.telemetry_stable.bhr_v4&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">load</span><span class="p">()</span>
+        <span class="o">.</span><span class="n">where</span><span class="p">(</span>
+            <span class="s2">&quot;submission_timestamp&gt;=to_date(&#39;</span><span class="si">%s</span><span class="s2">&#39;) and submission_timestamp&lt;=to_date(&#39;</span><span class="si">%s</span><span class="s2">&#39;)&quot;</span>
+            <span class="o">%</span> <span class="p">(</span><span class="n">submission_start_str</span><span class="p">,</span> <span class="n">submission_end_str</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="s2">&quot;normalized_channel=&#39;nightly&#39;&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;sample_size&quot;</span><span class="p">])</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;exclude_modules&quot;</span><span class="p">]:</span>
+        <span class="n">properties</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;environment/system/os/name&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;environment/system/os/version&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;application/architecture&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;application/build_id&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;payload/hangs&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;payload/time_since_last_ping&quot;</span><span class="p">,</span>
+        <span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">properties</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;environment/system/os/name&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;environment/system/os/version&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;application/architecture&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;application/build_id&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;payload/modules&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;payload/hangs&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;payload/time_since_last_ping&quot;</span><span class="p">,</span>
+        <span class="p">]</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2"> results total&quot;</span> <span class="o">%</span> <span class="n">pings_df</span><span class="o">.</span><span class="n">rdd</span><span class="o">.</span><span class="n">count</span><span class="p">())</span>
+    <span class="n">mapped</span> <span class="o">=</span> <span class="n">pings_df</span><span class="o">.</span><span class="n">rdd</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">get_ping_properties</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">properties</span><span class="p">))</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">properties_are_not_none</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">properties</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">mapped</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;application/build_id&quot;</span><span class="p">][:</span><span class="mi">8</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">date_str</span>
+            <span class="ow">and</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;application/build_id&quot;</span><span class="p">][:</span><span class="mi">8</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">end_date_str</span>
+        <span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2"> results after first filter&quot;</span> <span class="o">%</span> <span class="n">result</span><span class="o">.</span><span class="n">count</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">result</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="ping_is_valid"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.ping_is_valid">[docs]</a><span class="k">def</span> <span class="nf">ping_is_valid</span><span class="p">(</span><span class="n">ping</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ping</span><span class="p">[</span><span class="s2">&quot;environment/system/os/version&quot;</span><span class="p">],</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ping</span><span class="p">[</span><span class="s2">&quot;environment/system/os/name&quot;</span><span class="p">],</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ping</span><span class="p">[</span><span class="s2">&quot;application/build_id&quot;</span><span class="p">],</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ping</span><span class="p">[</span><span class="s2">&quot;payload/time_since_last_ping&quot;</span><span class="p">],</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="module_to_string"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.module_to_string">[docs]</a><span class="k">def</span> <span class="nf">module_to_string</span><span class="p">(</span><span class="n">module</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">module</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">module</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">module</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="string_to_module"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.string_to_module">[docs]</a><span class="k">def</span> <span class="nf">string_to_module</span><span class="p">(</span><span class="n">string_module</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">string_module</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">split_module</span> <span class="o">=</span> <span class="n">string_module</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">split_module</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Module strings had an extra </span><span class="se">\\</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">split_module</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">split_module</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;None&quot;</span> <span class="k">else</span> <span class="n">split_module</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="process_frame"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.process_frame">[docs]</a><span class="k">def</span> <span class="nf">process_frame</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="n">modules</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">module_index</span><span class="p">,</span> <span class="n">offset</span> <span class="o">=</span> <span class="n">frame</span>
+        <span class="k">if</span> <span class="n">module_index</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">module_index</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">module_index</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">modules</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">offset</span><span class="p">)</span>
+        <span class="n">debug_name</span><span class="p">,</span> <span class="n">breakpad_id</span> <span class="o">=</span> <span class="n">modules</span><span class="p">[</span><span class="n">module_index</span><span class="p">]</span>
+        <span class="k">return</span> <span class="p">((</span><span class="n">debug_name</span><span class="p">,</span> <span class="n">breakpad_id</span><span class="p">),</span> <span class="n">offset</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">((</span><span class="s2">&quot;pseudo&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="n">frame</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="filter_hang"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.filter_hang">[docs]</a><span class="k">def</span> <span class="nf">filter_hang</span><span class="p">(</span><span class="n">hang</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">hang</span><span class="p">[</span><span class="s2">&quot;thread&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Gecko&quot;</span>
+        <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">hang</span><span class="p">[</span><span class="s2">&quot;stack&quot;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">hang</span><span class="p">[</span><span class="s2">&quot;stack&quot;</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mi">300</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="process_hang"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.process_hang">[docs]</a><span class="k">def</span> <span class="nf">process_hang</span><span class="p">(</span><span class="n">hang</span><span class="p">):</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">hang</span><span class="o">.</span><span class="n">asDict</span><span class="p">()</span>
+    <span class="n">result</span><span class="p">[</span><span class="s2">&quot;stack&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">hang</span><span class="p">[</span><span class="s2">&quot;stack&quot;</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="process_hangs"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.process_hangs">[docs]</a><span class="k">def</span> <span class="nf">process_hangs</span><span class="p">(</span><span class="n">ping</span><span class="p">):</span>
+    <span class="n">build_date</span> <span class="o">=</span> <span class="n">ping</span><span class="p">[</span><span class="s2">&quot;application/build_id&quot;</span><span class="p">][:</span><span class="mi">8</span><span class="p">]</span>  <span class="c1"># &quot;YYYYMMDD&quot; : 8 characters</span>
+
+    <span class="n">platform</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ping</span><span class="p">[</span><span class="s2">&quot;environment/system/os/name&quot;</span><span class="p">])</span>
+
+    <span class="n">modules</span> <span class="o">=</span> <span class="n">ping</span><span class="p">[</span><span class="s2">&quot;payload/modules&quot;</span><span class="p">]</span>
+    <span class="n">hangs</span> <span class="o">=</span> <span class="p">[</span><span class="n">process_hang</span><span class="p">(</span><span class="n">h</span><span class="p">)</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">ping</span><span class="p">[</span><span class="s2">&quot;payload/hangs&quot;</span><span class="p">]]</span>
+    <span class="k">if</span> <span class="n">hangs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="n">pre_result</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span>
+            <span class="p">[</span>
+                <span class="n">process_frame</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="n">modules</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">frame</span> <span class="ow">in</span> <span class="n">h</span><span class="p">[</span><span class="s2">&quot;stack&quot;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+            <span class="p">],</span>
+            <span class="n">h</span><span class="p">[</span><span class="s2">&quot;duration&quot;</span><span class="p">],</span>
+            <span class="n">h</span><span class="p">[</span><span class="s2">&quot;thread&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="n">h</span><span class="p">[</span><span class="s2">&quot;process&quot;</span><span class="p">],</span>
+            <span class="n">h</span><span class="p">[</span><span class="s2">&quot;annotations&quot;</span><span class="p">],</span>
+            <span class="n">build_date</span><span class="p">,</span>
+            <span class="n">platform</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">hangs</span>
+        <span class="k">if</span> <span class="n">filter_hang</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
+    <span class="p">]</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="p">(</span>
+        <span class="n">stack</span><span class="p">,</span>
+        <span class="n">duration</span><span class="p">,</span>
+        <span class="n">thread</span><span class="p">,</span>
+        <span class="n">runnable_name</span><span class="p">,</span>
+        <span class="n">process</span><span class="p">,</span>
+        <span class="n">annotations</span><span class="p">,</span>
+        <span class="n">build_date</span><span class="p">,</span>
+        <span class="n">platform</span><span class="p">,</span>
+    <span class="p">)</span> <span class="ow">in</span> <span class="n">pre_result</span><span class="p">:</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="p">(</span>
+                <span class="n">stack</span><span class="p">,</span>
+                <span class="n">duration</span><span class="p">,</span>
+                <span class="n">thread</span><span class="p">,</span>
+                <span class="n">runnable_name</span><span class="p">,</span>
+                <span class="n">process</span><span class="p">,</span>
+                <span class="n">annotations</span><span class="p">,</span>
+                <span class="n">build_date</span><span class="p">,</span>
+                <span class="n">platform</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="s2">&quot;PaintWhileInterruptingJS&quot;</span> <span class="ow">in</span> <span class="n">annotations</span><span class="p">:</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="p">(</span>
+                    <span class="n">stack</span><span class="p">,</span>
+                    <span class="n">duration</span><span class="p">,</span>
+                    <span class="s2">&quot;Gecko_Child_ForcePaint&quot;</span><span class="p">,</span>
+                    <span class="n">runnable_name</span><span class="p">,</span>
+                    <span class="n">process</span><span class="p">,</span>
+                    <span class="n">annotations</span><span class="p">,</span>
+                    <span class="n">build_date</span><span class="p">,</span>
+                    <span class="n">platform</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="get_all_hangs"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.get_all_hangs">[docs]</a><span class="k">def</span> <span class="nf">get_all_hangs</span><span class="p">(</span><span class="n">pings</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">pings</span><span class="o">.</span><span class="n">flatMap</span><span class="p">(</span><span class="n">process_hangs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="map_to_frame_info"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.map_to_frame_info">[docs]</a><span class="k">def</span> <span class="nf">map_to_frame_info</span><span class="p">(</span><span class="n">hang</span><span class="p">):</span>
+    <span class="n">memory_map</span> <span class="o">=</span> <span class="n">hang</span><span class="p">[</span><span class="s2">&quot;hang&quot;</span><span class="p">][</span><span class="s2">&quot;nativeStack&quot;</span><span class="p">][</span><span class="s2">&quot;memoryMap&quot;</span><span class="p">]</span>
+    <span class="n">stack</span> <span class="o">=</span> <span class="n">hang</span><span class="p">[</span><span class="s2">&quot;hang&quot;</span><span class="p">][</span><span class="s2">&quot;nativeStack&quot;</span><span class="p">][</span><span class="s2">&quot;stacks&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="p">[</span>
+        <span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">memory_map</span><span class="p">[</span><span class="n">module_index</span><span class="p">]),</span> <span class="p">(</span><span class="n">offset</span><span class="p">,))</span>
+        <span class="k">if</span> <span class="n">module_index</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="k">else</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="p">(</span><span class="n">offset</span><span class="p">,))</span>
+        <span class="k">for</span> <span class="n">module_index</span><span class="p">,</span> <span class="n">offset</span> <span class="ow">in</span> <span class="n">stack</span>
+    <span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="get_frames_by_module"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.get_frames_by_module">[docs]</a><span class="k">def</span> <span class="nf">get_frames_by_module</span><span class="p">(</span><span class="n">hangs</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">hangs</span><span class="o">.</span><span class="n">flatMap</span><span class="p">(</span><span class="k">lambda</span> <span class="n">hang</span><span class="p">:</span> <span class="n">hang</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>  <span class="c1"># turn into an RDD of frames</span>
+        <span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">frame</span><span class="p">:</span> <span class="p">(</span><span class="n">frame</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">(</span><span class="n">frame</span><span class="p">[</span><span class="mi">1</span><span class="p">],)))</span>
+        <span class="o">.</span><span class="n">distinct</span><span class="p">()</span>
+        <span class="o">.</span><span class="n">reduceByKey</span><span class="p">(</span><span class="k">lambda</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span><span class="p">)</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="symbolicate_stacks"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.symbolicate_stacks">[docs]</a><span class="k">def</span> <span class="nf">symbolicate_stacks</span><span class="p">(</span><span class="n">stack</span><span class="p">,</span> <span class="n">processed_modules</span><span class="p">):</span>
+    <span class="n">symbol_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">processed_modules</span><span class="p">}</span>
+    <span class="n">symbolicated</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">module</span><span class="p">,</span> <span class="n">offset</span> <span class="ow">in</span> <span class="n">stack</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">module</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">debug_name</span> <span class="o">=</span> <span class="n">module</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">processed</span> <span class="o">=</span> <span class="n">symbol_map</span><span class="o">.</span><span class="n">get</span><span class="p">((</span><span class="nb">tuple</span><span class="p">(</span><span class="n">module</span><span class="p">),</span> <span class="n">offset</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">processed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">processed</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">symbolicated</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">processed</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">symbolicated</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">UNSYMBOLICATED</span><span class="p">,</span> <span class="n">debug_name</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">symbolicated</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">UNSYMBOLICATED</span><span class="p">,</span> <span class="s2">&quot;unknown&quot;</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">symbolicated</span></div>
+
+
+<div class="viewcode-block" id="tupleize_annotation_list"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.tupleize_annotation_list">[docs]</a><span class="k">def</span> <span class="nf">tupleize_annotation_list</span><span class="p">(</span><span class="n">d</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">((</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span></div>
+
+
+<div class="viewcode-block" id="map_to_hang_data"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.map_to_hang_data">[docs]</a><span class="k">def</span> <span class="nf">map_to_hang_data</span><span class="p">(</span><span class="n">hang</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+    <span class="p">(</span>
+        <span class="n">stack</span><span class="p">,</span>
+        <span class="n">duration</span><span class="p">,</span>
+        <span class="n">thread</span><span class="p">,</span>
+        <span class="n">runnable_name</span><span class="p">,</span>
+        <span class="n">process</span><span class="p">,</span>
+        <span class="n">annotations</span><span class="p">,</span>
+        <span class="n">build_date</span><span class="p">,</span>
+        <span class="n">platform</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">=</span> <span class="n">hang</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">duration</span> <span class="o">&lt;</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;hang_lower_bound&quot;</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="n">result</span>
+    <span class="k">if</span> <span class="n">duration</span> <span class="o">&gt;=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;hang_upper_bound&quot;</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="n">key</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="nb">tuple</span><span class="p">((</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">stack</span><span class="p">),</span>
+        <span class="n">runnable_name</span><span class="p">,</span>
+        <span class="n">thread</span><span class="p">,</span>
+        <span class="n">build_date</span><span class="p">,</span>
+        <span class="n">tupleize_annotation_list</span><span class="p">(</span><span class="n">annotations</span><span class="p">),</span>
+        <span class="n">platform</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">key</span><span class="p">,</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">duration</span><span class="p">),</span> <span class="mf">1.0</span><span class="p">)))</span>
+
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="merge_hang_data"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.merge_hang_data">[docs]</a><span class="k">def</span> <span class="nf">merge_hang_data</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+        <span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="process_hang_key"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.process_hang_key">[docs]</a><span class="k">def</span> <span class="nf">process_hang_key</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">processed_modules</span><span class="p">):</span>
+    <span class="n">stack</span> <span class="o">=</span> <span class="n">key</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">symbolicated</span> <span class="o">=</span> <span class="n">symbolicate_stacks</span><span class="p">(</span><span class="n">stack</span><span class="p">,</span> <span class="n">processed_modules</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">symbolicated</span><span class="p">,)</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">key</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span></div>
+
+
+<div class="viewcode-block" id="process_hang_value"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.process_hang_value">[docs]</a><span class="k">def</span> <span class="nf">process_hang_value</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">usage_hours_by_date</span><span class="p">):</span>
+    <span class="n">stack</span><span class="p">,</span> <span class="n">runnable_name</span><span class="p">,</span> <span class="n">thread</span><span class="p">,</span> <span class="n">build_date</span><span class="p">,</span> <span class="n">annotations</span><span class="p">,</span> <span class="n">platform</span> <span class="o">=</span> <span class="n">key</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">val</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">usage_hours_by_date</span><span class="p">[</span><span class="n">build_date</span><span class="p">],</span>
+        <span class="n">val</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">usage_hours_by_date</span><span class="p">[</span><span class="n">build_date</span><span class="p">],</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_frames_with_hang_id"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.get_frames_with_hang_id">[docs]</a><span class="k">def</span> <span class="nf">get_frames_with_hang_id</span><span class="p">(</span><span class="n">hang_tuple</span><span class="p">):</span>
+    <span class="n">hang_id</span><span class="p">,</span> <span class="n">hang</span> <span class="o">=</span> <span class="n">hang_tuple</span>
+    <span class="n">stack</span> <span class="o">=</span> <span class="n">hang</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="p">[(</span><span class="n">frame</span><span class="p">,</span> <span class="n">hang_id</span><span class="p">)</span> <span class="k">for</span> <span class="n">frame</span> <span class="ow">in</span> <span class="n">stack</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="get_symbolication_mapping_by_hang_id"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.get_symbolication_mapping_by_hang_id">[docs]</a><span class="k">def</span> <span class="nf">get_symbolication_mapping_by_hang_id</span><span class="p">(</span><span class="n">joined</span><span class="p">):</span>
+    <span class="n">unsymbolicated</span><span class="p">,</span> <span class="p">(</span><span class="n">hang_id</span><span class="p">,</span> <span class="n">symbolicated</span><span class="p">)</span> <span class="o">=</span> <span class="n">joined</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">hang_id</span><span class="p">,</span> <span class="p">{</span><span class="n">unsymbolicated</span><span class="p">:</span> <span class="n">symbolicated</span><span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="symbolicate_hang_with_mapping"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.symbolicate_hang_with_mapping">[docs]</a><span class="k">def</span> <span class="nf">symbolicate_hang_with_mapping</span><span class="p">(</span><span class="n">joined</span><span class="p">):</span>
+    <span class="n">hang</span><span class="p">,</span> <span class="n">symbol_map</span> <span class="o">=</span> <span class="n">joined</span>
+    <span class="k">return</span> <span class="n">process_hang_key</span><span class="p">(</span><span class="n">hang</span><span class="p">,</span> <span class="n">symbol_map</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="symbolicate_hang_keys"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.symbolicate_hang_keys">[docs]</a><span class="k">def</span> <span class="nf">symbolicate_hang_keys</span><span class="p">(</span><span class="n">hangs</span><span class="p">,</span> <span class="n">processed_modules</span><span class="p">):</span>
+    <span class="n">hangs_by_id</span> <span class="o">=</span> <span class="n">hangs</span><span class="o">.</span><span class="n">zipWithUniqueId</span><span class="p">()</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+    <span class="n">hang_ids_by_frame</span> <span class="o">=</span> <span class="n">hangs_by_id</span><span class="o">.</span><span class="n">flatMap</span><span class="p">(</span><span class="n">get_frames_with_hang_id</span><span class="p">)</span>
+
+    <span class="c1"># NOTE: this is the logic that we replaced with Dataframes</span>
+    <span class="c1"># symbolication_maps_by_hang_id = (hang_ids_by_frame.leftOuterJoin(processed_modules)</span>
+    <span class="c1">#                                  .map(get_symbolication_mapping_by_hang_id)</span>
+    <span class="c1">#                                  .reduceByKey(shallow_merge))</span>
+    <span class="c1"># return hangs_by_id.join(symbolication_maps_by_hang_id).map(symbolicate_hang_with_mapping)</span>
+
+    <span class="k">def</span> <span class="nf">get_hang_id_by_frame_row</span><span class="p">(</span><span class="n">hang_id_by_frame</span><span class="p">):</span>
+        <span class="n">frame</span><span class="p">,</span> <span class="n">hang_id</span> <span class="o">=</span> <span class="n">hang_id_by_frame</span>
+        <span class="k">return</span> <span class="n">Row</span><span class="p">(</span><span class="n">module_to_string</span><span class="p">(</span><span class="n">frame</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">frame</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">hang_id</span><span class="p">)</span>
+
+    <span class="n">hibf_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;module&quot;</span><span class="p">,</span> <span class="s2">&quot;offset&quot;</span><span class="p">,</span> <span class="s2">&quot;hang_id&quot;</span><span class="p">]</span>
+    <span class="n">hibf_df</span> <span class="o">=</span> <span class="n">hang_ids_by_frame</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">get_hang_id_by_frame_row</span><span class="p">)</span><span class="o">.</span><span class="n">toDF</span><span class="p">(</span><span class="n">hibf_cols</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_processed_modules_row</span><span class="p">(</span><span class="n">processed_module</span><span class="p">):</span>
+        <span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">offset</span><span class="p">),</span> <span class="p">(</span><span class="n">symbol</span><span class="p">,</span> <span class="n">module_name</span><span class="p">)</span> <span class="o">=</span> <span class="n">processed_module</span>
+        <span class="k">return</span> <span class="n">Row</span><span class="p">(</span><span class="n">module_to_string</span><span class="p">(</span><span class="n">module</span><span class="p">),</span> <span class="n">offset</span><span class="p">,</span> <span class="n">symbol</span><span class="p">,</span> <span class="n">module_name</span><span class="p">)</span>
+
+    <span class="n">pm_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;module&quot;</span><span class="p">,</span> <span class="s2">&quot;offset&quot;</span><span class="p">,</span> <span class="s2">&quot;symbol&quot;</span><span class="p">,</span> <span class="s2">&quot;module_name&quot;</span><span class="p">]</span>
+    <span class="n">pm_df</span> <span class="o">=</span> <span class="n">processed_modules</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">get_processed_modules_row</span><span class="p">)</span><span class="o">.</span><span class="n">toDF</span><span class="p">(</span><span class="n">pm_cols</span><span class="p">)</span>
+
+    <span class="n">smbhid_df</span> <span class="o">=</span> <span class="n">hibf_df</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">pm_df</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;module&quot;</span><span class="p">,</span> <span class="s2">&quot;offset&quot;</span><span class="p">],</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;left_outer&quot;</span><span class="p">)</span>
+    <span class="n">debug_print_rdd_count</span><span class="p">(</span><span class="n">smbhid_df</span><span class="o">.</span><span class="n">rdd</span><span class="p">)</span>
+
+    <span class="n">symbol_mapping_array</span> <span class="o">=</span> <span class="n">array</span><span class="p">(</span><span class="s2">&quot;module&quot;</span><span class="p">,</span> <span class="s2">&quot;offset&quot;</span><span class="p">,</span> <span class="s2">&quot;symbol&quot;</span><span class="p">,</span> <span class="s2">&quot;module_name&quot;</span><span class="p">)</span>
+    <span class="n">symbol_mappings_df</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">smbhid_df</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s2">&quot;hang_id&quot;</span><span class="p">,</span> <span class="n">symbol_mapping_array</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;symbol_mapping&quot;</span><span class="p">))</span>
+        <span class="o">.</span><span class="n">groupBy</span><span class="p">(</span><span class="s2">&quot;hang_id&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">agg</span><span class="p">(</span><span class="n">collect_list</span><span class="p">(</span><span class="s2">&quot;symbol_mapping&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;symbol_mappings&quot;</span><span class="p">))</span>
+    <span class="p">)</span>
+    <span class="n">debug_print_rdd_count</span><span class="p">(</span><span class="n">symbol_mappings_df</span><span class="o">.</span><span class="n">rdd</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_hang_by_id_row</span><span class="p">(</span><span class="n">hang_by_id</span><span class="p">):</span>
+        <span class="n">hang_id</span><span class="p">,</span> <span class="n">hang</span> <span class="o">=</span> <span class="n">hang_by_id</span>
+        <span class="k">return</span> <span class="n">Row</span><span class="p">(</span><span class="n">hang_id</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">hang</span><span class="p">,</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+
+    <span class="n">hbi_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;hang_id&quot;</span><span class="p">,</span> <span class="s2">&quot;hang_json&quot;</span><span class="p">]</span>
+    <span class="n">hbi_df</span> <span class="o">=</span> <span class="n">hangs_by_id</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">get_hang_by_id_row</span><span class="p">)</span><span class="o">.</span><span class="n">toDF</span><span class="p">(</span><span class="n">hbi_cols</span><span class="p">)</span>
+
+    <span class="n">result_df</span> <span class="o">=</span> <span class="n">hbi_df</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">symbol_mappings_df</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;hang_id&quot;</span><span class="p">])</span>
+    <span class="n">debug_print_rdd_count</span><span class="p">(</span><span class="n">result_df</span><span class="o">.</span><span class="n">rdd</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_result_obj_from_row</span><span class="p">(</span><span class="n">row</span><span class="p">):</span>
+        <span class="c1"># creates a tuple of (unsymbolicated, symbolicated) for each item in row.symbol_mappings</span>
+        <span class="n">mappings</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+            <span class="p">((</span><span class="n">string_to_module</span><span class="p">(</span><span class="n">mapping</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">mapping</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="p">(</span><span class="n">mapping</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">mapping</span><span class="p">[</span><span class="mi">3</span><span class="p">]))</span>
+            <span class="k">for</span> <span class="n">mapping</span> <span class="ow">in</span> <span class="n">row</span><span class="o">.</span><span class="n">symbol_mappings</span>
+        <span class="p">)</span>
+        <span class="n">hang</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">hang_json</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">hang</span><span class="p">,</span> <span class="n">mappings</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="n">result_df</span><span class="o">.</span><span class="n">rdd</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">get_result_obj_from_row</span><span class="p">)</span>
+    <span class="n">debug_print_rdd_count</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">symbolicate_hang_with_mapping</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_grouped_sums_and_counts"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.get_grouped_sums_and_counts">[docs]</a><span class="k">def</span> <span class="nf">get_grouped_sums_and_counts</span><span class="p">(</span><span class="n">hangs</span><span class="p">,</span> <span class="n">usage_hours_by_date</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+    <span class="n">reduced</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">hangs</span><span class="o">.</span><span class="n">flatMap</span><span class="p">(</span><span class="k">lambda</span> <span class="n">hang</span><span class="p">:</span> <span class="n">map_to_hang_data</span><span class="p">(</span><span class="n">hang</span><span class="p">,</span> <span class="n">config</span><span class="p">))</span>
+        <span class="o">.</span><span class="n">reduceByKey</span><span class="p">(</span><span class="n">merge_hang_data</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+    <span class="p">)</span>
+    <span class="n">items</span> <span class="o">=</span> <span class="p">[(</span><span class="n">k</span><span class="p">,</span> <span class="n">process_hang_value</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">usage_hours_by_date</span><span class="p">))</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">reduced</span><span class="p">]</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">k</span> <span class="o">+</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">items</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="get_usage_hours"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.get_usage_hours">[docs]</a><span class="k">def</span> <span class="nf">get_usage_hours</span><span class="p">(</span><span class="n">ping</span><span class="p">):</span>
+    <span class="n">build_date</span> <span class="o">=</span> <span class="n">ping</span><span class="p">[</span><span class="s2">&quot;application/build_id&quot;</span><span class="p">][:</span><span class="mi">8</span><span class="p">]</span>  <span class="c1"># &quot;YYYYMMDD&quot; : 8 characters</span>
+    <span class="n">usage_hours</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">ping</span><span class="p">[</span><span class="s2">&quot;payload/time_since_last_ping&quot;</span><span class="p">])</span> <span class="o">/</span> <span class="mf">3600000.0</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">build_date</span><span class="p">,</span> <span class="n">usage_hours</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="merge_usage_hours"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.merge_usage_hours">[docs]</a><span class="k">def</span> <span class="nf">merge_usage_hours</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span></div>
+
+
+<div class="viewcode-block" id="get_usage_hours_by_date"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.get_usage_hours_by_date">[docs]</a><span class="k">def</span> <span class="nf">get_usage_hours_by_date</span><span class="p">(</span><span class="n">pings</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">pings</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">get_usage_hours</span><span class="p">)</span><span class="o">.</span><span class="n">reduceByKey</span><span class="p">(</span><span class="n">merge_usage_hours</span><span class="p">)</span><span class="o">.</span><span class="n">collectAsMap</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="make_sym_map"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.make_sym_map">[docs]</a><span class="k">def</span> <span class="nf">make_sym_map</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+    <span class="n">public_symbols</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">func_symbols</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">splitlines</span><span class="p">():</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;PUBLIC &quot;</span><span class="p">):</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span>
+            <span class="n">fields</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+            <span class="n">m_offset</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">if</span> <span class="n">fields</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;m&quot;</span><span class="p">:</span>
+                <span class="n">m_offset</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="n">fields</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">4</span> <span class="o">+</span> <span class="n">m_offset</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Failed to parse address - line: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">line</span><span class="p">))</span>
+            <span class="n">address</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">fields</span><span class="p">[</span><span class="mi">1</span> <span class="o">+</span> <span class="n">m_offset</span><span class="p">],</span> <span class="mi">16</span><span class="p">)</span>
+            <span class="n">symbol</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="mi">3</span> <span class="o">+</span> <span class="n">m_offset</span><span class="p">]</span>
+            <span class="n">public_symbols</span><span class="p">[</span><span class="n">address</span><span class="p">]</span> <span class="o">=</span> <span class="n">symbol</span><span class="p">[:</span><span class="n">SYMBOL_TRUNCATE_LENGTH</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;FUNC &quot;</span><span class="p">):</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span>
+            <span class="n">fields</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+            <span class="n">m_offset</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">if</span> <span class="n">fields</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;m&quot;</span><span class="p">:</span>
+                <span class="n">m_offset</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="n">fields</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">5</span> <span class="o">+</span> <span class="n">m_offset</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Failed to parse address - line: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">line</span><span class="p">))</span>
+            <span class="n">address</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">fields</span><span class="p">[</span><span class="mi">1</span> <span class="o">+</span> <span class="n">m_offset</span><span class="p">],</span> <span class="mi">16</span><span class="p">)</span>
+            <span class="n">symbol</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="mi">4</span> <span class="o">+</span> <span class="n">m_offset</span><span class="p">]</span>
+            <span class="n">func_symbols</span><span class="p">[</span><span class="n">address</span><span class="p">]</span> <span class="o">=</span> <span class="n">symbol</span><span class="p">[:</span><span class="n">SYMBOL_TRUNCATE_LENGTH</span><span class="p">]</span>
+    <span class="c1"># Prioritize PUBLIC symbols over FUNC ones</span>
+    <span class="n">sym_map</span> <span class="o">=</span> <span class="n">func_symbols</span>
+    <span class="n">sym_map</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">public_symbols</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">sym_map</span><span class="p">),</span> <span class="n">sym_map</span></div>
+
+
+<div class="viewcode-block" id="get_file_url"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.get_file_url">[docs]</a><span class="k">def</span> <span class="nf">get_file_url</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+    <span class="n">lib_name</span><span class="p">,</span> <span class="n">breakpad_id</span> <span class="o">=</span> <span class="n">module</span>
+    <span class="k">if</span> <span class="n">lib_name</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">breakpad_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">lib_name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.pdb&quot;</span><span class="p">):</span>
+        <span class="n">file_name</span> <span class="o">=</span> <span class="n">lib_name</span><span class="p">[:</span><span class="o">-</span><span class="mi">4</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;.sym&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">file_name</span> <span class="o">=</span> <span class="n">lib_name</span> <span class="o">+</span> <span class="s2">&quot;.sym&quot;</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;symbol_server_url&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;/&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="n">urllib</span><span class="o">.</span><span class="n">parse</span><span class="o">.</span><span class="n">quote_plus</span><span class="p">(</span><span class="n">lib_name</span><span class="p">),</span>
+                <span class="n">urllib</span><span class="o">.</span><span class="n">parse</span><span class="o">.</span><span class="n">quote_plus</span><span class="p">(</span><span class="n">breakpad_id</span><span class="p">),</span>
+                <span class="n">urllib</span><span class="o">.</span><span class="n">parse</span><span class="o">.</span><span class="n">quote_plus</span><span class="p">(</span><span class="n">file_name</span><span class="p">),</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="c1"># urllib throws with unicode strings. TODO: investigate why</span>
+        <span class="c1"># any of these values (lib_name, breakpad_id, file_name) would</span>
+        <span class="c1"># have unicode strings, or if this is just bad pings.</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="process_module"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.process_module">[docs]</a><span class="k">def</span> <span class="nf">process_module</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">offsets</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">module</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">module</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[((</span><span class="n">module</span><span class="p">,</span> <span class="n">offset</span><span class="p">),</span> <span class="p">(</span><span class="n">UNSYMBOLICATED</span><span class="p">,</span> <span class="s2">&quot;unknown&quot;</span><span class="p">))</span> <span class="k">for</span> <span class="n">offset</span> <span class="ow">in</span> <span class="n">offsets</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">module</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;pseudo&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="p">((</span><span class="n">module</span><span class="p">,</span> <span class="n">offset</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;&quot;</span> <span class="k">if</span> <span class="n">offset</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">offset</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">offset</span> <span class="ow">in</span> <span class="n">offsets</span>
+        <span class="p">]</span>
+    <span class="n">file_url</span> <span class="o">=</span> <span class="n">get_file_url</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+    <span class="n">module_name</span> <span class="o">=</span> <span class="n">module</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">file_url</span><span class="p">:</span>
+        <span class="n">success</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="n">fetch_url</span><span class="p">(</span><span class="n">file_url</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">success</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">if</span> <span class="n">success</span><span class="p">:</span>
+        <span class="n">sorted_keys</span><span class="p">,</span> <span class="n">sym_map</span> <span class="o">=</span> <span class="n">make_sym_map</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">offset</span> <span class="ow">in</span> <span class="n">offsets</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">i</span> <span class="o">=</span> <span class="n">bisect</span><span class="p">(</span><span class="n">sorted_keys</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">offset</span><span class="p">,</span> <span class="mi">16</span><span class="p">))</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="n">sorted_keys</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">i</span> <span class="k">else</span> <span class="kc">None</span>
+                <span class="n">symbol</span> <span class="o">=</span> <span class="n">sym_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">UnicodeEncodeError</span><span class="p">:</span>
+                <span class="n">symbol</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="n">symbol</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">symbol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(((</span><span class="n">module</span><span class="p">,</span> <span class="n">offset</span><span class="p">),</span> <span class="p">(</span><span class="n">symbol</span><span class="p">,</span> <span class="n">module_name</span><span class="p">)))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(((</span><span class="n">module</span><span class="p">,</span> <span class="n">offset</span><span class="p">),</span> <span class="p">(</span><span class="n">UNSYMBOLICATED</span><span class="p">,</span> <span class="n">module_name</span><span class="p">)))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">offset</span> <span class="ow">in</span> <span class="n">offsets</span><span class="p">:</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(((</span><span class="n">module</span><span class="p">,</span> <span class="n">offset</span><span class="p">),</span> <span class="p">(</span><span class="n">UNSYMBOLICATED</span><span class="p">,</span> <span class="n">module_name</span><span class="p">)))</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="process_modules"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.process_modules">[docs]</a><span class="k">def</span> <span class="nf">process_modules</span><span class="p">(</span><span class="n">frames_by_module</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">frames_by_module</span><span class="o">.</span><span class="n">flatMap</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">process_module</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">config</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="debug_print_rdd_count"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.debug_print_rdd_count">[docs]</a><span class="k">def</span> <span class="nf">debug_print_rdd_count</span><span class="p">(</span><span class="n">rdd</span><span class="p">,</span> <span class="n">really</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">really</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;RDD count:</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">rdd</span><span class="o">.</span><span class="n">count</span><span class="p">()))</span></div>
+
+
+<div class="viewcode-block" id="transform_pings"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.transform_pings">[docs]</a><span class="k">def</span> <span class="nf">transform_pings</span><span class="p">(</span><span class="n">_</span><span class="p">,</span> <span class="n">pings</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+    <span class="k">global</span> <span class="n">DEBUG_VARS</span>
+    <span class="n">DEBUG_VARS</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Transforming pings&quot;</span><span class="p">)</span>
+    <span class="n">filtered</span> <span class="o">=</span> <span class="n">time_code</span><span class="p">(</span>
+        <span class="s2">&quot;Filtering to valid pings&quot;</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">pings</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ping_is_valid</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">DEBUG_VARS</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">filtered</span><span class="o">.</span><span class="n">first</span><span class="p">())</span>
+
+    <span class="n">hangs</span> <span class="o">=</span> <span class="n">time_code</span><span class="p">(</span>
+        <span class="s2">&quot;Filtering to hangs with native stacks&quot;</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">get_all_hangs</span><span class="p">(</span><span class="n">filtered</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="n">DEBUG_VARS</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hangs</span><span class="o">.</span><span class="n">first</span><span class="p">())</span>
+
+    <span class="n">frames_by_module</span> <span class="o">=</span> <span class="n">time_code</span><span class="p">(</span>
+        <span class="s2">&quot;Getting stacks by module&quot;</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">get_frames_by_module</span><span class="p">(</span><span class="n">hangs</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="n">processed_modules</span> <span class="o">=</span> <span class="n">time_code</span><span class="p">(</span>
+        <span class="s2">&quot;Processing modules&quot;</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">process_modules</span><span class="p">(</span><span class="n">frames_by_module</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="n">hangs</span> <span class="o">=</span> <span class="n">symbolicate_hang_keys</span><span class="p">(</span><span class="n">hangs</span><span class="p">,</span> <span class="n">processed_modules</span><span class="p">)</span>
+
+    <span class="n">usage_hours_by_date</span> <span class="o">=</span> <span class="n">time_code</span><span class="p">(</span>
+        <span class="s2">&quot;Getting usage hours&quot;</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">get_usage_hours_by_date</span><span class="p">(</span><span class="n">filtered</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="n">time_code</span><span class="p">(</span>
+        <span class="s2">&quot;Grouping stacks&quot;</span><span class="p">,</span>
+        <span class="k">lambda</span><span class="p">:</span> <span class="n">get_grouped_sums_and_counts</span><span class="p">(</span><span class="n">hangs</span><span class="p">,</span> <span class="n">usage_hours_by_date</span><span class="p">,</span> <span class="n">config</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span><span class="p">,</span> <span class="n">usage_hours_by_date</span></div>
+
+
+<div class="viewcode-block" id="fetch_url"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.fetch_url">[docs]</a><span class="k">def</span> <span class="nf">fetch_url</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">contextlib</span><span class="o">.</span><span class="n">closing</span><span class="p">(</span><span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">urlopen</span><span class="p">(</span><span class="n">url</span><span class="p">))</span> <span class="k">as</span> <span class="n">response</span><span class="p">:</span>
+            <span class="n">response_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">getcode</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">response_code</span> <span class="o">==</span> <span class="mi">404</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">if</span> <span class="n">response_code</span> <span class="o">!=</span> <span class="mi">200</span><span class="p">:</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">return</span> <span class="kc">True</span><span class="p">,</span> <span class="n">decode_response</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">contextlib</span><span class="o">.</span><span class="n">closing</span><span class="p">(</span><span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">urlopen</span><span class="p">(</span><span class="n">url</span><span class="p">))</span> <span class="k">as</span> <span class="n">response</span><span class="p">:</span>
+                <span class="n">response_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">getcode</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">response_code</span> <span class="o">==</span> <span class="mi">404</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;&quot;</span>
+                <span class="k">if</span> <span class="n">response_code</span> <span class="o">!=</span> <span class="mi">200</span><span class="p">:</span>
+                    <span class="n">result</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;&quot;</span>
+                <span class="k">return</span> <span class="kc">True</span><span class="p">,</span> <span class="n">decode_response</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="decode_response"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.decode_response">[docs]</a><span class="k">def</span> <span class="nf">decode_response</span><span class="p">(</span><span class="n">response</span><span class="p">):</span>
+    <span class="n">headers</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">info</span><span class="p">()</span>
+    <span class="n">content_encoding</span> <span class="o">=</span> <span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Content-Encoding&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">content_encoding</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;gzip&quot;</span><span class="p">,</span> <span class="s2">&quot;x-gzip&quot;</span><span class="p">,</span> <span class="s2">&quot;deflate&quot;</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">contextlib</span><span class="o">.</span><span class="n">closing</span><span class="p">(</span><span class="n">BytesIO</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">read</span><span class="p">()))</span> <span class="k">as</span> <span class="n">data_stream</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">with</span> <span class="n">gzip</span><span class="o">.</span><span class="n">GzipFile</span><span class="p">(</span><span class="n">fileobj</span><span class="o">=</span><span class="n">data_stream</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">EnvironmentError</span><span class="p">:</span>
+                <span class="n">data_stream</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">data_stream</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;zlib&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">read</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="read_file"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.read_file">[docs]</a><span class="k">def</span> <span class="nf">read_file</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+    <span class="n">end_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">today</span><span class="p">()</span>
+    <span class="n">end_date_str</span> <span class="o">=</span> <span class="n">end_date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;read_files_from_network&quot;</span><span class="p">]:</span>
+        <span class="n">s3_key</span> <span class="o">=</span> <span class="s2">&quot;bhr/data/hang_aggregates/&quot;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;.json&quot;</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;analysis_output_url&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">s3_key</span>
+        <span class="n">success</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="n">fetch_url</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">success</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Could not find file at url: &quot;</span> <span class="o">+</span> <span class="n">url</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;append_date&quot;</span><span class="p">]:</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="s2">&quot;./output/</span><span class="si">%s</span><span class="s2">-</span><span class="si">%s</span><span class="s2">.json&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">end_date_str</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="s2">&quot;./output/</span><span class="si">%s</span><span class="s2">.json&quot;</span> <span class="o">%</span> <span class="n">name</span>
+        <span class="n">gzfilename</span> <span class="o">=</span> <span class="n">filename</span> <span class="o">+</span> <span class="s2">&quot;.gz&quot;</span>
+        <span class="k">with</span> <span class="n">gzip</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">gzfilename</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="write_file"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.write_file">[docs]</a><span class="k">def</span> <span class="nf">write_file</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">stuff</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+    <span class="n">end_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">today</span><span class="p">()</span>
+    <span class="n">end_date_str</span> <span class="o">=</span> <span class="n">end_date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;append_date&quot;</span><span class="p">]:</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="s2">&quot;./output/</span><span class="si">%s</span><span class="s2">-</span><span class="si">%s</span><span class="s2">.json&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">end_date_str</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="s2">&quot;./output/</span><span class="si">%s</span><span class="s2">.json&quot;</span> <span class="o">%</span> <span class="n">name</span>
+    <span class="n">gzfilename</span> <span class="o">=</span> <span class="n">filename</span> <span class="o">+</span> <span class="s2">&quot;.gz&quot;</span>
+    <span class="n">jsonblob</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">stuff</span><span class="p">,</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="s2">&quot;./output&quot;</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="s2">&quot;./output&quot;</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">gzip</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">gzfilename</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">jsonblob</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;use_s3&quot;</span><span class="p">]:</span>
+        <span class="n">bucket</span> <span class="o">=</span> <span class="s2">&quot;telemetry-public-analysis-2&quot;</span>
+        <span class="n">s3_key</span> <span class="o">=</span> <span class="s2">&quot;bhr/data/hang_aggregates/&quot;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;.json&quot;</span>
+        <span class="n">client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;s3&quot;</span><span class="p">,</span> <span class="s2">&quot;us-west-2&quot;</span><span class="p">)</span>
+        <span class="n">transfer</span> <span class="o">=</span> <span class="n">S3Transfer</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>
+        <span class="n">extra_args</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;ContentType&quot;</span><span class="p">:</span> <span class="s2">&quot;application/json&quot;</span><span class="p">,</span> <span class="s2">&quot;ContentEncoding&quot;</span><span class="p">:</span> <span class="s2">&quot;gzip&quot;</span><span class="p">}</span>
+        <span class="n">transfer</span><span class="o">.</span><span class="n">upload_file</span><span class="p">(</span><span class="n">gzfilename</span><span class="p">,</span> <span class="n">bucket</span><span class="p">,</span> <span class="n">s3_key</span><span class="p">,</span> <span class="n">extra_args</span><span class="o">=</span><span class="n">extra_args</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;uuid&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">s3_uuid_key</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="s2">&quot;bhr/data/hang_aggregates/&quot;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;uuid&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;.json&quot;</span>
+            <span class="p">)</span>
+            <span class="n">transfer</span><span class="o">.</span><span class="n">upload_file</span><span class="p">(</span><span class="n">gzfilename</span><span class="p">,</span> <span class="n">bucket</span><span class="p">,</span> <span class="n">s3_uuid_key</span><span class="p">,</span> <span class="n">extra_args</span><span class="o">=</span><span class="n">extra_args</span><span class="p">)</span></div>
+
+
+<span class="n">default_config</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;start_date&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">today</span><span class="p">()</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">9</span><span class="p">),</span>
+    <span class="s2">&quot;end_date&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">today</span><span class="p">()</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+    <span class="s2">&quot;use_s3&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="s2">&quot;sample_size&quot;</span><span class="p">:</span> <span class="mf">0.50</span><span class="p">,</span>
+    <span class="s2">&quot;symbol_server_url&quot;</span><span class="p">:</span> <span class="s2">&quot;https://s3-us-west-2.amazonaws.com/&quot;</span>
+    <span class="s2">&quot;org.mozilla.crash-stats.symbols-public/v1/&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;hang_profile_in_filename&quot;</span><span class="p">:</span> <span class="s2">&quot;hang_profile_128_16000&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;hang_profile_out_filename&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="s2">&quot;print_debug_info&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="s2">&quot;hang_lower_bound&quot;</span><span class="p">:</span> <span class="mi">128</span><span class="p">,</span>
+    <span class="s2">&quot;hang_upper_bound&quot;</span><span class="p">:</span> <span class="mi">16000</span><span class="p">,</span>
+    <span class="s2">&quot;stack_acceptance_threshold&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="s2">&quot;hang_outlier_threshold&quot;</span><span class="p">:</span> <span class="mi">512</span><span class="p">,</span>
+    <span class="s2">&quot;append_date&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="s2">&quot;channel&quot;</span><span class="p">:</span> <span class="s2">&quot;nightly&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;analysis_output_url&quot;</span><span class="p">:</span> <span class="s2">&quot;https://analysis-output.telemetry.mozilla.org/&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;read_files_from_network&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="s2">&quot;split_threads_in_out_file&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="s2">&quot;use_minimal_sample_table&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="s2">&quot;post_sample_size&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="s2">&quot;exclude_modules&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="s2">&quot;uuid&quot;</span><span class="p">:</span> <span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="print_progress"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.print_progress">[docs]</a><span class="k">def</span> <span class="nf">print_progress</span><span class="p">(</span>
+    <span class="n">job_start</span><span class="p">,</span> <span class="n">iterations</span><span class="p">,</span> <span class="n">current_iteration</span><span class="p">,</span> <span class="n">iteration_start</span><span class="p">,</span> <span class="n">iteration_name</span>
+<span class="p">):</span>
+    <span class="n">iteration_end</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">iteration_delta</span> <span class="o">=</span> <span class="n">iteration_end</span> <span class="o">-</span> <span class="n">iteration_start</span>
+    <span class="nb">print</span><span class="p">(</span>
+        <span class="s2">&quot;Iteration for </span><span class="si">{}</span><span class="s2"> took </span><span class="si">{}</span><span class="s2">s&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">iteration_name</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">iteration_delta</span><span class="p">)))</span>
+    <span class="p">)</span>
+    <span class="n">job_elapsed</span> <span class="o">=</span> <span class="n">iteration_end</span> <span class="o">-</span> <span class="n">job_start</span>
+    <span class="n">percent_done</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">current_iteration</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">iterations</span><span class="p">)</span>
+    <span class="n">projected</span> <span class="o">=</span> <span class="n">job_elapsed</span> <span class="o">/</span> <span class="n">percent_done</span>
+    <span class="n">remaining</span> <span class="o">=</span> <span class="n">projected</span> <span class="o">-</span> <span class="n">job_elapsed</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Job should finish in </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="n">remaining</span><span class="p">)))</span></div>
+
+
+<div class="viewcode-block" id="etl_job_daily"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.etl_job_daily">[docs]</a><span class="k">def</span> <span class="nf">etl_job_daily</span><span class="p">(</span><span class="n">sc</span><span class="p">,</span> <span class="n">sql_context</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">final_config</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">final_config</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">default_config</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">config</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">final_config</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">final_config</span><span class="p">[</span><span class="s2">&quot;hang_profile_out_filename&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">final_config</span><span class="p">[</span><span class="s2">&quot;hang_profile_out_filename&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">final_config</span><span class="p">[</span>
+            <span class="s2">&quot;hang_profile_in_filename&quot;</span>
+        <span class="p">]</span>
+
+    <span class="n">iterations</span> <span class="o">=</span> <span class="p">(</span><span class="n">final_config</span><span class="p">[</span><span class="s2">&quot;end_date&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">final_config</span><span class="p">[</span><span class="s2">&quot;start_date&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">days</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">job_start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">current_date</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">transformed</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">usage_hours</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">iterations</span><span class="p">):</span>
+        <span class="n">iteration_start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">current_date</span> <span class="o">=</span> <span class="n">final_config</span><span class="p">[</span><span class="s2">&quot;start_date&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">date_str</span> <span class="o">=</span> <span class="n">current_date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">time_code</span><span class="p">(</span>
+            <span class="s2">&quot;Getting data&quot;</span><span class="p">,</span>
+            <span class="k">lambda</span><span class="p">:</span> <span class="n">get_data</span><span class="p">(</span><span class="n">sc</span><span class="p">,</span> <span class="n">sql_context</span><span class="p">,</span> <span class="n">final_config</span><span class="p">,</span> <span class="n">current_date</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;No data&quot;</span><span class="p">)</span>
+            <span class="k">continue</span>
+        <span class="n">transformed</span><span class="p">,</span> <span class="n">usage_hours</span> <span class="o">=</span> <span class="n">transform_pings</span><span class="p">(</span><span class="n">sc</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">final_config</span><span class="p">)</span>
+        <span class="n">profile_processor</span> <span class="o">=</span> <span class="n">ProfileProcessor</span><span class="p">(</span><span class="n">final_config</span><span class="p">)</span>
+        <span class="n">profile_processor</span><span class="o">.</span><span class="n">ingest</span><span class="p">(</span><span class="n">transformed</span><span class="p">,</span> <span class="n">usage_hours</span><span class="p">)</span>
+        <span class="n">profile</span> <span class="o">=</span> <span class="n">profile_processor</span><span class="o">.</span><span class="n">process_into_profile</span><span class="p">()</span>
+        <span class="n">filepath</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">_</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">final_config</span><span class="p">[</span><span class="s2">&quot;hang_profile_out_filename&quot;</span><span class="p">],</span> <span class="n">date_str</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;writing file </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">filepath</span><span class="p">)</span>
+        <span class="n">write_file</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">profile</span><span class="p">,</span> <span class="n">final_config</span><span class="p">)</span>
+        <span class="n">filepath</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">_current&quot;</span> <span class="o">%</span> <span class="n">final_config</span><span class="p">[</span><span class="s2">&quot;hang_profile_out_filename&quot;</span><span class="p">]</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;writing file </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">filepath</span><span class="p">)</span>
+        <span class="n">write_file</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">profile</span><span class="p">,</span> <span class="n">final_config</span><span class="p">)</span>
+        <span class="n">gc</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+        <span class="n">print_progress</span><span class="p">(</span><span class="n">job_start</span><span class="p">,</span> <span class="n">iterations</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">iteration_start</span><span class="p">,</span> <span class="n">date_str</span><span class="p">)</span></div>
+
+
+<span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">()</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--date&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">fromisoformat</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+    <span class="s2">&quot;--sample-size&quot;</span><span class="p">,</span>
+    <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+    <span class="n">default</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Proportion of pings to use (1.0 is 100%)&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">start_job</span><span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="n">sample_size</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Running for </span><span class="si">{</span><span class="n">date</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using sample size </span><span class="si">{</span><span class="n">sample_size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">etl_job_daily</span><span class="p">(</span>
+        <span class="n">sc</span><span class="p">,</span>
+        <span class="n">spark</span><span class="p">,</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;start_date&quot;</span><span class="p">:</span> <span class="n">date</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">4</span><span class="p">),</span>
+            <span class="s2">&quot;end_date&quot;</span><span class="p">:</span> <span class="n">date</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">4</span><span class="p">),</span>
+            <span class="s2">&quot;hang_profile_in_filename&quot;</span><span class="p">:</span> <span class="s2">&quot;hangs_main&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;hang_profile_out_filename&quot;</span><span class="p">:</span> <span class="s2">&quot;hangs_main&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;hang_lower_bound&quot;</span><span class="p">:</span> <span class="mi">128</span><span class="p">,</span>
+            <span class="s2">&quot;hang_upper_bound&quot;</span><span class="p">:</span> <span class="mi">65536</span><span class="p">,</span>
+            <span class="s2">&quot;sample_size&quot;</span><span class="p">:</span> <span class="n">sample_size</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">start_job</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">python_mozetl</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Firefox Telemetry Python ETL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#benefits">Benefits</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#tests">Tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#manual-execution">Manual Execution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#scheduling">Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#early-stage-etl-jobs">Early Stage ETL Jobs</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Ryan Harter.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

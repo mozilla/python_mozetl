@@ -1,20 +1,17 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Firefox Telemetry Python ETL &#8212; python_mozetl 0.1 documentation</title>
-    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-    <script type="text/javascript" src="_static/jquery.js"></script>
-    <script type="text/javascript" src="_static/underscore.js"></script>
-    <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="_static/language_data.js"></script>
-    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="prev" title="Indices and tables" href="index.html" />
@@ -37,7 +34,7 @@
   <div class="section" id="firefox-telemetry-python-etl">
 <h1>Firefox Telemetry Python ETL<a class="headerlink" href="#firefox-telemetry-python-etl" title="Permalink to this headline">¶</a></h1>
 <a class="reference external image-reference" href="https://circleci.com/gh/mozilla/python_mozetl"><img alt="CircleCI" src="https://circleci.com/gh/mozilla/python_mozetl.svg?style=svg" /></a>
-<a class="reference external image-reference" href="https://codecov.io/gh/mozilla/python_mozetl"><img alt="codecov" src="https://codecov.io/gh/mozilla/python_mozetl/branch/master/graph/badge.svg" /></a>
+<a class="reference external image-reference" href="https://codecov.io/gh/mozilla/python_mozetl"><img alt="codecov" src="https://codecov.io/gh/mozilla/python_mozetl/branch/main/graph/badge.svg" /></a>
 <p>This repository is a collection of ETL jobs for Firefox Telemetry.</p>
 </div>
 <div class="section" id="benefits">
@@ -68,7 +65,7 @@ environment. These are used for the <code class="docutils literal notranslate"><
 <h2>Calling the test runner<a class="headerlink" href="#calling-the-test-runner" title="Permalink to this headline">¶</a></h2>
 <p>Run tests by calling <code class="docutils literal notranslate"><span class="pre">tox</span></code> in the root directory.</p>
 <p>Arguments to <code class="docutils literal notranslate"><span class="pre">pytest</span></code> can be passed through tox using <code class="docutils literal notranslate"><span class="pre">--</span></code>.</p>
-<div class="highlight-guess notranslate"><div class="highlight"><pre><span></span><span class="n">tox</span> <span class="c1">-- -k test_main.py # runs tests only in the test_main module</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">tox</span> <span class="o">--</span> <span class="o">-</span><span class="n">k</span> <span class="n">test_main</span><span class="o">.</span><span class="n">py</span> <span class="c1"># runs tests only in the test_main module</span>
 </pre></div>
 </div>
 <p>Tests are configured in <a class="reference external" href="tox.ini">tox.ini</a></p>
@@ -82,7 +79,7 @@ environment. These are used for the <code class="docutils literal notranslate"><
 This script is used with the <code class="docutils literal notranslate"><span class="pre">EMRSparkOperator</span></code> in <code class="docutils literal notranslate"><span class="pre">telemetry-airflow</span></code> to schedule execution of <code class="docutils literal notranslate"><span class="pre">mozetl</span></code> jobs.
 It may be used with <a class="reference external" href="https://analysis.telemetry.mozilla.org/">ATMO</a> to manually test jobs.</p>
 <p>In an SSH session with an ATMO cluster, grab a copy of the script:</p>
-<div class="highlight-guess notranslate"><div class="highlight"><pre><span></span>$ wget https://raw.githubusercontent.com/mozilla/python_mozetl/master/bin/mozetl-submit.sh
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ wget https://raw.githubusercontent.com/mozilla/python_mozetl/main/bin/mozetl-submit.sh
 </pre></div>
 </div>
 <p>Push your code to your own fork, where the job has been added to <code class="docutils literal notranslate"><span class="pre">mozetl.cli</span></code>. Then run it.</p>
@@ -130,12 +127,12 @@ Use ATMO to schedule jobs you are still prototyping
 or jobs that have a limited lifespan.</p>
 <p>Jobs scheduled on Airflow will be more robust.</p>
 <ul class="simple">
-<li>Airflow will automatically retry your job in the event of a failure.</li>
-<li>You can also alert other members of your team when jobs fail,
-while ATMO will only send an email to the job owner.</li>
-<li>If your job depends on other datasets,
+<li><p>Airflow will automatically retry your job in the event of a failure.</p></li>
+<li><p>You can also alert other members of your team when jobs fail,
+while ATMO will only send an email to the job owner.</p></li>
+<li><p>If your job depends on other datasets,
 you can identify these dependencies in Airflow.
-This is useful if an upstream job fails.</li>
+This is useful if an upstream job fails.</p></li>
 </ul>
 <div class="section" id="id5">
 <h2>ATMO<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h2>
@@ -215,17 +212,15 @@ In fact, this project was created with
 </ul>
 </div>
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
       <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
     </form>
     </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script>
 
 
 
@@ -242,7 +237,7 @@ In fact, this project was created with
       &copy;2018, Ryan Harter.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

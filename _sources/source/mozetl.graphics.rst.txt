@@ -1,0 +1,29 @@
+mozetl.graphics package
+=======================
+
+Submodules
+----------
+
+mozetl.graphics.graphics\_telemetry\_dashboard module
+-----------------------------------------------------
+
+.. automodule:: mozetl.graphics.graphics_telemetry_dashboard
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+mozetl.graphics.graphics\_telemetry\_trends module
+--------------------------------------------------
+
+.. automodule:: mozetl.graphics.graphics_telemetry_trends
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Module contents
+---------------
+
+.. automodule:: mozetl.graphics
+   :members:
+   :undoc-members:
+   :show-inheritance:

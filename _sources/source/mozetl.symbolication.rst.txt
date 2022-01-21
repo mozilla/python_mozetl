@@ -1,0 +1,29 @@
+mozetl.symbolication package
+============================
+
+Submodules
+----------
+
+mozetl.symbolication.modules\_with\_missing\_symbols module
+-----------------------------------------------------------
+
+.. automodule:: mozetl.symbolication.modules_with_missing_symbols
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+mozetl.symbolication.top\_signatures\_correlations module
+---------------------------------------------------------
+
+.. automodule:: mozetl.symbolication.top_signatures_correlations
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Module contents
+---------------
+
+.. automodule:: mozetl.symbolication
+   :members:
+   :undoc-members:
+   :show-inheritance:

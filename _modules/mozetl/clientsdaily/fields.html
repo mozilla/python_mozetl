@@ -1,0 +1,330 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>mozetl.clientsdaily.fields &#8212; python_mozetl 0.1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for mozetl.clientsdaily.fields</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">pyspark.sql.functions</span> <span class="k">as</span> <span class="nn">F</span>
+
+<span class="n">VERSION</span> <span class="o">=</span> <span class="mi">1</span>
+
+
+<div class="viewcode-block" id="get_alias"><a class="viewcode-back" href="../../../source/mozetl.clientsdaily.html#mozetl.clientsdaily.fields.get_alias">[docs]</a><span class="k">def</span> <span class="nf">get_alias</span><span class="p">(</span><span class="n">field_name</span><span class="p">,</span> <span class="n">alias</span><span class="p">,</span> <span class="n">kind</span><span class="p">):</span>
+    <span class="n">field_alias</span> <span class="o">=</span> <span class="n">alias</span>
+    <span class="k">if</span> <span class="n">field_alias</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">field_alias</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">field_name</span><span class="p">,</span> <span class="n">kind</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">field_alias</span></div>
+
+
+<div class="viewcode-block" id="agg_sum"><a class="viewcode-back" href="../../../source/mozetl.clientsdaily.html#mozetl.clientsdaily.fields.agg_sum">[docs]</a><span class="k">def</span> <span class="nf">agg_sum</span><span class="p">(</span><span class="n">field_name</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">expression</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">field_alias</span> <span class="o">=</span> <span class="n">get_alias</span><span class="p">(</span><span class="n">field_name</span><span class="p">,</span> <span class="n">alias</span><span class="p">,</span> <span class="s2">&quot;sum&quot;</span><span class="p">)</span>
+    <span class="n">field_expression</span> <span class="o">=</span> <span class="n">expression</span>
+    <span class="k">if</span> <span class="n">field_expression</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">field_expression</span> <span class="o">=</span> <span class="n">field_name</span>
+    <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">field_expression</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="n">field_alias</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="agg_mean"><a class="viewcode-back" href="../../../source/mozetl.clientsdaily.html#mozetl.clientsdaily.fields.agg_mean">[docs]</a><span class="k">def</span> <span class="nf">agg_mean</span><span class="p">(</span><span class="n">field_name</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">field_alias</span> <span class="o">=</span> <span class="n">get_alias</span><span class="p">(</span><span class="n">field_name</span><span class="p">,</span> <span class="n">alias</span><span class="p">,</span> <span class="s2">&quot;mean&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">field_name</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="n">field_alias</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="agg_first"><a class="viewcode-back" href="../../../source/mozetl.clientsdaily.html#mozetl.clientsdaily.fields.agg_first">[docs]</a><span class="k">def</span> <span class="nf">agg_first</span><span class="p">(</span><span class="n">field_name</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">first</span><span class="p">(</span><span class="n">field_name</span><span class="p">,</span> <span class="n">ignorenulls</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="n">field_name</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="agg_max"><a class="viewcode-back" href="../../../source/mozetl.clientsdaily.html#mozetl.clientsdaily.fields.agg_max">[docs]</a><span class="k">def</span> <span class="nf">agg_max</span><span class="p">(</span><span class="n">field_name</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">field_alias</span> <span class="o">=</span> <span class="n">get_alias</span><span class="p">(</span><span class="n">field_name</span><span class="p">,</span> <span class="n">alias</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">field_name</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="n">field_alias</span><span class="p">)</span></div>
+
+
+<span class="n">_FIELD_AGGREGATORS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;aborts_content&quot;</span><span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;aborts_gmplugin&quot;</span><span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;aborts_plugin&quot;</span><span class="p">),</span>
+    <span class="c1"># active_addons</span>
+    <span class="n">agg_mean</span><span class="p">(</span><span class="s2">&quot;active_addons_count&quot;</span><span class="p">),</span>
+    <span class="c1"># MAIN_SUMMARY_FIELD_AGGREGATORS inserts here</span>
+    <span class="c1"># active_theme</span>
+    <span class="n">agg_sum</span><span class="p">(</span>
+        <span class="s2">&quot;active_ticks&quot;</span><span class="p">,</span>
+        <span class="n">alias</span><span class="o">=</span><span class="s2">&quot;active_hours_sum&quot;</span><span class="p">,</span>
+        <span class="n">expression</span><span class="o">=</span><span class="n">F</span><span class="o">.</span><span class="n">expr</span><span class="p">(</span><span class="s2">&quot;active_ticks/(3600.0/5)&quot;</span><span class="p">),</span>
+    <span class="p">),</span>
+    <span class="n">agg_first</span><span class="p">(</span><span class="s2">&quot;addon_compatibility_check_enabled&quot;</span><span class="p">),</span>
+    <span class="n">agg_first</span><span class="p">(</span><span class="s2">&quot;app_build_id&quot;</span><span class="p">),</span>
+    <span class="n">agg_first</span><span class="p">(</span><span class="s2">&quot;app_display_version&quot;</span><span class="p">),</span>
+    <span class="n">agg_first</span><span class="p">(</span><span class="s2">&quot;app_name&quot;</span><span class="p">),</span>
+    <span class="n">agg_first</span><span class="p">(</span><span class="s2">&quot;app_version&quot;</span><span class="p">),</span>
+    <span class="c1"># attribution</span>
+    <span class="n">agg_first</span><span class="p">(</span><span class="s2">&quot;blocklist_enabled&quot;</span><span class="p">),</span>
+    <span class="n">agg_first</span><span class="p">(</span><span class="s2">&quot;channel&quot;</span><span class="p">),</span>
+    <span class="n">F</span><span class="o">.</span><span class="n">first</span><span class="p">(</span>
+        <span class="n">F</span><span class="o">.</span><span class="n">expr</span><span class="p">(</span>
+            <span class="s2">&quot;IF(country IS NOT NULL AND country != &#39;??&#39;,&quot;</span>
+            <span class="s2">&quot; IF(city IS NOT NULL, city, &#39;??&#39;), NULL)&quot;</span>
+        <span class="p">)</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;city&quot;</span><span class="p">),</span>
+    <span class="n">F</span><span class="o">.</span><span class="n">first</span><span class="p">(</span>
+        <span class="n">F</span><span class="o">.</span><span class="n">expr</span><span class="p">(</span>
+            <span class="s2">&quot;IF(country IS NOT NULL AND country != &#39;??&#39;,&quot;</span>
+            <span class="s2">&quot; IF(geo_subdivision1 IS NOT NULL, geo_subdivision1, &#39;??&#39;), NULL)&quot;</span>
+        <span class="p">)</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;geo_subdivision1&quot;</span><span class="p">),</span>
+    <span class="n">F</span><span class="o">.</span><span class="n">first</span><span class="p">(</span>
+        <span class="n">F</span><span class="o">.</span><span class="n">expr</span><span class="p">(</span>
+            <span class="s2">&quot;IF(country IS NOT NULL AND country != &#39;??&#39;,&quot;</span>
+            <span class="s2">&quot; IF(geo_subdivision2 IS NOT NULL, geo_subdivision2, &#39;??&#39;), NULL)&quot;</span>
+        <span class="p">)</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;geo_subdivision2&quot;</span><span class="p">),</span>
+    <span class="n">F</span><span class="o">.</span><span class="n">first</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">expr</span><span class="p">(</span><span class="s2">&quot;IF(country IS NOT NULL AND country != &#39;??&#39;, country, NULL)&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span>
+        <span class="s2">&quot;country&quot;</span>
+    <span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;crashes_detected_content&quot;</span><span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;crashes_detected_gmplugin&quot;</span><span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;crashes_detected_plugin&quot;</span><span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;crash_submit_attempt_content&quot;</span><span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;crash_submit_attempt_main&quot;</span><span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;crash_submit_attempt_plugin&quot;</span><span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;crash_submit_success_content&quot;</span><span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;crash_submit_success_main&quot;</span><span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;crash_submit_success_plugin&quot;</span><span class="p">),</span>
+    <span class="n">agg_first</span><span class="p">(</span><span class="s2">&quot;default_search_engine&quot;</span><span class="p">),</span>
+    <span class="n">agg_first</span><span class="p">(</span><span class="s2">&quot;default_search_engine_data_load_path&quot;</span><span class="p">),</span>
+    <span class="n">agg_first</span><span class="p">(</span><span class="s2">&quot;default_search_engine_data_name&quot;</span><span class="p">),</span>
+    <span class="n">agg_first</span><span class="p">(</span><span class="s2">&quot;default_search_engine_data_origin&quot;</span><span class="p">),</span>
+    <span class="n">agg_first</span><span class="p">(</span><span class="s2">&quot;default_search_engine_data_submission_url&quot;</span><span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;devtools_toolbox_opened_count&quot;</span><span class="p">),</span>
+    <span class="n">agg_first</span><span class="p">(</span><span class="s2">&quot;distribution_id&quot;</span><span class="p">),</span>
+    <span class="c1"># userprefs/dom_ipc_process_count</span>
+    <span class="n">agg_first</span><span class="p">(</span><span class="s2">&quot;e10s_enabled&quot;</span><span class="p">),</span>
+    <span class="n">agg_first</span><span class="p">(</span><span class="s2">&quot;env_build_arch&quot;</span><span class="p">),</span>
+    <span class="n">agg_first</span><span class="p">(</span><span class="s2">&quot;env_build_id&quot;</span><span class="p">),</span>
+    <span class="n">agg_first</span><span class="p">(</span><span class="s2">&quot;env_build_version&quot;</span><span class="p">),</span>
+    <span class="c1"># events</span>
+    <span class="c1"># EXPERIMENT_FIELD_AGGREGATORS inserts here</span>
+    <span class="c1"># experiments</span>
+    <span class="n">agg_mean</span><span class="p">(</span><span class="s2">&quot;first_paint&quot;</span><span class="p">),</span>
+    <span class="c1"># F.first(</span>
+    <span class="c1">#     F.expr(&quot;userprefs.extensions_allow_non_mpc_extensions&quot;</span>
+    <span class="c1">#        ).alias(&quot;extensions_allow_non_mpc_extensions&quot;)</span>
+    <span class="c1"># ),</span>
+    <span class="n">agg_first</span><span class="p">(</span><span class="s2">&quot;flash_version&quot;</span><span class="p">),</span>
+    <span class="n">agg_first</span><span class="p">(</span><span class="s2">&quot;install_year&quot;</span><span class="p">),</span>
+    <span class="n">agg_first</span><span class="p">(</span><span class="s2">&quot;is_default_browser&quot;</span><span class="p">),</span>
+    <span class="n">agg_first</span><span class="p">(</span><span class="s2">&quot;is_wow64&quot;</span><span class="p">),</span>
+    <span class="n">agg_first</span><span class="p">(</span><span class="s2">&quot;locale&quot;</span><span class="p">),</span>
+    <span class="c1"># main</span>
+    <span class="n">agg_first</span><span class="p">(</span><span class="s2">&quot;memory_mb&quot;</span><span class="p">),</span>  <span class="c1"># mean?</span>
+    <span class="n">agg_first</span><span class="p">(</span><span class="s2">&quot;os&quot;</span><span class="p">),</span>
+    <span class="n">agg_first</span><span class="p">(</span><span class="s2">&quot;os_service_pack_major&quot;</span><span class="p">),</span>
+    <span class="n">agg_first</span><span class="p">(</span><span class="s2">&quot;os_service_pack_minor&quot;</span><span class="p">),</span>
+    <span class="n">agg_first</span><span class="p">(</span><span class="s2">&quot;os_version&quot;</span><span class="p">),</span>
+    <span class="n">agg_first</span><span class="p">(</span><span class="s2">&quot;normalized_channel&quot;</span><span class="p">),</span>
+    <span class="n">F</span><span class="o">.</span><span class="n">countDistinct</span><span class="p">(</span><span class="s2">&quot;document_id&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;pings_aggregated_by_this_row&quot;</span><span class="p">),</span>
+    <span class="n">agg_mean</span><span class="p">(</span><span class="s2">&quot;places_bookmarks_count&quot;</span><span class="p">),</span>
+    <span class="n">agg_mean</span><span class="p">(</span><span class="s2">&quot;places_pages_count&quot;</span><span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;plugin_hangs&quot;</span><span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;plugins_infobar_allow&quot;</span><span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;plugins_infobar_block&quot;</span><span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;plugins_infobar_shown&quot;</span><span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;plugins_notification_shown&quot;</span><span class="p">),</span>
+    <span class="c1"># plugins_notification_user_action</span>
+    <span class="c1"># popup_notification_stats</span>
+    <span class="n">F</span><span class="o">.</span><span class="n">first</span><span class="p">(</span>
+        <span class="n">F</span><span class="o">.</span><span class="n">expr</span><span class="p">(</span>
+            <span class="s2">&quot;datediff(subsession_start_date, &quot;</span>
+            <span class="s2">&quot;from_unixtime(profile_creation_date*24*60*60))&quot;</span>
+        <span class="p">)</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;profile_age_in_days&quot;</span><span class="p">),</span>
+    <span class="n">F</span><span class="o">.</span><span class="n">first</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">expr</span><span class="p">(</span><span class="s2">&quot;from_unixtime(profile_creation_date*24*60*60)&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span>
+        <span class="s2">&quot;profile_creation_date&quot;</span>
+    <span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;push_api_notify&quot;</span><span class="p">),</span>
+    <span class="n">agg_first</span><span class="p">(</span><span class="s2">&quot;sample_id&quot;</span><span class="p">),</span>
+    <span class="n">agg_first</span><span class="p">(</span><span class="s2">&quot;scalar_parent_aushelper_websense_reg_version&quot;</span><span class="p">),</span>
+    <span class="n">agg_max</span><span class="p">(</span><span class="s2">&quot;scalar_parent_browser_engagement_max_concurrent_tab_count&quot;</span><span class="p">),</span>
+    <span class="n">agg_max</span><span class="p">(</span><span class="s2">&quot;scalar_parent_browser_engagement_max_concurrent_window_count&quot;</span><span class="p">),</span>
+    <span class="c1"># scalar_parent_browser_engagement_navigation_about_home</span>
+    <span class="c1"># scalar_parent_browser_engagement_navigation_about_newtab</span>
+    <span class="c1"># scalar_parent_browser_engagement_navigation_contextmenu</span>
+    <span class="c1"># scalar_parent_browser_engagement_navigation_searchbar</span>
+    <span class="c1"># scalar_parent_browser_engagement_navigation_urlbar</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;scalar_parent_browser_engagement_tab_open_event_count&quot;</span><span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;scalar_parent_browser_engagement_total_uri_count&quot;</span><span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;scalar_parent_browser_engagement_unfiltered_uri_count&quot;</span><span class="p">),</span>
+    <span class="c1"># Include both max and mean for unique domains:</span>
+    <span class="n">agg_max</span><span class="p">(</span><span class="s2">&quot;scalar_parent_browser_engagement_unique_domains_count&quot;</span><span class="p">),</span>
+    <span class="n">agg_mean</span><span class="p">(</span><span class="s2">&quot;scalar_parent_browser_engagement_unique_domains_count&quot;</span><span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;scalar_parent_browser_engagement_window_open_event_count&quot;</span><span class="p">),</span>
+    <span class="c1"># F.sum(&#39;scalar_parent_browser_browser_usage_graphite&#39;).alias(</span>
+    <span class="c1">#     &#39;scalar_parent_browser_browser_usage_graphite_sum&#39;)</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;scalar_parent_devtools_copy_full_css_selector_opened&quot;</span><span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;scalar_parent_devtools_copy_unique_css_selector_opened&quot;</span><span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;scalar_parent_devtools_toolbar_eyedropper_opened&quot;</span><span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;scalar_parent_dom_contentprocess_troubled_due_to_memory&quot;</span><span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;scalar_parent_navigator_storage_estimate_count&quot;</span><span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;scalar_parent_navigator_storage_persist_count&quot;</span><span class="p">),</span>
+    <span class="n">agg_first</span><span class="p">(</span><span class="s2">&quot;scalar_parent_services_sync_fxa_verification_method&quot;</span><span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;scalar_parent_storage_sync_api_usage_extensions_using&quot;</span><span class="p">),</span>
+    <span class="c1"># scalar_parent_storage_sync_api_usage_items_stored</span>
+    <span class="c1"># scalar_parent_storage_sync_api_usage_storage_consumed</span>
+    <span class="n">agg_first</span><span class="p">(</span><span class="s2">&quot;scalar_parent_telemetry_os_shutting_down&quot;</span><span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;scalar_parent_webrtc_nicer_stun_retransmits&quot;</span><span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;scalar_parent_webrtc_nicer_turn_401s&quot;</span><span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;scalar_parent_webrtc_nicer_turn_403s&quot;</span><span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;scalar_parent_webrtc_nicer_turn_438s&quot;</span><span class="p">),</span>
+    <span class="n">agg_first</span><span class="p">(</span><span class="s2">&quot;search_cohort&quot;</span><span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;search_count_all&quot;</span><span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;search_count_abouthome&quot;</span><span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;search_count_contextmenu&quot;</span><span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;search_count_newtab&quot;</span><span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;search_count_searchbar&quot;</span><span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;search_count_system&quot;</span><span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;search_count_urlbar&quot;</span><span class="p">),</span>
+    <span class="n">agg_mean</span><span class="p">(</span><span class="s2">&quot;session_restored&quot;</span><span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span>
+        <span class="s2">&quot;subsession_counter&quot;</span><span class="p">,</span>
+        <span class="n">alias</span><span class="o">=</span><span class="s2">&quot;sessions_started_on_this_day&quot;</span><span class="p">,</span>
+        <span class="n">expression</span><span class="o">=</span><span class="n">F</span><span class="o">.</span><span class="n">expr</span><span class="p">(</span><span class="s2">&quot;IF(subsession_counter = 1, 1, 0)&quot;</span><span class="p">),</span>
+    <span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;shutdown_kill&quot;</span><span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span>
+        <span class="s2">&quot;subsession_length&quot;</span><span class="p">,</span>
+        <span class="n">alias</span><span class="o">=</span><span class="s2">&quot;subsession_hours_sum&quot;</span><span class="p">,</span>
+        <span class="n">expression</span><span class="o">=</span><span class="n">F</span><span class="o">.</span><span class="n">expr</span><span class="p">(</span><span class="s2">&quot;subsession_length/3600.0&quot;</span><span class="p">),</span>
+    <span class="p">),</span>
+    <span class="c1"># ssl_handshake_result</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;ssl_handshake_result_failure&quot;</span><span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;ssl_handshake_result_success&quot;</span><span class="p">),</span>
+    <span class="n">agg_first</span><span class="p">(</span><span class="s2">&quot;sync_configured&quot;</span><span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;sync_count_desktop&quot;</span><span class="p">),</span>  <span class="c1"># TODO: max</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;sync_count_mobile&quot;</span><span class="p">),</span>  <span class="c1"># TODO: max</span>
+    <span class="n">agg_first</span><span class="p">(</span><span class="s2">&quot;telemetry_enabled&quot;</span><span class="p">),</span>
+    <span class="n">agg_first</span><span class="p">(</span><span class="s2">&quot;timezone_offset&quot;</span><span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span>
+        <span class="s2">&quot;total_time&quot;</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s2">&quot;total_hours_sum&quot;</span><span class="p">,</span> <span class="n">expression</span><span class="o">=</span><span class="n">F</span><span class="o">.</span><span class="n">expr</span><span class="p">(</span><span class="s2">&quot;total_time/3600.0&quot;</span><span class="p">)</span>
+    <span class="p">),</span>
+    <span class="n">agg_first</span><span class="p">(</span><span class="s2">&quot;vendor&quot;</span><span class="p">),</span>
+    <span class="n">agg_sum</span><span class="p">(</span><span class="s2">&quot;web_notification_shown&quot;</span><span class="p">),</span>
+    <span class="n">agg_first</span><span class="p">(</span><span class="s2">&quot;windows_build_number&quot;</span><span class="p">),</span>
+    <span class="n">agg_first</span><span class="p">(</span><span class="s2">&quot;windows_ubr&quot;</span><span class="p">),</span>
+<span class="p">]</span>
+
+
+<span class="n">MAIN_SUMMARY_FIELD_AGGREGATORS</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">_FIELD_AGGREGATORS</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span>
+    <span class="o">+</span> <span class="p">[</span><span class="n">agg_first</span><span class="p">(</span><span class="s2">&quot;active_experiment_branch&quot;</span><span class="p">),</span> <span class="n">agg_first</span><span class="p">(</span><span class="s2">&quot;active_experiment_id&quot;</span><span class="p">)]</span>
+    <span class="o">+</span> <span class="n">_FIELD_AGGREGATORS</span><span class="p">[</span><span class="mi">4</span><span class="p">:]</span>
+<span class="p">)</span>
+
+
+<span class="n">EXPERIMENT_FIELD_AGGREGATORS</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">_FIELD_AGGREGATORS</span><span class="p">[:</span><span class="mi">15</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">agg_first</span><span class="p">(</span><span class="s2">&quot;experiment_branch&quot;</span><span class="p">)]</span> <span class="o">+</span> <span class="n">_FIELD_AGGREGATORS</span><span class="p">[</span><span class="mi">15</span><span class="p">:]</span>
+<span class="p">)</span>
+
+
+<span class="n">ACTIVITY_DATE_COLUMN</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">expr</span><span class="p">(</span><span class="s2">&quot;substr(subsession_start_date, 1, 10)&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span>
+    <span class="s2">&quot;activity_date&quot;</span>
+<span class="p">)</span>
+
+<span class="n">NULL_STRING_COLUMN</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">expr</span><span class="p">(</span><span class="s2">&quot;STRING(NULL)&quot;</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">python_mozetl</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Firefox Telemetry Python ETL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#benefits">Benefits</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#tests">Tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#manual-execution">Manual Execution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#scheduling">Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#early-stage-etl-jobs">Early Stage ETL Jobs</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Ryan Harter.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

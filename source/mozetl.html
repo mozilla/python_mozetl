@@ -1,20 +1,17 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>mozetl package &#8212; python_mozetl 0.1 documentation</title>
-    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="../_static/language_data.js"></script>
-    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
    
@@ -53,7 +50,7 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="mozetl.clientsdaily.html">mozetl.clientsdaily package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="mozetl.clientsdaily.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mozetl.clientsdaily.html#mozetl-clientsdaily-fields-module">mozetl.clientsdaily.fields module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mozetl.clientsdaily.html#module-mozetl.clientsdaily.fields">mozetl.clientsdaily.fields module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mozetl.clientsdaily.html#module-mozetl.clientsdaily.rollup">mozetl.clientsdaily.rollup module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mozetl.clientsdaily.html#module-mozetl.clientsdaily">Module contents</a></li>
 </ul>
@@ -171,25 +168,25 @@
 </div>
 <div class="section" id="module-mozetl.main">
 <span id="mozetl-main-module"></span><h2>mozetl.main module<a class="headerlink" href="#module-mozetl.main" title="Permalink to this headline">¶</a></h2>
-<dl class="function">
+<dl class="py function">
 <dt id="mozetl.main.etl_job">
-<code class="descclassname">mozetl.main.</code><code class="descname">etl_job</code><span class="sig-paren">(</span><em>sc</em>, <em>sqlContext</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/main.html#etl_job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.main.etl_job" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">mozetl.main.</span></code><code class="sig-name descname"><span class="pre">etl_job</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sqlContext</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/main.html#etl_job"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.main.etl_job" title="Permalink to this definition">¶</a></dt>
 <dd><p>This is the function that will be executed on the cluster</p>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="mozetl.main.get_data">
-<code class="descclassname">mozetl.main.</code><code class="descname">get_data</code><span class="sig-paren">(</span><em>sc</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/main.html#get_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.main.get_data" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">mozetl.main.</span></code><code class="sig-name descname"><span class="pre">get_data</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sc</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/main.html#get_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.main.get_data" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="mozetl.main.ping_to_row">
-<code class="descclassname">mozetl.main.</code><code class="descname">ping_to_row</code><span class="sig-paren">(</span><em>ping</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/main.html#ping_to_row"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.main.ping_to_row" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">mozetl.main.</span></code><code class="sig-name descname"><span class="pre">ping_to_row</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ping</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/main.html#ping_to_row"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.main.ping_to_row" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="mozetl.main.transform_pings">
-<code class="descclassname">mozetl.main.</code><code class="descname">transform_pings</code><span class="sig-paren">(</span><em>pings</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/main.html#transform_pings"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.main.transform_pings" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">mozetl.main.</span></code><code class="sig-name descname"><span class="pre">transform_pings</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pings</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/main.html#transform_pings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.main.transform_pings" title="Permalink to this definition">¶</a></dt>
 <dd><p>Take a dataframe of main pings and summarize OS share</p>
 </dd></dl>
 
@@ -199,14 +196,14 @@
 </div>
 <div class="section" id="module-mozetl.utils">
 <span id="mozetl-utils-module"></span><h2>mozetl.utils module<a class="headerlink" href="#module-mozetl.utils" title="Permalink to this headline">¶</a></h2>
-<dl class="function">
+<dl class="py function">
 <dt id="mozetl.utils.delete_from_s3">
-<code class="descclassname">mozetl.utils.</code><code class="descname">delete_from_s3</code><span class="sig-paren">(</span><em>bucket_name</em>, <em>keys_to_delete</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/utils.html#delete_from_s3"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.utils.delete_from_s3" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">mozetl.utils.</span></code><code class="sig-name descname"><span class="pre">delete_from_s3</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bucket_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keys_to_delete</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/utils.html#delete_from_s3"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.utils.delete_from_s3" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="mozetl.utils.extract_submission_window_for_activity_day">
-<code class="descclassname">mozetl.utils.</code><code class="descname">extract_submission_window_for_activity_day</code><span class="sig-paren">(</span><em>frame</em>, <em>date</em>, <em>lag_days</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/utils.html#extract_submission_window_for_activity_day"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.utils.extract_submission_window_for_activity_day" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">mozetl.utils.</span></code><code class="sig-name descname"><span class="pre">extract_submission_window_for_activity_day</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lag_days</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/utils.html#extract_submission_window_for_activity_day"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.utils.extract_submission_window_for_activity_day" title="Permalink to this definition">¶</a></dt>
 <dd><p>Extract rows with an activity_date of <cite>date</cite> minus lag_days and a
 submission_date between <cite>activity_date</cite> and <cite>date</cite> (inclusive).</p>
 <p>:date ‘Y-m-d’ of the end of the target period
@@ -219,61 +216,57 @@ submission dates including the activity day itself plus 5 days of lag for
 a total of 6 days).</p>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="mozetl.utils.format_as_submission_date">
-<code class="descclassname">mozetl.utils.</code><code class="descname">format_as_submission_date</code><span class="sig-paren">(</span><em>date</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/utils.html#format_as_submission_date"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.utils.format_as_submission_date" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">mozetl.utils.</span></code><code class="sig-name descname"><span class="pre">format_as_submission_date</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">date</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/utils.html#format_as_submission_date"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.utils.format_as_submission_date" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="mozetl.utils.format_spark_path">
-<code class="descclassname">mozetl.utils.</code><code class="descname">format_spark_path</code><span class="sig-paren">(</span><em>bucket</em>, <em>prefix</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/utils.html#format_spark_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.utils.format_spark_path" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">mozetl.utils.</span></code><code class="sig-name descname"><span class="pre">format_spark_path</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bucket</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/utils.html#format_spark_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.utils.format_spark_path" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="mozetl.utils.generate_filter_parameters">
-<code class="descclassname">mozetl.utils.</code><code class="descname">generate_filter_parameters</code><span class="sig-paren">(</span><em>end_date</em>, <em>days_back</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/utils.html#generate_filter_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.utils.generate_filter_parameters" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">mozetl.utils.</span></code><code class="sig-name descname"><span class="pre">generate_filter_parameters</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">end_date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">days_back</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/utils.html#generate_filter_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.utils.generate_filter_parameters" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="mozetl.utils.parse_as_submission_date">
-<code class="descclassname">mozetl.utils.</code><code class="descname">parse_as_submission_date</code><span class="sig-paren">(</span><em>date_string</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/utils.html#parse_as_submission_date"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.utils.parse_as_submission_date" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">mozetl.utils.</span></code><code class="sig-name descname"><span class="pre">parse_as_submission_date</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">date_string</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/utils.html#parse_as_submission_date"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.utils.parse_as_submission_date" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="mozetl.utils.send_ses">
-<code class="descclassname">mozetl.utils.</code><code class="descname">send_ses</code><span class="sig-paren">(</span><em>fromaddr</em>, <em>subject</em>, <em>body</em>, <em>recipient</em>, <em>filename=''</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/utils.html#send_ses"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.utils.send_ses" title="Permalink to this definition">¶</a></dt>
-<dd><p>Send an email via the Amazon SES service.
-Example:
-<code class="docutils literal notranslate"><span class="pre">`</span>
-<span class="pre">send_ses('me&#64;example.com,</span> <span class="pre">'greetings',</span> <span class="pre">&quot;Hi!&quot;,</span> <span class="pre">'you&#64;example.com)</span>
-<span class="pre">`</span></code></p>
+<code class="sig-prename descclassname"><span class="pre">mozetl.utils.</span></code><code class="sig-name descname"><span class="pre">send_ses</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="pre">'me&#64;example.com</span></em>, <em class="sig-param"><span class="pre">'greetings'</span></em>, <em class="sig-param"><span class="pre">&quot;Hi!&quot;</span></em>, <em class="sig-param"><span class="pre">'you&#64;example.com</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/utils.html#send_ses"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.utils.send_ses" title="Permalink to this definition">¶</a></dt>
+<dd><p><a href="#id1"><span class="problematic" id="id2">``</span></a><a href="#id3"><span class="problematic" id="id4">`</span></a></p>
 <p>Raises a RuntimeError if the message did not send correctly.</p>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="mozetl.utils.stop_session_safely">
-<code class="descclassname">mozetl.utils.</code><code class="descname">stop_session_safely</code><span class="sig-paren">(</span><em>spark_session</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/utils.html#stop_session_safely"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.utils.stop_session_safely" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">mozetl.utils.</span></code><code class="sig-name descname"><span class="pre">stop_session_safely</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spark_session</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/utils.html#stop_session_safely"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.utils.stop_session_safely" title="Permalink to this definition">¶</a></dt>
 <dd><p>Safely stops Spark session.
 This is no-op if running on Databricks - we shouldn’t stop session there since
 it’s managed by the platform, doing so fails the job.</p>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="mozetl.utils.upload_file_to_s3">
-<code class="descclassname">mozetl.utils.</code><code class="descname">upload_file_to_s3</code><span class="sig-paren">(</span><em>client</em>, <em>filepath</em>, <em>bucket</em>, <em>key</em>, <em>ACL='bucket-owner-full-control'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/utils.html#upload_file_to_s3"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.utils.upload_file_to_s3" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">mozetl.utils.</span></code><code class="sig-name descname"><span class="pre">upload_file_to_s3</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bucket</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ACL</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'bucket-owner-full-control'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/utils.html#upload_file_to_s3"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.utils.upload_file_to_s3" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="mozetl.utils.write_csv">
-<code class="descclassname">mozetl.utils.</code><code class="descname">write_csv</code><span class="sig-paren">(</span><em>dataframe</em>, <em>path</em>, <em>header=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/utils.html#write_csv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.utils.write_csv" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">mozetl.utils.</span></code><code class="sig-name descname"><span class="pre">write_csv</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataframe</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">header</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/utils.html#write_csv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.utils.write_csv" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write a dataframe to local disk.</p>
 <p>Disclaimer: Do not write csv files larger than driver memory. This
 is ~15GB for ec2 c3.xlarge (due to caching overhead).</p>
 </dd></dl>
 
-<dl class="function">
+<dl class="py function">
 <dt id="mozetl.utils.write_csv_to_s3">
-<code class="descclassname">mozetl.utils.</code><code class="descname">write_csv_to_s3</code><span class="sig-paren">(</span><em>dataframe</em>, <em>bucket</em>, <em>key</em>, <em>header=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/utils.html#write_csv_to_s3"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mozetl.utils.write_csv_to_s3" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">mozetl.utils.</span></code><code class="sig-name descname"><span class="pre">write_csv_to_s3</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataframe</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bucket</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">header</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/utils.html#write_csv_to_s3"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.utils.write_csv_to_s3" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </div>
@@ -316,17 +309,15 @@ is ~15GB for ec2 c3.xlarge (due to caching overhead).</p>
 </ul>
 </div>
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
       <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
     </form>
     </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script>
 
 
 
@@ -343,7 +334,7 @@ is ~15GB for ec2 c3.xlarge (due to caching overhead).</p>
       &copy;2018, Ryan Harter.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
