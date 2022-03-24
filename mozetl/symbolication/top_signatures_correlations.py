@@ -72,7 +72,7 @@ signatures = {}
 
 for channel in channels:
     signatures[channel] = download_data.get_top(
-        1000, versions=channel_to_versions[channel], days=5
+        300, versions=channel_to_versions[channel], days=5
     )
 
 utils.rmdir("top-signatures-correlations_output")
