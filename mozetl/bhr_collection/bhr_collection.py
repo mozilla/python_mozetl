@@ -919,10 +919,13 @@ def make_sym_map(data):
             if fields[1] == "m":
                 m_offset = 1
                 fields = line.split(" ", 5)
-            if len(fields) < 5 + m_offset:
+            if len(fields) == 4 + m_offset:
+                symbol = "(no symbol)"
+            elif len(fields) < 4 + m_offset:
                 raise ValueError("Failed to parse address - line: {}".format(line))
+            else
+                symbol = fields[4 + m_offset]
             address = int(fields[1 + m_offset], 16)
-            symbol = fields[4 + m_offset]
             func_symbols[address] = symbol[:SYMBOL_TRUNCATE_LENGTH]
     # Prioritize PUBLIC symbols over FUNC ones
     sym_map = func_symbols
