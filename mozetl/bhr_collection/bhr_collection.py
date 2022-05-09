@@ -923,7 +923,7 @@ def make_sym_map(data):
                 symbol = "(no symbol)"
             elif len(fields) < 4 + m_offset:
                 raise ValueError("Failed to parse address - line: {}".format(line))
-            else
+            else:
                 symbol = fields[4 + m_offset]
             address = int(fields[1 + m_offset], 16)
             func_symbols[address] = symbol[:SYMBOL_TRUNCATE_LENGTH]
