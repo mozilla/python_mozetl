@@ -24,6 +24,17 @@ spark = SparkSession.builder.appName("modules-with-missing-symbols").getOrCreate
 
 sc.addPyFile("stemming-1.0.1/stemming/porter2.py")
 
+
+# Number of top signatures to look at
+TOP_SIGNATURE_COUNT = 250
+
+# Number of days to look at to figure out top signatures
+TOP_SIGNATURE_PERIOD_DAYS = 5
+
+# Number of days to look at for telemetry crash data
+TELEMETRY_CRASHES_PERIOD_DAYS = 30
+
+
 from crashcorrelations import (  # noqa E402
     utils,
     download_data,
@@ -72,7 +83,9 @@ signatures = {}
 
 for channel in channels:
     signatures[channel] = download_data.get_top(
-        300, versions=channel_to_versions[channel], days=5
+        TOP_SIGNATURE_COUNT,
+        versions=channel_to_versions[channel],
+        days=TOP_SIGNATURE_PERIOD_DAYS,
     )
 
 utils.rmdir("top-signatures-correlations_output")
@@ -97,7 +110,9 @@ for channel in channels:
 
     try:
         dataset = crash_deviations.get_telemetry_crashes(
-            spark, versions=channel_to_versions[channel], days=30
+            spark,
+            versions=channel_to_versions[channel],
+            days=TELEMETRY_CRASHES_PERIOD_DAYS,
         )
         top_words = comments.get_top_words(dataset, signatures[channel])
     except Exception:
