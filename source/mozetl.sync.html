@@ -35,35 +35,11 @@
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-mozetl.sync.bookmark_validation">
-<span id="mozetl-sync-bookmark-validation-module"></span><h2>mozetl.sync.bookmark_validation module<a class="headerlink" href="#module-mozetl.sync.bookmark_validation" title="Permalink to this headline">¶</a></h2>
-<p># Sync Bookmark Validation Dataset</p>
-<p>This notebook is adapted from a gist that transforms the <cite>sync_summary</cite> into a
-flat table to avoid straining the resources on the Presto cluster.[1] The
-bookmark totals table generates statistics relative to the server clock.</p>
-<p>See bugs 1349065, 1374831, 1410963</p>
-<p>[1] <a class="reference external" href="https://gist.github.com/kitcambridge/364f56182f3e96fb3131bf38ff648609">https://gist.github.com/kitcambridge/364f56182f3e96fb3131bf38ff648609</a></p>
-<dl class="py function">
-<dt id="mozetl.sync.bookmark_validation.extract">
-<code class="sig-prename descclassname"><span class="pre">mozetl.sync.bookmark_validation.</span></code><code class="sig-name descname"><span class="pre">extract</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spark</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_date</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/sync/bookmark_validation.html#extract"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.sync.bookmark_validation.extract" title="Permalink to this definition">¶</a></dt>
-<dd><p>Register a temporary <cite>sync_summary</cite> view on the start date.</p>
-</dd></dl>
-
-<dl class="py function">
-<dt id="mozetl.sync.bookmark_validation.load">
-<code class="sig-prename descclassname"><span class="pre">mozetl.sync.bookmark_validation.</span></code><code class="sig-name descname"><span class="pre">load</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spark</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bucket</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">version</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_date</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/sync/bookmark_validation.html#load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.sync.bookmark_validation.load" title="Permalink to this definition">¶</a></dt>
-<dd><p>Save tables to disk.</p>
-</dd></dl>
-
-<dl class="py function">
-<dt id="mozetl.sync.bookmark_validation.transform">
-<code class="sig-prename descclassname"><span class="pre">mozetl.sync.bookmark_validation.</span></code><code class="sig-name descname"><span class="pre">transform</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spark</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/sync/bookmark_validation.html#transform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.sync.bookmark_validation.transform" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create the bookmark problem and summary tables.</p>
-</dd></dl>
-
+<div class="section" id="mozetl-sync-bookmark-validation-module">
+<h2>mozetl.sync.bookmark_validation module<a class="headerlink" href="#mozetl-sync-bookmark-validation-module" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-mozetl.sync">
-<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-mozetl.sync" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-contents">
+<h2>Module contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
 </div>
 </div>
 
