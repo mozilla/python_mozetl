@@ -26,7 +26,7 @@ sc.addPyFile("stemming-1.0.1/stemming/porter2.py")
 
 
 # Number of top signatures to look at
-TOP_SIGNATURE_COUNT = 250
+TOP_SIGNATURE_COUNT = 200
 
 # Number of days to look at to figure out top signatures
 TOP_SIGNATURE_PERIOD_DAYS = 5
