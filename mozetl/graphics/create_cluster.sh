@@ -15,7 +15,7 @@ fi
 gcloud dataproc clusters create graphics-test-cluster \
     --image-version=1.5 \
     --region=us-central1 \
-    --metadata='PIP_PACKAGES=python_moztelemetry git+https://github.com/FirefoxGraphics/telemetry.git#egg=pkg&subdirectory=analyses/bigquery_shim boto3==1.16.20 six==1.15.0' \
+    --metadata='PIP_PACKAGES=git+https://github.com/mozilla/python_moztelemetry.git@v0.10.2#egg=python-moztelemetry git+https://github.com/FirefoxGraphics/telemetry.git#egg=pkg&subdirectory=analyses/bigquery_shim boto3==1.16.20 six==1.15.0' \
     --num-workers=2 \
     --worker-machine-type=n2-highmem-4 \
     --properties "core:fs.s3.awsAccessKeyId=$AWS_ACCESS_KEY_ID,core:fs.s3.awsSecretAccessKey=$AWS_SECRET_ACCESS_KEY,spark-env:AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID,spark-env:AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" \
