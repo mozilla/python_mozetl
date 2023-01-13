@@ -35,7 +35,7 @@ setup(
         'numpy==1.19.4',
         'pandas==1.1.4',
         'pyspark==2.3.2',
-        'python_moztelemetry==0.10.2',
+        'python-moztelemetry @ git+http://github.com/mozilla/python_moztelemetry.git@v0.10.2#egg=python-moztelemetry',
         'requests-toolbelt==0.9.1',
         'requests==2.25.0',
         'scipy==1.5.4',
