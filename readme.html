@@ -57,7 +57,7 @@ For more on this see the writeup at
 <h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline">¶</a></h2>
 <p>First install the necessary runtime dependencies – snappy and the java runtime
 environment. These are used for the <code class="docutils literal notranslate"><span class="pre">pyspark</span></code> package. In ubuntu:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ sudo apt-get install libsnappy-dev openjdk-8-jre-headless
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>libsnappy-dev<span class="w"> </span>openjdk-8-jre-headless
 </pre></div>
 </div>
 </div>
@@ -83,12 +83,12 @@ It may be used with <a class="reference external" href="https://analysis.telemet
 </pre></div>
 </div>
 <p>Push your code to your own fork, where the job has been added to <code class="docutils literal notranslate"><span class="pre">mozetl.cli</span></code>. Then run it.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ ./mozetl-submit.sh <span class="se">\</span>
-    -p https://github.com/&lt;USERNAME&gt;/python_mozetl.git <span class="se">\</span>
-    -b &lt;BRANCHNAME&gt; <span class="se">\</span>
-    &lt;COMMAND&gt; <span class="se">\</span>
-        --first-argument foo <span class="se">\</span>
-        --second-argument bar
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>./mozetl-submit.sh<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-p<span class="w"> </span>https://github.com/&lt;USERNAME&gt;/python_mozetl.git<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-b<span class="w"> </span>&lt;BRANCHNAME&gt;<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>&lt;COMMAND&gt;<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>--first-argument<span class="w"> </span>foo<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>--second-argument<span class="w"> </span>bar
 </pre></div>
 </div>
 <p>See comments in <code class="docutils literal notranslate"><span class="pre">bin/mozetl-submit.sh</span></code> for more details.</p>
@@ -100,13 +100,13 @@ They are scheduled via the <code class="docutils literal notranslate"><span clas
 <p>This script runs on your local machine and submits the job to a remote spark executor.
 First, generate an API token in the User Settings page in Databricks.
 Then run the script.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python bin/mozetl-databricks.py <span class="se">\</span>
-    --git-path https://github.com/&lt;USERNAME&gt;/python_mozetl.git <span class="se">\</span>
-    --git-branch &lt;BRANCHNAME&gt; <span class="se">\</span>
-    --token &lt;TOKEN&gt;  <span class="se">\</span>
-    &lt;COMMAND&gt; <span class="se">\</span>
-        --first-argument foo <span class="se">\</span>
-        --second-argument bar
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>bin/mozetl-databricks.py<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--git-path<span class="w"> </span>https://github.com/&lt;USERNAME&gt;/python_mozetl.git<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--git-branch<span class="w"> </span>&lt;BRANCHNAME&gt;<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--token<span class="w"> </span>&lt;TOKEN&gt;<span class="w">  </span><span class="se">\</span>
+<span class="w">    </span>&lt;COMMAND&gt;<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>--first-argument<span class="w"> </span>foo<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>--second-argument<span class="w"> </span>bar
 </pre></div>
 </div>
 <p>Run <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">bin/mozetl-databricks.py</span> <span class="pre">--help</span></code> for more options, including increasing the number of workers and using python 3.
@@ -238,7 +238,7 @@ In fact, this project was created with
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.4</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
       
       |
       <a href="_sources/readme.rst.txt"
