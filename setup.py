@@ -8,7 +8,8 @@ test_deps = [
     'moto==1.3.16',
     'mock==2.0.0',
     'pytest==3.10.1',
-    'flake8==3.8.4'
+    # NOTE: this is pinned to 4.0.0 so as to pin importlib to a version that works.
+    'flake8==4.0.0'
 ]
 
 extras = {
@@ -34,6 +35,8 @@ setup(
         'click_datetime==0.2',
         'numpy==1.19.4',
         'pandas==1.1.4',
+        # NOTE: this is pinned to 3.20.3 because protos changed and we can't regenerate them.
+        'protobuf==3.20.3',
         'pyspark==2.3.2',
         'python-moztelemetry @ git+http://github.com/mozilla/python_moztelemetry.git@v0.10.2#egg=python-moztelemetry',
         'requests-toolbelt==0.9.1',
