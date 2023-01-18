@@ -1,0 +1,170 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>mozetl.basic.transform &#8212; python_mozetl 0.1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for mozetl.basic.transform</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span>
+
+<span class="kn">from</span> <span class="nn">moztelemetry</span> <span class="kn">import</span> <span class="n">get_pings_properties</span>
+<span class="kn">from</span> <span class="nn">pyspark.sql.types</span> <span class="kn">import</span> <span class="n">StructType</span><span class="p">,</span> <span class="n">StructField</span>
+
+
+<span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="n">ColumnConfig</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span>
+    <span class="s2">&quot;ColumnConfig&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;path&quot;</span><span class="p">,</span> <span class="s2">&quot;cleaning_func&quot;</span><span class="p">,</span> <span class="s2">&quot;struct_type&quot;</span><span class="p">]</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="DataFrameConfig"><a class="viewcode-back" href="../../../source/mozetl.basic.html#mozetl.basic.transform.DataFrameConfig">[docs]</a><span class="k">class</span> <span class="nc">DataFrameConfig</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">col_configs</span><span class="p">,</span> <span class="n">ping_filter</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">ColumnConfig</span><span class="p">(</span><span class="o">*</span><span class="n">col</span><span class="p">)</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">col_configs</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ping_filter</span> <span class="o">=</span> <span class="n">ping_filter</span>
+
+<div class="viewcode-block" id="DataFrameConfig.toStructType"><a class="viewcode-back" href="../../../source/mozetl.basic.html#mozetl.basic.transform.DataFrameConfig.toStructType">[docs]</a>    <span class="k">def</span> <span class="nf">toStructType</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">StructType</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">StructField</span><span class="p">(</span><span class="n">col</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">col</span><span class="o">.</span><span class="n">struct_type</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="DataFrameConfig.get_paths"><a class="viewcode-back" href="../../../source/mozetl.basic.html#mozetl.basic.transform.DataFrameConfig.get_paths">[docs]</a>    <span class="k">def</span> <span class="nf">get_paths</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">col</span><span class="o">.</span><span class="n">path</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span></div></div>
+
+
+<div class="viewcode-block" id="convert_pings"><a class="viewcode-back" href="../../../source/mozetl.basic.html#mozetl.basic.transform.convert_pings">[docs]</a><span class="k">def</span> <span class="nf">convert_pings</span><span class="p">(</span><span class="n">sqlContext</span><span class="p">,</span> <span class="n">pings</span><span class="p">,</span> <span class="n">data_frame_config</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Performs basic data pipelining on raw telemetry pings &quot;&quot;&quot;</span>
+    <span class="n">filtered_pings</span> <span class="o">=</span> <span class="n">get_pings_properties</span><span class="p">(</span><span class="n">pings</span><span class="p">,</span> <span class="n">data_frame_config</span><span class="o">.</span><span class="n">get_paths</span><span class="p">())</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+        <span class="n">data_frame_config</span><span class="o">.</span><span class="n">ping_filter</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">convert_rdd</span><span class="p">(</span><span class="n">sqlContext</span><span class="p">,</span> <span class="n">filtered_pings</span><span class="p">,</span> <span class="n">data_frame_config</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">_build_cell</span><span class="p">(</span><span class="n">ping</span><span class="p">,</span> <span class="n">column_config</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Take a json ping and a ColumnConfig and return a cleaned cell&quot;&quot;&quot;</span>
+    <span class="n">raw_value</span> <span class="o">=</span> <span class="n">ping</span><span class="p">[</span><span class="n">column_config</span><span class="o">.</span><span class="n">path</span><span class="p">]</span>
+    <span class="n">func</span> <span class="o">=</span> <span class="n">column_config</span><span class="o">.</span><span class="n">cleaning_func</span>
+    <span class="k">if</span> <span class="n">func</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="n">raw_value</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Unable to apply transform on data &#39;</span><span class="si">%s</span><span class="s2">&#39;: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">raw_value</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">raw_value</span>
+
+
+<div class="viewcode-block" id="convert_rdd"><a class="viewcode-back" href="../../../source/mozetl.basic.html#mozetl.basic.transform.convert_rdd">[docs]</a><span class="k">def</span> <span class="nf">convert_rdd</span><span class="p">(</span><span class="n">sqlContext</span><span class="p">,</span> <span class="n">raw_data</span><span class="p">,</span> <span class="n">data_frame_config</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Performs basic data pipelining over an RDD, returning a DataFrame</span>
+
+<span class="sd">    raw_data must have a map method.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">ping_to_row</span><span class="p">(</span><span class="n">ping</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">_build_cell</span><span class="p">(</span><span class="n">ping</span><span class="p">,</span> <span class="n">col</span><span class="p">)</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">data_frame_config</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">sqlContext</span><span class="o">.</span><span class="n">createDataFrame</span><span class="p">(</span>
+        <span class="n">raw_data</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">ping_to_row</span><span class="p">),</span> <span class="n">schema</span><span class="o">=</span><span class="n">data_frame_config</span><span class="o">.</span><span class="n">toStructType</span><span class="p">()</span>
+    <span class="p">)</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">python_mozetl</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Firefox Telemetry Python ETL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#benefits">Benefits</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#tests">Tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#manual-execution">Manual Execution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#scheduling">Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#early-stage-etl-jobs">Early Stage ETL Jobs</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Ryan Harter.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

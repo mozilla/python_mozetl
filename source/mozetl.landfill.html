@@ -35,11 +35,33 @@
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="mozetl-landfill-sampler-module">
-<h2>mozetl.landfill.sampler module<a class="headerlink" href="#mozetl-landfill-sampler-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-mozetl.landfill.sampler">
+<span id="mozetl-landfill-sampler-module"></span><h2>mozetl.landfill.sampler module<a class="headerlink" href="#module-mozetl.landfill.sampler" title="Permalink to this headline">¶</a></h2>
+<p>Landfill Sampler</p>
+<p>Take a stratified sample of documents sent to ingestion from the
+raw data store used for platform backfill.</p>
+<p>Changelog:
+v1 - Initial schema used for edge-validator integration
+v2 - Addition of document version as a partition value
+v3 - Retain whitelisted metadata fields and simplify schema</p>
+<dl class="py function">
+<dt id="mozetl.landfill.sampler.extract">
+<code class="sig-prename descclassname"><span class="pre">mozetl.landfill.sampler.</span></code><code class="sig-name descname"><span class="pre">extract</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">submission_date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.01</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/landfill/sampler.html#extract"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.landfill.sampler.extract" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.landfill.sampler.save">
+<code class="sig-prename descclassname"><span class="pre">mozetl.landfill.sampler.</span></code><code class="sig-name descname"><span class="pre">save</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">submission_date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bucket</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/landfill/sampler.html#save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.landfill.sampler.save" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.landfill.sampler.transform">
+<code class="sig-prename descclassname"><span class="pre">mozetl.landfill.sampler.</span></code><code class="sig-name descname"><span class="pre">transform</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">landfill</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_documents</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/landfill/sampler.html#transform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.landfill.sampler.transform" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </div>
-<div class="section" id="module-contents">
-<h2>Module contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-mozetl.landfill">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-mozetl.landfill" title="Permalink to this headline">¶</a></h2>
 </div>
 </div>
 

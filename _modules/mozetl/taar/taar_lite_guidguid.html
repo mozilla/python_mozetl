@@ -1,0 +1,320 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>mozetl.taar.taar_lite_guidguid &#8212; python_mozetl 0.1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for mozetl.taar.taar_lite_guidguid</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This ETL job computes the co-installation occurrence of white-listed</span>
+<span class="sd">Firefox webextensions for a sample of the longitudinal telemetry dataset.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">click</span>
+<span class="kn">import</span> <span class="nn">datetime</span> <span class="k">as</span> <span class="nn">dt</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="kn">import</span> <span class="n">SparkSession</span>
+<span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="kn">import</span> <span class="n">functions</span> <span class="k">as</span> <span class="n">F</span>
+<span class="kn">from</span> <span class="nn">pyspark.sql.types</span> <span class="kn">import</span> <span class="n">StructType</span><span class="p">,</span> <span class="n">StructField</span><span class="p">,</span> <span class="n">StringType</span><span class="p">,</span> <span class="n">LongType</span>
+<span class="kn">import</span> <span class="nn">mozetl.taar.taar_utils</span> <span class="k">as</span> <span class="nn">taar_utils</span>
+
+
+<span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="n">OUTPUT_BUCKET</span> <span class="o">=</span> <span class="s2">&quot;telemetry-parquet&quot;</span>
+<span class="n">OUTPUT_PREFIX</span> <span class="o">=</span> <span class="s2">&quot;taar/lite/&quot;</span>
+<span class="n">OUTPUT_BASE_FILENAME</span> <span class="o">=</span> <span class="s2">&quot;guid_coinstallation&quot;</span>
+
+<span class="n">AMO_DUMP_BUCKET</span> <span class="o">=</span> <span class="s2">&quot;telemetry-parquet&quot;</span>
+<span class="n">AMO_DUMP_KEY</span> <span class="o">=</span> <span class="s2">&quot;telemetry-ml/addon_recommender/addons_database.json&quot;</span>
+<span class="n">MAIN_SUMMARY_PATH</span> <span class="o">=</span> <span class="s2">&quot;s3://telemetry-parquet/main_summary/v4/&quot;</span>
+<span class="n">ONE_WEEK_AGO</span> <span class="o">=</span> <span class="p">(</span><span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">-</span> <span class="n">dt</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">7</span><span class="p">))</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="is_valid_addon"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_lite_guidguid.is_valid_addon">[docs]</a><span class="k">def</span> <span class="nf">is_valid_addon</span><span class="p">(</span><span class="n">broadcast_amo_whitelist</span><span class="p">,</span> <span class="n">guid</span><span class="p">,</span> <span class="n">addon</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Filter individual addons out to exclude, system addons,</span>
+<span class="sd">    legacy addons, disabled addons, sideloaded addons.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="ow">not</span> <span class="p">(</span>
+        <span class="n">addon</span><span class="o">.</span><span class="n">is_system</span>
+        <span class="ow">or</span> <span class="n">addon</span><span class="o">.</span><span class="n">app_disabled</span>
+        <span class="ow">or</span> <span class="n">addon</span><span class="o">.</span><span class="n">type</span> <span class="o">!=</span> <span class="s2">&quot;extension&quot;</span>
+        <span class="ow">or</span> <span class="n">addon</span><span class="o">.</span><span class="n">user_disabled</span>
+        <span class="ow">or</span> <span class="n">addon</span><span class="o">.</span><span class="n">foreign_install</span>
+        <span class="ow">or</span>
+        <span class="c1"># make sure the amo_whitelist has been broadcast to worker nodes.</span>
+        <span class="n">guid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">broadcast_amo_whitelist</span><span class="o">.</span><span class="n">value</span>
+        <span class="ow">or</span>
+        <span class="c1"># Make sure that the Pioneer addon is explicitly</span>
+        <span class="c1"># excluded</span>
+        <span class="n">guid</span> <span class="o">==</span> <span class="s2">&quot;pioneer-opt-in@mozilla.org&quot;</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_addons_per_client"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_lite_guidguid.get_addons_per_client">[docs]</a><span class="k">def</span> <span class="nf">get_addons_per_client</span><span class="p">(</span><span class="n">broadcast_amo_whitelist</span><span class="p">,</span> <span class="n">users_df</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extracts a DataFrame that contains one row</span>
+<span class="sd">    for each client along with the list of active add-on GUIDs.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Create an add-ons dataset un-nesting the add-on map from each</span>
+    <span class="c1"># user to a list of add-on GUIDs. Also filter undesired add-ons.</span>
+    <span class="n">rdd_list</span> <span class="o">=</span> <span class="n">users_df</span><span class="o">.</span><span class="n">rdd</span><span class="o">.</span><span class="n">map</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="p">(</span>
+            <span class="n">p</span><span class="p">[</span><span class="s2">&quot;client_id&quot;</span><span class="p">],</span>
+            <span class="p">[</span>
+                <span class="n">addon_data</span><span class="o">.</span><span class="n">addon_id</span>
+                <span class="k">for</span> <span class="n">addon_data</span> <span class="ow">in</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;active_addons&quot;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">is_valid_addon</span><span class="p">(</span>
+                    <span class="n">broadcast_amo_whitelist</span><span class="p">,</span> <span class="n">addon_data</span><span class="o">.</span><span class="n">addon_id</span><span class="p">,</span> <span class="n">addon_data</span>
+                <span class="p">)</span>
+            <span class="p">],</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">filtered_rdd</span> <span class="o">=</span> <span class="n">rdd_list</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">filtered_rdd</span><span class="o">.</span><span class="n">toDF</span><span class="p">([</span><span class="s2">&quot;client_id&quot;</span><span class="p">,</span> <span class="s2">&quot;addon_ids&quot;</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">df</span></div>
+
+
+<div class="viewcode-block" id="get_initial_sample"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_lite_guidguid.get_initial_sample">[docs]</a><span class="k">def</span> <span class="nf">get_initial_sample</span><span class="p">(</span><span class="n">spark</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Takes an initial sample from the longitudinal dataset</span>
+<span class="sd">    (randomly sampled from main summary). Coarse filtering on:</span>
+<span class="sd">    - number of installed addons (greater than 1)</span>
+<span class="sd">    - corrupt and generally wierd telemetry entries</span>
+<span class="sd">    - isolating release channel</span>
+<span class="sd">    - column selection</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Could scale this up to grab more than what is in</span>
+    <span class="c1"># longitudinal and see how long it takes to run.</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">spark</span><span class="o">.</span><span class="n">table</span><span class="p">(</span><span class="s2">&quot;clients_daily&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="s2">&quot;active_addons IS NOT null&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="s2">&quot;size(active_addons) &gt; 1&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="s2">&quot;channel = &#39;release&#39;&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="s2">&quot;normalized_channel = &#39;release&#39;&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="s2">&quot;app_name = &#39;Firefox&#39;&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">selectExpr</span><span class="p">(</span><span class="s2">&quot;client_id&quot;</span><span class="p">,</span> <span class="s2">&quot;active_addons&quot;</span><span class="p">)</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="extract_telemetry"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_lite_guidguid.extract_telemetry">[docs]</a><span class="k">def</span> <span class="nf">extract_telemetry</span><span class="p">(</span><span class="n">spark</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;load some training data from telemetry given a sparkContext&quot;&quot;&quot;</span>
+    <span class="n">sc</span> <span class="o">=</span> <span class="n">spark</span><span class="o">.</span><span class="n">sparkContext</span>
+
+    <span class="c1"># Define the set of feature names to be used in the donor computations.</span>
+
+    <span class="n">client_features_frame</span> <span class="o">=</span> <span class="n">get_initial_sample</span><span class="p">(</span><span class="n">spark</span><span class="p">)</span>
+
+    <span class="n">amo_white_list</span> <span class="o">=</span> <span class="n">taar_utils</span><span class="o">.</span><span class="n">load_amo_external_whitelist</span><span class="p">()</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;AMO White list loaded&quot;</span><span class="p">)</span>
+
+    <span class="n">broadcast_amo_whitelist</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">broadcast</span><span class="p">(</span><span class="n">amo_white_list</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Broadcast AMO whitelist success&quot;</span><span class="p">)</span>
+
+    <span class="n">addons_info_frame</span> <span class="o">=</span> <span class="n">get_addons_per_client</span><span class="p">(</span>
+        <span class="n">broadcast_amo_whitelist</span><span class="p">,</span> <span class="n">client_features_frame</span>
+    <span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Filtered for valid addons only.&quot;</span><span class="p">)</span>
+
+    <span class="n">taar_training</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">addons_info_frame</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">client_features_frame</span><span class="p">,</span> <span class="s2">&quot;client_id&quot;</span><span class="p">,</span> <span class="s2">&quot;inner&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s2">&quot;active_addons&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">selectExpr</span><span class="p">(</span><span class="s2">&quot;addon_ids as installed_addons&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;JOIN completed on TAAR training data&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">taar_training</span></div>
+
+
+<div class="viewcode-block" id="key_all"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_lite_guidguid.key_all">[docs]</a><span class="k">def</span> <span class="nf">key_all</span><span class="p">(</span><span class="n">a</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return (for each Row) a two column set of Rows that contains each individual</span>
+<span class="sd">    installed addon (the key_addon) as the first column and an array of guids of</span>
+<span class="sd">    all *other* addons that were seen co-installed with the key_addon. Excluding</span>
+<span class="sd">    the key_addon from the second column to avoid inflated counts in later aggregation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">[(</span><span class="n">i</span><span class="p">,</span> <span class="p">[</span><span class="n">b</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">a</span> <span class="k">if</span> <span class="n">b</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">a</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="transform"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_lite_guidguid.transform">[docs]</a><span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="n">longitudinal_addons</span><span class="p">):</span>
+    <span class="c1"># Only for logging, not used, but may be interesting for later analysis.</span>
+    <span class="n">guid_set_unique</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">longitudinal_addons</span><span class="o">.</span><span class="n">withColumn</span><span class="p">(</span>
+            <span class="s2">&quot;exploded&quot;</span><span class="p">,</span> <span class="n">F</span><span class="o">.</span><span class="n">explode</span><span class="p">(</span><span class="n">longitudinal_addons</span><span class="o">.</span><span class="n">installed_addons</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s2">&quot;exploded&quot;</span><span class="p">)</span>  <span class="c1"># noqa: E501 - long lines</span>
+        <span class="o">.</span><span class="n">rdd</span><span class="o">.</span><span class="n">flatMap</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">distinct</span><span class="p">()</span>
+        <span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+    <span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">&quot;Number of unique guids co-installed in sample: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">guid_set_unique</span><span class="p">))</span>
+    <span class="p">)</span>
+
+    <span class="n">restructured</span> <span class="o">=</span> <span class="n">longitudinal_addons</span><span class="o">.</span><span class="n">rdd</span><span class="o">.</span><span class="n">flatMap</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">key_all</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">installed_addons</span><span class="p">)</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">toDF</span><span class="p">([</span><span class="s2">&quot;key_addon&quot;</span><span class="p">,</span> <span class="s2">&quot;coinstalled_addons&quot;</span><span class="p">])</span>
+
+    <span class="c1"># Explode the list of co-installs and count pair occurrences.</span>
+    <span class="n">addon_co_installations</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">restructured</span><span class="o">.</span><span class="n">select</span><span class="p">(</span>
+            <span class="s2">&quot;key_addon&quot;</span><span class="p">,</span> <span class="n">F</span><span class="o">.</span><span class="n">explode</span><span class="p">(</span><span class="s2">&quot;coinstalled_addons&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;coinstalled_addon&quot;</span><span class="p">)</span>
+        <span class="p">)</span>  <span class="c1"># noqa: E501 - long lines</span>
+        <span class="o">.</span><span class="n">groupBy</span><span class="p">(</span><span class="s2">&quot;key_addon&quot;</span><span class="p">,</span> <span class="s2">&quot;coinstalled_addon&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">count</span><span class="p">()</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Collect the set of coinstalled_addon, count pairs for each key_addon.</span>
+    <span class="n">combine_and_map_cols</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">udf</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">),</span>
+        <span class="n">StructType</span><span class="p">([</span><span class="n">StructField</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">,</span> <span class="n">StringType</span><span class="p">()),</span> <span class="n">StructField</span><span class="p">(</span><span class="s2">&quot;n&quot;</span><span class="p">,</span> <span class="n">LongType</span><span class="p">())]),</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Spark functions are sometimes long and unwieldy. Tough luck.</span>
+    <span class="c1"># Ignore E128 and E501 long line errors</span>
+    <span class="n">addon_co_installations_collapsed</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">addon_co_installations</span><span class="o">.</span><span class="n">select</span><span class="p">(</span>  <span class="c1"># noqa: E128</span>
+            <span class="s2">&quot;key_addon&quot;</span><span class="p">,</span>
+            <span class="n">combine_and_map_cols</span><span class="p">(</span><span class="s2">&quot;coinstalled_addon&quot;</span><span class="p">,</span> <span class="s2">&quot;count&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span>  <span class="c1"># noqa: E501</span>
+                <span class="s2">&quot;id_n&quot;</span>
+            <span class="p">),</span>
+        <span class="p">)</span>
+        <span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;key_addon&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">agg</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">collect_list</span><span class="p">(</span><span class="s2">&quot;id_n&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;coinstallation_counts&quot;</span><span class="p">))</span>
+    <span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">addon_co_installations_collapsed</span><span class="o">.</span><span class="n">printSchema</span><span class="p">())</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Collecting final result of co-installations.&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">addon_co_installations_collapsed</span></div>
+
+
+<div class="viewcode-block" id="load_s3"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_lite_guidguid.load_s3">[docs]</a><span class="k">def</span> <span class="nf">load_s3</span><span class="p">(</span><span class="n">result_df</span><span class="p">,</span> <span class="n">date</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">bucket</span><span class="p">):</span>
+    <span class="n">result_list</span> <span class="o">=</span> <span class="n">result_df</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+    <span class="n">result_json</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">result_list</span><span class="p">:</span>
+        <span class="n">key_addon</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">key_addon</span>
+        <span class="n">coinstalls</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">coinstallation_counts</span>
+        <span class="n">value_json</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">_id</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">coinstalls</span><span class="p">:</span>
+            <span class="n">value_json</span><span class="p">[</span><span class="n">_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">n</span>
+        <span class="n">result_json</span><span class="p">[</span><span class="n">key_addon</span><span class="p">]</span> <span class="o">=</span> <span class="n">value_json</span>
+
+    <span class="n">taar_utils</span><span class="o">.</span><span class="n">store_json_to_s3</span><span class="p">(</span>
+        <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">result_json</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span> <span class="n">OUTPUT_BASE_FILENAME</span><span class="p">,</span> <span class="n">date</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">bucket</span>
+    <span class="p">)</span></div>
+
+
+<span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">()</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--date&quot;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--bucket&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">OUTPUT_BUCKET</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--prefix&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">OUTPUT_PREFIX</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="n">bucket</span><span class="p">,</span> <span class="n">prefix</span><span class="p">):</span>
+    <span class="n">spark</span> <span class="o">=</span> <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">appName</span><span class="p">(</span><span class="s2">&quot;taar_lite=&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">enableHiveSupport</span><span class="p">()</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading telemetry sample.&quot;</span><span class="p">)</span>
+
+    <span class="n">longitudinal_addons</span> <span class="o">=</span> <span class="n">extract_telemetry</span><span class="p">(</span><span class="n">spark</span><span class="p">)</span>
+    <span class="n">result_df</span> <span class="o">=</span> <span class="n">transform</span><span class="p">(</span><span class="n">longitudinal_addons</span><span class="p">)</span>
+    <span class="n">load_s3</span><span class="p">(</span><span class="n">result_df</span><span class="p">,</span> <span class="n">date</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">bucket</span><span class="p">)</span>
+
+    <span class="n">spark</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">python_mozetl</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Firefox Telemetry Python ETL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#benefits">Benefits</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#tests">Tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#manual-execution">Manual Execution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#scheduling">Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#early-stage-etl-jobs">Early Stage ETL Jobs</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Ryan Harter.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

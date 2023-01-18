@@ -35,11 +35,40 @@
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="mozetl-basic-transform-module">
-<h2>mozetl.basic.transform module<a class="headerlink" href="#mozetl-basic-transform-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-mozetl.basic.transform">
+<span id="mozetl-basic-transform-module"></span><h2>mozetl.basic.transform module<a class="headerlink" href="#module-mozetl.basic.transform" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="mozetl.basic.transform.DataFrameConfig">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">mozetl.basic.transform.</span></code><code class="sig-name descname"><span class="pre">DataFrameConfig</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col_configs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ping_filter</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/basic/transform.html#DataFrameConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.basic.transform.DataFrameConfig" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dl class="py method">
+<dt id="mozetl.basic.transform.DataFrameConfig.get_paths">
+<code class="sig-name descname"><span class="pre">get_paths</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/basic/transform.html#DataFrameConfig.get_paths"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.basic.transform.DataFrameConfig.get_paths" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mozetl.basic.transform.DataFrameConfig.toStructType">
+<code class="sig-name descname"><span class="pre">toStructType</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/basic/transform.html#DataFrameConfig.toStructType"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.basic.transform.DataFrameConfig.toStructType" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.basic.transform.convert_pings">
+<code class="sig-prename descclassname"><span class="pre">mozetl.basic.transform.</span></code><code class="sig-name descname"><span class="pre">convert_pings</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sqlContext</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pings</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_frame_config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/basic/transform.html#convert_pings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.basic.transform.convert_pings" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs basic data pipelining on raw telemetry pings</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.basic.transform.convert_rdd">
+<code class="sig-prename descclassname"><span class="pre">mozetl.basic.transform.</span></code><code class="sig-name descname"><span class="pre">convert_rdd</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sqlContext</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">raw_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_frame_config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/basic/transform.html#convert_rdd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.basic.transform.convert_rdd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs basic data pipelining over an RDD, returning a DataFrame</p>
+<p>raw_data must have a map method.</p>
+</dd></dl>
+
 </div>
-<div class="section" id="module-contents">
-<h2>Module contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-mozetl.basic">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-mozetl.basic" title="Permalink to this headline">¶</a></h2>
 </div>
 </div>
 

@@ -1,0 +1,562 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>mozetl.taar.taar_dynamo &#8212; python_mozetl 0.1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for mozetl.taar.taar_dynamo</h1><div class="highlight"><pre>
+<span></span><span class="c1"># This Source Code Form is subject to the terms of the Mozilla Public</span>
+<span class="c1"># License, v. 2.0. If a copy of the MPL was not distributed with this</span>
+<span class="c1"># file, You can obtain one at http://mozilla.org/MPL/2.0/.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module replicates the scala script over at</span>
+
+<span class="sd">https://github.com/mozilla/telemetry-batch-view/blob/1c544f65ad2852703883fe31a9fba38c39e75698/src/main/scala/com/mozilla/telemetry/views/HBaseAddonRecommenderView.scala</span>
+
+<span class="sd">This should be invoked with something like this:</span>
+
+<span class="sd">spark-submit \</span>
+<span class="sd">    --master=spark://ec2-52-32-39-246.us-west-2.compute.amazonaws.com taar_dynamo.py \</span>
+<span class="sd">    --date=20180218  \</span>
+<span class="sd">    --region=us-west-2  \</span>
+<span class="sd">    --table=taar_addon_data_20180206 \</span>
+<span class="sd">    --prod-iam-role=arn:aws:iam::361527076523:role/taar-write-dynamodb-from-dev</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">timedelta</span>
+<span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pprint</span>
+<span class="kn">from</span> <span class="nn">pyspark</span> <span class="kn">import</span> <span class="n">SparkConf</span>
+<span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="kn">import</span> <span class="n">SparkSession</span>
+<span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="kn">import</span> <span class="n">Window</span>
+<span class="kn">from</span> <span class="nn">pyspark.sql.functions</span> <span class="kn">import</span> <span class="n">desc</span><span class="p">,</span> <span class="n">row_number</span>
+<span class="kn">import</span> <span class="nn">click</span>
+<span class="kn">import</span> <span class="nn">dateutil.parser</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">boto3</span>
+<span class="kn">from</span> <span class="nn">boto3.dynamodb.types</span> <span class="kn">import</span> <span class="n">Binary</span> <span class="k">as</span> <span class="n">DynamoBinary</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">zlib</span>
+<span class="kn">from</span> <span class="nn">.taar_utils</span> <span class="kn">import</span> <span class="n">hash_telemetry_id</span>
+
+<span class="c1"># We use the os and threading modules to generate a spark worker</span>
+<span class="c1"># specific identity:w</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+
+<span class="n">MAX_RECORDS</span> <span class="o">=</span> <span class="mi">200</span>
+<span class="n">EMPTY_TUPLE</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">[],</span> <span class="p">[])</span>
+
+
+<div class="viewcode-block" id="CredentialSingleton"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_dynamo.CredentialSingleton">[docs]</a><span class="k">class</span> <span class="nc">CredentialSingleton</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_credentials</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">RLock</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__getstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;credentials&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_credentials</span><span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">__setstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+        <span class="c1"># This is basically the constructor all over again</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_credentials</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;credentials&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">RLock</span><span class="p">()</span>
+
+<div class="viewcode-block" id="CredentialSingleton.getInstance"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_dynamo.CredentialSingleton.getInstance">[docs]</a>    <span class="k">def</span> <span class="nf">getInstance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prod_iam_role</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
+            <span class="c1"># If credentials exist, make sure we haven&#39;t expire them yet</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_credentials</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+
+                <span class="c1"># Credentials should expire if the expiry time is sooner</span>
+                <span class="c1"># than the next 5 minutes</span>
+                <span class="n">five_minute_from_now</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_credentials</span><span class="p">[</span><span class="s2">&quot;expiry&quot;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">five_minute_from_now</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_credentials</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_credentials</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_credentials</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_new_creds</span><span class="p">(</span><span class="n">prod_iam_role</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_credentials</span><span class="p">[</span><span class="s2">&quot;cred_args&quot;</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="CredentialSingleton.get_new_creds"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_dynamo.CredentialSingleton.get_new_creds">[docs]</a>    <span class="k">def</span> <span class="nf">get_new_creds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prod_iam_role</span><span class="p">):</span>
+        <span class="n">client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;sts&quot;</span><span class="p">)</span>
+        <span class="n">session_name</span> <span class="o">=</span> <span class="s2">&quot;taar_dynamo_</span><span class="si">%s</span><span class="s2">_</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">getpid</span><span class="p">(),</span>
+            <span class="n">threading</span><span class="o">.</span><span class="n">current_thread</span><span class="p">()</span><span class="o">.</span><span class="n">ident</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># 30 minutes to flush 50 records should be ridiculously</span>
+        <span class="c1"># generous</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">assume_role</span><span class="p">(</span>
+            <span class="n">RoleArn</span><span class="o">=</span><span class="n">prod_iam_role</span><span class="p">,</span> <span class="n">RoleSessionName</span><span class="o">=</span><span class="n">session_name</span><span class="p">,</span> <span class="n">DurationSeconds</span><span class="o">=</span><span class="mi">60</span> <span class="o">*</span> <span class="mi">30</span>
+        <span class="p">)</span>
+
+        <span class="n">raw_creds</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s2">&quot;Credentials&quot;</span><span class="p">]</span>
+        <span class="n">cred_args</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;aws_access_key_id&quot;</span><span class="p">:</span> <span class="n">raw_creds</span><span class="p">[</span><span class="s2">&quot;AccessKeyId&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;aws_secret_access_key&quot;</span><span class="p">:</span> <span class="n">raw_creds</span><span class="p">[</span><span class="s2">&quot;SecretAccessKey&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;aws_session_token&quot;</span><span class="p">:</span> <span class="n">raw_creds</span><span class="p">[</span><span class="s2">&quot;SessionToken&quot;</span><span class="p">],</span>
+        <span class="p">}</span>
+
+        <span class="c1"># Set the expiry of this credential to be 30 minutes</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;expiry&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="mi">30</span><span class="p">),</span>
+            <span class="s2">&quot;cred_args&quot;</span><span class="p">:</span> <span class="n">cred_args</span><span class="p">,</span>
+        <span class="p">}</span></div></div>
+
+
+<div class="viewcode-block" id="json_serial"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_dynamo.json_serial">[docs]</a><span class="k">def</span> <span class="nf">json_serial</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;JSON serializer for objects not serializable by default json code&quot;&quot;&quot;</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="p">(</span><span class="n">datetime</span><span class="p">,</span> <span class="n">date</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="c1"># Some dates are invalid and won&#39;t serialize to</span>
+        <span class="c1"># ISO format if the year is &lt; 1601.  Yes. This actually</span>
+        <span class="c1"># happens.  Force the date to epoch in this case</span>
+        <span class="k">return</span> <span class="n">date</span><span class="p">(</span><span class="mi">1970</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Type </span><span class="si">%s</span><span class="s2"> not serializable&quot;</span> <span class="o">%</span> <span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="filterDateAndClientID"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_dynamo.filterDateAndClientID">[docs]</a><span class="k">def</span> <span class="nf">filterDateAndClientID</span><span class="p">(</span><span class="n">row_jstr</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Filter out any rows where the client_id is None or where the</span>
+<span class="sd">    subsession_start_date is not a valid date</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">jstr</span><span class="p">)</span> <span class="o">=</span> <span class="n">row_jstr</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">row</span><span class="o">.</span><span class="n">client_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">assert</span> <span class="n">row</span><span class="o">.</span><span class="n">client_id</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">some_date</span> <span class="o">=</span> <span class="n">dateutil</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">subsession_start_date</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">some_date</span><span class="o">.</span><span class="n">year</span> <span class="o">&lt;</span> <span class="mi">1970</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="list_transformer"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_dynamo.list_transformer">[docs]</a><span class="k">def</span> <span class="nf">list_transformer</span><span class="p">(</span><span class="n">row_jsonstr</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    We need to merge two elements of the row data - namely the</span>
+<span class="sd">    client_id and the start_date into the main JSON blob.</span>
+
+<span class="sd">    This is then packaged into a 4-tuple of :</span>
+
+<span class="sd">    The first integer represents the number of records that have been</span>
+<span class="sd">    pushed into DynamoDB.</span>
+
+<span class="sd">    The second is the length of the JSON data list. This prevents us</span>
+<span class="sd">    from having to compute the length of the JSON list unnecessarily.</span>
+
+<span class="sd">    The third element of the tuple is the list of JSON data.</span>
+
+<span class="sd">    The fourth element is a list of invalid JSON blobs.  We maintain</span>
+<span class="sd">    this to be no more than 50 elements long.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">json_str</span><span class="p">)</span> <span class="o">=</span> <span class="n">row_jsonstr</span>
+    <span class="n">client_id</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">client_id</span>
+    <span class="n">start_date</span> <span class="o">=</span> <span class="n">dateutil</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">subsession_start_date</span><span class="p">)</span>
+    <span class="n">start_date</span> <span class="o">=</span> <span class="n">start_date</span><span class="o">.</span><span class="n">date</span><span class="p">()</span>
+    <span class="n">start_date</span> <span class="o">=</span> <span class="n">start_date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">jdata</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">json_str</span><span class="p">)</span>
+    <span class="n">jdata</span><span class="p">[</span><span class="s2">&quot;client_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">client_id</span>
+    <span class="n">jdata</span><span class="p">[</span><span class="s2">&quot;start_date&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">start_date</span>
+
+    <span class="c1"># Filter out keys with an empty value</span>
+    <span class="n">jdata</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">value</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">jdata</span><span class="o">.</span><span class="n">items</span><span class="p">())</span> <span class="k">if</span> <span class="n">value</span><span class="p">}</span>
+
+    <span class="c1"># We need to return a 4-tuple of values</span>
+    <span class="c1"># (numrec_dynamodb_pushed, json_list_length, json_list, error_json)</span>
+
+    <span class="c1"># These 4-tuples can be reduced in a map/reduce</span>
+    <span class="k">return</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="p">[</span><span class="n">jdata</span><span class="p">],</span> <span class="p">[])</span></div>
+
+
+<span class="c1"># TODO: singletons are hard to test - this should get refactored into</span>
+<span class="c1"># some kind of factory or injectable dependency to the DynamoReducer</span>
+<span class="c1"># so that we can mock out the singleton</span>
+<span class="n">credentials</span> <span class="o">=</span> <span class="n">CredentialSingleton</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="DynamoReducer"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_dynamo.DynamoReducer">[docs]</a><span class="k">class</span> <span class="nc">DynamoReducer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prod_iam_role</span><span class="p">,</span> <span class="n">region_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">table_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="n">region_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">region_name</span> <span class="o">=</span> <span class="s2">&quot;us-west-2&quot;</span>
+
+        <span class="k">if</span> <span class="n">table_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">table_name</span> <span class="o">=</span> <span class="s2">&quot;taar_addon_data&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_region_name</span> <span class="o">=</span> <span class="n">region_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_table_name</span> <span class="o">=</span> <span class="n">table_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_prod_iam_role</span> <span class="o">=</span> <span class="n">prod_iam_role</span>
+
+<div class="viewcode-block" id="DynamoReducer.hash_client_ids"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_dynamo.DynamoReducer.hash_client_ids">[docs]</a>    <span class="k">def</span> <span class="nf">hash_client_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_tuple</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        # Clobber the client_id by using sha256 hashes encoded as hex</span>
+<span class="sd">        # Based on the js code in Fx</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">data_tuple</span><span class="p">[</span><span class="mi">2</span><span class="p">]:</span>
+            <span class="n">client_id</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;client_id&quot;</span><span class="p">]</span>
+            <span class="n">item</span><span class="p">[</span><span class="s2">&quot;client_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hash_telemetry_id</span><span class="p">(</span><span class="n">client_id</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DynamoReducer.push_to_dynamo"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_dynamo.DynamoReducer.push_to_dynamo">[docs]</a>    <span class="k">def</span> <span class="nf">push_to_dynamo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_tuple</span><span class="p">):</span>  <span class="c1"># noqa</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This connects to DynamoDB and pushes records in `item_list` into</span>
+<span class="sd">        a table.</span>
+
+<span class="sd">        We accumulate a list of up to 50 elements long to allow debugging</span>
+<span class="sd">        of write errors.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Transform the data into something that DynamoDB will always</span>
+        <span class="c1"># accept</span>
+        <span class="c1"># Set TTL to 60 days from now</span>
+        <span class="n">ttl</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span> <span class="o">+</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">24</span> <span class="o">*</span> <span class="mi">60</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">hash_client_ids</span><span class="p">(</span><span class="n">data_tuple</span><span class="p">)</span>
+
+        <span class="n">item_list</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;client_id&quot;</span><span class="p">:</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;client_id&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;TTL&quot;</span><span class="p">:</span> <span class="n">ttl</span><span class="p">,</span>
+                <span class="s2">&quot;json_payload&quot;</span><span class="p">:</span> <span class="n">DynamoBinary</span><span class="p">(</span>
+                    <span class="n">zlib</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">json_serial</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf8&quot;</span><span class="p">))</span>
+                <span class="p">),</span>
+            <span class="p">}</span>
+            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">data_tuple</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="p">]</span>
+
+        <span class="c1"># Obtain credentials from the singleton</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Using prod iam role: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prod_iam_role</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prod_iam_role</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">cred_args</span> <span class="o">=</span> <span class="n">credentials</span><span class="o">.</span><span class="n">getInstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_prod_iam_role</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cred_args</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="n">conn</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">resource</span><span class="p">(</span><span class="s2">&quot;dynamodb&quot;</span><span class="p">,</span> <span class="n">region_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_region_name</span><span class="p">,</span> <span class="o">**</span><span class="n">cred_args</span><span class="p">)</span>
+
+        <span class="n">table</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_table_name</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">table</span><span class="o">.</span><span class="n">batch_writer</span><span class="p">(</span><span class="n">overwrite_by_pkeys</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;client_id&quot;</span><span class="p">])</span> <span class="k">as</span> <span class="n">batch</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">item_list</span><span class="p">:</span>
+                    <span class="n">batch</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span><span class="n">Item</span><span class="o">=</span><span class="n">item</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">[]</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="c1"># Something went wrong with the batch write write.</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data_tuple</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span> <span class="o">==</span> <span class="mi">50</span><span class="p">:</span>
+                <span class="c1"># Too many errors already accumulated, just short circuit</span>
+                <span class="c1"># and return</span>
+                <span class="k">return</span> <span class="p">[]</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">error_accum</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">conn</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">resource</span><span class="p">(</span><span class="s2">&quot;dynamodb&quot;</span><span class="p">,</span> <span class="n">region_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_region_name</span><span class="p">)</span>
+                <span class="n">table</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">Table</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_table_name</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">item_list</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span><span class="n">Item</span><span class="o">=</span><span class="n">item</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                        <span class="n">error_accum</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">error_accum</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="c1"># Something went wrong with the entire DynamoDB</span>
+                <span class="c1"># connection. Just return the entire list of</span>
+                <span class="c1"># JSON items</span>
+                <span class="k">return</span> <span class="n">item_list</span></div>
+
+<div class="viewcode-block" id="DynamoReducer.dynamo_reducer"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_dynamo.DynamoReducer.dynamo_reducer">[docs]</a>    <span class="k">def</span> <span class="nf">dynamo_reducer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">list_a</span><span class="p">,</span> <span class="n">list_b</span><span class="p">,</span> <span class="n">force_write</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This function can be used to reduce tuples of the form in</span>
+<span class="sd">        `list_transformer`. Data is merged and when MAX_RECORDS</span>
+<span class="sd">        number of JSON blobs are merged, the list of JSON is batch written</span>
+<span class="sd">        into DynamoDB.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">new_list</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">list_a</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">list_b</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+            <span class="n">list_a</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">list_b</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+            <span class="n">list_a</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">list_b</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+            <span class="n">list_a</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="n">list_b</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span>
+        <span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">new_list</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">MAX_RECORDS</span> <span class="ow">or</span> <span class="n">force_write</span><span class="p">:</span>
+            <span class="n">error_blobs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">push_to_dynamo</span><span class="p">(</span><span class="n">new_list</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">error_blobs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c1"># Gather up to maximum 50 error blobs</span>
+                <span class="n">new_list</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">error_blobs</span><span class="p">[:</span> <span class="mi">50</span> <span class="o">-</span> <span class="n">new_list</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+                <span class="c1"># Zero out the number of accumulated records</span>
+                <span class="n">new_list</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># No errors during write process</span>
+                <span class="c1"># Update number of records written to dynamo</span>
+                <span class="n">new_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="n">new_list</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="c1"># Zero out the number of accumulated records</span>
+                <span class="n">new_list</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="c1"># Clear out the accumulated JSON records</span>
+                <span class="n">new_list</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">new_list</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="etl"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_dynamo.etl">[docs]</a><span class="k">def</span> <span class="nf">etl</span><span class="p">(</span><span class="n">spark</span><span class="p">,</span> <span class="n">run_date</span><span class="p">,</span> <span class="n">region_name</span><span class="p">,</span> <span class="n">table_name</span><span class="p">,</span> <span class="n">prod_iam_role</span><span class="p">,</span> <span class="n">sample_rate</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function is responsible for extract, transform and load.</span>
+
+<span class="sd">    Data is extracted from Parquet files in Amazon S3.</span>
+<span class="sd">    Transforms and filters are applied to the data to create</span>
+<span class="sd">    3-tuples that are easily merged in a map-reduce fashion.</span>
+
+<span class="sd">    The 3-tuples are then loaded into DynamoDB using a map-reduce</span>
+<span class="sd">    operation in Spark.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">rdd</span> <span class="o">=</span> <span class="n">extract_transform</span><span class="p">(</span><span class="n">spark</span><span class="p">,</span> <span class="n">run_date</span><span class="p">,</span> <span class="n">sample_rate</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">load_rdd</span><span class="p">(</span><span class="n">prod_iam_role</span><span class="p">,</span> <span class="n">region_name</span><span class="p">,</span> <span class="n">table_name</span><span class="p">,</span> <span class="n">rdd</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="extract_transform"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_dynamo.extract_transform">[docs]</a><span class="k">def</span> <span class="nf">extract_transform</span><span class="p">(</span><span class="n">spark</span><span class="p">,</span> <span class="n">run_date</span><span class="p">,</span> <span class="n">sample_rate</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="n">currentDate</span> <span class="o">=</span> <span class="n">run_date</span>
+    <span class="n">currentDateString</span> <span class="o">=</span> <span class="n">currentDate</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Processing </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">currentDateString</span><span class="p">)</span>
+
+    <span class="c1"># Get the data for the desired date out of parquet</span>
+    <span class="n">template</span> <span class="o">=</span> <span class="s2">&quot;s3://telemetry-parquet/main_summary/v4/submission_date_s3=</span><span class="si">%s</span><span class="s2">&quot;</span>
+    <span class="n">datasetForDate</span> <span class="o">=</span> <span class="n">spark</span><span class="o">.</span><span class="n">read</span><span class="o">.</span><span class="n">parquet</span><span class="p">(</span><span class="n">template</span> <span class="o">%</span> <span class="n">currentDateString</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">sample_rate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">sample_rate</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Sample rate set to </span><span class="si">%0.9f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">sample_rate</span><span class="p">)</span>
+        <span class="n">datasetForDate</span> <span class="o">=</span> <span class="n">datasetForDate</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="n">sample_rate</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;No sampling on dataset&quot;</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Parquet data loaded&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Get the most recent (client_id, subsession_start_date) tuple</span>
+    <span class="c1"># for each client since the main_summary might contain</span>
+    <span class="c1"># multiple rows per client. We will use it to filter out the</span>
+    <span class="c1"># full table with all the columns we require.</span>
+
+    <span class="n">clientShortList</span> <span class="o">=</span> <span class="n">datasetForDate</span><span class="o">.</span><span class="n">select</span><span class="p">(</span>
+        <span class="s2">&quot;client_id&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;subsession_start_date&quot;</span><span class="p">,</span>
+        <span class="n">row_number</span><span class="p">()</span>
+        <span class="o">.</span><span class="n">over</span><span class="p">(</span><span class="n">Window</span><span class="o">.</span><span class="n">partitionBy</span><span class="p">(</span><span class="s2">&quot;client_id&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">orderBy</span><span class="p">(</span><span class="n">desc</span><span class="p">(</span><span class="s2">&quot;subsession_start_date&quot;</span><span class="p">)))</span>
+        <span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;clientid_rank&quot;</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;clientShortList selected&quot;</span><span class="p">)</span>
+    <span class="n">clientShortList</span> <span class="o">=</span> <span class="n">clientShortList</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="s2">&quot;clientid_rank == 1&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s2">&quot;clientid_rank&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;clientShortList selected&quot;</span><span class="p">)</span>
+
+    <span class="n">select_fields</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;client_id&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;subsession_start_date&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;subsession_length&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;city&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;locale&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;os&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;places_bookmarks_count&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;scalar_parent_browser_engagement_tab_open_event_count&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;scalar_parent_browser_engagement_total_uri_count&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;scalar_parent_browser_engagement_unique_domains_count&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;active_addons&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;disabled_addons_ids&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
+    <span class="n">dataSubset</span> <span class="o">=</span> <span class="n">datasetForDate</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="o">*</span><span class="n">select_fields</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;datasetForDate select fields completed&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Join the two tables: only the elements in both dataframes</span>
+    <span class="c1"># will make it through.</span>
+    <span class="n">clientsData</span> <span class="o">=</span> <span class="n">dataSubset</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+        <span class="n">clientShortList</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;client_id&quot;</span><span class="p">,</span> <span class="s2">&quot;subsession_start_date&quot;</span><span class="p">]</span>
+    <span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;clientsData join with client_id and subsession_start_date&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Convert the DataFrame to JSON and get an RDD out of it.</span>
+    <span class="n">subset</span> <span class="o">=</span> <span class="n">clientsData</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s2">&quot;client_id&quot;</span><span class="p">,</span> <span class="s2">&quot;subsession_start_date&quot;</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;clientsData select of client_id and subsession_start_date completed&quot;</span><span class="p">)</span>
+
+    <span class="n">jsonDataRDD</span> <span class="o">=</span> <span class="n">clientsData</span><span class="o">.</span><span class="n">select</span><span class="p">(</span>
+        <span class="s2">&quot;city&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;subsession_start_date&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;subsession_length&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;locale&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;os&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;places_bookmarks_count&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;scalar_parent_browser_engagement_tab_open_event_count&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;scalar_parent_browser_engagement_total_uri_count&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;scalar_parent_browser_engagement_unique_domains_count&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;active_addons&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;disabled_addons_ids&quot;</span><span class="p">,</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">toJSON</span><span class="p">()</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;jsonDataRDD selected&quot;</span><span class="p">)</span>
+    <span class="n">rdd</span> <span class="o">=</span> <span class="n">subset</span><span class="o">.</span><span class="n">rdd</span><span class="o">.</span><span class="n">zip</span><span class="p">(</span><span class="n">jsonDataRDD</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;subset rdd has been zipped&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Filter out any records with invalid dates or client_id</span>
+    <span class="n">filtered_rdd</span> <span class="o">=</span> <span class="n">rdd</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">filterDateAndClientID</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;rdd filtered by date and client_id&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Transform the JSON elements into a 4-tuple as per docstring</span>
+    <span class="n">merged_filtered_rdd</span> <span class="o">=</span> <span class="n">filtered_rdd</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">list_transformer</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;rdd has been transformed into tuples&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">merged_filtered_rdd</span></div>
+
+
+<div class="viewcode-block" id="load_rdd"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_dynamo.load_rdd">[docs]</a><span class="k">def</span> <span class="nf">load_rdd</span><span class="p">(</span><span class="n">prod_iam_role</span><span class="p">,</span> <span class="n">region_name</span><span class="p">,</span> <span class="n">table_name</span><span class="p">,</span> <span class="n">rdd</span><span class="p">):</span>
+    <span class="c1"># Apply a MapReduce operation to the RDD</span>
+    <span class="n">dynReducer</span> <span class="o">=</span> <span class="n">DynamoReducer</span><span class="p">(</span><span class="n">prod_iam_role</span><span class="p">,</span> <span class="n">region_name</span><span class="p">,</span> <span class="n">table_name</span><span class="p">)</span>
+
+    <span class="n">reduction_output</span> <span class="o">=</span> <span class="n">rdd</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">dynReducer</span><span class="o">.</span><span class="n">dynamo_reducer</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;1st pass dynamo reduction completed&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Apply the reducer one more time to force any lingering</span>
+    <span class="c1"># data to get pushed into DynamoDB.</span>
+    <span class="n">final_reduction_output</span> <span class="o">=</span> <span class="n">dynReducer</span><span class="o">.</span><span class="n">dynamo_reducer</span><span class="p">(</span>
+        <span class="n">reduction_output</span><span class="p">,</span> <span class="n">EMPTY_TUPLE</span><span class="p">,</span> <span class="n">force_write</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">final_reduction_output</span></div>
+
+
+<div class="viewcode-block" id="run_etljob"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_dynamo.run_etljob">[docs]</a><span class="k">def</span> <span class="nf">run_etljob</span><span class="p">(</span><span class="n">spark</span><span class="p">,</span> <span class="n">run_date</span><span class="p">,</span> <span class="n">region_name</span><span class="p">,</span> <span class="n">table_name</span><span class="p">,</span> <span class="n">prod_iam_role</span><span class="p">,</span> <span class="n">sample_rate</span><span class="p">):</span>
+    <span class="n">reduction_output</span> <span class="o">=</span> <span class="n">etl</span><span class="p">(</span>
+        <span class="n">spark</span><span class="p">,</span> <span class="n">run_date</span><span class="p">,</span> <span class="n">region_name</span><span class="p">,</span> <span class="n">table_name</span><span class="p">,</span> <span class="n">prod_iam_role</span><span class="p">,</span> <span class="n">sample_rate</span>
+    <span class="p">)</span>
+    <span class="n">report_data</span> <span class="o">=</span> <span class="p">(</span><span class="n">reduction_output</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">reduction_output</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">40</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span>
+        <span class="s2">&quot;</span><span class="si">%d</span><span class="s2"> records inserted to DynamoDB.</span><span class="se">\n</span><span class="si">%d</span><span class="s2"> records remaining in queue.&quot;</span> <span class="o">%</span> <span class="n">report_data</span>
+    <span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">40</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">reduction_output</span></div>
+
+
+<span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">()</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--date&quot;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># YYYYMMDD</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--region&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;us-west-2&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--table&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;taar_addon_data_20180206&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+    <span class="s2">&quot;--prod-iam-role&quot;</span><span class="p">,</span>
+    <span class="n">default</span><span class="o">=</span><span class="s2">&quot;arn:aws:iam::361527076523:role/taar-write-dynamodb-from-dev&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--sample-rate&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="n">region</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">prod_iam_role</span><span class="p">,</span> <span class="n">sample_rate</span><span class="p">):</span>
+    <span class="n">APP_NAME</span> <span class="o">=</span> <span class="s2">&quot;HBaseAddonRecommenderView&quot;</span>
+    <span class="n">conf</span> <span class="o">=</span> <span class="n">SparkConf</span><span class="p">()</span><span class="o">.</span><span class="n">setAppName</span><span class="p">(</span><span class="n">APP_NAME</span><span class="p">)</span>
+    <span class="n">spark</span> <span class="o">=</span> <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">config</span><span class="p">(</span><span class="n">conf</span><span class="o">=</span><span class="n">conf</span><span class="p">)</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
+    <span class="n">date_obj</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">prod_iam_role</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+        <span class="n">prod_iam_role</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="n">reduction_output</span> <span class="o">=</span> <span class="n">run_etljob</span><span class="p">(</span>
+        <span class="n">spark</span><span class="p">,</span> <span class="n">date_obj</span><span class="p">,</span> <span class="n">region</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">prod_iam_role</span><span class="p">,</span> <span class="n">sample_rate</span>
+    <span class="p">)</span>
+    <span class="n">pprint</span><span class="p">(</span><span class="n">reduction_output</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">python_mozetl</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Firefox Telemetry Python ETL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#benefits">Benefits</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#tests">Tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#manual-execution">Manual Execution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#scheduling">Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#early-stage-etl-jobs">Early Stage ETL Jobs</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Ryan Harter.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

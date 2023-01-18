@@ -35,17 +35,293 @@
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="mozetl-hardware-report-check-output-module">
-<h2>mozetl.hardware_report.check_output module<a class="headerlink" href="#mozetl-hardware-report-check-output-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-mozetl.hardware_report.check_output">
+<span id="mozetl-hardware-report-check-output-module"></span><h2>mozetl.hardware_report.check_output module<a class="headerlink" href="#module-mozetl.hardware_report.check_output" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="mozetl.hardware_report.check_output.check_output">
+<code class="sig-prename descclassname"><span class="pre">mozetl.hardware_report.check_output.</span></code><code class="sig-name descname"><span class="pre">check_output</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/hardware_report/check_output.html#check_output"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.hardware_report.check_output.check_output" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </div>
-<div class="section" id="mozetl-hardware-report-hardware-dashboard-module">
-<h2>mozetl.hardware_report.hardware_dashboard module<a class="headerlink" href="#mozetl-hardware-report-hardware-dashboard-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-mozetl.hardware_report.hardware_dashboard">
+<span id="mozetl-hardware-report-hardware-dashboard-module"></span><h2>mozetl.hardware_report.hardware_dashboard module<a class="headerlink" href="#module-mozetl.hardware_report.hardware_dashboard" title="Permalink to this headline">¶</a></h2>
+<p>Hardware Report Generator.</p>
+<p>This dashboard can be found at:
+<a class="reference external" href="https://hardware.metrics.mozilla.com/">https://hardware.metrics.mozilla.com/</a></p>
 </div>
-<div class="section" id="mozetl-hardware-report-summarize-json-module">
-<h2>mozetl.hardware_report.summarize_json module<a class="headerlink" href="#mozetl-hardware-report-summarize-json-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-mozetl.hardware_report.summarize_json">
+<span id="mozetl-hardware-report-summarize-json-module"></span><h2>mozetl.hardware_report.summarize_json module<a class="headerlink" href="#module-mozetl.hardware_report.summarize_json" title="Permalink to this headline">¶</a></h2>
+<p>This job was originally located at [1].</p>
+<p>[1] <a class="reference external" href="https://git.io/vHRWO">https://git.io/vHRWO</a></p>
+<dl class="py function">
+<dt id="mozetl.hardware_report.summarize_json.aggregate_data">
+<code class="sig-prename descclassname"><span class="pre">mozetl.hardware_report.summarize_json.</span></code><code class="sig-name descname"><span class="pre">aggregate_data</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">processed_data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/hardware_report/summarize_json.html#aggregate_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.hardware_report.summarize_json.aggregate_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return aggregated data.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.hardware_report.summarize_json.build_device_map">
+<code class="sig-prename descclassname"><span class="pre">mozetl.hardware_report.summarize_json.</span></code><code class="sig-name descname"><span class="pre">build_device_map</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/hardware_report/summarize_json.html#build_device_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.hardware_report.summarize_json.build_device_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build a dictionary that will help us map vendor/device ids to device families.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.hardware_report.summarize_json.collapse_buckets">
+<code class="sig-prename descclassname"><span class="pre">mozetl.hardware_report.summarize_json.</span></code><code class="sig-name descname"><span class="pre">collapse_buckets</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">aggregated_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">count_threshold</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/hardware_report/summarize_json.html#collapse_buckets"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.hardware_report.summarize_json.collapse_buckets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Collapse uncommon configurations in generic groups to preserve privacy.</p>
+<p>This takes the dictionary of aggregated results from <a href="#id1"><span class="problematic" id="id2">|aggregate_data|</span></a> and collapses
+entries with a value less than <a href="#id3"><span class="problematic" id="id4">|count_threshold|</span></a> in a generic bucket.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>aggregated_data</strong> – The object containing aggregated data.</p></li>
+<li><p><strong>count_threhold</strong> – Groups (or “configurations”) containing less than this value</p></li>
+<li><p><strong>collapsed in a generic bucket.</strong> (<em>are</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.hardware_report.summarize_json.fetch_json">
+<code class="sig-prename descclassname"><span class="pre">mozetl.hardware_report.summarize_json.</span></code><code class="sig-name descname"><span class="pre">fetch_json</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uri</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/hardware_report/summarize_json.html#fetch_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.hardware_report.summarize_json.fetch_json" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform an HTTP GET on the given uri, return the results as json.</p>
+<p>If there is an error fetching the data, raise an exception.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>uri</strong> – the string URI to fetch.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A JSON object with the response.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.hardware_report.summarize_json.fetch_previous_state">
+<code class="sig-prename descclassname"><span class="pre">mozetl.hardware_report.summarize_json.</span></code><code class="sig-name descname"><span class="pre">fetch_previous_state</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s3_source_file_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">local_file_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bucket</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/hardware_report/summarize_json.html#fetch_previous_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.hardware_report.summarize_json.fetch_previous_state" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fetch the previous state from S3’s bucket and store it locally.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>s3_source_file_name</strong> – The name of the file on S3.</p></li>
+<li><p><strong>local_file_name</strong> – The name of the file to save to, locally.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.hardware_report.summarize_json.finalize_data">
+<code class="sig-prename descclassname"><span class="pre">mozetl.hardware_report.summarize_json.</span></code><code class="sig-name descname"><span class="pre">finalize_data</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_count</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">broken_ratio</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inactive_ratio</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">report_date</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/hardware_report/summarize_json.html#finalize_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.hardware_report.summarize_json.finalize_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finalize the aggregated data.</p>
+<p>Translate raw sample numbers to percentages and add the date for the reported
+week along with the percentage of discarded samples due to broken data.</p>
+<p>Rename the keys to more human friendly names.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – Data in aggregated form.</p></li>
+<li><p><strong>sample_count</strong> – The number of samples the aggregates where generated from.</p></li>
+<li><p><strong>broken_ratio</strong> – The percentage of samples discarded due to broken data.</p></li>
+<li><p><strong>inactive_ratio</strong> – The percentage of samples discarded due to the client not sending data.</p></li>
+<li><p><strong>report_date</strong> – The starting day for the reported week.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>An object containing the reported hardware statistics.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.hardware_report.summarize_json.generate_report">
+<code class="sig-prename descclassname"><span class="pre">mozetl.hardware_report.summarize_json.</span></code><code class="sig-name descname"><span class="pre">generate_report</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start_date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spark</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/hardware_report/summarize_json.html#generate_report"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.hardware_report.summarize_json.generate_report" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate the hardware survey dataset for the reference timeframe.</p>
+<p>If the timeframe is longer than a week, split it in in weekly chunks
+and process each chunk individually (eases backfilling).</p>
+<p>The report for each week is saved in a local JSON file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>start_date</strong> – The date from which we start generating the report. If None,
+the report starts from the beginning of the past week (Sunday).</p></li>
+<li><p><strong>end_date</strong> – The date the marks the end of the reporting period. This only
+makes sense if a <a href="#id5"><span class="problematic" id="id6">|start_date|</span></a> was provided. If None, this defaults
+to the end of the past week (Saturday).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.hardware_report.summarize_json.get_OS_arch">
+<code class="sig-prename descclassname"><span class="pre">mozetl.hardware_report.summarize_json.</span></code><code class="sig-name descname"><span class="pre">get_OS_arch</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">browser_arch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">os_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_wow64</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/hardware_report/summarize_json.html#get_OS_arch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.hardware_report.summarize_json.get_OS_arch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Infer the OS arch from environment data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>browser_arch</strong> – the browser architecture string (either “x86” or “x86-64”).</p></li>
+<li><p><strong>os_name</strong> – the operating system name.</p></li>
+<li><p><strong>is_wow64</strong> – on Windows, indicates if the browser process is running under WOW64.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>‘x86’ if the underlying OS is 32bit, ‘x86-64’ if it’s a 64bit OS.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.hardware_report.summarize_json.get_device_family_chipset">
+<code class="sig-prename descclassname"><span class="pre">mozetl.hardware_report.summarize_json.</span></code><code class="sig-name descname"><span class="pre">get_device_family_chipset</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vendor_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device_map</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/hardware_report/summarize_json.html#get_device_family_chipset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.hardware_report.summarize_json.get_device_family_chipset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the family and chipset strings given the vendor and device ids.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>vendor_id</strong> – a string representing the vendor id (e.g. ‘0xabcd’).</p></li>
+<li><p><strong>device_id</strong> – a string representing the device id (e.g. ‘0xbcde’).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A string in the format “Device Family Name-Chipset Name”.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.hardware_report.summarize_json.get_file_name">
+<code class="sig-prename descclassname"><span class="pre">mozetl.hardware_report.summarize_json.</span></code><code class="sig-name descname"><span class="pre">get_file_name</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">suffix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/hardware_report/summarize_json.html#get_file_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.hardware_report.summarize_json.get_file_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return report file name with date appended.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.hardware_report.summarize_json.get_latest_valid_per_client">
+<code class="sig-prename descclassname"><span class="pre">mozetl.hardware_report.summarize_json.</span></code><code class="sig-name descname"><span class="pre">get_latest_valid_per_client</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entry</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_end</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/hardware_report/summarize_json.html#get_latest_valid_per_client"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.hardware_report.summarize_json.get_latest_valid_per_client" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the most recently submitted ping for a client within the given timeframe.</p>
+<p>Then use this index to look up the data from the other columns (we can assume that the sizes
+of these arrays match, otherwise the longitudinal dataset is broken).
+Once we have the data, we make sure it’s valid and return it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>entry</strong> – The record containing all the data for a single client.</p></li>
+<li><p><strong>time_start</strong> – The beginning of the reference timeframe.</p></li>
+<li><p><strong>time_end</strong> – The end of the reference timeframe.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>An object containing the valid hardware data for the client or a string
+describing why the data is discarded. Either REASON_INACTIVE, if the client didn’t
+submit a ping within the desired timeframe, or REASON_BROKEN_DATA if it send
+broken data.</p>
+</dd>
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.11)"><strong>ValueError</strong></a> – if the columns within the record have mismatching lengths. This</p></li>
+<li><p><strong>means the longitudinal dataset is corrupted.</strong> – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.hardware_report.summarize_json.get_longitudinal_version">
+<code class="sig-prename descclassname"><span class="pre">mozetl.hardware_report.summarize_json.</span></code><code class="sig-name descname"><span class="pre">get_longitudinal_version</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">date</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/hardware_report/summarize_json.html#get_longitudinal_version"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.hardware_report.summarize_json.get_longitudinal_version" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.hardware_report.summarize_json.get_valid_client_record">
+<code class="sig-prename descclassname"><span class="pre">mozetl.hardware_report.summarize_json.</span></code><code class="sig-name descname"><span class="pre">get_valid_client_record</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/hardware_report/summarize_json.html#get_valid_client_record"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.hardware_report.summarize_json.get_valid_client_record" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if the referenced record is sane or contains partial/broken data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>r</strong> – The client entry in the longitudinal dataset.</p></li>
+<li><p><strong>dat_index</strong> – The index of the sample within the client record.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>An object containing the client hardware data or REASON_BROKEN_DATA if the
+data is invalid.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.hardware_report.summarize_json.invert_device_map">
+<code class="sig-prename descclassname"><span class="pre">mozetl.hardware_report.summarize_json.</span></code><code class="sig-name descname"><span class="pre">invert_device_map</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">m</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/hardware_report/summarize_json.html#invert_device_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.hardware_report.summarize_json.invert_device_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inverts a GPU device map fetched from the jrmuizel’s Github repo.</p>
+<dl class="simple">
+<dt>The layout of the fetched GPU map layout is:</dt><dd><p>Vendor ID -&gt; Device Family -&gt; Chipset -&gt; [Device IDs]</p>
+</dd>
+<dt>We should convert it to:</dt><dd><p>Vendor ID -&gt; Device ID -&gt; [Device Family, Chipset]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.hardware_report.summarize_json.prepare_data">
+<code class="sig-prename descclassname"><span class="pre">mozetl.hardware_report.summarize_json.</span></code><code class="sig-name descname"><span class="pre">prepare_data</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device_map</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/hardware_report/summarize_json.html#prepare_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.hardware_report.summarize_json.prepare_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prepare data for further analyses.</p>
+<p>e.g. unit conversion, vendor id to string, etc.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.hardware_report.summarize_json.serialize_results">
+<code class="sig-prename descclassname"><span class="pre">mozetl.hardware_report.summarize_json.</span></code><code class="sig-name descname"><span class="pre">serialize_results</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">date_to_json</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/hardware_report/summarize_json.html#serialize_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.hardware_report.summarize_json.serialize_results" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save each aggregated data item as an entry in the JSON.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.hardware_report.summarize_json.store_new_state">
+<code class="sig-prename descclassname"><span class="pre">mozetl.hardware_report.summarize_json.</span></code><code class="sig-name descname"><span class="pre">store_new_state</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source_file_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s3_dest_file_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bucket</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/hardware_report/summarize_json.html#store_new_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.hardware_report.summarize_json.store_new_state" title="Permalink to this definition">¶</a></dt>
+<dd><p>Store the new state file to S3.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>source_file_name</strong> – The name of the local source file.</p></li>
+<li><p><strong>s3_dest_file_name</strong> – The name of the destination file on S3.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.hardware_report.summarize_json.validate_finalized_data">
+<code class="sig-prename descclassname"><span class="pre">mozetl.hardware_report.summarize_json.</span></code><code class="sig-name descname"><span class="pre">validate_finalized_data</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/hardware_report/summarize_json.html#validate_finalized_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.hardware_report.summarize_json.validate_finalized_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Validate the aggregated and finalized data.</p>
+<p>This checks that the aggregated hardware data object contains all the expected keys
+and that they sum up roughly 1.0.</p>
+<p>When a problem is found a message is printed to make debugging easier.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>data</strong> – Data in aggregated form.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if the data validates correctly, false otherwise.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.hardware_report.summarize_json.vendor_name_from_id">
+<code class="sig-prename descclassname"><span class="pre">mozetl.hardware_report.summarize_json.</span></code><code class="sig-name descname"><span class="pre">vendor_name_from_id</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/hardware_report/summarize_json.html#vendor_name_from_id"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.hardware_report.summarize_json.vendor_name_from_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the string name matching the provided vendor id.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>id</strong> – A string containing the vendor id.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A string containing the vendor name or “(Other &lt;ID&gt;)” if
+unknown.</p>
+</dd>
+</dl>
+</dd></dl>
+
 </div>
-<div class="section" id="module-contents">
-<h2>Module contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-mozetl.hardware_report">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-mozetl.hardware_report" title="Permalink to this headline">¶</a></h2>
 </div>
 </div>
 

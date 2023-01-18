@@ -35,11 +35,104 @@
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="mozetl-addon-aggregates-addon-aggregates-module">
-<h2>mozetl.addon_aggregates.addon_aggregates module<a class="headerlink" href="#mozetl-addon-aggregates-addon-aggregates-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-mozetl.addon_aggregates.addon_aggregates">
+<span id="mozetl-addon-aggregates-addon-aggregates-module"></span><h2>mozetl.addon_aggregates.addon_aggregates module<a class="headerlink" href="#module-mozetl.addon_aggregates.addon_aggregates" title="Permalink to this headline">¶</a></h2>
+<p>ETL code for the addon_aggregates dataset</p>
+<dl class="py function">
+<dt id="mozetl.addon_aggregates.addon_aggregates.add_addon_columns">
+<code class="sig-prename descclassname"><span class="pre">mozetl.addon_aggregates.addon_aggregates.</span></code><code class="sig-name descname"><span class="pre">add_addon_columns</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/addon_aggregates/addon_aggregates.html#add_addon_columns"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.addon_aggregates.addon_aggregates.add_addon_columns" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs additional indicator columns decribing the add-on/theme
+present in a given record. The columns are</p>
+<p>is_self_install
+is_shield_addon
+is_foreign_install
+is_system
+is_web_extension
+Which maps True -&gt; 1 and False -&gt; 0</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>df</strong> – SparkDF, exploded on active_addons, each record
+maps to a single add-on</p>
+</dd>
+</dl>
+<p>:return df with the above columns added</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.addon_aggregates.addon_aggregates.aggregate_addons">
+<code class="sig-prename descclassname"><span class="pre">mozetl.addon_aggregates.addon_aggregates.</span></code><code class="sig-name descname"><span class="pre">aggregate_addons</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/addon_aggregates/addon_aggregates.html#aggregate_addons"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.addon_aggregates.addon_aggregates.aggregate_addons" title="Permalink to this definition">¶</a></dt>
+<dd><p>Aggregates add-on indicators by client, channel, version and locale.
+The result is a DataFrame with the additional aggregate columns:</p>
+<p>n_self_installed_addons (int)
+n_shield_addons (int)
+n_foreign_installed_addons (int)
+n_system_addons (int)
+n_web_extensions (int)
+first_addon_install_date (str %Y%m%d)
+profile_creation_date (str %Y%m%d)</p>
+<p>for each of the above facets.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>df</strong> – an expoded instance of main_summary by active_addons
+with various additional indicator columns</p>
+</dd>
+<dt class="field-even">Return SparkDF</dt>
+<dd class="field-even"><p>an aggregated dataset with each of the above columns</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.addon_aggregates.addon_aggregates.get_dest">
+<code class="sig-prename descclassname"><span class="pre">mozetl.addon_aggregates.addon_aggregates.</span></code><code class="sig-name descname"><span class="pre">get_dest</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_bucket</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_prefix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_version</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/addon_aggregates/addon_aggregates.html#get_dest"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.addon_aggregates.addon_aggregates.get_dest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stitches together an s3 destination.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>output_bucket</strong> – s3 output_bucket</p></li>
+<li><p><strong>output_prefix</strong> – s3 output_prefix (within output_bucket)</p></li>
+<li><p><strong>output_version</strong> – dataset output_version</p></li>
+</ul>
+</dd>
+</dl>
+<p>:retrn str -&gt;
+s3://output_bucket/output_prefix/output_version/submissin_date_s3=[date]/sample_id=[sid]</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.addon_aggregates.addon_aggregates.load_main_summary">
+<code class="sig-prename descclassname"><span class="pre">mozetl.addon_aggregates.addon_aggregates.</span></code><code class="sig-name descname"><span class="pre">load_main_summary</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spark</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_bucket</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_prefix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_version</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/addon_aggregates/addon_aggregates.html#load_main_summary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.addon_aggregates.addon_aggregates.load_main_summary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loads main_summary from the bucket constructed from
+input_bucket, input_prefix, input_version</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>spark</strong> – SparkSession object</p></li>
+<li><p><strong>input_bucket</strong> – s3 bucket (telemetry-parquet)</p></li>
+<li><p><strong>input_prefix</strong> – s3 prefix (main_summary)</p></li>
+<li><p><strong>input_version</strong> – dataset version (v4)</p></li>
+</ul>
+</dd>
+</dl>
+<p>:return SparkDF</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.addon_aggregates.addon_aggregates.ms_explode_addons">
+<code class="sig-prename descclassname"><span class="pre">mozetl.addon_aggregates.addon_aggregates.</span></code><code class="sig-name descname"><span class="pre">ms_explode_addons</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ms</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/addon_aggregates/addon_aggregates.html#ms_explode_addons"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.addon_aggregates.addon_aggregates.ms_explode_addons" title="Permalink to this definition">¶</a></dt>
+<dd><p>Explodes the active_addons object in
+the ms DataFrame and selects relevant fields</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>ms</strong> – a subset of main_summary</p>
+</dd>
+</dl>
+<p>:return SparkDF</p>
+</dd></dl>
+
 </div>
-<div class="section" id="module-contents">
-<h2>Module contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-mozetl.addon_aggregates">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-mozetl.addon_aggregates" title="Permalink to this headline">¶</a></h2>
 </div>
 </div>
 

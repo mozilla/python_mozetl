@@ -1,0 +1,469 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>mozetl.taar.taar_locale &#8212; python_mozetl 0.1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for mozetl.taar.taar_locale</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Bug 1396549 - TAAR Top addons per locale dictionary</span>
+<span class="sd">This notebook is adapted from a gist that computes the top N addons per</span>
+<span class="sd">locale after filtering for good candidates (e.g. no unsigned, no disabled,</span>
+<span class="sd">...) [1].</span>
+
+<span class="sd">[1] https://gist.github.com/mlopatka/46dddac9d063589275f06b0443fcc69d</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">click</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span><span class="p">,</span> <span class="n">timedelta</span>
+<span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="kn">import</span> <span class="n">SparkSession</span>
+<span class="kn">from</span> <span class="nn">pyspark.sql.functions</span> <span class="kn">import</span> <span class="n">col</span>
+<span class="kn">from</span> <span class="nn">pyspark.sql.types</span> <span class="kn">import</span> <span class="n">StructType</span><span class="p">,</span> <span class="n">StructField</span><span class="p">,</span> <span class="n">StringType</span><span class="p">,</span> <span class="n">IntegerType</span>
+<span class="kn">from</span> <span class="nn">pandas</span> <span class="kn">import</span> <span class="n">DataFrame</span><span class="p">,</span> <span class="n">IndexSlice</span>
+<span class="kn">from</span> <span class="nn">numpy.random</span> <span class="kn">import</span> <span class="n">laplace</span> <span class="k">as</span> <span class="n">rlaplace</span>
+
+<span class="kn">from</span> <span class="nn">.taar_utils</span> <span class="kn">import</span> <span class="n">store_json_to_s3</span>
+<span class="kn">from</span> <span class="nn">.taar_utils</span> <span class="kn">import</span> <span class="n">load_amo_curated_whitelist</span>
+
+<span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="n">LOCALE_FILE_NAME</span> <span class="o">=</span> <span class="s2">&quot;top10_dict&quot;</span>
+<span class="c1"># Set the max multiplicative DP difference in probabilities to</span>
+<span class="c1"># exp(espilon) ~= 1.5.</span>
+<span class="n">EPSILON</span> <span class="o">=</span> <span class="mf">0.4</span>
+
+
+<div class="viewcode-block" id="get_client_addons"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_locale.get_client_addons">[docs]</a><span class="k">def</span> <span class="nf">get_client_addons</span><span class="p">(</span><span class="n">spark</span><span class="p">,</span> <span class="n">start_date</span><span class="p">,</span> <span class="n">end_date</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a Spark DF listing add-ons by client_id and locale.</span>
+
+<span class="sd">    Only Firefox release clients are considered. The query finds each client&#39;s</span>
+<span class="sd">    most recent record in the `clients_daily` dataset over the given time period</span>
+<span class="sd">    and returns its installed add-ons. System add-ons, disabled add-ons, and</span>
+<span class="sd">    unsigned add-ons are filtered out.</span>
+
+<span class="sd">    :param start_date: the earliest submission date to include (yyyymmdd)</span>
+<span class="sd">    :param end_date, optional: the latest submission date to include (yyyymmdd)</span>
+<span class="sd">    :return: a DF with columns `locale`, `client_id`, `addon`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">addons_query_template</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    WITH sample AS (</span>
+<span class="s2">        SELECT</span>
+<span class="s2">            client_id,</span>
+<span class="s2">            submission_date_s3,</span>
+<span class="s2">            locale,</span>
+<span class="s2">            active_addons</span>
+<span class="s2">        FROM clients_daily</span>
+<span class="s2">        WHERE</span>
+<span class="s2">            app_name=&#39;Firefox&#39;</span>
+<span class="s2">            AND channel=&#39;release&#39;</span>
+<span class="s2">            AND submission_date_s3 &gt;= &#39;</span><span class="si">{start_date}</span><span class="s2">&#39;</span>
+<span class="s2">            </span><span class="si">{end_date_filter}</span>
+<span class="s2">            AND client_id IS NOT NULL</span>
+<span class="s2">    ),</span>
+<span class="s2">    sample_dedup AS (</span>
+<span class="s2">        SELECT</span>
+<span class="s2">            client_id,</span>
+<span class="s2">            locale,</span>
+<span class="s2">            explode(active_addons) AS addon_info</span>
+<span class="s2">        FROM (</span>
+<span class="s2">            SELECT</span>
+<span class="s2">                *,</span>
+<span class="s2">                -- retain the most recent active day for each client</span>
+<span class="s2">                row_number() OVER (</span>
+<span class="s2">                    PARTITION BY client_id</span>
+<span class="s2">                    ORDER BY submission_date_s3 DESC</span>
+<span class="s2">                ) AS idx</span>
+<span class="s2">            FROM sample</span>
+<span class="s2">        )</span>
+<span class="s2">        WHERE idx = 1</span>
+<span class="s2">    )</span>
+<span class="s2">    SELECT</span>
+<span class="s2">        locale,</span>
+<span class="s2">        client_id,</span>
+<span class="s2">        addon_info.addon_id as addon</span>
+<span class="s2">    FROM sample_dedup</span>
+<span class="s2">    WHERE</span>
+<span class="s2">        addon_info.blocklisted = FALSE -- not blocklisted</span>
+<span class="s2">        AND addon_info.type = &#39;extension&#39; -- nice webextensions only</span>
+<span class="s2">        AND addon_info.signed_state = 2 -- fully reviewed addons only</span>
+<span class="s2">        AND addon_info.user_disabled = FALSE -- active addons only get counted</span>
+<span class="s2">        AND addon_info.app_disabled = FALSE -- exclude compatibility disabled addons</span>
+<span class="s2">        AND addon_info.is_system = FALSE -- exclude system addons</span>
+<span class="s2">        AND locale &lt;&gt; &#39;null&#39;</span>
+<span class="s2">        AND addon_info.addon_id IS NOT NULL</span>
+<span class="s2">    &quot;&quot;&quot;</span>
+
+    <span class="n">end_date_filter</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&quot;AND submission_date_s3 &lt;= &#39;</span><span class="si">{}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">end_date</span><span class="p">)</span> <span class="k">if</span> <span class="n">end_date</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+    <span class="p">)</span>
+    <span class="n">addons_query</span> <span class="o">=</span> <span class="n">addons_query_template</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="n">start_date</span><span class="o">=</span><span class="n">start_date</span><span class="p">,</span> <span class="n">end_date_filter</span><span class="o">=</span><span class="n">end_date_filter</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">spark</span><span class="o">.</span><span class="n">sql</span><span class="p">(</span><span class="n">addons_query</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="limit_client_addons"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_locale.limit_client_addons">[docs]</a><span class="k">def</span> <span class="nf">limit_client_addons</span><span class="p">(</span><span class="n">spark</span><span class="p">,</span> <span class="n">client_addons_df</span><span class="p">,</span> <span class="n">addon_limits</span><span class="p">,</span> <span class="n">whitelist</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Limit the number of add-ons associated with a single client ID.</span>
+
+<span class="sd">    This is a part of the privacy protection mechanism applied to the raw data.</span>
+<span class="sd">    For each client in the dataset, we retain a randomly selected subset of</span>
+<span class="sd">    their add-ons which belong to the whitelist. The max number of add-ons may</span>
+<span class="sd">    differ by locale.</span>
+
+<span class="sd">    :param client_addons_df: a DF listing add-on IDs by client ID and locale, as</span>
+<span class="sd">                             generated by `get_client_addons()`</span>
+<span class="sd">    :param addon_limits: a dict mapping locale strings to ints representing the</span>
+<span class="sd">                         max number of add-ons retained per client in that locale.</span>
+<span class="sd">                         Any locale not present in the dict is excluded from the</span>
+<span class="sd">                         final dataset.</span>
+<span class="sd">    :param whitelist: a list of add-on IDs belonging to the AMO whitelist</span>
+<span class="sd">    :return: a DF containing a subset of the rows of `client_addons_df`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Convert the dict of limits to a Spark DF that can be joined in.</span>
+    <span class="n">addon_limits_schema</span> <span class="o">=</span> <span class="n">StructType</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="n">StructField</span><span class="p">(</span><span class="s2">&quot;locale&quot;</span><span class="p">,</span> <span class="n">StringType</span><span class="p">(),</span> <span class="kc">False</span><span class="p">),</span>
+            <span class="n">StructField</span><span class="p">(</span><span class="s2">&quot;client_max_addons&quot;</span><span class="p">,</span> <span class="n">IntegerType</span><span class="p">(),</span> <span class="kc">False</span><span class="p">),</span>
+        <span class="p">]</span>
+    <span class="p">)</span>
+    <span class="n">addon_limits_df</span> <span class="o">=</span> <span class="n">spark</span><span class="o">.</span><span class="n">createDataFrame</span><span class="p">(</span>
+        <span class="n">addon_limits</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">schema</span><span class="o">=</span><span class="n">addon_limits_schema</span>
+    <span class="p">)</span>
+    <span class="c1"># Inner join means that data for any locale not listed in the dict gets dropped.</span>
+    <span class="n">client_df</span> <span class="o">=</span> <span class="n">client_addons_df</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">addon_limits_df</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="s2">&quot;locale&quot;</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;inner&quot;</span><span class="p">)</span>
+    <span class="c1"># client_df now has columns (locale, client_id, addon, client_max_addons).</span>
+    <span class="c1"># Restrict to whitelist add-ons.</span>
+    <span class="n">client_df</span> <span class="o">=</span> <span class="n">client_df</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;addon&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">whitelist</span><span class="p">))</span>
+    <span class="n">client_df</span><span class="o">.</span><span class="n">createOrReplaceTempView</span><span class="p">(</span><span class="s2">&quot;client_addons&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Limit each client&#39;s add-ons to a random subset of max allowed size.</span>
+    <span class="c1"># Add-ons are shuffled by generating an auxiliary column of independent Uniform(0,1)</span>
+    <span class="c1"># random variables and sorting along this column within clients.</span>
+    <span class="c1"># Shuffling only needs to be done if the user has more than the max allowed</span>
+    <span class="c1"># add-ons (otherwise they will all be retained).</span>
+    <span class="k">return</span> <span class="n">spark</span><span class="o">.</span><span class="n">sql</span><span class="p">(</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        WITH addons AS (</span>
+<span class="sd">            -- add a convenience column listing the number of add-ons each client has</span>
+<span class="sd">            SELECT</span>
+<span class="sd">                *,</span>
+<span class="sd">                COUNT(client_id) OVER (PARTITION BY client_id) AS num_client_addons</span>
+<span class="sd">            FROM client_addons</span>
+<span class="sd">        ),</span>
+<span class="sd">        shuffle_ord AS (</span>
+<span class="sd">            -- add the auxiliary sorting column</span>
+<span class="sd">            SELECT</span>
+<span class="sd">                *,</span>
+<span class="sd">                -- only need to shuffle if the client has too many add-ons</span>
+<span class="sd">                CASE WHEN num_client_addons &gt; client_max_addons THEN RAND() ELSE NULL</span>
+<span class="sd">                    END AS ord</span>
+<span class="sd">            FROM addons</span>
+<span class="sd">        )</span>
+<span class="sd">        SELECT</span>
+<span class="sd">            client_id,</span>
+<span class="sd">            locale,</span>
+<span class="sd">            addon</span>
+<span class="sd">        FROM (</span>
+<span class="sd">            SELECT</span>
+<span class="sd">                *,</span>
+<span class="sd">                row_number() OVER (PARTITION BY client_id ORDER BY ord) AS idx</span>
+<span class="sd">            FROM shuffle_ord</span>
+<span class="sd">        )</span>
+<span class="sd">        WHERE idx &lt;= client_max_addons</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="compute_noisy_counts"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_locale.compute_noisy_counts">[docs]</a><span class="k">def</span> <span class="nf">compute_noisy_counts</span><span class="p">(</span><span class="n">locale_addon_counts</span><span class="p">,</span> <span class="n">addon_limits</span><span class="p">,</span> <span class="n">whitelist</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="n">EPSILON</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Apply DP protections to the raw per-locale add-on frequency counts.</span>
+
+<span class="sd">    Laplace noise is added to each of the counts. Additionally, each per-locale</span>
+<span class="sd">    set of frequency counts is expanded to include every add-on in the</span>
+<span class="sd">    whitelist, even if some were not observed in the raw data.</span>
+
+<span class="sd">    This computation is done in local memory, rather than in Spark, to simplify</span>
+<span class="sd">    working with random number generation. This relies on the assumption that</span>
+<span class="sd">    the number of unique locales and whitelist add-ons each remain small (on the</span>
+<span class="sd">    order of 100-1000).</span>
+
+<span class="sd">    :param locale_addon_counts: a Pandas DF of per-locale add-on frequency</span>
+<span class="sd">                                counts, with columns `locale`, `addon`, `count`</span>
+<span class="sd">    :param addon_limits: a dict mapping locale strings to ints representing the</span>
+<span class="sd">                         max number of add-ons retained per client in that locale.</span>
+<span class="sd">                         Any locale not present in the dict is excluded from the</span>
+<span class="sd">                         final dataset.</span>
+<span class="sd">    :param whitelist: a list of add-on IDs belonging to the AMO whitelist</span>
+<span class="sd">    :param eps: the DP epsilon parameter, representing the privacy budget</span>
+<span class="sd">    :return: a DF with the same structure as `locale_addon_counts`. Counts may</span>
+<span class="sd">             now be non-integer and negative.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># First expand the frequency count table to include all whitelisted add-ons</span>
+    <span class="c1"># in each locale.</span>
+    <span class="n">locale_wl_addons</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="o">.</span><span class="n">from_records</span><span class="p">(</span>
+        <span class="p">[(</span><span class="n">loc</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">loc</span> <span class="ow">in</span> <span class="n">addon_limits</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">whitelist</span><span class="p">],</span>
+        <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;locale&quot;</span><span class="p">,</span> <span class="s2">&quot;addon&quot;</span><span class="p">],</span>
+    <span class="p">)</span>
+    <span class="n">raw_counts</span> <span class="o">=</span> <span class="n">locale_addon_counts</span><span class="o">.</span><span class="n">set_index</span><span class="p">([</span><span class="s2">&quot;locale&quot;</span><span class="p">,</span> <span class="s2">&quot;addon&quot;</span><span class="p">])</span>
+    <span class="n">locale_wl</span> <span class="o">=</span> <span class="n">locale_wl_addons</span><span class="o">.</span><span class="n">set_index</span><span class="p">([</span><span class="s2">&quot;locale&quot;</span><span class="p">,</span> <span class="s2">&quot;addon&quot;</span><span class="p">])</span>
+    <span class="c1"># Left join means the result will have every add-on in the whitelist and</span>
+    <span class="c1"># only the locales in the limits dict.</span>
+    <span class="n">expanded_counts</span> <span class="o">=</span> <span class="n">locale_wl</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">raw_counts</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># Add the Laplace noise.</span>
+    <span class="c1">#</span>
+    <span class="c1"># For each add-on in the whitelist, in each locale, we take the observed</span>
+    <span class="c1"># installation frequency count and add independent random noise.</span>
+    <span class="c1"># Observed frequencies may be 0 if no profile had those add-ons installed.</span>
+    <span class="c1">#</span>
+    <span class="c1"># The random noise is Laplace-distributed with scale parameter $m/\epsilon$,</span>
+    <span class="c1"># where epsilon is the DP privacy budget, and m is the max number of add-ons</span>
+    <span class="c1"># reported per client in the current locale.</span>
+    <span class="c1">#</span>
+    <span class="c1"># Since the Laplace parametrization depends only on locale, we iterate over</span>
+    <span class="c1"># locales and add a numpy array of independent simulated Laplace random</span>
+    <span class="c1"># values to the series of add-on frequency counts.</span>
+    <span class="c1">#</span>
+    <span class="c1"># Since the Laplace noise is continuous and real-valued, counts will no</span>
+    <span class="c1"># longer be integer, and may become negative.</span>
+    <span class="k">for</span> <span class="n">locale</span> <span class="ow">in</span> <span class="n">expanded_counts</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="s2">&quot;locale&quot;</span><span class="p">):</span>
+        <span class="c1"># The scale parameter depends on the max number of add-ons per client,</span>
+        <span class="c1"># which varies by locale.</span>
+        <span class="n">locale_laplace_param</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">addon_limits</span><span class="p">[</span><span class="n">locale</span><span class="p">])</span> <span class="o">/</span> <span class="n">eps</span>
+        <span class="c1"># Select counts for all add-ons in the current locale.</span>
+        <span class="n">locale_idx</span> <span class="o">=</span> <span class="n">IndexSlice</span><span class="p">[</span><span class="n">locale</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">locale_counts</span> <span class="o">=</span> <span class="n">expanded_counts</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">locale_idx</span><span class="p">,</span> <span class="s2">&quot;count&quot;</span><span class="p">]</span>
+        <span class="n">locale_counts</span> <span class="o">+=</span> <span class="n">rlaplace</span><span class="p">(</span><span class="n">scale</span><span class="o">=</span><span class="n">locale_laplace_param</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">locale_counts</span><span class="p">))</span>
+        <span class="n">expanded_counts</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">locale_idx</span><span class="p">,</span> <span class="s2">&quot;count&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">locale_counts</span>
+
+    <span class="k">return</span> <span class="n">expanded_counts</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="get_addon_limits_by_locale"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_locale.get_addon_limits_by_locale">[docs]</a><span class="k">def</span> <span class="nf">get_addon_limits_by_locale</span><span class="p">(</span><span class="n">client_addons_df</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Determine the max number of add-ons per user in each locale.</span>
+
+<span class="sd">    We allow for the possibility of basing this on a summary statistic computed</span>
+<span class="sd">    from the original data, in which case the limits will remain private.</span>
+
+<span class="sd">    :param client_addons_df: a DF listing add-on IDs by client ID and locale, as</span>
+<span class="sd">                             generated by `get_client_addons()`</span>
+<span class="sd">    :return: a dict mapping locale strings to their add-on limits</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># For now, set add-on limits to 1 per client for each locale observed in</span>
+    <span class="c1"># the dataset.</span>
+    <span class="n">all_locales</span> <span class="o">=</span> <span class="n">client_addons_df</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s2">&quot;locale&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">distinct</span><span class="p">()</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;locale&quot;</span><span class="p">]:</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">all_locales</span><span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="get_protected_locale_addon_counts"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_locale.get_protected_locale_addon_counts">[docs]</a><span class="k">def</span> <span class="nf">get_protected_locale_addon_counts</span><span class="p">(</span><span class="n">spark</span><span class="p">,</span> <span class="n">client_addons_df</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute DP-protected per-locale add-on frequency counts.</span>
+
+<span class="sd">    Privacy-preserving counts are generated using the Laplace mechanism,</span>
+<span class="sd">    restricting to add-ons in the AMO whitelist.</span>
+
+<span class="sd">    :param client_addons_df: a DF listing add-on IDs by client ID and locale, as</span>
+<span class="sd">                             generated by `get_client_addons()`</span>
+<span class="sd">    :return: a Pandas DF with columns `locale`, `addon`, `count` containing</span>
+<span class="sd">             DP-protected counts for each whitelist add-on within each locale.</span>
+<span class="sd">             Unlike the true counts, weights may be non-integer or negative.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Load external whitelist based on AMO data.</span>
+    <span class="n">amo_whitelist</span> <span class="o">=</span> <span class="n">load_amo_curated_whitelist</span><span class="p">()</span>
+
+    <span class="c1"># Determine the max number of add-ons per user in each locale.</span>
+    <span class="n">locale_addon_limits</span> <span class="o">=</span> <span class="n">get_addon_limits_by_locale</span><span class="p">(</span><span class="n">client_addons_df</span><span class="p">)</span>
+
+    <span class="c1"># Limit the number of add-ons per client.</span>
+    <span class="n">limited_addons_df</span> <span class="o">=</span> <span class="n">limit_client_addons</span><span class="p">(</span>
+        <span class="n">spark</span><span class="p">,</span> <span class="n">client_addons_df</span><span class="p">,</span> <span class="n">locale_addon_limits</span><span class="p">,</span> <span class="n">amo_whitelist</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Aggregate to a Pandas DF of locale/add-on frequency counts.</span>
+    <span class="n">locale_addon_counts</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">limited_addons_df</span><span class="o">.</span><span class="n">groupBy</span><span class="p">(</span><span class="s2">&quot;locale&quot;</span><span class="p">,</span> <span class="s2">&quot;addon&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span><span class="o">.</span><span class="n">toPandas</span><span class="p">()</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Add noise to the frequency counts.</span>
+    <span class="n">noisy_addon_counts</span> <span class="o">=</span> <span class="n">compute_noisy_counts</span><span class="p">(</span>
+        <span class="n">locale_addon_counts</span><span class="p">,</span> <span class="n">locale_addon_limits</span><span class="p">,</span> <span class="n">amo_whitelist</span><span class="p">,</span> <span class="n">EPSILON</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">noisy_addon_counts</span></div>
+
+
+<div class="viewcode-block" id="get_top_addons_by_locale"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_locale.get_top_addons_by_locale">[docs]</a><span class="k">def</span> <span class="nf">get_top_addons_by_locale</span><span class="p">(</span><span class="n">addon_counts</span><span class="p">,</span> <span class="n">num_addons</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate a dictionary of top-weighted add-ons by locale.</span>
+
+<span class="sd">    Raw counts are normalized by converting to relative proportions.</span>
+
+<span class="sd">    :param addon_counts: a Pandas DF of per-locale add-on counts, with columns</span>
+<span class="sd">                          `locale`, `addon`, `count`.</span>
+<span class="sd">    :param num_addons: requested number of recommendations.</span>
+<span class="sd">    :return: a dictionary `{&lt;locale&gt;: [(&#39;GUID1&#39;, 0.4), (&#39;GUID2&#39;, 0.25), ...]}`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">top_addons</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">addons_by_locale</span> <span class="o">=</span> <span class="n">addon_counts</span><span class="o">.</span><span class="n">set_index</span><span class="p">([</span><span class="s2">&quot;locale&quot;</span><span class="p">,</span> <span class="s2">&quot;addon&quot;</span><span class="p">])</span>
+
+    <span class="k">for</span> <span class="n">locale</span> <span class="ow">in</span> <span class="n">addons_by_locale</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="s2">&quot;locale&quot;</span><span class="p">):</span>
+        <span class="c1"># For each locale, work with a Series of counts indexed by add-on.</span>
+        <span class="n">counts</span> <span class="o">=</span> <span class="n">addons_by_locale</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">locale</span><span class="p">,</span> <span class="s2">&quot;count&quot;</span><span class="p">]</span>
+        <span class="c1"># Shift counts so as to align the smallest count with 0 in each locale.</span>
+        <span class="c1"># Since DP-protected counts can be negative, this is done to avoid</span>
+        <span class="c1"># problems computing the sum.</span>
+        <span class="n">shifted_counts</span> <span class="o">=</span> <span class="n">counts</span> <span class="o">-</span> <span class="n">counts</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+        <span class="n">rel_counts</span> <span class="o">=</span> <span class="n">shifted_counts</span> <span class="o">/</span> <span class="n">shifted_counts</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">top_rel_counts</span> <span class="o">=</span> <span class="n">rel_counts</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="n">num_addons</span><span class="p">)</span>
+
+        <span class="n">top_addons</span><span class="p">[</span><span class="n">locale</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">top_rel_counts</span><span class="o">.</span><span class="n">iteritems</span><span class="p">())</span>
+
+    <span class="k">return</span> <span class="n">top_addons</span></div>
+
+
+<div class="viewcode-block" id="generate_dictionary"><a class="viewcode-back" href="../../../source/mozetl.taar.html#mozetl.taar.taar_locale.generate_dictionary">[docs]</a><span class="k">def</span> <span class="nf">generate_dictionary</span><span class="p">(</span><span class="n">spark</span><span class="p">,</span> <span class="n">num_addons</span><span class="p">,</span> <span class="n">dataset_num_days</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compile lists of top add-ons by locale from per-client add-on data.</span>
+
+<span class="sd">    Runs a fresh data pull against `clients_daily`, computes DP-protected</span>
+<span class="sd">    frequency counts, and generates a weighted list of top add-ons by locale.</span>
+
+<span class="sd">    :param num_addons: number of add-on recommendations to report for each locale</span>
+<span class="sd">    :param dataset_num_days: number of days the raw data should cover</span>
+<span class="sd">    :return: a dictionary `{&lt;locale&gt;: [(&#39;GUID1&#39;, 0.4), (&#39;GUID2&#39;, 0.25), ...]}`</span>
+<span class="sd">             as returned by `get_top_addons_by_locale()`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Execute spark.SQL query to get fresh addons from clients_daily.</span>
+    <span class="c1"># Add an extra day to the date range since the latest date in the dataset</span>
+    <span class="c1"># tends to lag 1 day behind.</span>
+    <span class="n">earliest_date</span> <span class="o">=</span> <span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">dataset_num_days</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">earliest_date_fmt</span> <span class="o">=</span> <span class="n">earliest_date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">addon_df</span> <span class="o">=</span> <span class="n">get_client_addons</span><span class="p">(</span><span class="n">spark</span><span class="p">,</span> <span class="n">earliest_date_fmt</span><span class="p">)</span>
+
+    <span class="c1"># Compute DP-protected frequency-based counts for each add-on by locale.</span>
+    <span class="n">addon_df_protected</span> <span class="o">=</span> <span class="n">get_protected_locale_addon_counts</span><span class="p">(</span><span class="n">spark</span><span class="p">,</span> <span class="n">addon_df</span><span class="p">)</span>
+
+    <span class="c1"># Find the top add-ons in each locale based on these counts.</span>
+    <span class="n">top_addons</span> <span class="o">=</span> <span class="n">get_top_addons_by_locale</span><span class="p">(</span><span class="n">addon_df_protected</span><span class="p">,</span> <span class="n">num_addons</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">top_addons</span></div>
+
+
+<span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">()</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--date&quot;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--bucket&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;telemetry-private-analysis-2&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--prefix&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;taar/locale/&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--num_addons&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--client_data_num_days&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">28</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="n">bucket</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">num_addons</span><span class="p">,</span> <span class="n">client_data_num_days</span><span class="p">):</span>
+    <span class="n">spark</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">appName</span><span class="p">(</span><span class="s2">&quot;taar_locale&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">enableHiveSupport</span><span class="p">()</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
+    <span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Processing top N addons per locale&quot;</span><span class="p">)</span>
+    <span class="n">locale_dict</span> <span class="o">=</span> <span class="n">generate_dictionary</span><span class="p">(</span><span class="n">spark</span><span class="p">,</span> <span class="n">num_addons</span><span class="p">,</span> <span class="n">client_data_num_days</span><span class="p">)</span>
+    <span class="n">store_json_to_s3</span><span class="p">(</span>
+        <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">locale_dict</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span> <span class="n">LOCALE_FILE_NAME</span><span class="p">,</span> <span class="n">date</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">bucket</span>
+    <span class="p">)</span>
+
+    <span class="n">spark</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">python_mozetl</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Firefox Telemetry Python ETL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#benefits">Benefits</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#tests">Tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#manual-execution">Manual Execution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#scheduling">Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#early-stage-etl-jobs">Early Stage ETL Jobs</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Ryan Harter.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

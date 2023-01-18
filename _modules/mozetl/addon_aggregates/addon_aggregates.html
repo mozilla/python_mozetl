@@ -1,0 +1,311 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>mozetl.addon_aggregates.addon_aggregates &#8212; python_mozetl 0.1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for mozetl.addon_aggregates.addon_aggregates</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;ETL code for the addon_aggregates dataset&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="kn">import</span> <span class="n">SparkSession</span>
+<span class="kn">import</span> <span class="nn">pyspark.sql.functions</span> <span class="k">as</span> <span class="nn">fun</span>
+<span class="kn">import</span> <span class="nn">click</span>
+
+<span class="n">MS_FIELDS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;client_id&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;normalized_channel&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;app_version&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;locale&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;sample_id&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;profile_creation_date&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
+<span class="n">ADDON_FIELDS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;addons.addon_id&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;addons.foreign_install&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;addons.is_system&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;addons.is_web_extension&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;addons.install_day&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
+
+<div class="viewcode-block" id="get_dest"><a class="viewcode-back" href="../../../source/mozetl.addon_aggregates.html#mozetl.addon_aggregates.addon_aggregates.get_dest">[docs]</a><span class="k">def</span> <span class="nf">get_dest</span><span class="p">(</span><span class="n">output_bucket</span><span class="p">,</span> <span class="n">output_prefix</span><span class="p">,</span> <span class="n">output_version</span><span class="p">,</span> <span class="n">date</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sample_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Stitches together an s3 destination.</span>
+
+<span class="sd">    :param output_bucket: s3 output_bucket</span>
+<span class="sd">    :param output_prefix: s3 output_prefix (within output_bucket)</span>
+<span class="sd">    :param output_version: dataset output_version</span>
+<span class="sd">    :retrn str -&gt;</span>
+<span class="sd">    s3://output_bucket/output_prefix/output_version/submissin_date_s3=[date]/sample_id=[sid]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">suffix</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">date</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">suffix</span> <span class="o">+=</span> <span class="s2">&quot;/submission_date_s3=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">date</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">sample_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">suffix</span> <span class="o">+=</span> <span class="s2">&quot;/sample_id=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sample_id</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="s2">&quot;s3://&quot;</span>
+        <span class="o">+</span> <span class="s2">&quot;/&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">output_bucket</span><span class="p">,</span> <span class="n">output_prefix</span><span class="p">,</span> <span class="n">output_version</span><span class="p">])</span>
+        <span class="o">+</span> <span class="n">suffix</span>
+        <span class="o">+</span> <span class="s2">&quot;/&quot;</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="load_main_summary"><a class="viewcode-back" href="../../../source/mozetl.addon_aggregates.html#mozetl.addon_aggregates.addon_aggregates.load_main_summary">[docs]</a><span class="k">def</span> <span class="nf">load_main_summary</span><span class="p">(</span><span class="n">spark</span><span class="p">,</span> <span class="n">input_bucket</span><span class="p">,</span> <span class="n">input_prefix</span><span class="p">,</span> <span class="n">input_version</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Loads main_summary from the bucket constructed from</span>
+<span class="sd">    input_bucket, input_prefix, input_version</span>
+
+<span class="sd">    :param spark: SparkSession object</span>
+<span class="sd">    :param input_bucket: s3 bucket (telemetry-parquet)</span>
+<span class="sd">    :param input_prefix: s3 prefix (main_summary)</span>
+<span class="sd">    :param input_version: dataset version (v4)</span>
+<span class="sd">    :return SparkDF</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dest</span> <span class="o">=</span> <span class="n">get_dest</span><span class="p">(</span><span class="n">input_bucket</span><span class="p">,</span> <span class="n">input_prefix</span><span class="p">,</span> <span class="n">input_version</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;loading...&quot;</span><span class="p">,</span> <span class="n">dest</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">spark</span><span class="o">.</span><span class="n">read</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;mergeSchema&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">parquet</span><span class="p">(</span><span class="n">dest</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ms_explode_addons"><a class="viewcode-back" href="../../../source/mozetl.addon_aggregates.html#mozetl.addon_aggregates.addon_aggregates.ms_explode_addons">[docs]</a><span class="k">def</span> <span class="nf">ms_explode_addons</span><span class="p">(</span><span class="n">ms</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Explodes the active_addons object in</span>
+<span class="sd">    the ms DataFrame and selects relevant fields</span>
+
+<span class="sd">    :param ms: a subset of main_summary</span>
+<span class="sd">    :return SparkDF</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">addons_df</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">ms</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">MS_FIELDS</span> <span class="o">+</span> <span class="p">[</span><span class="n">fun</span><span class="o">.</span><span class="n">explode</span><span class="p">(</span><span class="s2">&quot;active_addons&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;addons&quot;</span><span class="p">)])</span>
+        <span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">MS_FIELDS</span> <span class="o">+</span> <span class="n">ADDON_FIELDS</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">withColumn</span><span class="p">(</span><span class="s2">&quot;app_version&quot;</span><span class="p">,</span> <span class="n">fun</span><span class="o">.</span><span class="n">substring</span><span class="p">(</span><span class="s2">&quot;app_version&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">addons_df</span></div>
+
+
+<div class="viewcode-block" id="add_addon_columns"><a class="viewcode-back" href="../../../source/mozetl.addon_aggregates.html#mozetl.addon_aggregates.addon_aggregates.add_addon_columns">[docs]</a><span class="k">def</span> <span class="nf">add_addon_columns</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Constructs additional indicator columns decribing the add-on/theme</span>
+<span class="sd">    present in a given record. The columns are</span>
+
+<span class="sd">    is_self_install</span>
+<span class="sd">    is_shield_addon</span>
+<span class="sd">    is_foreign_install</span>
+<span class="sd">    is_system</span>
+<span class="sd">    is_web_extension</span>
+<span class="sd">    Which maps True -&gt; 1 and False -&gt; 0</span>
+
+
+<span class="sd">    :param df: SparkDF, exploded on active_addons, each record</span>
+<span class="sd">               maps to a single add-on</span>
+<span class="sd">    :return df with the above columns added</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">addons_expanded</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">withColumn</span><span class="p">(</span>
+            <span class="s2">&quot;is_self_install&quot;</span><span class="p">,</span>
+            <span class="n">fun</span><span class="o">.</span><span class="n">when</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">addon_id</span><span class="o">.</span><span class="n">isNotNull</span><span class="p">())</span>
+                <span class="o">&amp;</span> <span class="p">(</span><span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">is_system</span><span class="p">)</span>
+                <span class="o">&amp;</span> <span class="p">(</span><span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">foreign_install</span><span class="p">)</span>
+                <span class="o">&amp;</span> <span class="p">(</span><span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">addon_id</span><span class="o">.</span><span class="n">like</span><span class="p">(</span><span class="s2">&quot;%mozilla%&quot;</span><span class="p">))</span>
+                <span class="o">&amp;</span> <span class="p">(</span><span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">addon_id</span><span class="o">.</span><span class="n">like</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%c</span><span class="s2">liqz%&quot;</span><span class="p">))</span>
+                <span class="o">&amp;</span> <span class="p">(</span><span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">addon_id</span><span class="o">.</span><span class="n">like</span><span class="p">(</span><span class="s2">&quot;%@unified-urlbar%&quot;</span><span class="p">)),</span>
+                <span class="mi">1</span><span class="p">,</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">otherwise</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="o">.</span><span class="n">withColumn</span><span class="p">(</span>
+            <span class="s2">&quot;is_shield_addon&quot;</span><span class="p">,</span>
+            <span class="n">fun</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">addon_id</span><span class="o">.</span><span class="n">like</span><span class="p">(</span><span class="s2">&quot;%@shield.mozilla%&quot;</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">otherwise</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="o">.</span><span class="n">withColumn</span><span class="p">(</span><span class="s2">&quot;is_foreign_install&quot;</span><span class="p">,</span> <span class="n">fun</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">foreign_install</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">otherwise</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+        <span class="o">.</span><span class="n">withColumn</span><span class="p">(</span><span class="s2">&quot;is_system&quot;</span><span class="p">,</span> <span class="n">fun</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">is_system</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">otherwise</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+        <span class="o">.</span><span class="n">withColumn</span><span class="p">(</span><span class="s2">&quot;is_web_extension&quot;</span><span class="p">,</span> <span class="n">fun</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">is_web_extension</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">otherwise</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">addons_expanded</span></div>
+
+
+<div class="viewcode-block" id="aggregate_addons"><a class="viewcode-back" href="../../../source/mozetl.addon_aggregates.html#mozetl.addon_aggregates.addon_aggregates.aggregate_addons">[docs]</a><span class="k">def</span> <span class="nf">aggregate_addons</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Aggregates add-on indicators by client, channel, version and locale.</span>
+<span class="sd">    The result is a DataFrame with the additional aggregate columns:</span>
+
+<span class="sd">    n_self_installed_addons (int)</span>
+<span class="sd">    n_shield_addons (int)</span>
+<span class="sd">    n_foreign_installed_addons (int)</span>
+<span class="sd">    n_system_addons (int)</span>
+<span class="sd">    n_web_extensions (int)</span>
+<span class="sd">    first_addon_install_date (str %Y%m%d)</span>
+<span class="sd">    profile_creation_date (str %Y%m%d)</span>
+
+<span class="sd">    for each of the above facets.</span>
+
+<span class="sd">    :param df: an expoded instance of main_summary by active_addons</span>
+<span class="sd">               with various additional indicator columns</span>
+<span class="sd">    :return SparkDF: an aggregated dataset with each of the above columns</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">addon_aggregates</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">distinct</span><span class="p">()</span>
+        <span class="o">.</span><span class="n">groupBy</span><span class="p">(</span><span class="s2">&quot;client_id&quot;</span><span class="p">,</span> <span class="s2">&quot;normalized_channel&quot;</span><span class="p">,</span> <span class="s2">&quot;app_version&quot;</span><span class="p">,</span> <span class="s2">&quot;locale&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">agg</span><span class="p">(</span>
+            <span class="n">fun</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;is_self_install&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;n_self_installed_addons&quot;</span><span class="p">),</span>
+            <span class="n">fun</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;is_shield_addon&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;n_shield_addons&quot;</span><span class="p">),</span>
+            <span class="n">fun</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;is_foreign_install&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;n_foreign_installed_addons&quot;</span><span class="p">),</span>
+            <span class="n">fun</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;is_system&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;n_system_addons&quot;</span><span class="p">),</span>
+            <span class="n">fun</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;is_web_extension&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;n_web_extensions&quot;</span><span class="p">),</span>
+            <span class="n">fun</span><span class="o">.</span><span class="n">min</span><span class="p">(</span>
+                <span class="n">fun</span><span class="o">.</span><span class="n">when</span><span class="p">(</span>
+                    <span class="n">df</span><span class="o">.</span><span class="n">is_self_install</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="n">fun</span><span class="o">.</span><span class="n">date_format</span><span class="p">(</span>
+                        <span class="n">fun</span><span class="o">.</span><span class="n">from_unixtime</span><span class="p">(</span><span class="n">fun</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;install_day&quot;</span><span class="p">)</span> <span class="o">*</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">24</span><span class="p">),</span>
+                        <span class="s2">&quot;yyyyMMdd&quot;</span><span class="p">,</span>
+                    <span class="p">),</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">otherwise</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;first_addon_install_date&quot;</span><span class="p">),</span>
+            <span class="n">fun</span><span class="o">.</span><span class="n">date_format</span><span class="p">(</span>
+                <span class="n">fun</span><span class="o">.</span><span class="n">from_unixtime</span><span class="p">(</span><span class="n">fun</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="s2">&quot;profile_creation_date&quot;</span><span class="p">)</span> <span class="o">*</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">24</span><span class="p">),</span>
+                <span class="s2">&quot;yyyyMMdd&quot;</span><span class="p">,</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;profile_creation_date&quot;</span><span class="p">),</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">addon_aggregates</span></div>
+
+
+<span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">()</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--date&quot;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--input-bucket&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;telemetry-parquet&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--input-prefix&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;main_summary&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--input-version&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;v4&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--output-bucket&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;telemetry-parquet&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--output-prefix&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;addons/agg&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--output-version&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;v2&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span>
+    <span class="n">date</span><span class="p">,</span>
+    <span class="n">input_bucket</span><span class="p">,</span>
+    <span class="n">input_prefix</span><span class="p">,</span>
+    <span class="n">input_version</span><span class="p">,</span>
+    <span class="n">output_bucket</span><span class="p">,</span>
+    <span class="n">output_prefix</span><span class="p">,</span>
+    <span class="n">output_version</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Loads main_summary where submission_date_s3 == date</span>
+<span class="sd">    Partition by sample_id and write aggregated data to s3</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">spark</span> <span class="o">=</span> <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">appName</span><span class="p">(</span><span class="s2">&quot;addon_aggregates&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
+    <span class="c1"># don&#39;t write _SUCCESS files, which interfere w/ReDash discovery</span>
+    <span class="n">spark</span><span class="o">.</span><span class="n">conf</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;mapreduce.fileoutputcommitter.marksuccessfuljobs&quot;</span><span class="p">,</span> <span class="s2">&quot;false&quot;</span><span class="p">)</span>
+    <span class="c1"># load main_summary</span>
+    <span class="n">ms</span> <span class="o">=</span> <span class="n">load_main_summary</span><span class="p">(</span><span class="n">spark</span><span class="p">,</span> <span class="n">input_bucket</span><span class="p">,</span> <span class="n">input_prefix</span><span class="p">,</span> <span class="n">input_version</span><span class="p">)</span>
+    <span class="c1"># filter main summary to the date supplied in the environment</span>
+    <span class="n">ms_day</span> <span class="o">=</span> <span class="n">ms</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ms</span><span class="o">.</span><span class="n">submission_date_s3</span> <span class="o">==</span> <span class="n">date</span><span class="p">)</span>
+    <span class="c1"># partition each date into 100 partitions by sample_id</span>
+    <span class="k">for</span> <span class="n">sample_id</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">):</span>
+        <span class="n">exploded</span> <span class="o">=</span> <span class="n">ms_explode_addons</span><span class="p">(</span><span class="n">ms_day</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ms_day</span><span class="o">.</span><span class="n">sample_id</span> <span class="o">==</span> <span class="n">sample_id</span><span class="p">))</span>
+        <span class="n">exploded_addons</span> <span class="o">=</span> <span class="n">add_addon_columns</span><span class="p">(</span><span class="n">exploded</span><span class="p">)</span>
+        <span class="n">aggregates</span> <span class="o">=</span> <span class="n">aggregate_addons</span><span class="p">(</span><span class="n">exploded_addons</span><span class="p">)</span>
+        <span class="n">dest</span> <span class="o">=</span> <span class="n">get_dest</span><span class="p">(</span><span class="n">output_bucket</span><span class="p">,</span> <span class="n">output_prefix</span><span class="p">,</span> <span class="n">output_version</span><span class="p">,</span> <span class="n">date</span><span class="p">,</span> <span class="n">sample_id</span><span class="p">)</span>
+        <span class="c1"># 1 partition is ~ 50MB</span>
+        <span class="n">aggregates</span><span class="o">.</span><span class="n">repartition</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">write</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;parquet&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;overwrite&quot;</span><span class="p">)</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">python_mozetl</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Firefox Telemetry Python ETL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#benefits">Benefits</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#tests">Tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#manual-execution">Manual Execution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#scheduling">Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#early-stage-etl-jobs">Early Stage ETL Jobs</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Ryan Harter.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

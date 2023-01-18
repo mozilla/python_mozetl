@@ -35,11 +35,107 @@
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="mozetl-search-aggregates-module">
-<h2>mozetl.search.aggregates module<a class="headerlink" href="#mozetl-search-aggregates-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-mozetl.search.aggregates">
+<span id="mozetl-search-aggregates-module"></span><h2>mozetl.search.aggregates module<a class="headerlink" href="#module-mozetl.search.aggregates" title="Permalink to this headline">¶</a></h2>
+<p>Firefox Desktop Search Count Datasets</p>
+<p>This job produces derived datasets that make it easy to explore search count
+data.</p>
+<p>The search_aggregates job is used to populate an executive search dashboard.
+For more information, see Bug 1381140.</p>
+<p>The search_clients_daily job produces a dataset keyed by
+<cite>(client_id, submission_date, search_counts.engine, search_counts.source)</cite>.
+This allows for deeper analysis into user level search behavior.</p>
+<dl class="py function">
+<dt id="mozetl.search.aggregates.add_derived_columns">
+<code class="sig-prename descclassname"><span class="pre">mozetl.search.aggregates.</span></code><code class="sig-name descname"><span class="pre">add_derived_columns</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">exploded_search_counts</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/search/aggregates.html#add_derived_columns"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.search.aggregates.add_derived_columns" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds the following columns to the provided dataset:</p>
+<dl class="simple">
+<dt>type:           One of ‘in-content-sap’, ‘follow-on’, ‘chrome-sap’,</dt><dd><p>‘ad-click’ or ‘search-with-ads’.</p>
+</dd>
+</dl>
+<p>addon_version:  The version of the <a class="reference external" href="mailto:followon-search&#37;&#52;&#48;mozilla">followon-search<span>&#64;</span>mozilla</a> addon, or None</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.search.aggregates.agg_first">
+<code class="sig-prename descclassname"><span class="pre">mozetl.search.aggregates.</span></code><code class="sig-name descname"><span class="pre">agg_first</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/search/aggregates.html#agg_first"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.search.aggregates.agg_first" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.search.aggregates.agg_search_data">
+<code class="sig-prename descclassname"><span class="pre">mozetl.search.aggregates.</span></code><code class="sig-name descname"><span class="pre">agg_search_data</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">main_summary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grouping_cols</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">agg_functions</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/search/aggregates.html#agg_search_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.search.aggregates.agg_search_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Augment, Explode, and Aggregate search data</p>
+<p>The augmented and exploded dataset has the same columns as main_summary
+with the addition of the following:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>engine: A key in the search_counts field representing a search engine.</dt><dd><p>e.g. ‘hoolie’</p>
+</dd>
+<dt>source: A key in the search_counts field representing a search source</dt><dd><p>e.g. ‘urlbar’</p>
+</dd>
+</dl>
+<p>tagged-sap: Sum of all searches with partner codes from an SAP
+tagged-follow-on: Sum of all searches with partner codes from a downstream query
+sap: Sum of all searches originating from a direct user interaction with the Firefox UI
+addon_version: The version of the <a class="reference external" href="mailto:followon-search&#37;&#52;&#48;mozilla&#46;com">followon-search<span>&#64;</span>mozilla<span>&#46;</span>com</a> addon</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.search.aggregates.explode_search_counts">
+<code class="sig-prename descclassname"><span class="pre">mozetl.search.aggregates.</span></code><code class="sig-name descname"><span class="pre">explode_search_counts</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">main_summary</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/search/aggregates.html#explode_search_counts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.search.aggregates.explode_search_counts" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.search.aggregates.gen_click_command">
+<code class="sig-prename descclassname"><span class="pre">mozetl.search.aggregates.</span></code><code class="sig-name descname"><span class="pre">gen_click_command</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">etl_job</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/search/aggregates.html#gen_click_command"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.search.aggregates.gen_click_command" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrap an ETL job with click arguements</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.search.aggregates.generate_rollups">
+<code class="sig-prename descclassname"><span class="pre">mozetl.search.aggregates.</span></code><code class="sig-name descname"><span class="pre">generate_rollups</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">submission_date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_bucket</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_prefix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_version</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transform_func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_bucket</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'telemetry-parquet'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_prefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'main_summary/v4'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'error'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">orderBy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/search/aggregates.html#generate_rollups"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.search.aggregates.generate_rollups" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load main_summary, apply transform_func, and write to S3</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.search.aggregates.get_ad_click_count">
+<code class="sig-prename descclassname"><span class="pre">mozetl.search.aggregates.</span></code><code class="sig-name descname"><span class="pre">get_ad_click_count</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ad_click_count</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/search/aggregates.html#get_ad_click_count"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.search.aggregates.get_ad_click_count" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.search.aggregates.get_search_addon_version">
+<code class="sig-prename descclassname"><span class="pre">mozetl.search.aggregates.</span></code><code class="sig-name descname"><span class="pre">get_search_addon_version</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">active_addons</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/search/aggregates.html#get_search_addon_version"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.search.aggregates.get_search_addon_version" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.search.aggregates.get_search_with_ads_count">
+<code class="sig-prename descclassname"><span class="pre">mozetl.search.aggregates.</span></code><code class="sig-name descname"><span class="pre">get_search_with_ads_count</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">search_with_ads</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/search/aggregates.html#get_search_with_ads_count"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.search.aggregates.get_search_with_ads_count" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.search.aggregates.search_aggregates">
+<code class="sig-prename descclassname"><span class="pre">mozetl.search.aggregates.</span></code><code class="sig-name descname"><span class="pre">search_aggregates</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">main_summary</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/search/aggregates.html#search_aggregates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.search.aggregates.search_aggregates" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.search.aggregates.search_aggregates_etl">
+<code class="sig-prename descclassname"><span class="pre">mozetl.search.aggregates.</span></code><code class="sig-name descname"><span class="pre">search_aggregates_etl</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">submission_date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bucket</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/search/aggregates.html#search_aggregates_etl"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.search.aggregates.search_aggregates_etl" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.search.aggregates.search_clients_daily">
+<code class="sig-prename descclassname"><span class="pre">mozetl.search.aggregates.</span></code><code class="sig-name descname"><span class="pre">search_clients_daily</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">main_summary</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/search/aggregates.html#search_clients_daily"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.search.aggregates.search_clients_daily" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.search.aggregates.search_clients_daily_etl">
+<code class="sig-prename descclassname"><span class="pre">mozetl.search.aggregates.</span></code><code class="sig-name descname"><span class="pre">search_clients_daily_etl</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">submission_date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bucket</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/search/aggregates.html#search_clients_daily_etl"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.search.aggregates.search_clients_daily_etl" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </div>
-<div class="section" id="module-contents">
-<h2>Module contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-mozetl.search">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-mozetl.search" title="Permalink to this headline">¶</a></h2>
 </div>
 </div>
 

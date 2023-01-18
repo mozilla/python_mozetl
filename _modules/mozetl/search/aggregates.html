@@ -1,0 +1,524 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>mozetl.search.aggregates &#8212; python_mozetl 0.1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for mozetl.search.aggregates</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Firefox Desktop Search Count Datasets</span>
+
+<span class="sd">This job produces derived datasets that make it easy to explore search count</span>
+<span class="sd">data.</span>
+
+<span class="sd">The search_aggregates job is used to populate an executive search dashboard.</span>
+<span class="sd">For more information, see Bug 1381140.</span>
+
+<span class="sd">The search_clients_daily job produces a dataset keyed by</span>
+<span class="sd">`(client_id, submission_date, search_counts.engine, search_counts.source)`.</span>
+<span class="sd">This allows for deeper analysis into user level search behavior.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">click</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">from</span> <span class="nn">pyspark.sql.functions</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">explode</span><span class="p">,</span>
+    <span class="n">col</span><span class="p">,</span>
+    <span class="n">when</span><span class="p">,</span>
+    <span class="n">udf</span><span class="p">,</span>
+    <span class="nb">sum</span><span class="p">,</span>
+    <span class="n">first</span><span class="p">,</span>
+    <span class="n">count</span><span class="p">,</span>
+    <span class="n">datediff</span><span class="p">,</span>
+    <span class="n">from_unixtime</span><span class="p">,</span>
+    <span class="n">mean</span><span class="p">,</span>
+    <span class="n">size</span><span class="p">,</span>
+    <span class="nb">max</span><span class="p">,</span>
+    <span class="n">lit</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">pyspark.sql.types</span> <span class="kn">import</span> <span class="n">LongType</span><span class="p">,</span> <span class="n">ArrayType</span><span class="p">,</span> <span class="n">StringType</span><span class="p">,</span> <span class="n">StructType</span><span class="p">,</span> <span class="n">StructField</span>
+<span class="kn">from</span> <span class="nn">pyspark.sql.utils</span> <span class="kn">import</span> <span class="n">AnalysisException</span>
+<span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="kn">import</span> <span class="n">SparkSession</span>
+
+<span class="kn">from</span> <span class="nn">mozetl.constants</span> <span class="kn">import</span> <span class="n">SEARCH_SOURCE_WHITELIST</span>
+<span class="kn">from</span> <span class="nn">mozetl.utils</span> <span class="kn">import</span> <span class="n">stop_session_safely</span>
+
+
+<span class="n">DEFAULT_INPUT_BUCKET</span> <span class="o">=</span> <span class="s2">&quot;telemetry-parquet&quot;</span>
+<span class="n">DEFAULT_INPUT_PREFIX</span> <span class="o">=</span> <span class="s2">&quot;main_summary/v4&quot;</span>
+<span class="n">DEFAULT_SAVE_MODE</span> <span class="o">=</span> <span class="s2">&quot;error&quot;</span>
+<span class="n">MAX_CLIENT_SEARCH_COUNT</span> <span class="o">=</span> <span class="mi">10000</span>
+
+<span class="n">SEARCH_AGGREGATES_VERSION</span> <span class="o">=</span> <span class="mi">7</span>
+<span class="n">SEARCH_CLIENTS_DAILY_VERSION</span> <span class="o">=</span> <span class="mi">7</span>
+
+
+<div class="viewcode-block" id="agg_first"><a class="viewcode-back" href="../../../source/mozetl.search.html#mozetl.search.aggregates.agg_first">[docs]</a><span class="k">def</span> <span class="nf">agg_first</span><span class="p">(</span><span class="n">col</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">first</span><span class="p">(</span><span class="n">col</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="n">col</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="search_clients_daily"><a class="viewcode-back" href="../../../source/mozetl.search.html#mozetl.search.aggregates.search_clients_daily">[docs]</a><span class="k">def</span> <span class="nf">search_clients_daily</span><span class="p">(</span><span class="n">main_summary</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">agg_search_data</span><span class="p">(</span>
+        <span class="n">main_summary</span><span class="p">,</span>
+        <span class="p">[</span><span class="s2">&quot;client_id&quot;</span><span class="p">,</span> <span class="s2">&quot;submission_date&quot;</span><span class="p">,</span> <span class="s2">&quot;engine&quot;</span><span class="p">,</span> <span class="s2">&quot;source&quot;</span><span class="p">],</span>
+        <span class="nb">list</span><span class="p">(</span>
+            <span class="nb">map</span><span class="p">(</span>
+                <span class="n">agg_first</span><span class="p">,</span>
+                <span class="p">[</span>
+                    <span class="s2">&quot;country&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;app_version&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;distribution_id&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;locale&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;user_pref_browser_search_region&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;search_cohort&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;addon_version&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;os&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;os_version&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;channel&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;profile_creation_date&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;default_search_engine&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;default_search_engine_data_load_path&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;default_search_engine_data_submission_url&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;sample_id&quot;</span><span class="p">,</span>
+                <span class="p">],</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="o">+</span> <span class="p">[</span>
+            <span class="c1"># Count of &#39;first&#39; subsessions seen for this client_day</span>
+            <span class="p">(</span>
+                <span class="n">count</span><span class="p">(</span><span class="n">when</span><span class="p">(</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;subsession_counter&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span>
+                    <span class="s2">&quot;sessions_started_on_this_day&quot;</span>
+                <span class="p">)</span>
+            <span class="p">),</span>
+            <span class="n">first</span><span class="p">(</span>
+                <span class="n">datediff</span><span class="p">(</span>
+                    <span class="s2">&quot;subsession_start_date&quot;</span><span class="p">,</span>
+                    <span class="n">from_unixtime</span><span class="p">(</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;profile_creation_date&quot;</span><span class="p">)</span> <span class="o">*</span> <span class="mi">24</span> <span class="o">*</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">60</span><span class="p">),</span>
+                <span class="p">)</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;profile_age_in_days&quot;</span><span class="p">),</span>
+            <span class="nb">sum</span><span class="p">(</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;subsession_length&quot;</span><span class="p">)</span> <span class="o">/</span> <span class="mf">3600.0</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;subsession_hours_sum&quot;</span><span class="p">),</span>
+            <span class="n">mean</span><span class="p">(</span><span class="n">size</span><span class="p">(</span><span class="s2">&quot;active_addons&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;active_addons_count_mean&quot;</span><span class="p">),</span>
+            <span class="p">(</span>
+                <span class="nb">max</span><span class="p">(</span><span class="s2">&quot;scalar_parent_browser_engagement_max_concurrent_tab_count&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span>
+                    <span class="s2">&quot;max_concurrent_tab_count_max&quot;</span>
+                <span class="p">)</span>
+            <span class="p">),</span>
+            <span class="p">(</span>
+                <span class="nb">sum</span><span class="p">(</span><span class="s2">&quot;scalar_parent_browser_engagement_tab_open_event_count&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span>
+                    <span class="s2">&quot;tab_open_event_count_sum&quot;</span>
+                <span class="p">)</span>
+            <span class="p">),</span>
+            <span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;active_ticks&quot;</span><span class="p">)</span> <span class="o">*</span> <span class="mi">5</span> <span class="o">/</span> <span class="mf">3600.0</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;active_hours_sum&quot;</span><span class="p">)),</span>
+        <span class="p">],</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="search_aggregates"><a class="viewcode-back" href="../../../source/mozetl.search.html#mozetl.search.aggregates.search_aggregates">[docs]</a><span class="k">def</span> <span class="nf">search_aggregates</span><span class="p">(</span><span class="n">main_summary</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">agg_search_data</span><span class="p">(</span>
+        <span class="n">main_summary</span><span class="p">,</span>
+        <span class="p">[</span>
+            <span class="s2">&quot;addon_version&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;app_version&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;country&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;distribution_id&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;engine&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;locale&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;os&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;os_version&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;search_cohort&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;source&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;submission_date&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;default_search_engine&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="p">[],</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;engine&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">isNotNull</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="agg_search_data"><a class="viewcode-back" href="../../../source/mozetl.search.html#mozetl.search.aggregates.agg_search_data">[docs]</a><span class="k">def</span> <span class="nf">agg_search_data</span><span class="p">(</span><span class="n">main_summary</span><span class="p">,</span> <span class="n">grouping_cols</span><span class="p">,</span> <span class="n">agg_functions</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Augment, Explode, and Aggregate search data</span>
+
+<span class="sd">    The augmented and exploded dataset has the same columns as main_summary</span>
+<span class="sd">    with the addition of the following:</span>
+
+<span class="sd">        engine: A key in the search_counts field representing a search engine.</span>
+<span class="sd">                e.g. &#39;hoolie&#39;</span>
+<span class="sd">        source: A key in the search_counts field representing a search source</span>
+<span class="sd">                e.g. &#39;urlbar&#39;</span>
+<span class="sd">        tagged-sap: Sum of all searches with partner codes from an SAP</span>
+<span class="sd">        tagged-follow-on: Sum of all searches with partner codes from a downstream query</span>
+<span class="sd">        sap: Sum of all searches originating from a direct user interaction with the Firefox UI</span>
+<span class="sd">        addon_version: The version of the followon-search@mozilla.com addon</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">exploded</span> <span class="o">=</span> <span class="n">explode_search_counts</span><span class="p">(</span><span class="n">main_summary</span><span class="p">)</span>
+    <span class="n">augmented</span> <span class="o">=</span> <span class="n">add_derived_columns</span><span class="p">(</span><span class="n">exploded</span><span class="p">)</span>
+
+    <span class="c1"># Do all aggregations</span>
+    <span class="n">aggregated</span> <span class="o">=</span> <span class="n">augmented</span><span class="o">.</span><span class="n">groupBy</span><span class="p">(</span><span class="n">grouping_cols</span> <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">agg</span><span class="p">(</span>
+        <span class="o">*</span><span class="p">(</span><span class="n">agg_functions</span> <span class="o">+</span> <span class="p">[</span><span class="nb">sum</span><span class="p">(</span><span class="s2">&quot;count&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;count&quot;</span><span class="p">)])</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Pivot on search type</span>
+    <span class="n">pivoted</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">aggregated</span><span class="o">.</span><span class="n">groupBy</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">column</span> <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">aggregated</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">column</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">,</span> <span class="s2">&quot;count&quot;</span><span class="p">]]</span>
+        <span class="p">)</span>
+        <span class="o">.</span><span class="n">pivot</span><span class="p">(</span>
+            <span class="s2">&quot;type&quot;</span><span class="p">,</span>
+            <span class="p">[</span>
+                <span class="s2">&quot;organic&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;tagged-sap&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;tagged-follow-on&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;sap&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;unknown&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;ad-click&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;search-with-ads&quot;</span><span class="p">,</span>
+            <span class="p">],</span>
+        <span class="p">)</span>
+        <span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;count&quot;</span><span class="p">)</span>
+        <span class="c1"># Add convenience columns with underscores instead of hyphens.</span>
+        <span class="c1"># This makes the table easier to query from Presto.</span>
+        <span class="o">.</span><span class="n">withColumn</span><span class="p">(</span><span class="s2">&quot;tagged_sap&quot;</span><span class="p">,</span> <span class="n">col</span><span class="p">(</span><span class="s2">&quot;tagged-sap&quot;</span><span class="p">))</span>
+        <span class="o">.</span><span class="n">withColumn</span><span class="p">(</span><span class="s2">&quot;tagged_follow_on&quot;</span><span class="p">,</span> <span class="n">col</span><span class="p">(</span><span class="s2">&quot;tagged-follow-on&quot;</span><span class="p">))</span>
+        <span class="o">.</span><span class="n">withColumn</span><span class="p">(</span><span class="s2">&quot;ad_click&quot;</span><span class="p">,</span> <span class="n">col</span><span class="p">(</span><span class="s2">&quot;ad-click&quot;</span><span class="p">))</span>
+        <span class="o">.</span><span class="n">withColumn</span><span class="p">(</span><span class="s2">&quot;search_with_ads&quot;</span><span class="p">,</span> <span class="n">col</span><span class="p">(</span><span class="s2">&quot;search-with-ads&quot;</span><span class="p">))</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">pivoted</span></div>
+
+
+<div class="viewcode-block" id="get_search_addon_version"><a class="viewcode-back" href="../../../source/mozetl.search.html#mozetl.search.aggregates.get_search_addon_version">[docs]</a><span class="k">def</span> <span class="nf">get_search_addon_version</span><span class="p">(</span><span class="n">active_addons</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">active_addons</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="nb">next</span><span class="p">(</span>
+        <span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">active_addons</span> <span class="k">if</span> <span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;followonsearch@mozilla.com&quot;</span><span class="p">),</span> <span class="kc">None</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_ad_click_count"><a class="viewcode-back" href="../../../source/mozetl.search.html#mozetl.search.aggregates.get_ad_click_count">[docs]</a><span class="k">def</span> <span class="nf">get_ad_click_count</span><span class="p">(</span><span class="n">ad_click_count</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">ad_click_count</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">&quot;engine&quot;</span><span class="p">:</span> <span class="n">e</span><span class="p">,</span> <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="s2">&quot;ad-click:&quot;</span><span class="p">,</span> <span class="s2">&quot;count&quot;</span><span class="p">:</span> <span class="n">c</span><span class="p">}</span>
+            <span class="k">for</span> <span class="n">e</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">ad_click_count</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">]</span>
+    <span class="k">return</span> <span class="p">[]</span></div>
+
+
+<div class="viewcode-block" id="get_search_with_ads_count"><a class="viewcode-back" href="../../../source/mozetl.search.html#mozetl.search.aggregates.get_search_with_ads_count">[docs]</a><span class="k">def</span> <span class="nf">get_search_with_ads_count</span><span class="p">(</span><span class="n">search_with_ads</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">search_with_ads</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">&quot;engine&quot;</span><span class="p">:</span> <span class="n">e</span><span class="p">,</span> <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="s2">&quot;search-with-ads:&quot;</span><span class="p">,</span> <span class="s2">&quot;count&quot;</span><span class="p">:</span> <span class="n">c</span><span class="p">}</span>
+            <span class="k">for</span> <span class="n">e</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">search_with_ads</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">]</span>
+    <span class="k">return</span> <span class="p">[]</span></div>
+
+
+<div class="viewcode-block" id="explode_search_counts"><a class="viewcode-back" href="../../../source/mozetl.search.html#mozetl.search.aggregates.explode_search_counts">[docs]</a><span class="k">def</span> <span class="nf">explode_search_counts</span><span class="p">(</span><span class="n">main_summary</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_get_search_fields</span><span class="p">(</span><span class="n">exploded_col_name</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="n">exploded_col_name</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="n">field</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;engine&quot;</span><span class="p">,</span> <span class="s2">&quot;source&quot;</span><span class="p">,</span> <span class="s2">&quot;count&quot;</span><span class="p">]</span>
+        <span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_drop_source_columns</span><span class="p">(</span><span class="n">base</span><span class="p">):</span>
+        <span class="n">derived</span> <span class="o">=</span> <span class="n">base</span>
+        <span class="k">for</span> <span class="n">source_col</span> <span class="ow">in</span> <span class="p">[</span>
+            <span class="s2">&quot;search_counts&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;scalar_parent_browser_search_ad_clicks&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;scalar_parent_browser_search_with_ads&quot;</span><span class="p">,</span>
+        <span class="p">]:</span>
+            <span class="n">derived</span> <span class="o">=</span> <span class="n">derived</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">source_col</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">derived</span>
+
+    <span class="k">def</span> <span class="nf">_select_counts</span><span class="p">(</span><span class="n">main_summary</span><span class="p">,</span> <span class="n">col_name</span><span class="p">,</span> <span class="n">count_udf</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">col_name</span> <span class="o">==</span> <span class="s2">&quot;single_search_count&quot;</span><span class="p">:</span>
+            <span class="n">derived</span> <span class="o">=</span> <span class="n">main_summary</span><span class="o">.</span><span class="n">withColumn</span><span class="p">(</span>
+                <span class="s2">&quot;single_search_count&quot;</span><span class="p">,</span> <span class="n">explode</span><span class="p">(</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;search_counts&quot;</span><span class="p">))</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="s2">&quot;single_search_count.count &lt; </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">MAX_CLIENT_SEARCH_COUNT</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">derived</span> <span class="o">=</span> <span class="n">main_summary</span>
+        <span class="k">if</span> <span class="n">count_udf</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">derived</span> <span class="o">=</span> <span class="n">derived</span><span class="o">.</span><span class="n">withColumn</span><span class="p">(</span><span class="n">col_name</span><span class="p">,</span> <span class="n">explode</span><span class="p">(</span><span class="n">count_udf</span><span class="p">))</span>
+        <span class="n">derived</span> <span class="o">=</span> <span class="n">_drop_source_columns</span><span class="p">(</span>
+            <span class="n">derived</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s2">&quot;*&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">_get_search_fields</span><span class="p">(</span><span class="n">col_name</span><span class="p">))</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">col_name</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">derived</span>
+
+    <span class="k">def</span> <span class="nf">_get_ad_counts</span><span class="p">(</span><span class="n">scalar_name</span><span class="p">,</span> <span class="n">col_name</span><span class="p">,</span> <span class="n">udf_function</span><span class="p">):</span>
+        <span class="n">count_udf</span> <span class="o">=</span> <span class="n">udf</span><span class="p">(</span>
+            <span class="n">udf_function</span><span class="p">,</span>
+            <span class="n">ArrayType</span><span class="p">(</span>
+                <span class="n">StructType</span><span class="p">(</span>
+                    <span class="p">[</span>
+                        <span class="n">StructField</span><span class="p">(</span><span class="s2">&quot;engine&quot;</span><span class="p">,</span> <span class="n">StringType</span><span class="p">(),</span> <span class="kc">False</span><span class="p">),</span>
+                        <span class="n">StructField</span><span class="p">(</span><span class="s2">&quot;source&quot;</span><span class="p">,</span> <span class="n">StringType</span><span class="p">(),</span> <span class="kc">False</span><span class="p">),</span>
+                        <span class="n">StructField</span><span class="p">(</span><span class="s2">&quot;count&quot;</span><span class="p">,</span> <span class="n">LongType</span><span class="p">(),</span> <span class="kc">False</span><span class="p">),</span>
+                    <span class="p">]</span>
+                <span class="p">)</span>
+            <span class="p">),</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">_select_counts</span><span class="p">(</span><span class="n">main_summary</span><span class="p">,</span> <span class="n">col_name</span><span class="p">,</span> <span class="n">count_udf</span><span class="p">(</span><span class="n">scalar_name</span><span class="p">))</span>
+
+    <span class="n">exploded_search_counts</span> <span class="o">=</span> <span class="n">_select_counts</span><span class="p">(</span><span class="n">main_summary</span><span class="p">,</span> <span class="s2">&quot;single_search_count&quot;</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">exploded_search_counts</span> <span class="o">=</span> <span class="n">exploded_search_counts</span><span class="o">.</span><span class="n">union</span><span class="p">(</span>
+            <span class="n">_get_ad_counts</span><span class="p">(</span>
+                <span class="s2">&quot;scalar_parent_browser_search_ad_clicks&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;ad_click_count&quot;</span><span class="p">,</span>
+                <span class="n">get_ad_click_count</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">exploded_search_counts</span> <span class="o">=</span> <span class="n">exploded_search_counts</span><span class="o">.</span><span class="n">union</span><span class="p">(</span>
+            <span class="n">_get_ad_counts</span><span class="p">(</span>
+                <span class="s2">&quot;scalar_parent_browser_search_with_ads&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;search_with_ads_count&quot;</span><span class="p">,</span>
+                <span class="n">get_search_with_ads_count</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="n">AnalysisException</span><span class="p">:</span>
+        <span class="c1"># older generated versions of main_summary may not have the ad click</span>
+        <span class="c1"># columns, and that&#39;s ok</span>
+        <span class="k">pass</span>
+
+    <span class="n">zero_search_users</span> <span class="o">=</span> <span class="n">_drop_source_columns</span><span class="p">(</span>
+        <span class="n">main_summary</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;search_counts&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">isNull</span><span class="p">())</span>
+        <span class="o">.</span><span class="n">withColumn</span><span class="p">(</span><span class="s2">&quot;engine&quot;</span><span class="p">,</span> <span class="n">lit</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
+        <span class="o">.</span><span class="n">withColumn</span><span class="p">(</span><span class="s2">&quot;source&quot;</span><span class="p">,</span> <span class="n">lit</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
+        <span class="c1"># Using 0 instead of None for search_count makes many queries easier</span>
+        <span class="c1"># (e.g. average searche per user)</span>
+        <span class="o">.</span><span class="n">withColumn</span><span class="p">(</span><span class="s2">&quot;count&quot;</span><span class="p">,</span> <span class="n">lit</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">exploded_search_counts</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">zero_search_users</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="add_derived_columns"><a class="viewcode-back" href="../../../source/mozetl.search.html#mozetl.search.aggregates.add_derived_columns">[docs]</a><span class="k">def</span> <span class="nf">add_derived_columns</span><span class="p">(</span><span class="n">exploded_search_counts</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Adds the following columns to the provided dataset:</span>
+
+<span class="sd">    type:           One of &#39;in-content-sap&#39;, &#39;follow-on&#39;, &#39;chrome-sap&#39;,</span>
+<span class="sd">                    &#39;ad-click&#39; or &#39;search-with-ads&#39;.</span>
+<span class="sd">    addon_version:  The version of the followon-search@mozilla addon, or None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">udf_get_search_addon_version</span> <span class="o">=</span> <span class="n">udf</span><span class="p">(</span><span class="n">get_search_addon_version</span><span class="p">,</span> <span class="n">StringType</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="nf">_generate_when_expr</span><span class="p">(</span><span class="n">source_mappings</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">source_mappings</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;unknown&quot;</span>
+        <span class="n">source_mapping</span> <span class="o">=</span> <span class="n">source_mappings</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">when</span><span class="p">(</span>
+            <span class="n">col</span><span class="p">(</span><span class="s2">&quot;source&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">source_mapping</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">source_mapping</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">otherwise</span><span class="p">(</span><span class="n">_generate_when_expr</span><span class="p">(</span><span class="n">source_mappings</span><span class="p">[</span><span class="mi">1</span><span class="p">:]))</span>
+
+    <span class="n">when_expr</span> <span class="o">=</span> <span class="n">when</span><span class="p">(</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;source&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">SEARCH_SOURCE_WHITELIST</span><span class="p">),</span> <span class="s2">&quot;sap&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">otherwise</span><span class="p">(</span>
+        <span class="n">when</span><span class="p">(</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;source&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">isNull</span><span class="p">(),</span> <span class="s2">&quot;sap&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">otherwise</span><span class="p">(</span>
+            <span class="n">_generate_when_expr</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="p">(</span><span class="s2">&quot;in-content:sap:&quot;</span><span class="p">,</span> <span class="s2">&quot;tagged-sap&quot;</span><span class="p">),</span>
+                    <span class="p">(</span><span class="s2">&quot;in-content:sap-follow-on:&quot;</span><span class="p">,</span> <span class="s2">&quot;tagged-follow-on&quot;</span><span class="p">),</span>
+                    <span class="p">(</span><span class="s2">&quot;in-content:organic:&quot;</span><span class="p">,</span> <span class="s2">&quot;organic&quot;</span><span class="p">),</span>
+                    <span class="p">(</span><span class="s2">&quot;sap:&quot;</span><span class="p">,</span> <span class="s2">&quot;tagged-sap&quot;</span><span class="p">),</span>
+                    <span class="p">(</span><span class="s2">&quot;follow-on:&quot;</span><span class="p">,</span> <span class="s2">&quot;tagged-follow-on&quot;</span><span class="p">),</span>
+                    <span class="p">(</span><span class="s2">&quot;ad-click:&quot;</span><span class="p">,</span> <span class="s2">&quot;ad-click&quot;</span><span class="p">),</span>
+                    <span class="p">(</span><span class="s2">&quot;search-with-ads:&quot;</span><span class="p">,</span> <span class="s2">&quot;search-with-ads&quot;</span><span class="p">),</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">exploded_search_counts</span><span class="o">.</span><span class="n">withColumn</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">,</span> <span class="n">when_expr</span><span class="p">)</span><span class="o">.</span><span class="n">withColumn</span><span class="p">(</span>
+        <span class="s2">&quot;addon_version&quot;</span><span class="p">,</span> <span class="n">udf_get_search_addon_version</span><span class="p">(</span><span class="s2">&quot;active_addons&quot;</span><span class="p">)</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="generate_rollups"><a class="viewcode-back" href="../../../source/mozetl.search.html#mozetl.search.aggregates.generate_rollups">[docs]</a><span class="k">def</span> <span class="nf">generate_rollups</span><span class="p">(</span>
+    <span class="n">submission_date</span><span class="p">,</span>
+    <span class="n">output_bucket</span><span class="p">,</span>
+    <span class="n">output_prefix</span><span class="p">,</span>
+    <span class="n">output_version</span><span class="p">,</span>
+    <span class="n">transform_func</span><span class="p">,</span>
+    <span class="n">input_bucket</span><span class="o">=</span><span class="n">DEFAULT_INPUT_BUCKET</span><span class="p">,</span>
+    <span class="n">input_prefix</span><span class="o">=</span><span class="n">DEFAULT_INPUT_PREFIX</span><span class="p">,</span>
+    <span class="n">save_mode</span><span class="o">=</span><span class="n">DEFAULT_SAVE_MODE</span><span class="p">,</span>
+    <span class="n">orderBy</span><span class="o">=</span><span class="p">[],</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load main_summary, apply transform_func, and write to S3&quot;&quot;&quot;</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Running the </span><span class="si">{0}</span><span class="s2"> ETL job...&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">transform_func</span><span class="o">.</span><span class="vm">__name__</span><span class="p">))</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+    <span class="n">spark</span> <span class="o">=</span> <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">appName</span><span class="p">(</span><span class="s2">&quot;search_dashboard_etl&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
+
+    <span class="n">source_path</span> <span class="o">=</span> <span class="s2">&quot;s3://</span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="s2">/submission_date_s3=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="n">input_bucket</span><span class="p">,</span> <span class="n">input_prefix</span><span class="p">,</span> <span class="n">submission_date</span>
+    <span class="p">)</span>
+    <span class="n">output_path</span> <span class="o">=</span> <span class="s2">&quot;s3://</span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="s2">/v</span><span class="si">{}</span><span class="s2">/submission_date_s3=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="n">output_bucket</span><span class="p">,</span> <span class="n">output_prefix</span><span class="p">,</span> <span class="n">output_version</span><span class="p">,</span> <span class="n">submission_date</span>
+    <span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading main_summary...&quot;</span><span class="p">)</span>
+    <span class="n">main_summary</span> <span class="o">=</span> <span class="n">spark</span><span class="o">.</span><span class="n">read</span><span class="o">.</span><span class="n">parquet</span><span class="p">(</span><span class="n">source_path</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Applying transformation function...&quot;</span><span class="p">)</span>
+    <span class="n">search_dashboard_data</span> <span class="o">=</span> <span class="n">transform_func</span><span class="p">(</span><span class="n">main_summary</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">orderBy</span><span class="p">:</span>
+        <span class="n">search_dashboard_data</span> <span class="o">=</span> <span class="n">search_dashboard_data</span><span class="o">.</span><span class="n">orderBy</span><span class="p">(</span><span class="o">*</span><span class="n">orderBy</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Saving rollups to: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">output_path</span><span class="p">))</span>
+    <span class="p">(</span><span class="n">search_dashboard_data</span><span class="o">.</span><span class="n">write</span><span class="o">.</span><span class="n">mode</span><span class="p">(</span><span class="n">save_mode</span><span class="p">)</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">output_path</span><span class="p">))</span>
+
+    <span class="n">stop_session_safely</span><span class="p">(</span><span class="n">spark</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;... done (took: </span><span class="si">%s</span><span class="s2">)&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span><span class="p">))</span></div>
+
+
+<span class="c1"># Generate ETL jobs - these are useful if you want to run a job from ATMO</span>
+<div class="viewcode-block" id="search_aggregates_etl"><a class="viewcode-back" href="../../../source/mozetl.search.html#mozetl.search.aggregates.search_aggregates_etl">[docs]</a><span class="k">def</span> <span class="nf">search_aggregates_etl</span><span class="p">(</span><span class="n">submission_date</span><span class="p">,</span> <span class="n">bucket</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="n">generate_rollups</span><span class="p">(</span>
+        <span class="n">submission_date</span><span class="p">,</span>
+        <span class="n">bucket</span><span class="p">,</span>
+        <span class="n">prefix</span><span class="p">,</span>
+        <span class="n">SEARCH_AGGREGATES_VERSION</span><span class="p">,</span>
+        <span class="n">search_aggregates</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="search_clients_daily_etl"><a class="viewcode-back" href="../../../source/mozetl.search.html#mozetl.search.aggregates.search_clients_daily_etl">[docs]</a><span class="k">def</span> <span class="nf">search_clients_daily_etl</span><span class="p">(</span><span class="n">submission_date</span><span class="p">,</span> <span class="n">bucket</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="n">generate_rollups</span><span class="p">(</span>
+        <span class="n">submission_date</span><span class="p">,</span>
+        <span class="n">bucket</span><span class="p">,</span>
+        <span class="n">prefix</span><span class="p">,</span>
+        <span class="n">SEARCH_CLIENTS_DAILY_VERSION</span><span class="p">,</span>
+        <span class="n">search_clients_daily</span><span class="p">,</span>
+        <span class="n">orderBy</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;sample_id&quot;</span><span class="p">],</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+<span class="c1"># Generate click commands - wrap ETL jobs to accept click arguements</span>
+<div class="viewcode-block" id="gen_click_command"><a class="viewcode-back" href="../../../source/mozetl.search.html#mozetl.search.aggregates.gen_click_command">[docs]</a><span class="k">def</span> <span class="nf">gen_click_command</span><span class="p">(</span><span class="n">etl_job</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrap an ETL job with click arguements&quot;&quot;&quot;</span>
+
+    <span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">()</span>
+    <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--submission_date&quot;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--bucket&quot;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--prefix&quot;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+        <span class="s2">&quot;--input_bucket&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="n">DEFAULT_INPUT_BUCKET</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Bucket of the input dataset&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+        <span class="s2">&quot;--input_prefix&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="n">DEFAULT_INPUT_PREFIX</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Prefix of the input dataset&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+        <span class="s2">&quot;--save_mode&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">DEFAULT_SAVE_MODE</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Save mode for writing data&quot;</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">posargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">etl_job</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">posargs</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">wrapper</span></div>
+
+
+<span class="n">search_aggregates_click</span> <span class="o">=</span> <span class="n">gen_click_command</span><span class="p">(</span><span class="n">search_aggregates_etl</span><span class="p">)</span>
+<span class="n">search_clients_daily_click</span> <span class="o">=</span> <span class="n">gen_click_command</span><span class="p">(</span><span class="n">search_clients_daily_etl</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">python_mozetl</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Firefox Telemetry Python ETL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#benefits">Benefits</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#tests">Tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#manual-execution">Manual Execution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#scheduling">Scheduling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme.html#early-stage-etl-jobs">Early Stage ETL Jobs</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Ryan Harter.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

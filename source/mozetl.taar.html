@@ -12,6 +12,7 @@
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
     <script src="../_static/doctools.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
    
@@ -35,32 +36,847 @@
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="mozetl-taar-taar-amodump-module">
-<h2>mozetl.taar.taar_amodump module<a class="headerlink" href="#mozetl-taar-taar-amodump-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-mozetl.taar.taar_amodump">
+<span id="mozetl-taar-taar-amodump-module"></span><h2>mozetl.taar.taar_amodump module<a class="headerlink" href="#module-mozetl.taar.taar_amodump" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="mozetl.taar.taar_amodump.AMOAddonFile">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_amodump.</span></code><code class="sig-name descname"><span class="pre">AMOAddonFile</span></code><a class="reference internal" href="../_modules/mozetl/taar/taar_amodump.html#AMOAddonFile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_amodump.AMOAddonFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mozetl.taar.taar_amodump.JSONSchema" title="mozetl.taar.taar_amodump.JSONSchema"><code class="xref py py-class docutils literal notranslate"><span class="pre">mozetl.taar.taar_amodump.JSONSchema</span></code></a></p>
+<dl class="py attribute">
+<dt id="mozetl.taar.taar_amodump.AMOAddonFile.meta">
+<code class="sig-name descname"><span class="pre">meta</span></code><em class="property"> <span class="pre">=</span> <span class="pre">{'id':</span> <span class="pre">&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">'is_webextension':</span> <span class="pre">&lt;class</span> <span class="pre">'bool'&gt;,</span> <span class="pre">'platform':</span> <span class="pre">&lt;class</span> <span class="pre">'str'&gt;,</span> <span class="pre">'status':</span> <span class="pre">&lt;class</span> <span class="pre">'str'&gt;}</span></em><a class="headerlink" href="#mozetl.taar.taar_amodump.AMOAddonFile.meta" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="mozetl.taar.taar_amodump.AMOAddonInfo">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_amodump.</span></code><code class="sig-name descname"><span class="pre">AMOAddonInfo</span></code><a class="reference internal" href="../_modules/mozetl/taar/taar_amodump.html#AMOAddonInfo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_amodump.AMOAddonInfo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mozetl.taar.taar_amodump.JSONSchema" title="mozetl.taar.taar_amodump.JSONSchema"><code class="xref py py-class docutils literal notranslate"><span class="pre">mozetl.taar.taar_amodump.JSONSchema</span></code></a></p>
+<dl class="py attribute">
+<dt id="mozetl.taar.taar_amodump.AMOAddonInfo.meta">
+<code class="sig-name descname"><span class="pre">meta</span></code><em class="property"> <span class="pre">=</span> <span class="pre">{'categories':</span> <span class="pre">typing.Dict[str,</span> <span class="pre">typing.List[str]],</span> <span class="pre">'current_version':</span> <span class="pre">&lt;class</span> <span class="pre">'mozetl.taar.taar_amodump.AMOAddonVersion'&gt;,</span> <span class="pre">'default_locale':</span> <span class="pre">&lt;class</span> <span class="pre">'str'&gt;,</span> <span class="pre">'description':</span> <span class="pre">typing.Dict[str,</span> <span class="pre">str],</span> <span class="pre">'guid':</span> <span class="pre">&lt;class</span> <span class="pre">'str'&gt;,</span> <span class="pre">'name':</span> <span class="pre">typing.Dict[str,</span> <span class="pre">str],</span> <span class="pre">'ratings':</span> <span class="pre">typing.Dict[str,</span> <span class="pre">float],</span> <span class="pre">'summary':</span> <span class="pre">typing.Dict[str,</span> <span class="pre">str],</span> <span class="pre">'tags':</span> <span class="pre">typing.List[str],</span> <span class="pre">'weekly_downloads':</span> <span class="pre">&lt;class</span> <span class="pre">'int'&gt;}</span></em><a class="headerlink" href="#mozetl.taar.taar_amodump.AMOAddonInfo.meta" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="mozetl.taar.taar_amodump.AMOAddonVersion">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_amodump.</span></code><code class="sig-name descname"><span class="pre">AMOAddonVersion</span></code><a class="reference internal" href="../_modules/mozetl/taar/taar_amodump.html#AMOAddonVersion"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_amodump.AMOAddonVersion" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mozetl.taar.taar_amodump.JSONSchema" title="mozetl.taar.taar_amodump.JSONSchema"><code class="xref py py-class docutils literal notranslate"><span class="pre">mozetl.taar.taar_amodump.JSONSchema</span></code></a></p>
+<dl class="py attribute">
+<dt id="mozetl.taar.taar_amodump.AMOAddonVersion.meta">
+<code class="sig-name descname"><span class="pre">meta</span></code><em class="property"> <span class="pre">=</span> <span class="pre">{'files':</span> <span class="pre">typing.List[mozetl.taar.taar_amodump.AMOAddonFile]}</span></em><a class="headerlink" href="#mozetl.taar.taar_amodump.AMOAddonVersion.meta" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="mozetl.taar.taar_amodump.AMODatabase">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_amodump.</span></code><code class="sig-name descname"><span class="pre">AMODatabase</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">worker_count</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_amodump.html#AMODatabase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_amodump.AMODatabase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dl class="py method">
+<dt id="mozetl.taar.taar_amodump.AMODatabase.fetch_addons">
+<code class="sig-name descname"><span class="pre">fetch_addons</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_amodump.html#AMODatabase.fetch_addons"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_amodump.AMODatabase.fetch_addons" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="mozetl.taar.taar_amodump.JSONSchema">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_amodump.</span></code><code class="sig-name descname"><span class="pre">JSONSchema</span></code><a class="reference internal" href="../_modules/mozetl/taar/taar_amodump.html#JSONSchema"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_amodump.JSONSchema" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="mozetl.taar.taar_amodump.Undefined">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_amodump.</span></code><code class="sig-name descname"><span class="pre">Undefined</span></code><a class="reference internal" href="../_modules/mozetl/taar/taar_amodump.html#Undefined"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_amodump.Undefined" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>This value is used to disambiguate None vs a non-existant value on
+dict.get() lookups</p>
+</dd></dl>
+
+<dl class="py data">
+<dt id="mozetl.taar.taar_amodump.logger">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_amodump.</span></code><code class="sig-name descname"><span class="pre">logger</span></code><em class="property"> <span class="pre">=</span> <span class="pre">&lt;Logger</span> <span class="pre">amo_database</span> <span class="pre">(INFO)&gt;</span></em><a class="headerlink" href="#mozetl.taar.taar_amodump.logger" title="Permalink to this definition">¶</a></dt>
+<dd><p>JSON from addons.mozilla.org server are parsed using subclasses of
+JSONSchema to declare the types that we want to extract.</p>
+<p>The top level object that we are parsing is <cite>AMOAddonInfo</cite>.</p>
+<p>All classes of type JSONSchema have a <cite>meta</cite> dictionary attribute
+which define keys which we are interested in extracting.</p>
+<p>The key is the name of the attribute which we are interested in
+retrieving.</p>
+<p>The value defines how we want to coerce the inbound data.  There are 3
+general cases:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><p>subclasses of JSONSchema are nested objects which are
+represented as dictionaries</p></li>
+<li><p>List&lt;T&gt; or Dict&lt;T,T&gt; types where values are coerced
+recursively using the marshal function.</p></li>
+<li><p>Everything else. These are callable type defintions. Usually
+Python built-ins like str or bool. It is possible to define
+custom callables if you want to do custom data conversion.</p></li>
+</ol>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.taar.taar_amodump.marshal">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_amodump.</span></code><code class="sig-name descname"><span class="pre">marshal</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type_def</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_amodump.html#marshal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_amodump.marshal" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </div>
-<div class="section" id="mozetl-taar-taar-amowhitelist-module">
-<h2>mozetl.taar.taar_amowhitelist module<a class="headerlink" href="#mozetl-taar-taar-amowhitelist-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-mozetl.taar.taar_amowhitelist">
+<span id="mozetl-taar-taar-amowhitelist-module"></span><h2>mozetl.taar.taar_amowhitelist module<a class="headerlink" href="#module-mozetl.taar.taar_amowhitelist" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="mozetl.taar.taar_amowhitelist.AMOTransformer">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_amowhitelist.</span></code><code class="sig-name descname"><span class="pre">AMOTransformer</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bucket</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_rating</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_age</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_amowhitelist.html#AMOTransformer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_amowhitelist.AMOTransformer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>This class transforms the raw AMO addon JSON dump
+by filtering out addons that do not meet the minimum requirements
+for ‘whitelisted’ addons.  See the documentation in the transform
+method for details.</p>
+<dl class="py method">
+<dt id="mozetl.taar.taar_amowhitelist.AMOTransformer.extract">
+<code class="sig-name descname"><span class="pre">extract</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_amowhitelist.html#AMOTransformer.extract"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_amowhitelist.AMOTransformer.extract" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mozetl.taar.taar_amowhitelist.AMOTransformer.get_featuredlist">
+<code class="sig-name descname"><span class="pre">get_featuredlist</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_amowhitelist.html#AMOTransformer.get_featuredlist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_amowhitelist.AMOTransformer.get_featuredlist" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mozetl.taar.taar_amowhitelist.AMOTransformer.get_featuredwhitelist">
+<code class="sig-name descname"><span class="pre">get_featuredwhitelist</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_amowhitelist.html#AMOTransformer.get_featuredwhitelist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_amowhitelist.AMOTransformer.get_featuredwhitelist" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mozetl.taar.taar_amowhitelist.AMOTransformer.get_whitelist">
+<code class="sig-name descname"><span class="pre">get_whitelist</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_amowhitelist.html#AMOTransformer.get_whitelist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_amowhitelist.AMOTransformer.get_whitelist" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mozetl.taar.taar_amowhitelist.AMOTransformer.load">
+<code class="sig-name descname"><span class="pre">load</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_amowhitelist.html#AMOTransformer.load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_amowhitelist.AMOTransformer.load" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mozetl.taar.taar_amowhitelist.AMOTransformer.load_featuredlist">
+<code class="sig-name descname"><span class="pre">load_featuredlist</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">jdata</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_amowhitelist.html#AMOTransformer.load_featuredlist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_amowhitelist.AMOTransformer.load_featuredlist" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mozetl.taar.taar_amowhitelist.AMOTransformer.load_featuredwhitelist">
+<code class="sig-name descname"><span class="pre">load_featuredwhitelist</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">jdata</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_amowhitelist.html#AMOTransformer.load_featuredwhitelist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_amowhitelist.AMOTransformer.load_featuredwhitelist" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mozetl.taar.taar_amowhitelist.AMOTransformer.load_whitelist">
+<code class="sig-name descname"><span class="pre">load_whitelist</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">jdata</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_amowhitelist.html#AMOTransformer.load_whitelist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_amowhitelist.AMOTransformer.load_whitelist" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mozetl.taar.taar_amowhitelist.AMOTransformer.transform">
+<code class="sig-name descname"><span class="pre">transform</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">json_data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_amowhitelist.html#AMOTransformer.transform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_amowhitelist.AMOTransformer.transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>We currently whitelist addons which meet a minimum critieria
+of:</p>
+<ul class="simple">
+<li><p>At least 3.0 average rating or higher</p></li>
+<li><p>At least 60 days old as computed using the
+‘first_create_date’ field in the addon JSON</p></li>
+<li><p>Not the Firefox Pioneer addon</p></li>
+</ul>
+<dl class="simple">
+<dt>Criteria are discussed over at :</dt><dd><p><a class="reference external" href="https://github.com/mozilla/taar-lite/issues/1">https://github.com/mozilla/taar-lite/issues/1</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="mozetl.taar.taar_amowhitelist.AbstractAccumulator">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_amowhitelist.</span></code><code class="sig-name descname"><span class="pre">AbstractAccumulator</span></code><a class="reference internal" href="../_modules/mozetl/taar/taar_amowhitelist.html#AbstractAccumulator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_amowhitelist.AbstractAccumulator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dl class="py method">
+<dt id="mozetl.taar.taar_amowhitelist.AbstractAccumulator.get_results">
+<code class="sig-name descname"><span class="pre">get_results</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_amowhitelist.html#AbstractAccumulator.get_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_amowhitelist.AbstractAccumulator.get_results" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mozetl.taar.taar_amowhitelist.AbstractAccumulator.process_record">
+<em class="property"><span class="pre">abstract</span> </em><code class="sig-name descname"><span class="pre">process_record</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">guid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addon_data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_amowhitelist.html#AbstractAccumulator.process_record"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_amowhitelist.AbstractAccumulator.process_record" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="mozetl.taar.taar_amowhitelist.FeaturedAccumulator">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_amowhitelist.</span></code><code class="sig-name descname"><span class="pre">FeaturedAccumulator</span></code><a class="reference internal" href="../_modules/mozetl/taar/taar_amowhitelist.html#FeaturedAccumulator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_amowhitelist.FeaturedAccumulator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mozetl.taar.taar_amowhitelist.AbstractAccumulator" title="mozetl.taar.taar_amowhitelist.AbstractAccumulator"><code class="xref py py-class docutils literal notranslate"><span class="pre">mozetl.taar.taar_amowhitelist.AbstractAccumulator</span></code></a></p>
+<dl class="py method">
+<dt id="mozetl.taar.taar_amowhitelist.FeaturedAccumulator.process_record">
+<code class="sig-name descname"><span class="pre">process_record</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">guid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addon_data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_amowhitelist.html#FeaturedAccumulator.process_record"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_amowhitelist.FeaturedAccumulator.process_record" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="mozetl.taar.taar_amowhitelist.WhitelistAccumulator">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_amowhitelist.</span></code><code class="sig-name descname"><span class="pre">WhitelistAccumulator</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">min_age</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_rating</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_amowhitelist.html#WhitelistAccumulator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_amowhitelist.WhitelistAccumulator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mozetl.taar.taar_amowhitelist.AbstractAccumulator" title="mozetl.taar.taar_amowhitelist.AbstractAccumulator"><code class="xref py py-class docutils literal notranslate"><span class="pre">mozetl.taar.taar_amowhitelist.AbstractAccumulator</span></code></a></p>
+<dl class="py method">
+<dt id="mozetl.taar.taar_amowhitelist.WhitelistAccumulator.process_record">
+<code class="sig-name descname"><span class="pre">process_record</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">guid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addon_data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_amowhitelist.html#WhitelistAccumulator.process_record"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_amowhitelist.WhitelistAccumulator.process_record" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="mozetl.taar.taar_amowhitelist.WhitelistFeaturedAccumulator">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_amowhitelist.</span></code><code class="sig-name descname"><span class="pre">WhitelistFeaturedAccumulator</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">min_age</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_rating</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_amowhitelist.html#WhitelistFeaturedAccumulator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_amowhitelist.WhitelistFeaturedAccumulator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mozetl.taar.taar_amowhitelist.WhitelistAccumulator" title="mozetl.taar.taar_amowhitelist.WhitelistAccumulator"><code class="xref py py-class docutils literal notranslate"><span class="pre">mozetl.taar.taar_amowhitelist.WhitelistAccumulator</span></code></a></p>
+<dl class="py method">
+<dt id="mozetl.taar.taar_amowhitelist.WhitelistFeaturedAccumulator.get_results">
+<code class="sig-name descname"><span class="pre">get_results</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_amowhitelist.html#WhitelistFeaturedAccumulator.get_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_amowhitelist.WhitelistFeaturedAccumulator.get_results" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mozetl.taar.taar_amowhitelist.WhitelistFeaturedAccumulator.process_record">
+<code class="sig-name descname"><span class="pre">process_record</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">guid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addon_data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_amowhitelist.html#WhitelistFeaturedAccumulator.process_record"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_amowhitelist.WhitelistFeaturedAccumulator.process_record" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 </div>
-<div class="section" id="mozetl-taar-taar-dynamo-module">
-<h2>mozetl.taar.taar_dynamo module<a class="headerlink" href="#mozetl-taar-taar-dynamo-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-mozetl.taar.taar_dynamo">
+<span id="mozetl-taar-taar-dynamo-module"></span><h2>mozetl.taar.taar_dynamo module<a class="headerlink" href="#module-mozetl.taar.taar_dynamo" title="Permalink to this headline">¶</a></h2>
+<p>This module replicates the scala script over at</p>
+<p><a class="reference external" href="https://github.com/mozilla/telemetry-batch-view/blob/1c544f65ad2852703883fe31a9fba38c39e75698/src/main/scala/com/mozilla/telemetry/views/HBaseAddonRecommenderView.scala">https://github.com/mozilla/telemetry-batch-view/blob/1c544f65ad2852703883fe31a9fba38c39e75698/src/main/scala/com/mozilla/telemetry/views/HBaseAddonRecommenderView.scala</a></p>
+<p>This should be invoked with something like this:</p>
+<p>spark-submit     –master=spark://ec2-52-32-39-246.us-west-2.compute.amazonaws.com taar_dynamo.py     –date=20180218      –region=us-west-2      –table=taar_addon_data_20180206     –prod-iam-role=arn:aws:iam::361527076523:role/taar-write-dynamodb-from-dev</p>
+<dl class="py class">
+<dt id="mozetl.taar.taar_dynamo.CredentialSingleton">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_dynamo.</span></code><code class="sig-name descname"><span class="pre">CredentialSingleton</span></code><a class="reference internal" href="../_modules/mozetl/taar/taar_dynamo.html#CredentialSingleton"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_dynamo.CredentialSingleton" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dl class="py method">
+<dt id="mozetl.taar.taar_dynamo.CredentialSingleton.getInstance">
+<code class="sig-name descname"><span class="pre">getInstance</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prod_iam_role</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_dynamo.html#CredentialSingleton.getInstance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_dynamo.CredentialSingleton.getInstance" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mozetl.taar.taar_dynamo.CredentialSingleton.get_new_creds">
+<code class="sig-name descname"><span class="pre">get_new_creds</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prod_iam_role</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_dynamo.html#CredentialSingleton.get_new_creds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_dynamo.CredentialSingleton.get_new_creds" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="mozetl.taar.taar_dynamo.DynamoReducer">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_dynamo.</span></code><code class="sig-name descname"><span class="pre">DynamoReducer</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prod_iam_role</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">region_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">table_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_dynamo.html#DynamoReducer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_dynamo.DynamoReducer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dl class="py method">
+<dt id="mozetl.taar.taar_dynamo.DynamoReducer.dynamo_reducer">
+<code class="sig-name descname"><span class="pre">dynamo_reducer</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">list_b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_write</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_dynamo.html#DynamoReducer.dynamo_reducer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_dynamo.DynamoReducer.dynamo_reducer" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function can be used to reduce tuples of the form in
+<cite>list_transformer</cite>. Data is merged and when MAX_RECORDS
+number of JSON blobs are merged, the list of JSON is batch written
+into DynamoDB.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="mozetl.taar.taar_dynamo.DynamoReducer.hash_client_ids">
+<code class="sig-name descname"><span class="pre">hash_client_ids</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_tuple</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_dynamo.html#DynamoReducer.hash_client_ids"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_dynamo.DynamoReducer.hash_client_ids" title="Permalink to this definition">¶</a></dt>
+<dd><p># Clobber the client_id by using sha256 hashes encoded as hex
+# Based on the js code in Fx</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="mozetl.taar.taar_dynamo.DynamoReducer.push_to_dynamo">
+<code class="sig-name descname"><span class="pre">push_to_dynamo</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_tuple</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_dynamo.html#DynamoReducer.push_to_dynamo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_dynamo.DynamoReducer.push_to_dynamo" title="Permalink to this definition">¶</a></dt>
+<dd><p>This connects to DynamoDB and pushes records in <cite>item_list</cite> into
+a table.</p>
+<p>We accumulate a list of up to 50 elements long to allow debugging
+of write errors.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.taar.taar_dynamo.etl">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_dynamo.</span></code><code class="sig-name descname"><span class="pre">etl</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spark</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">region_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">table_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prod_iam_role</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_rate</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_dynamo.html#etl"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_dynamo.etl" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function is responsible for extract, transform and load.</p>
+<p>Data is extracted from Parquet files in Amazon S3.
+Transforms and filters are applied to the data to create
+3-tuples that are easily merged in a map-reduce fashion.</p>
+<p>The 3-tuples are then loaded into DynamoDB using a map-reduce
+operation in Spark.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.taar.taar_dynamo.extract_transform">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_dynamo.</span></code><code class="sig-name descname"><span class="pre">extract_transform</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spark</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_rate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_dynamo.html#extract_transform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_dynamo.extract_transform" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.taar.taar_dynamo.filterDateAndClientID">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_dynamo.</span></code><code class="sig-name descname"><span class="pre">filterDateAndClientID</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">row_jstr</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_dynamo.html#filterDateAndClientID"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_dynamo.filterDateAndClientID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Filter out any rows where the client_id is None or where the
+subsession_start_date is not a valid date</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.taar.taar_dynamo.json_serial">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_dynamo.</span></code><code class="sig-name descname"><span class="pre">json_serial</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_dynamo.html#json_serial"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_dynamo.json_serial" title="Permalink to this definition">¶</a></dt>
+<dd><p>JSON serializer for objects not serializable by default json code</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.taar.taar_dynamo.list_transformer">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_dynamo.</span></code><code class="sig-name descname"><span class="pre">list_transformer</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">row_jsonstr</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_dynamo.html#list_transformer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_dynamo.list_transformer" title="Permalink to this definition">¶</a></dt>
+<dd><p>We need to merge two elements of the row data - namely the
+client_id and the start_date into the main JSON blob.</p>
+<p>This is then packaged into a 4-tuple of :</p>
+<p>The first integer represents the number of records that have been
+pushed into DynamoDB.</p>
+<p>The second is the length of the JSON data list. This prevents us
+from having to compute the length of the JSON list unnecessarily.</p>
+<p>The third element of the tuple is the list of JSON data.</p>
+<p>The fourth element is a list of invalid JSON blobs.  We maintain
+this to be no more than 50 elements long.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.taar.taar_dynamo.load_rdd">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_dynamo.</span></code><code class="sig-name descname"><span class="pre">load_rdd</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prod_iam_role</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">region_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">table_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rdd</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_dynamo.html#load_rdd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_dynamo.load_rdd" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.taar.taar_dynamo.run_etljob">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_dynamo.</span></code><code class="sig-name descname"><span class="pre">run_etljob</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spark</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">region_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">table_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prod_iam_role</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_rate</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_dynamo.html#run_etljob"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_dynamo.run_etljob" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </div>
-<div class="section" id="mozetl-taar-taar-lite-guidguid-module">
-<h2>mozetl.taar.taar_lite_guidguid module<a class="headerlink" href="#mozetl-taar-taar-lite-guidguid-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-mozetl.taar.taar_lite_guidguid">
+<span id="mozetl-taar-taar-lite-guidguid-module"></span><h2>mozetl.taar.taar_lite_guidguid module<a class="headerlink" href="#module-mozetl.taar.taar_lite_guidguid" title="Permalink to this headline">¶</a></h2>
+<p>This ETL job computes the co-installation occurrence of white-listed
+Firefox webextensions for a sample of the longitudinal telemetry dataset.</p>
+<dl class="py function">
+<dt id="mozetl.taar.taar_lite_guidguid.extract_telemetry">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_lite_guidguid.</span></code><code class="sig-name descname"><span class="pre">extract_telemetry</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spark</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_lite_guidguid.html#extract_telemetry"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_lite_guidguid.extract_telemetry" title="Permalink to this definition">¶</a></dt>
+<dd><p>load some training data from telemetry given a sparkContext</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.taar.taar_lite_guidguid.get_addons_per_client">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_lite_guidguid.</span></code><code class="sig-name descname"><span class="pre">get_addons_per_client</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">broadcast_amo_whitelist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">users_df</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_lite_guidguid.html#get_addons_per_client"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_lite_guidguid.get_addons_per_client" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extracts a DataFrame that contains one row
+for each client along with the list of active add-on GUIDs.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.taar.taar_lite_guidguid.get_initial_sample">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_lite_guidguid.</span></code><code class="sig-name descname"><span class="pre">get_initial_sample</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spark</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_lite_guidguid.html#get_initial_sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_lite_guidguid.get_initial_sample" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes an initial sample from the longitudinal dataset
+(randomly sampled from main summary). Coarse filtering on:
+- number of installed addons (greater than 1)
+- corrupt and generally wierd telemetry entries
+- isolating release channel
+- column selection</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.taar.taar_lite_guidguid.is_valid_addon">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_lite_guidguid.</span></code><code class="sig-name descname"><span class="pre">is_valid_addon</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">broadcast_amo_whitelist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addon</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_lite_guidguid.html#is_valid_addon"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_lite_guidguid.is_valid_addon" title="Permalink to this definition">¶</a></dt>
+<dd><p>Filter individual addons out to exclude, system addons,
+legacy addons, disabled addons, sideloaded addons.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.taar.taar_lite_guidguid.key_all">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_lite_guidguid.</span></code><code class="sig-name descname"><span class="pre">key_all</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_lite_guidguid.html#key_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_lite_guidguid.key_all" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return (for each Row) a two column set of Rows that contains each individual
+installed addon (the key_addon) as the first column and an array of guids of
+all <em>other</em> addons that were seen co-installed with the key_addon. Excluding
+the key_addon from the second column to avoid inflated counts in later aggregation.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.taar.taar_lite_guidguid.load_s3">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_lite_guidguid.</span></code><code class="sig-name descname"><span class="pre">load_s3</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">result_df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bucket</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_lite_guidguid.html#load_s3"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_lite_guidguid.load_s3" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.taar.taar_lite_guidguid.transform">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_lite_guidguid.</span></code><code class="sig-name descname"><span class="pre">transform</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">longitudinal_addons</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_lite_guidguid.html#transform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_lite_guidguid.transform" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </div>
-<div class="section" id="mozetl-taar-taar-lite-guidranking-module">
-<h2>mozetl.taar.taar_lite_guidranking module<a class="headerlink" href="#mozetl-taar-taar-lite-guidranking-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-mozetl.taar.taar_lite_guidranking">
+<span id="mozetl-taar-taar-lite-guidranking-module"></span><h2>mozetl.taar.taar_lite_guidranking module<a class="headerlink" href="#module-mozetl.taar.taar_lite_guidranking" title="Permalink to this headline">¶</a></h2>
+<p>This ETL job computes the installation rate of all addons and then
+cross references against the whitelist to compute the total install
+rate for all whitelisted addons.</p>
+<dl class="py function">
+<dt id="mozetl.taar.taar_lite_guidranking.extract_telemetry">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_lite_guidranking.</span></code><code class="sig-name descname"><span class="pre">extract_telemetry</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sparkSession</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_lite_guidranking.html#extract_telemetry"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_lite_guidranking.extract_telemetry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load some training data from telemetry given a sparkContext</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.taar.taar_lite_guidranking.load_s3">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_lite_guidranking.</span></code><code class="sig-name descname"><span class="pre">load_s3</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">result_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bucket</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_lite_guidranking.html#load_s3"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_lite_guidranking.load_s3" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.taar.taar_lite_guidranking.transform">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_lite_guidranking.</span></code><code class="sig-name descname"><span class="pre">transform</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frame</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_lite_guidranking.html#transform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_lite_guidranking.transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert the dataframe to JSON and augment each record to
+include the install count for each addon.</p>
+</dd></dl>
+
 </div>
-<div class="section" id="mozetl-taar-taar-locale-module">
-<h2>mozetl.taar.taar_locale module<a class="headerlink" href="#mozetl-taar-taar-locale-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-mozetl.taar.taar_locale">
+<span id="mozetl-taar-taar-locale-module"></span><h2>mozetl.taar.taar_locale module<a class="headerlink" href="#module-mozetl.taar.taar_locale" title="Permalink to this headline">¶</a></h2>
+<p>Bug 1396549 - TAAR Top addons per locale dictionary
+This notebook is adapted from a gist that computes the top N addons per
+locale after filtering for good candidates (e.g. no unsigned, no disabled,
+…) [1].</p>
+<p>[1] <a class="reference external" href="https://gist.github.com/mlopatka/46dddac9d063589275f06b0443fcc69d">https://gist.github.com/mlopatka/46dddac9d063589275f06b0443fcc69d</a></p>
+<dl class="py function">
+<dt id="mozetl.taar.taar_locale.compute_noisy_counts">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_locale.</span></code><code class="sig-name descname"><span class="pre">compute_noisy_counts</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">locale_addon_counts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addon_limits</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">whitelist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.4</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_locale.html#compute_noisy_counts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_locale.compute_noisy_counts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply DP protections to the raw per-locale add-on frequency counts.</p>
+<p>Laplace noise is added to each of the counts. Additionally, each per-locale
+set of frequency counts is expanded to include every add-on in the
+whitelist, even if some were not observed in the raw data.</p>
+<p>This computation is done in local memory, rather than in Spark, to simplify
+working with random number generation. This relies on the assumption that
+the number of unique locales and whitelist add-ons each remain small (on the
+order of 100-1000).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>locale_addon_counts</strong> – a Pandas DF of per-locale add-on frequency
+counts, with columns <cite>locale</cite>, <cite>addon</cite>, <cite>count</cite></p></li>
+<li><p><strong>addon_limits</strong> – a dict mapping locale strings to ints representing the
+max number of add-ons retained per client in that locale.
+Any locale not present in the dict is excluded from the
+final dataset.</p></li>
+<li><p><strong>whitelist</strong> – a list of add-on IDs belonging to the AMO whitelist</p></li>
+<li><p><strong>eps</strong> – the DP epsilon parameter, representing the privacy budget</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a DF with the same structure as <cite>locale_addon_counts</cite>. Counts may
+now be non-integer and negative.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.taar.taar_locale.generate_dictionary">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_locale.</span></code><code class="sig-name descname"><span class="pre">generate_dictionary</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spark</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_addons</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_num_days</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_locale.html#generate_dictionary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_locale.generate_dictionary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compile lists of top add-ons by locale from per-client add-on data.</p>
+<p>Runs a fresh data pull against <cite>clients_daily</cite>, computes DP-protected
+frequency counts, and generates a weighted list of top add-ons by locale.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>num_addons</strong> – number of add-on recommendations to report for each locale</p></li>
+<li><p><strong>dataset_num_days</strong> – number of days the raw data should cover</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a dictionary <cite>{&lt;locale&gt;: [(‘GUID1’, 0.4), (‘GUID2’, 0.25), …]}</cite>
+as returned by <cite>get_top_addons_by_locale()</cite></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.taar.taar_locale.get_addon_limits_by_locale">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_locale.</span></code><code class="sig-name descname"><span class="pre">get_addon_limits_by_locale</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client_addons_df</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_locale.html#get_addon_limits_by_locale"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_locale.get_addon_limits_by_locale" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determine the max number of add-ons per user in each locale.</p>
+<p>We allow for the possibility of basing this on a summary statistic computed
+from the original data, in which case the limits will remain private.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>client_addons_df</strong> – a DF listing add-on IDs by client ID and locale, as
+generated by <cite>get_client_addons()</cite></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a dict mapping locale strings to their add-on limits</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.taar.taar_locale.get_client_addons">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_locale.</span></code><code class="sig-name descname"><span class="pre">get_client_addons</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spark</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_date</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_locale.html#get_client_addons"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_locale.get_client_addons" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a Spark DF listing add-ons by client_id and locale.</p>
+<p>Only Firefox release clients are considered. The query finds each client’s
+most recent record in the <cite>clients_daily</cite> dataset over the given time period
+and returns its installed add-ons. System add-ons, disabled add-ons, and
+unsigned add-ons are filtered out.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>start_date</strong> – the earliest submission date to include (yyyymmdd)</p></li>
+<li><p><strong>optional</strong> (<em>end_date</em><em>,</em>) – the latest submission date to include (yyyymmdd)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a DF with columns <cite>locale</cite>, <cite>client_id</cite>, <cite>addon</cite></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.taar.taar_locale.get_protected_locale_addon_counts">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_locale.</span></code><code class="sig-name descname"><span class="pre">get_protected_locale_addon_counts</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spark</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">client_addons_df</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_locale.html#get_protected_locale_addon_counts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_locale.get_protected_locale_addon_counts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute DP-protected per-locale add-on frequency counts.</p>
+<p>Privacy-preserving counts are generated using the Laplace mechanism,
+restricting to add-ons in the AMO whitelist.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>client_addons_df</strong> – a DF listing add-on IDs by client ID and locale, as
+generated by <cite>get_client_addons()</cite></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a Pandas DF with columns <cite>locale</cite>, <cite>addon</cite>, <cite>count</cite> containing
+DP-protected counts for each whitelist add-on within each locale.
+Unlike the true counts, weights may be non-integer or negative.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.taar.taar_locale.get_top_addons_by_locale">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_locale.</span></code><code class="sig-name descname"><span class="pre">get_top_addons_by_locale</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">addon_counts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_addons</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_locale.html#get_top_addons_by_locale"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_locale.get_top_addons_by_locale" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a dictionary of top-weighted add-ons by locale.</p>
+<p>Raw counts are normalized by converting to relative proportions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>addon_counts</strong> – a Pandas DF of per-locale add-on counts, with columns
+<cite>locale</cite>, <cite>addon</cite>, <cite>count</cite>.</p></li>
+<li><p><strong>num_addons</strong> – requested number of recommendations.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a dictionary <cite>{&lt;locale&gt;: [(‘GUID1’, 0.4), (‘GUID2’, 0.25), …]}</cite></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.taar.taar_locale.limit_client_addons">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_locale.</span></code><code class="sig-name descname"><span class="pre">limit_client_addons</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spark</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">client_addons_df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addon_limits</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">whitelist</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_locale.html#limit_client_addons"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_locale.limit_client_addons" title="Permalink to this definition">¶</a></dt>
+<dd><p>Limit the number of add-ons associated with a single client ID.</p>
+<p>This is a part of the privacy protection mechanism applied to the raw data.
+For each client in the dataset, we retain a randomly selected subset of
+their add-ons which belong to the whitelist. The max number of add-ons may
+differ by locale.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>client_addons_df</strong> – a DF listing add-on IDs by client ID and locale, as
+generated by <cite>get_client_addons()</cite></p></li>
+<li><p><strong>addon_limits</strong> – a dict mapping locale strings to ints representing the
+max number of add-ons retained per client in that locale.
+Any locale not present in the dict is excluded from the
+final dataset.</p></li>
+<li><p><strong>whitelist</strong> – a list of add-on IDs belonging to the AMO whitelist</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a DF containing a subset of the rows of <cite>client_addons_df</cite></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.taar.taar_locale.rlaplace">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_locale.</span></code><code class="sig-name descname"><span class="pre">rlaplace</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mozetl.taar.taar_locale.rlaplace" title="Permalink to this definition">¶</a></dt>
+<dd><p>laplace(loc=0.0, scale=1.0, size=None)</p>
+<p>Draw samples from the Laplace or double exponential distribution with
+specified location (or mean) and scale (decay).</p>
+<p>The Laplace distribution is similar to the Gaussian/normal distribution,
+but is sharper at the peak and has fatter tails. It represents the
+difference between two independent, identically distributed exponential
+random variables.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>New code should use the <code class="docutils literal notranslate"><span class="pre">laplace</span></code> method of a <code class="docutils literal notranslate"><span class="pre">default_rng()</span></code>
+instance instead; please see the <span class="xref std std-ref">random-quick-start</span>.</p>
 </div>
-<div class="section" id="mozetl-taar-taar-similarity-module">
-<h2>mozetl.taar.taar_similarity module<a class="headerlink" href="#mozetl-taar-taar-similarity-module" title="Permalink to this headline">¶</a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>loc</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><em>array_like of floats</em><em>, </em><em>optional</em>) – The position, <span class="math notranslate nohighlight">\(\mu\)</span>, of the distribution peak. Default is 0.</p></li>
+<li><p><strong>scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><em>array_like of floats</em><em>, </em><em>optional</em>) – <span class="math notranslate nohighlight">\(\lambda\)</span>, the exponential decay. Default is 1. Must be non-
+negative.</p></li>
+<li><p><strong>size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em> or </em><em>tuple of ints</em><em>, </em><em>optional</em>) – Output shape.  If the given shape is, e.g., <code class="docutils literal notranslate"><span class="pre">(m,</span> <span class="pre">n,</span> <span class="pre">k)</span></code>, then
+<code class="docutils literal notranslate"><span class="pre">m</span> <span class="pre">*</span> <span class="pre">n</span> <span class="pre">*</span> <span class="pre">k</span></code> samples are drawn.  If size is <code class="docutils literal notranslate"><span class="pre">None</span></code> (default),
+a single value is returned if <code class="docutils literal notranslate"><span class="pre">loc</span></code> and <code class="docutils literal notranslate"><span class="pre">scale</span></code> are both scalars.
+Otherwise, <code class="docutils literal notranslate"><span class="pre">np.broadcast(loc,</span> <span class="pre">scale).size</span></code> samples are drawn.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>out</strong> – Drawn samples from the parameterized Laplace distribution.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>ndarray or scalar</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">Generator.laplace</span></code></dt><dd><p>which should be used for new code.</p>
+</dd>
+</dl>
 </div>
-<div class="section" id="mozetl-taar-taar-utils-module">
-<h2>mozetl.taar.taar_utils module<a class="headerlink" href="#mozetl-taar-taar-utils-module" title="Permalink to this headline">¶</a></h2>
+<p class="rubric">Notes</p>
+<p>It has the probability density function</p>
+<div class="math notranslate nohighlight">
+\[f(x; \mu, \lambda) = \frac{1}{2\lambda}
+\exp\left(-\frac{|x - \mu|}{\lambda}\right).\]</div>
+<p>The first law of Laplace, from 1774, states that the frequency
+of an error can be expressed as an exponential function of the
+absolute magnitude of the error, which leads to the Laplace
+distribution. For many problems in economics and health
+sciences, this distribution seems to model the data better
+than the standard Gaussian distribution.</p>
+<p class="rubric">References</p>
+<dl class="footnote brackets">
+<dt class="label" id="id1"><span class="brackets">1</span></dt>
+<dd><p>Abramowitz, M. and Stegun, I. A. (Eds.). “Handbook of
+Mathematical Functions with Formulas, Graphs, and Mathematical
+Tables, 9th printing,” New York: Dover, 1972.</p>
+</dd>
+<dt class="label" id="id2"><span class="brackets">2</span></dt>
+<dd><p>Kotz, Samuel, et. al. “The Laplace Distribution and
+Generalizations, ” Birkhauser, 2001.</p>
+</dd>
+<dt class="label" id="id3"><span class="brackets">3</span></dt>
+<dd><p>Weisstein, Eric W. “Laplace Distribution.”
+From MathWorld–A Wolfram Web Resource.
+<a class="reference external" href="http://mathworld.wolfram.com/LaplaceDistribution.html">http://mathworld.wolfram.com/LaplaceDistribution.html</a></p>
+</dd>
+<dt class="label" id="id4"><span class="brackets">4</span></dt>
+<dd><p>Wikipedia, “Laplace distribution”,
+<a class="reference external" href="https://en.wikipedia.org/wiki/Laplace_distribution">https://en.wikipedia.org/wiki/Laplace_distribution</a></p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>Draw samples from the distribution</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">loc</span><span class="p">,</span> <span class="n">scale</span> <span class="o">=</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">laplace</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="n">scale</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+</pre></div>
 </div>
-<div class="section" id="module-contents">
-<h2>Module contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
+<p>Display the histogram of the samples, along with
+the probability density function:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">count</span><span class="p">,</span> <span class="n">bins</span><span class="p">,</span> <span class="n">ignored</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">-</span><span class="mf">8.</span><span class="p">,</span> <span class="mf">8.</span><span class="p">,</span> <span class="mf">.01</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pdf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="nb">abs</span><span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="n">loc</span><span class="p">)</span><span class="o">/</span><span class="n">scale</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">scale</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">pdf</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Plot Gaussian for comparison:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">g</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="p">(</span><span class="n">scale</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">))</span> <span class="o">*</span>
+<span class="gp">... </span>     <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">loc</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">scale</span><span class="o">**</span><span class="mi">2</span><span class="p">)))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">g</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="module-mozetl.taar.taar_similarity">
+<span id="mozetl-taar-taar-similarity-module"></span><h2>mozetl.taar.taar_similarity module<a class="headerlink" href="#module-mozetl.taar.taar_similarity" title="Permalink to this headline">¶</a></h2>
+<p>Bug 1386274 - TAAR similarity-based add-on donor list</p>
+<p>This job clusters users into different groups based on their
+active add-ons. A representative users sample is selected from
+each cluster (“donors”) and is saved to a model file along
+with a feature vector that will be used, by the TAAR library
+module, to perform recommendations.</p>
+<dl class="py function">
+<dt id="mozetl.taar.taar_similarity.compute_clusters">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_similarity.</span></code><code class="sig-name descname"><span class="pre">compute_clusters</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">addons_df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_clusters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_seed</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_similarity.html#compute_clusters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_similarity.compute_clusters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs user clustering by using add-on ids as features.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.taar.taar_similarity.format_donors_dictionary">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_similarity.</span></code><code class="sig-name descname"><span class="pre">format_donors_dictionary</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">donors_df</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_similarity.html#format_donors_dictionary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_similarity.format_donors_dictionary" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.taar.taar_similarity.generate_non_cartesian_pairs">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_similarity.</span></code><code class="sig-name descname"><span class="pre">generate_non_cartesian_pairs</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">first_rdd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">second_rdd</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_similarity.html#generate_non_cartesian_pairs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_similarity.generate_non_cartesian_pairs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.taar.taar_similarity.get_addons_per_client">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_similarity.</span></code><code class="sig-name descname"><span class="pre">get_addons_per_client</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">users_df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addon_whitelist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minimum_addons_count</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_similarity.html#get_addons_per_client"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_similarity.get_addons_per_client" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extracts a DataFrame that contains one row
+for each client along with the list of active add-on GUIDs.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.taar.taar_similarity.get_donor_pools">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_similarity.</span></code><code class="sig-name descname"><span class="pre">get_donor_pools</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">users_df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clusters_df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_donors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_similarity.html#get_donor_pools"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_similarity.get_donor_pools" title="Permalink to this definition">¶</a></dt>
+<dd><p>Samples users from each cluster.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.taar.taar_similarity.get_donors">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_similarity.</span></code><code class="sig-name descname"><span class="pre">get_donors</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spark</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_clusters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_donors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addon_whitelist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date_from</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_similarity.html#get_donors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_similarity.get_donors" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.taar.taar_similarity.get_lr_curves">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_similarity.</span></code><code class="sig-name descname"><span class="pre">get_lr_curves</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spark</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">features_df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cluster_ids</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel_bandwidth</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_pdf_points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_similarity.html#get_lr_curves"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_similarity.get_lr_curves" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the likelihood ratio curves for clustered clients.</p>
+<p>Work-flow followed in this function is as follows:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Access the DataFrame including cluster numbers and features.</p></li>
+<li><p>Load same similarity function that will be used in TAAR module.</p></li>
+<li><p>Iterate through each cluster and compute in-cluster similarity.</p></li>
+<li><p>Iterate through each cluster and compute out-cluster similarity.</p></li>
+<li><p>Compute the kernel density estimate (KDE) per similarity score.</p></li>
+<li><p>Linearly down-sample both PDFs to 1000 points.</p></li>
+</ul>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>spark</strong> – the SparkSession object.</p></li>
+<li><p><strong>features_df</strong> – the DataFrame containing the user features (e.g. the
+ones coming from <a href="#id5"><span class="problematic" id="id6">|get_donors|</span></a>).</p></li>
+<li><p><strong>cluster_ids</strong> – the list of cluster ids (e.g. the one coming from <a href="#id7"><span class="problematic" id="id8">|get_donors|</span></a>).</p></li>
+<li><p><strong>kernel_bandwidth</strong> – the kernel bandwidth used to estimate the kernel densities.</p></li>
+<li><p><strong>num_pdf_points</strong> – the number of points to sample for the LR-curves.</p></li>
+<li><p><strong>random_seed</strong> – the provided random seed (fixed in tests).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A list in the following format
+[(idx, (lr-numerator-for-idx, lr-denominator-for-idx)), (…), …]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.taar.taar_similarity.get_samples">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_similarity.</span></code><code class="sig-name descname"><span class="pre">get_samples</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spark</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date_from</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_similarity.html#get_samples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_similarity.get_samples" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a DataFrame with a valid set of sample to base the next
+processing on.</p>
+<p>Sample is limited to submissions received since <cite>date_from</cite> and latest row per each client.</p>
+<p>Reference documentation is found here:</p>
+<p>Firefox Clients Daily telemetry table
+<a class="reference external" href="https://docs.telemetry.mozilla.org/datasets/batch_view/clients_daily/reference.html">https://docs.telemetry.mozilla.org/datasets/batch_view/clients_daily/reference.html</a></p>
+<p>BUG 1485152: PR include active_addons to clients_daily table:
+<a class="reference external" href="https://github.com/mozilla/telemetry-batch-view/pull/490">https://github.com/mozilla/telemetry-batch-view/pull/490</a></p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.taar.taar_similarity.similarity_function">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_similarity.</span></code><code class="sig-name descname"><span class="pre">similarity_function</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_similarity.html#similarity_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_similarity.similarity_function" title="Permalink to this definition">¶</a></dt>
+<dd><p>Similarity function for comparing user features.</p>
+<p>This actually really should be implemented in taar.similarity_recommender
+and then imported here for consistency.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.taar.taar_similarity.today_minus_90_days">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_similarity.</span></code><code class="sig-name descname"><span class="pre">today_minus_90_days</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_similarity.html#today_minus_90_days"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_similarity.today_minus_90_days" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-mozetl.taar.taar_utils">
+<span id="mozetl-taar-taar-utils-module"></span><h2>mozetl.taar.taar_utils module<a class="headerlink" href="#module-mozetl.taar.taar_utils" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="mozetl.taar.taar_utils.hash_telemetry_id">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_utils.</span></code><code class="sig-name descname"><span class="pre">hash_telemetry_id</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">telemetry_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_utils.html#hash_telemetry_id"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_utils.hash_telemetry_id" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>This hashing function is a reference implementation based on :</dt><dd><p><a class="reference external" href="https://phabricator.services.mozilla.com/D8311">https://phabricator.services.mozilla.com/D8311</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.taar.taar_utils.load_amo_curated_whitelist">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_utils.</span></code><code class="sig-name descname"><span class="pre">load_amo_curated_whitelist</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_utils.html#load_amo_curated_whitelist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_utils.load_amo_curated_whitelist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the curated whitelist of addon GUIDs</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.taar.taar_utils.load_amo_external_whitelist">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_utils.</span></code><code class="sig-name descname"><span class="pre">load_amo_external_whitelist</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_utils.html#load_amo_external_whitelist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_utils.load_amo_external_whitelist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Download and parse the AMO add-on whitelist.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#RuntimeError" title="(in Python v3.11)"><strong>RuntimeError</strong></a> – the AMO whitelist file cannot be downloaded or contains
+no valid add-ons.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.taar.taar_utils.read_from_s3">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_utils.</span></code><code class="sig-name descname"><span class="pre">read_from_s3</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s3_dest_file_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s3_prefix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bucket</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_utils.html#read_from_s3"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_utils.read_from_s3" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read JSON from an S3 bucket and return the decoded JSON blob</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.taar.taar_utils.selfdestructing_path">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_utils.</span></code><code class="sig-name descname"><span class="pre">selfdestructing_path</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dirname</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_utils.html#selfdestructing_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_utils.selfdestructing_path" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.taar.taar_utils.store_json_to_s3">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_utils.</span></code><code class="sig-name descname"><span class="pre">store_json_to_s3</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">json_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bucket</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_utils.html#store_json_to_s3"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_utils.store_json_to_s3" title="Permalink to this definition">¶</a></dt>
+<dd><p>Saves the JSON data to a local file and then uploads it to S3.</p>
+<p>Two copies of the file will get uploaded: one with as “&lt;base_filename&gt;.json”
+and the other as “&lt;base_filename&gt;&lt;YYYYMMDD&gt;.json” for backup purposes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>json_data</strong> – A string with the JSON content to write.</p></li>
+<li><p><strong>base_filename</strong> – A string with the base name of the file to use for saving
+locally and uploading to S3.</p></li>
+<li><p><strong>date</strong> – A date string in the “YYYYMMDD” format.</p></li>
+<li><p><strong>prefix</strong> – The S3 prefix.</p></li>
+<li><p><strong>bucket</strong> – The S3 bucket name.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mozetl.taar.taar_utils.write_to_s3">
+<code class="sig-prename descclassname"><span class="pre">mozetl.taar.taar_utils.</span></code><code class="sig-name descname"><span class="pre">write_to_s3</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source_file_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s3_dest_file_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s3_prefix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bucket</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mozetl/taar/taar_utils.html#write_to_s3"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mozetl.taar.taar_utils.write_to_s3" title="Permalink to this definition">¶</a></dt>
+<dd><p>Store the new json file containing current top addons per locale to S3.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>source_file_name</strong> – The name of the local source file.</p></li>
+<li><p><strong>s3_dest_file_name</strong> – The name of the destination file on S3.</p></li>
+<li><p><strong>s3_prefix</strong> – The S3 prefix in the bucket.</p></li>
+<li><p><strong>bucket</strong> – The S3 bucket.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-mozetl.taar">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-mozetl.taar" title="Permalink to this headline">¶</a></h2>
 </div>
 </div>
 
