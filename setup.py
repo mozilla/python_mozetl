@@ -34,7 +34,7 @@ setup(
         'click_datetime==0.2',
         'numpy==1.19.4',
         'pandas==1.1.4',
-        'pyspark==2.3.2',
+        'pyspark==3.3.1',
         'python-moztelemetry @ git+http://github.com/mozilla/python_moztelemetry.git@v0.10.2#egg=python-moztelemetry',
         'requests-toolbelt==0.9.1',
         'requests==2.25.0',
