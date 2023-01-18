@@ -37,7 +37,7 @@ setup(
         'pandas==1.1.4',
         # NOTE: this is pinned to 3.20.3 because protos changed and we can't regenerate them.
         'protobuf==3.20.3',
-        'pyspark==2.3.2',
+        'pyspark==3.2.2',
         'python-moztelemetry @ git+http://github.com/mozilla/python_moztelemetry.git@v0.10.2#egg=python-moztelemetry',
         'requests-toolbelt==0.9.1',
         'requests==2.25.0',
