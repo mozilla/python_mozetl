@@ -1139,8 +1139,7 @@ default_config = {
     "end_date": datetime.today() - timedelta(days=1),
     "use_s3": True,
     "sample_size": 0.50,
-    "symbol_server_url": "https://s3-us-west-2.amazonaws.com/"
-    "org.mozilla.crash-stats.symbols-public/v1/",
+    "symbol_server_url": "https://symbols.mozilla.org/",
     "hang_profile_in_filename": "hang_profile_128_16000",
     "hang_profile_out_filename": None,
     "print_debug_info": False,
