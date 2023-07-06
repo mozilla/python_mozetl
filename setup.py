@@ -41,7 +41,7 @@ setup(
         'python-moztelemetry @ git+http://github.com/mozilla/python_moztelemetry.git@v0.10.2#egg=python-moztelemetry',
         'requests-toolbelt==0.9.1',
         'requests==2.25.0',
-        'scipy==1.5.4',
+        'scipy==1.10.0',
         'typing==3.6.4',
         'six==1.15.0',
     ],
