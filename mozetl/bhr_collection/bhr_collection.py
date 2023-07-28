@@ -300,7 +300,7 @@ class ProfileProcessor(object):
         root_stack[0] += hang_ms
 
         last_stack = 0
-        for (func_name, lib_name) in stack:
+        for func_name, lib_name in stack:
             last_stack = prune_stack_cache.key_to_index(
                 (func_name, lib_name, last_stack)
             )
@@ -327,14 +327,14 @@ class ProfileProcessor(object):
         prune_stack_cache = thread["pruneStackCache"]
 
         last_annotation = None
-        for (name, value) in annotations:
+        for name, value in annotations:
             last_annotation = annotations_table.key_to_index(
                 (last_annotation, name, value)
             )
 
         last_stack = 0
         last_cache_item_index = 0
-        for (func_name, lib_name) in stack:
+        for func_name, lib_name in stack:
             cache_item_index = prune_stack_cache.key_to_index(
                 (func_name, lib_name, last_cache_item_index)
             )
@@ -1252,8 +1252,8 @@ def start_job(date, sample_size, use_gcs):
             "hang_lower_bound": 128,
             "hang_upper_bound": 65536,
             "sample_size": sample_size,
-            "use_gcs" : use_gcs,
-            "use_s3" : not use_gcs,
+            "use_gcs": use_gcs,
+            "use_s3": not use_gcs,
         },
     )
 
