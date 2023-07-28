@@ -23,6 +23,7 @@ from boto3.s3.transfer import S3Transfer
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import array, collect_list
 from pyspark.sql.types import Row
+from google.cloud import storage
 
 UNSYMBOLICATED = "<unsymbolicated>"
 SYMBOL_TRUNCATE_LENGTH = 200
@@ -1132,12 +1133,24 @@ def write_file(name, stuff, config):
                 "bhr/data/hang_aggregates/" + name + "_" + config["uuid"] + ".json"
             )
             transfer.upload_file(gzfilename, bucket, s3_uuid_key, extra_args=extra_args)
+    elif config["use_gcs"]:
+        bucket_name = "moz-fx-data-static-websit-f7e0-analysis-output"
+        gcs_key = "bhr/data/hang_aggregates/" + name + ".json"
+        if config["uuid"] is not None:
+            gcs_key = (
+                "bhr/data/hang_aggregates/" + name + "_" + config["uuid"] + ".json"
+            )
+        storage_client = storage.Client()
+        bucket = storage_client.bucket(bucket_name)
+        blob = bucket.blob(gcs_key)
+        blob.upload_from_filename(gzfilename)
 
 
 default_config = {
     "start_date": datetime.today() - timedelta(days=9),
     "end_date": datetime.today() - timedelta(days=1),
     "use_s3": True,
+    "use_gcs": False,
     "sample_size": 0.50,
     "symbol_server_url": "https://symbols.mozilla.org/",
     "hang_profile_in_filename": "hang_profile_128_16000",
@@ -1224,7 +1237,8 @@ def etl_job_daily(sc, sql_context, config=None):
     default=0.5,
     help="Proportion of pings to use (1.0 is 100%)",
 )
-def start_job(date, sample_size):
+@click.option("--use_gcs", is_flag=True, default=False)
+def start_job(date, sample_size, use_gcs):
     print(f"Running for {date}")
     print(f"Using sample size {sample_size}")
     etl_job_daily(
@@ -1238,6 +1252,8 @@ def start_job(date, sample_size):
             "hang_lower_bound": 128,
             "hang_upper_bound": 65536,
             "sample_size": sample_size,
+            "use_gcs" : use_gcs,
+            "use_s3" : not use_gcs,
         },
     )
 
