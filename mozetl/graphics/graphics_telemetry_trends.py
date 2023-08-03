@@ -12,12 +12,13 @@ import os
 import sys
 import time
 
-import boto3
 import requests
 from bigquery_shim import trends
 from moztelemetry import get_one_ping_per_client
 from pyspark import SparkContext
 from pyspark.sql import SparkSession
+
+from google.cloud import storage
 
 
 def fmt_date(d):
@@ -32,7 +33,7 @@ def repartition(pipeline):
     return pipeline.repartition(MaxPartitions).cache()
 
 
-s3_client = boto3.client("s3")
+storage_client = storage.Client()
 
 sc = SparkContext.getOrCreate()
 spark = SparkSession.builder.appName("graphics-trends").getOrCreate()
@@ -45,13 +46,13 @@ WeeklyFraction = 0.003
 # Amount of days Telemetry keeps.
 MaxHistoryInDays = datetime.timedelta(days=210)
 
-# Bucket we'll drop files into on S3. If this is None, we won't attempt any
-# S3 uploads, and the analysis will start from scratch.
-S3_BUCKET = "telemetry-public-analysis-2"
-S3_PREFIX = "gfx/telemetry-data/"
+# Bucket we'll drop files into on GCS. If this is None, we won't attempt any
+# GCS uploads, and the analysis will start from scratch.
+GCS_BUCKET = "moz-fx-data-static-websit-f7e0-analysis-output"
+GCS_PREFIX = "gfx/telemetry-data/"
 GITHUB_REPO = "https://raw.githubusercontent.com/FirefoxGraphics/moz-gfx-telemetry"
 
-# List of jobs allowed to have a first-run (meaning no S3 content).
+# List of jobs allowed to have a first-run (meaning no GCS content).
 BrandNewJobs = []
 
 # If true, backfill up to MaxHistoryInDays rather than the last update.
@@ -329,7 +330,7 @@ class TrendGroup(TrendBase):
 
 # A Trend object takes a new set of pings for a week's worth of data,
 # analyzes it, and adds the result to the trend set. Trend sets are
-# cached in S3 as JSON.
+# cached in GCS as JSON.
 #
 # If the latest entry in the cache covers less than a full week of
 # data, the entry is removed so that week can be re-queried.
@@ -431,25 +432,22 @@ class Trend(TrendBase):
         with open(self.local_path, "w") as fp:
             fp.write(text)
 
-        if S3_BUCKET is not None:
+        if GCS_BUCKET is not None:
             try:
-                s3_client.upload_file(
-                    Filename=self.local_path,
-                    Bucket=S3_BUCKET,
-                    Key=os.path.join(S3_PREFIX, self.name),
-                )
+                bucket = storage_client.get_bucket(GCS_BUCKET)
+                blob = bucket.blob(os.path.join(GCS_PREFIX, self.name))
+                blob.upload_from_filename(self.local_path)
             except Exception as e:
-                print("Failed s3 upload: {0}".format(e))
+                print("Failed gcs upload: {0}".format(e))
 
     def fetch_json(self):
         print("Reading file {0}".format(self.local_path))
-        if S3_BUCKET is not None:
+        if GCS_BUCKET is not None:
             try:
-                s3_client.download_file(
-                    Bucket=S3_BUCKET,
-                    Key=os.path.join(S3_PREFIX, self.name),
-                    Filename=self.local_path,
-                )
+                storage_client = storage.Client()
+                bucket = storage_client.get_bucket(GCS_BUCKET)
+                blob = bucket.blob(os.path.join(GCS_PREFIX, self.name))
+                blob.download_to_filename(self.local_path)
                 with open(self.local_path, "r") as fp:
                     return json.load(fp)
             except Exception:
@@ -595,8 +593,10 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--force-max-backfill", action="store_true")
     parser.add_argument("--weekly-fraction", type=float, default=0.003)
-    parser.add_argument("--s3-bucket", default="telemetry-public-analysis-2")
-    parser.add_argument("--s3-prefix", default="gfx/telemetry-data/")
+    parser.add_argument(
+        "--gcs-bucket", default="moz-fx-data-static-websit-f7e0-analysis-output"
+    )
+    parser.add_argument("--gcs-prefix", default="gfx/telemetry-data/")
     parser.add_argument("--max-history-in-days", type=int, default=210)
     parser.add_argument("--brand-new-jobs", action="append", default=[])
     return parser.parse_args()
@@ -606,8 +606,8 @@ if __name__ == "__main__":
     args = parse_args()
     ForceMaxBackfill = args.force_max_backfill
     WeeklyFraction = args.weekly_fraction
-    S3_BUCKET = args.s3_bucket
-    S3_PREFIX = args.s3_prefix
+    GCS_BUCKET = args.gcs_bucket
+    GCS_PREFIX = args.gcs_prefix
     MaxHistoryInDays = datetime.timedelta(days=args.max_history_in_days)
     BrandNewJobs = args.brand_new_jobs
 
