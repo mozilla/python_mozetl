@@ -1134,7 +1134,7 @@ def write_file(name, stuff, config):
             )
             transfer.upload_file(gzfilename, bucket, s3_uuid_key, extra_args=extra_args)
     elif config["use_gcs"]:
-        bucket_name = "moz-fx-data-static-websit-f7e0-analysis-output"
+        bucket_name = "moz-fx-data-static-websit-8565-analysis-output"
         gcs_key = "bhr/data/hang_aggregates/" + name + ".json"
         if config["uuid"] is not None:
             gcs_key = (
