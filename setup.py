@@ -33,7 +33,7 @@ setup(
         'botocore==1.19.20',
         'click==7.1.2',
         'click_datetime==0.2',
-        'numpy==1.19.4',
+        'numpy==1.22.0',
         'pandas==1.1.4',
         # NOTE: this is pinned to 3.20.3 because protos changed and we can't regenerate them.
         'protobuf==3.20.3',
