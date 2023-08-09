@@ -1104,7 +1104,7 @@ def read_file(name, config):
         with gzip.open(gzfilename, "r") as f:
             return json.loads(f.read())
 
-
+# Retained s3 logic for backwards compatibility only due to the AWS to GCP migration
 def write_file(name, stuff, config):
     end_date = datetime.today()
     end_date_str = end_date.strftime("%Y%m%d")
