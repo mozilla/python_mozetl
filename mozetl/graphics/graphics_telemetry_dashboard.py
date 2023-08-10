@@ -65,7 +65,6 @@ ReleaseFraction = args.release_fraction
 
 bucket = storage_client.get_bucket(OUTPUT_BUCKET)
 blobs = bucket.list_blobs(prefix=OUTPUT_PREFIX)
-# Extract object names from the Blob objects
 existing_objects = [blob.name for blob in blobs]
 
 print(f"Existing objects: {existing_objects}")
