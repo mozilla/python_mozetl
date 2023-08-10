@@ -329,7 +329,6 @@ def export(filename, obj, **kwargs):
     bucket = storage_client.get_bucket(OUTPUT_BUCKET)
     blob = bucket.blob(full_filename)
 
-    # Convert the 'obj' dictionary to JSON and upload it to GCS
     # serialize snake case dicts via their underlying dict
     blob.upload_from_string(
         json.dumps(obj, cls=snake_case.SnakeCaseEncoder),
