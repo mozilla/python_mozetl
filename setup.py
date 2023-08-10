@@ -33,6 +33,7 @@ setup(
         'botocore==1.19.20',
         'click==7.1.2',
         'click_datetime==0.2',
+        'google-cloud-storage==2.7.0',
         'numpy==1.19.4',
         'pandas==1.1.4',
         # NOTE: this is pinned to 3.20.3 because protos changed and we can't regenerate them.

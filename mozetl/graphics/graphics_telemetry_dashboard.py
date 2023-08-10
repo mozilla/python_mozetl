@@ -2,7 +2,6 @@
 # pip install:
 # python_moztelemetry
 # git+https://github.com/FirefoxGraphics/telemetry.git#egg=pkg&subdirectory=analyses/bigquery_shim
-# boto3==1.16.20
 # six==1.15.0
 
 import argparse
@@ -12,11 +11,12 @@ import os
 import sys
 import time
 
-import boto3
 from bigquery_shim import dashboard, snake_case
 from moztelemetry import get_pings_properties
 from pyspark import SparkContext
 from pyspark.sql import SparkSession
+
+from google.cloud import storage
 
 
 def fmt_date(d):
@@ -27,7 +27,7 @@ def repartition(pipeline):
     return pipeline.repartition(MaxPartitions).cache()
 
 
-s3_client = boto3.client("s3")
+storage_client = storage.Client()
 
 sc = SparkContext.getOrCreate()
 spark = SparkSession.builder.appName("graphics-trends").getOrCreate()
@@ -45,7 +45,9 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--default-time-window", type=int, default=14)
     parser.add_argument("--release-fraction", type=float, default=0.003)
-    parser.add_argument("--output-bucket", default="telemetry-public-analysis-2")
+    parser.add_argument(
+        "--output-bucket", default="moz-fx-data-static-websit-f7e0-analysis-output"
+    )
     parser.add_argument("--output-prefix", default="gfx/telemetry-data/")
     return parser.parse_args()
 
@@ -61,12 +63,10 @@ OUTPUT_PREFIX = args.output_prefix
 DefaultTimeWindow = args.default_time_window
 ReleaseFraction = args.release_fraction
 
-existing_objects = [
-    obj["Key"]
-    for obj in s3_client.list_objects_v2(Bucket=OUTPUT_BUCKET, Prefix=OUTPUT_PREFIX)[
-        "Contents"
-    ]
-]
+bucket = storage_client.get_bucket(OUTPUT_BUCKET)
+blobs = bucket.list_blobs(prefix=OUTPUT_PREFIX)
+existing_objects = [blob.name for blob in blobs]
+
 print(f"Existing objects: {existing_objects}")
 
 # List of keys for properties on session pings that we care about.
@@ -324,10 +324,13 @@ def export(filename, obj, **kwargs):
     full_filename = os.path.join(OUTPUT_PREFIX, f"{filename}.json")
     print("Writing to {0}".format(full_filename))
     # serialize snake case dicts via their underlying dict
-    s3_client.put_object(
-        Bucket=OUTPUT_BUCKET,
-        Key=full_filename,
-        Body=bytes(json.dumps(obj, cls=snake_case.SnakeCaseEncoder), encoding="utf-8"),
+    bucket = storage_client.get_bucket(OUTPUT_BUCKET)
+    blob = bucket.blob(full_filename)
+
+    # serialize snake case dicts via their underlying dict
+    blob.upload_from_string(
+        json.dumps(obj, cls=snake_case.SnakeCaseEncoder),
+        content_type="application/json",
     )
 
 
