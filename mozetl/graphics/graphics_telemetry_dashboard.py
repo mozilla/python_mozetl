@@ -64,7 +64,6 @@ DefaultTimeWindow = args.default_time_window
 ReleaseFraction = args.release_fraction
 
 bucket = storage_client.get_bucket(OUTPUT_BUCKET)
-# List all objects in the GCS bucket with the given prefix
 blobs = bucket.list_blobs(prefix=OUTPUT_PREFIX)
 # Extract object names from the Blob objects
 existing_objects = [blob.name for blob in blobs]
