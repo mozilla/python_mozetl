@@ -48,7 +48,7 @@ MaxHistoryInDays = datetime.timedelta(days=210)
 
 # Bucket we'll drop files into on GCS. If this is None, we won't attempt any
 # GCS uploads, and the analysis will start from scratch.
-GCS_BUCKET = "moz-fx-data-static-websit-f7e0-analysis-output"
+GCS_BUCKET = "moz-fx-data-static-websit-8565-analysis-output"
 GCS_PREFIX = "gfx/telemetry-data/"
 GITHUB_REPO = "https://raw.githubusercontent.com/FirefoxGraphics/moz-gfx-telemetry"
 
@@ -594,7 +594,7 @@ def parse_args():
     parser.add_argument("--force-max-backfill", action="store_true")
     parser.add_argument("--weekly-fraction", type=float, default=0.003)
     parser.add_argument(
-        "--gcs-bucket", default="moz-fx-data-static-websit-f7e0-analysis-output"
+        "--gcs-bucket", default="moz-fx-data-static-websit-8565-analysis-output"
     )
     parser.add_argument("--gcs-prefix", default="gfx/telemetry-data/")
     parser.add_argument("--max-history-in-days", type=int, default=210)

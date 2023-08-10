@@ -46,7 +46,7 @@ def parse_args():
     parser.add_argument("--default-time-window", type=int, default=14)
     parser.add_argument("--release-fraction", type=float, default=0.003)
     parser.add_argument(
-        "--output-bucket", default="moz-fx-data-static-websit-f7e0-analysis-output"
+        "--output-bucket", default="moz-fx-data-static-websit-8565-analysis-output"
     )
     parser.add_argument("--output-prefix", default="gfx/telemetry-data/")
     return parser.parse_args()
