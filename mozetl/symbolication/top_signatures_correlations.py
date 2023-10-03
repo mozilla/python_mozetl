@@ -13,6 +13,8 @@ from datetime import datetime
 from pyspark import SparkContext
 from pyspark.sql import SparkSession
 
+from google.cloud import storage
+
 sys.path += [os.path.abspath("."), os.path.abspath("crashcorrelations")]
 os.system("git clone https://github.com/marco-c/crashcorrelations.git")
 
@@ -21,6 +23,7 @@ os.system("tar xf stemming-1.0.1.tar.gz")
 
 sc = SparkContext.getOrCreate()
 spark = SparkSession.builder.appName("modules-with-missing-symbols").getOrCreate()
+gcs_client = storage.Client()
 
 sc.addPyFile("stemming-1.0.1/stemming/porter2.py")
 
@@ -33,6 +36,9 @@ TOP_SIGNATURE_PERIOD_DAYS = 5
 
 # Number of days to look at for telemetry crash data
 TELEMETRY_CRASHES_PERIOD_DAYS = 30
+
+# Name of the GCS bucket where results are stored
+RESULTS_GCS_BUCKET = "moz-fx-data-static-websit-f7e0-analysis-output"
 
 
 from crashcorrelations import (  # noqa E402
@@ -60,6 +66,25 @@ def parse_args():
         help="Run date, defaults to current dat",
     )
     return parser.parse_args()
+
+
+def remove_results_gcs(job_name):
+    bucket = gcs_client.bucket(RESULTS_GCS_BUCKET)
+    for key in bucket.list_blobs(prefix=job_name + "/data/"):
+        key.delete()
+
+
+def upload_results_gcs(job_name, directory):
+    bucket = gcs_client.bucket(RESULTS_GCS_BUCKET)
+    for root, dirs, files in os.walk(directory):
+        for name in files:
+            full_path = os.path.join(root, name)
+            blob = bucket.blob(
+                "{}/data/{}".format(
+                    job_name, full_path[len(directory) + 1 :]  # noqa E203
+                )
+            )
+            blob.upload_from_filename(full_path, content_type="application/json")
 
 
 args = parse_args()
@@ -167,7 +192,5 @@ print(datetime.utcnow())
 
 # Will be uploaded under
 # https://analysis-output.telemetry.mozilla.org/top-signatures-correlations/data/
-utils.remove_results("top-signatures-correlations")
-utils.upload_results(
-    "top-signatures-correlations", "top-signatures-correlations_output"
-)
+remove_results_gcs("top-signatures-correlations")
+upload_results_gcs("top-signatures-correlations", "top-signatures-correlations_output")
