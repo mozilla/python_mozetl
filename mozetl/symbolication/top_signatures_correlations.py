@@ -38,7 +38,7 @@ TOP_SIGNATURE_PERIOD_DAYS = 5
 TELEMETRY_CRASHES_PERIOD_DAYS = 30
 
 # Name of the GCS bucket where results are stored
-RESULTS_GCS_BUCKET = 'moz-fx-data-static-websit-f7e0-analysis-output'
+RESULTS_GCS_BUCKET = "moz-fx-data-static-websit-f7e0-analysis-output"
 
 
 from crashcorrelations import (  # noqa E402
@@ -70,7 +70,7 @@ def parse_args():
 
 def remove_results_gcs(job_name):
     bucket = gcs_client.bucket(RESULTS_GCS_BUCKET)
-    for key in bucket.list_blobs(prefix=job_name + '/data/'):
+    for key in bucket.list_blobs(prefix=job_name + "/data/"):
         key.delete()
 
 
@@ -79,8 +79,13 @@ def upload_results_gcs(job_name, directory):
     for root, dirs, files in os.walk(directory):
         for name in files:
             full_path = os.path.join(root, name)
-            blob = bucket.blob('{}/data/{}'.format(job_name, full_path[len(directory) + 1:]))
-            blob.upload_from_filename(full_path, content_type='application/json')
+            blob = bucket.blob(
+                "{}/data/{}".format(
+                    job_name, full_path[len(directory) + 1 :]  # noqa E203
+                )
+            )
+            blob.upload_from_filename(full_path, content_type="application/json")
+
 
 args = parse_args()
 
@@ -188,6 +193,4 @@ print(datetime.utcnow())
 # Will be uploaded under
 # https://analysis-output.telemetry.mozilla.org/top-signatures-correlations/data/
 remove_results_gcs("top-signatures-correlations")
-upload_results_gcs(
-    "top-signatures-correlations", "top-signatures-correlations_output"
-)
+upload_results_gcs("top-signatures-correlations", "top-signatures-correlations_output")
