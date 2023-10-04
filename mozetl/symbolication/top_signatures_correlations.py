@@ -38,7 +38,7 @@ TOP_SIGNATURE_PERIOD_DAYS = 5
 TELEMETRY_CRASHES_PERIOD_DAYS = 30
 
 # Name of the GCS bucket where results are stored
-RESULTS_GCS_BUCKET = "moz-fx-data-static-websit-f7e0-analysis-output"
+RESULTS_GCS_BUCKET = "moz-fx-data-static-websit-8565-analysis-output"
 
 
 from crashcorrelations import (  # noqa E402
