@@ -1144,7 +1144,11 @@ def write_file(name, stuff, config):
         blob.upload_from_filename(gzfilename, **extra_args)
         if config["uuid"] is not None:
             gcs_key = (
-                "bhr/test_folder/hang_aggregates/" + name + "_" + config["uuid"] + ".json"
+                "bhr/test_folder/hang_aggregates/"
+                + name
+                + "_"
+                + config["uuid"]
+                + ".json"
             )
             storage_client = storage.Client()
             bucket = storage_client.bucket(bucket_name)
