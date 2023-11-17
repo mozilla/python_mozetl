@@ -1136,7 +1136,7 @@ def write_file(name, stuff, config):
             transfer.upload_file(gzfilename, bucket, s3_uuid_key, extra_args=extra_args)
     elif config["use_gcs"]:
         bucket_name = "moz-fx-data-static-websit-8565-analysis-output"
-        gcs_key = "bhr/data/hang_aggregates/" + name + ".json"
+        gcs_key = "bhr/test_folder/hang_aggregates/" + name + ".json"
         extra_args = {"ContentType": "application/json", "ContentEncoding": "gzip"}
         storage_client = storage.Client()
         bucket = storage_client.bucket(bucket_name)
@@ -1144,7 +1144,7 @@ def write_file(name, stuff, config):
         blob.upload_from_filename(gzfilename, **extra_args)
         if config["uuid"] is not None:
             gcs_key = (
-                "bhr/data/hang_aggregates/" + name + "_" + config["uuid"] + ".json"
+                "bhr/test_folder/hang_aggregates/" + name + "_" + config["uuid"] + ".json"
             )
             storage_client = storage.Client()
             bucket = storage_client.bucket(bucket_name)
