@@ -1168,7 +1168,7 @@
             <span class="p">)</span>
             <span class="n">transfer</span><span class="o">.</span><span class="n">upload_file</span><span class="p">(</span><span class="n">gzfilename</span><span class="p">,</span> <span class="n">bucket</span><span class="p">,</span> <span class="n">s3_uuid_key</span><span class="p">,</span> <span class="n">extra_args</span><span class="o">=</span><span class="n">extra_args</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;use_gcs&quot;</span><span class="p">]:</span>
-        <span class="n">bucket_name</span> <span class="o">=</span> <span class="s2">&quot;moz-fx-data-static-websit-8565-analysis-output&quot;</span>
+        <span class="n">bucket_name</span> <span class="o">=</span> <span class="s2">&quot;moz-fx-data-static-websit-f7e0-analysis-output&quot;</span>
         <span class="n">gcs_key</span> <span class="o">=</span> <span class="s2">&quot;bhr/test_folder/hang_aggregates/&quot;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;.json&quot;</span>
         <span class="n">extra_args</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;ContentType&quot;</span><span class="p">:</span> <span class="s2">&quot;application/json&quot;</span><span class="p">,</span> <span class="s2">&quot;ContentEncoding&quot;</span><span class="p">:</span> <span class="s2">&quot;gzip&quot;</span><span class="p">}</span>
         <span class="n">storage_client</span> <span class="o">=</span> <span class="n">storage</span><span class="o">.</span><span class="n">Client</span><span class="p">()</span>
