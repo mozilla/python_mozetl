@@ -1100,8 +1100,7 @@ def read_file(name, config):
             filename = "./output/%s-%s.json" % (name, end_date_str)
         else:
             filename = "./output/%s.json" % name
-        gzfilename = filename + ".gz"
-        with gzip.open(gzfilename, "r") as f:
+        with open(filename, "r") as f:
             return json.loads(f.read())
 
 
@@ -1114,12 +1113,12 @@ def write_file(name, stuff, config):
         filename = "./output/%s-%s.json" % (name, end_date_str)
     else:
         filename = "./output/%s.json" % name
-    gzfilename = filename + ".gz"
+
     jsonblob = json.dumps(stuff, ensure_ascii=False).encode("utf-8")
 
     if not os.path.exists("./output"):
         os.makedirs("./output")
-    with gzip.open(gzfilename, "w") as f:
+    with open(filename, "w") as f:
         f.write(jsonblob)
 
     if config["use_s3"]:
@@ -1127,21 +1126,21 @@ def write_file(name, stuff, config):
         s3_key = "bhr/data/hang_aggregates/" + name + ".json"
         client = boto3.client("s3", "us-west-2")
         transfer = S3Transfer(client)
-        extra_args = {"ContentType": "application/json", "ContentEncoding": "gzip"}
-        transfer.upload_file(gzfilename, bucket, s3_key, extra_args=extra_args)
+        extra_args = {"ContentType": "application/json"}
+        transfer.upload_file(filename, bucket, s3_key, extra_args=extra_args)
         if config["uuid"] is not None:
             s3_uuid_key = (
                 "bhr/data/hang_aggregates/" + name + "_" + config["uuid"] + ".json"
             )
-            transfer.upload_file(gzfilename, bucket, s3_uuid_key, extra_args=extra_args)
+            transfer.upload_file(filename, bucket, s3_uuid_key, extra_args=extra_args)
     elif config["use_gcs"]:
         bucket_name = "moz-fx-data-static-websit-8565-analysis-output"
         gcs_key = "bhr/data/hang_aggregates/" + name + ".json"
-        extra_args = {"ContentType": "application/json", "ContentEncoding": "gzip"}
+        extra_args = {"content_type": "application/json"}
         storage_client = storage.Client()
         bucket = storage_client.bucket(bucket_name)
         blob = bucket.blob(gcs_key)
-        blob.upload_from_filename(gzfilename, **extra_args)
+        blob.upload_from_filename(filename, **extra_args)
         if config["uuid"] is not None:
             gcs_key = (
                 "bhr/data/hang_aggregates/" + name + "_" + config["uuid"] + ".json"
@@ -1149,7 +1148,7 @@ def write_file(name, stuff, config):
             storage_client = storage.Client()
             bucket = storage_client.bucket(bucket_name)
             blob = bucket.blob(gcs_key)
-            blob.upload_from_filename(gzfilename, **extra_args)
+            blob.upload_from_filename(filename, **extra_args)
 
 
 default_config = {
