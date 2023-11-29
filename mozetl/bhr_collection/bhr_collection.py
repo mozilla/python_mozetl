@@ -1116,7 +1116,7 @@ def write_file(name, stuff, config):
 
     if not os.path.exists("./output"):
         os.makedirs("./output")
-    with open("filename", "w", encoding="utf8") as json_file:
+    with open(filename, "w", encoding="utf8") as json_file:
         json.dump(stuff, json_file, ensure_ascii=False)
 
     if config["use_s3"]:
