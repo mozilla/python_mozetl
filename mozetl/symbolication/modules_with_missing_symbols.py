@@ -167,7 +167,10 @@ top_missing_with_avail_info = [
     for name, (version, debug_id, debug_file), count in top_missing
 ]
 
-subject = "Weekly report of modules with missing symbols in crash reports: %s" % datetime.today().strftime("%Y-%m-%d")
+subject = (
+    "Weekly report of modules with missing symbols in crash reports: %s"
+    % datetime.today().strftime("%Y-%m-%d")
+)
 
 body = """
 <table style="border-collapse:collapse;">
