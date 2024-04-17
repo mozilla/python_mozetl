@@ -614,9 +614,9 @@ def process_frame(frame, modules):
         return (("pseudo", None), frame)
 
 
-def filter_hang(hang):
+def filter_hang(hang, config):
     return (
-        hang["thread"] == "Gecko"
+        hang["thread"] == config["thread_filter"]
         and len(hang["stack"]) > 0
         and len(hang["stack"]) < 300
     )
@@ -628,7 +628,7 @@ def process_hang(hang):
     return result
 
 
-def process_hangs(ping):
+def process_hangs(ping, config):
     build_date = ping["application/build_id"][:8]  # "YYYYMMDD" : 8 characters
 
     platform = "{}".format(ping["environment/system/os/name"])
@@ -654,7 +654,7 @@ def process_hangs(ping):
             platform,
         )
         for h in hangs
-        if filter_hang(h)
+        if filter_hang(h, config)
     ]
 
     result = []
@@ -698,8 +698,8 @@ def process_hangs(ping):
     return result
 
 
-def get_all_hangs(pings):
-    return pings.flatMap(process_hangs)
+def get_all_hangs(pings, config):
+    return pings.flatMap(lambda ping: process_hangs(ping, config))
 
 
 def map_to_frame_info(hang):
@@ -1016,7 +1016,7 @@ def transform_pings(_, pings, config):
     DEBUG_VARS.append(filtered.first())
 
     hangs = time_code(
-        "Filtering to hangs with native stacks", lambda: get_all_hangs(filtered)
+        "Filtering to hangs with native stacks", lambda: get_all_hangs(filtered, config)
     )
 
     DEBUG_VARS.append(hangs.first())
@@ -1172,6 +1172,7 @@ default_config = {
     "post_sample_size": 1.0,
     "exclude_modules": False,
     "uuid": uuid.uuid4().hex,
+    "thread_filter": "Gecko",
 }
 
 
@@ -1252,6 +1253,23 @@ def start_job(date, sample_size, use_gcs):
             "end_date": date - timedelta(days=4),
             "hang_profile_in_filename": "hangs_main",
             "hang_profile_out_filename": "hangs_main",
+            "thread_filter": "Gecko",
+            "hang_lower_bound": 128,
+            "hang_upper_bound": 65536,
+            "sample_size": sample_size,
+            "use_gcs": use_gcs,
+            "use_s3": not use_gcs,
+        },
+    )
+    etl_job_daily(
+        sc,
+        spark,
+        {
+            "start_date": date - timedelta(days=4),
+            "end_date": date - timedelta(days=4),
+            "hang_profile_in_filename": "hangs_child",
+            "hang_profile_out_filename": "hangs_child",
+            "thread_filter": "Gecko_Child",
             "hang_lower_bound": 128,
             "hang_upper_bound": 65536,
             "sample_size": sample_size,
