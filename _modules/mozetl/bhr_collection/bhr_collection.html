@@ -647,9 +647,9 @@
         <span class="k">return</span> <span class="p">((</span><span class="s2">&quot;pseudo&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="n">frame</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="filter_hang"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.filter_hang">[docs]</a><span class="k">def</span> <span class="nf">filter_hang</span><span class="p">(</span><span class="n">hang</span><span class="p">):</span>
+<div class="viewcode-block" id="filter_hang"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.filter_hang">[docs]</a><span class="k">def</span> <span class="nf">filter_hang</span><span class="p">(</span><span class="n">hang</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
     <span class="k">return</span> <span class="p">(</span>
-        <span class="n">hang</span><span class="p">[</span><span class="s2">&quot;thread&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Gecko&quot;</span>
+        <span class="n">hang</span><span class="p">[</span><span class="s2">&quot;thread&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;thread_filter&quot;</span><span class="p">]</span>
         <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">hang</span><span class="p">[</span><span class="s2">&quot;stack&quot;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span>
         <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">hang</span><span class="p">[</span><span class="s2">&quot;stack&quot;</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mi">300</span>
     <span class="p">)</span></div>
@@ -661,7 +661,7 @@
     <span class="k">return</span> <span class="n">result</span></div>
 
 
-<div class="viewcode-block" id="process_hangs"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.process_hangs">[docs]</a><span class="k">def</span> <span class="nf">process_hangs</span><span class="p">(</span><span class="n">ping</span><span class="p">):</span>
+<div class="viewcode-block" id="process_hangs"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.process_hangs">[docs]</a><span class="k">def</span> <span class="nf">process_hangs</span><span class="p">(</span><span class="n">ping</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
     <span class="n">build_date</span> <span class="o">=</span> <span class="n">ping</span><span class="p">[</span><span class="s2">&quot;application/build_id&quot;</span><span class="p">][:</span><span class="mi">8</span><span class="p">]</span>  <span class="c1"># &quot;YYYYMMDD&quot; : 8 characters</span>
 
     <span class="n">platform</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ping</span><span class="p">[</span><span class="s2">&quot;environment/system/os/name&quot;</span><span class="p">])</span>
@@ -687,7 +687,7 @@
             <span class="n">platform</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">hangs</span>
-        <span class="k">if</span> <span class="n">filter_hang</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">filter_hang</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
     <span class="p">]</span>
 
     <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
@@ -731,8 +731,8 @@
     <span class="k">return</span> <span class="n">result</span></div>
 
 
-<div class="viewcode-block" id="get_all_hangs"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.get_all_hangs">[docs]</a><span class="k">def</span> <span class="nf">get_all_hangs</span><span class="p">(</span><span class="n">pings</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">pings</span><span class="o">.</span><span class="n">flatMap</span><span class="p">(</span><span class="n">process_hangs</span><span class="p">)</span></div>
+<div class="viewcode-block" id="get_all_hangs"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.get_all_hangs">[docs]</a><span class="k">def</span> <span class="nf">get_all_hangs</span><span class="p">(</span><span class="n">pings</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">pings</span><span class="o">.</span><span class="n">flatMap</span><span class="p">(</span><span class="k">lambda</span> <span class="n">ping</span><span class="p">:</span> <span class="n">process_hangs</span><span class="p">(</span><span class="n">ping</span><span class="p">,</span> <span class="n">config</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="map_to_frame_info"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.map_to_frame_info">[docs]</a><span class="k">def</span> <span class="nf">map_to_frame_info</span><span class="p">(</span><span class="n">hang</span><span class="p">):</span>
@@ -1049,7 +1049,7 @@
     <span class="n">DEBUG_VARS</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">filtered</span><span class="o">.</span><span class="n">first</span><span class="p">())</span>
 
     <span class="n">hangs</span> <span class="o">=</span> <span class="n">time_code</span><span class="p">(</span>
-        <span class="s2">&quot;Filtering to hangs with native stacks&quot;</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">get_all_hangs</span><span class="p">(</span><span class="n">filtered</span><span class="p">)</span>
+        <span class="s2">&quot;Filtering to hangs with native stacks&quot;</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">get_all_hangs</span><span class="p">(</span><span class="n">filtered</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
     <span class="p">)</span>
 
     <span class="n">DEBUG_VARS</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hangs</span><span class="o">.</span><span class="n">first</span><span class="p">())</span>
@@ -1205,6 +1205,7 @@
     <span class="s2">&quot;post_sample_size&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
     <span class="s2">&quot;exclude_modules&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
     <span class="s2">&quot;uuid&quot;</span><span class="p">:</span> <span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">,</span>
+    <span class="s2">&quot;thread_filter&quot;</span><span class="p">:</span> <span class="s2">&quot;Gecko&quot;</span><span class="p">,</span>
 <span class="p">}</span>
 
 
@@ -1285,6 +1286,23 @@
             <span class="s2">&quot;end_date&quot;</span><span class="p">:</span> <span class="n">date</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">4</span><span class="p">),</span>
             <span class="s2">&quot;hang_profile_in_filename&quot;</span><span class="p">:</span> <span class="s2">&quot;hangs_main&quot;</span><span class="p">,</span>
             <span class="s2">&quot;hang_profile_out_filename&quot;</span><span class="p">:</span> <span class="s2">&quot;hangs_main&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;thread_filter&quot;</span><span class="p">:</span> <span class="s2">&quot;Gecko&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;hang_lower_bound&quot;</span><span class="p">:</span> <span class="mi">128</span><span class="p">,</span>
+            <span class="s2">&quot;hang_upper_bound&quot;</span><span class="p">:</span> <span class="mi">65536</span><span class="p">,</span>
+            <span class="s2">&quot;sample_size&quot;</span><span class="p">:</span> <span class="n">sample_size</span><span class="p">,</span>
+            <span class="s2">&quot;use_gcs&quot;</span><span class="p">:</span> <span class="n">use_gcs</span><span class="p">,</span>
+            <span class="s2">&quot;use_s3&quot;</span><span class="p">:</span> <span class="ow">not</span> <span class="n">use_gcs</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">etl_job_daily</span><span class="p">(</span>
+        <span class="n">sc</span><span class="p">,</span>
+        <span class="n">spark</span><span class="p">,</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;start_date&quot;</span><span class="p">:</span> <span class="n">date</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">4</span><span class="p">),</span>
+            <span class="s2">&quot;end_date&quot;</span><span class="p">:</span> <span class="n">date</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">4</span><span class="p">),</span>
+            <span class="s2">&quot;hang_profile_in_filename&quot;</span><span class="p">:</span> <span class="s2">&quot;hangs_child&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;hang_profile_out_filename&quot;</span><span class="p">:</span> <span class="s2">&quot;hangs_child&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;thread_filter&quot;</span><span class="p">:</span> <span class="s2">&quot;Gecko_Child&quot;</span><span class="p">,</span>
             <span class="s2">&quot;hang_lower_bound&quot;</span><span class="p">:</span> <span class="mi">128</span><span class="p">,</span>
             <span class="s2">&quot;hang_upper_bound&quot;</span><span class="p">:</span> <span class="mi">65536</span><span class="p">,</span>
             <span class="s2">&quot;sample_size&quot;</span><span class="p">:</span> <span class="n">sample_size</span><span class="p">,</span>
