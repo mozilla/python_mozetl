@@ -1243,11 +1243,11 @@ def etl_job_daily(sc, sql_context, config=None):
 )
 @click.option("--use_gcs", is_flag=True, default=False)
 @click.option(
-    "--thread-filter", default="Gecko", help="Specifies which thread we are processing hangs from"
+    "--thread-filter",
+    default="Gecko",
+    help="Specifies which thread we are processing hangs from",
 )
-@click.option(
-    "--output-tag", default="main", help="Tags the output filename"
-)
+@click.option("--output-tag", default="main", help="Tags the output filename")
 def start_job(date, sample_size, use_gcs, thread_filter, output_tag):
     print(f"Running for {date}")
     print(f"Using sample size {sample_size}")
@@ -1258,7 +1258,7 @@ def start_job(date, sample_size, use_gcs, thread_filter, output_tag):
             "start_date": date - timedelta(days=4),
             "end_date": date - timedelta(days=4),
             "hang_profile_in_filename": "hangs_" + output_tag,
-            "hang_profile_out_filename": "hangs_main" + output_tag,
+            "hang_profile_out_filename": "hangs_" + output_tag,
             "thread_filter": thread_filter,
             "hang_lower_bound": 128,
             "hang_upper_bound": 65536,
