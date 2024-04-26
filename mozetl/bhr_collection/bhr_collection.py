@@ -1242,7 +1242,13 @@ def etl_job_daily(sc, sql_context, config=None):
     help="Proportion of pings to use (1.0 is 100%)",
 )
 @click.option("--use_gcs", is_flag=True, default=False)
-def start_job(date, sample_size, use_gcs):
+@click.option(
+    "--thread-filter",
+    default="Gecko",
+    help="Specifies which thread we are processing hangs from",
+)
+@click.option("--output-tag", default="main", help="Tags the output filename")
+def start_job(date, sample_size, use_gcs, thread_filter, output_tag):
     print(f"Running for {date}")
     print(f"Using sample size {sample_size}")
     etl_job_daily(
@@ -1251,25 +1257,9 @@ def start_job(date, sample_size, use_gcs):
         {
             "start_date": date - timedelta(days=4),
             "end_date": date - timedelta(days=4),
-            "hang_profile_in_filename": "hangs_main",
-            "hang_profile_out_filename": "hangs_main",
-            "thread_filter": "Gecko",
-            "hang_lower_bound": 128,
-            "hang_upper_bound": 65536,
-            "sample_size": sample_size,
-            "use_gcs": use_gcs,
-            "use_s3": not use_gcs,
-        },
-    )
-    etl_job_daily(
-        sc,
-        spark,
-        {
-            "start_date": date - timedelta(days=4),
-            "end_date": date - timedelta(days=4),
-            "hang_profile_in_filename": "hangs_child",
-            "hang_profile_out_filename": "hangs_child",
-            "thread_filter": "Gecko_Child",
+            "hang_profile_in_filename": "hangs_" + output_tag,
+            "hang_profile_out_filename": "hangs_" + output_tag,
+            "thread_filter": thread_filter,
             "hang_lower_bound": 128,
             "hang_upper_bound": 65536,
             "sample_size": sample_size,
