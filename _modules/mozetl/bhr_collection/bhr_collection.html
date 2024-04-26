@@ -1275,7 +1275,13 @@
     <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Proportion of pings to use (1.0 is 100%)&quot;</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--use_gcs&quot;</span><span class="p">,</span> <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">start_job</span><span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="n">sample_size</span><span class="p">,</span> <span class="n">use_gcs</span><span class="p">):</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+    <span class="s2">&quot;--thread-filter&quot;</span><span class="p">,</span>
+    <span class="n">default</span><span class="o">=</span><span class="s2">&quot;Gecko&quot;</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Specifies which thread we are processing hangs from&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--output-tag&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;main&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Tags the output filename&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">start_job</span><span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="n">sample_size</span><span class="p">,</span> <span class="n">use_gcs</span><span class="p">,</span> <span class="n">thread_filter</span><span class="p">,</span> <span class="n">output_tag</span><span class="p">):</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Running for </span><span class="si">{</span><span class="n">date</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using sample size </span><span class="si">{</span><span class="n">sample_size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="n">etl_job_daily</span><span class="p">(</span>
@@ -1284,25 +1290,9 @@
         <span class="p">{</span>
             <span class="s2">&quot;start_date&quot;</span><span class="p">:</span> <span class="n">date</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">4</span><span class="p">),</span>
             <span class="s2">&quot;end_date&quot;</span><span class="p">:</span> <span class="n">date</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">4</span><span class="p">),</span>
-            <span class="s2">&quot;hang_profile_in_filename&quot;</span><span class="p">:</span> <span class="s2">&quot;hangs_main&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;hang_profile_out_filename&quot;</span><span class="p">:</span> <span class="s2">&quot;hangs_main&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;thread_filter&quot;</span><span class="p">:</span> <span class="s2">&quot;Gecko&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;hang_lower_bound&quot;</span><span class="p">:</span> <span class="mi">128</span><span class="p">,</span>
-            <span class="s2">&quot;hang_upper_bound&quot;</span><span class="p">:</span> <span class="mi">65536</span><span class="p">,</span>
-            <span class="s2">&quot;sample_size&quot;</span><span class="p">:</span> <span class="n">sample_size</span><span class="p">,</span>
-            <span class="s2">&quot;use_gcs&quot;</span><span class="p">:</span> <span class="n">use_gcs</span><span class="p">,</span>
-            <span class="s2">&quot;use_s3&quot;</span><span class="p">:</span> <span class="ow">not</span> <span class="n">use_gcs</span><span class="p">,</span>
-        <span class="p">},</span>
-    <span class="p">)</span>
-    <span class="n">etl_job_daily</span><span class="p">(</span>
-        <span class="n">sc</span><span class="p">,</span>
-        <span class="n">spark</span><span class="p">,</span>
-        <span class="p">{</span>
-            <span class="s2">&quot;start_date&quot;</span><span class="p">:</span> <span class="n">date</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">4</span><span class="p">),</span>
-            <span class="s2">&quot;end_date&quot;</span><span class="p">:</span> <span class="n">date</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">4</span><span class="p">),</span>
-            <span class="s2">&quot;hang_profile_in_filename&quot;</span><span class="p">:</span> <span class="s2">&quot;hangs_child&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;hang_profile_out_filename&quot;</span><span class="p">:</span> <span class="s2">&quot;hangs_child&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;thread_filter&quot;</span><span class="p">:</span> <span class="s2">&quot;Gecko_Child&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;hang_profile_in_filename&quot;</span><span class="p">:</span> <span class="s2">&quot;hangs_&quot;</span> <span class="o">+</span> <span class="n">output_tag</span><span class="p">,</span>
+            <span class="s2">&quot;hang_profile_out_filename&quot;</span><span class="p">:</span> <span class="s2">&quot;hangs_&quot;</span> <span class="o">+</span> <span class="n">output_tag</span><span class="p">,</span>
+            <span class="s2">&quot;thread_filter&quot;</span><span class="p">:</span> <span class="n">thread_filter</span><span class="p">,</span>
             <span class="s2">&quot;hang_lower_bound&quot;</span><span class="p">:</span> <span class="mi">128</span><span class="p">,</span>
             <span class="s2">&quot;hang_upper_bound&quot;</span><span class="p">:</span> <span class="mi">65536</span><span class="p">,</span>
             <span class="s2">&quot;sample_size&quot;</span><span class="p">:</span> <span class="n">sample_size</span><span class="p">,</span>
