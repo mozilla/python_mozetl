@@ -84,6 +84,7 @@ def upload_results_gcs(job_name, directory):
                     job_name, full_path[len(directory) + 1 :]  # noqa E203
                 )
             )
+            blob.content_encoding = "gzip"
             blob.upload_from_filename(full_path, content_type="application/json")
 
 
