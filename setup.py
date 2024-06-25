@@ -41,7 +41,7 @@ setup(
         'pyspark==2.3.2',
         'python-moztelemetry @ git+http://github.com/mozilla/python_moztelemetry.git@v0.10.2#egg=python-moztelemetry',
         'requests-toolbelt==0.9.1',
-        'requests==2.25.0',
+        'requests==2.31.0',
         'scipy==1.5.4',
         'typing==3.6.4',
         'six==1.15.0',
