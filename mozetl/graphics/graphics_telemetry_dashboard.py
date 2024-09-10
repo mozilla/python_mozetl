@@ -77,6 +77,7 @@ FeaturesKey = "environment/system/gfx/features"
 UserPrefsKey = "environment/settings/userPrefs"
 DeviceResetReasonKey = "payload/histograms/DEVICE_RESET_REASON"
 SANITY_TEST = "payload/histograms/GRAPHICS_SANITY_TEST"
+SANITY_TEST_REASON = "payload/histograms/GRAPHICS_SANITY_TEST_REASON"
 STARTUP_TEST_KEY = "payload/histograms/GRAPHICS_DRIVER_STARTUP_TEST"
 WebGLSuccessKey = "payload/histograms/CANVAS_WEBGL_SUCCESS"
 WebGL2SuccessKey = "payload/histograms/CANVAS_WEBGL2_SUCCESS"
@@ -96,6 +97,7 @@ PropertyList = [
     ArchKey,
     DeviceResetReasonKey,
     SANITY_TEST,
+    SANITY_TEST_REASON,
     STARTUP_TEST_KEY,
     WebGLSuccessKey,
     WebGL2SuccessKey,
@@ -251,7 +253,6 @@ def fetch_and_format(**kwargs):
 ##################################################################
 # Helper function block for massaging pings into aggregate data. #
 ##################################################################
-
 
 # Take each key in |b| and add it to |a|, accumulating its value into
 # |a| if it already exists.
@@ -462,7 +463,6 @@ timed_export(
 
 # ## TDR Statistics
 
-
 #############################
 # Perform the TDR analysis. #
 #############################
@@ -633,6 +633,11 @@ SANITY_TEST_FAILED_VIDEO = 2
 SANITY_TEST_CRASHED = 3
 SANITY_TEST_TIMEDOUT = 4
 SANITY_TEST_LAST_VALUE = 5
+SANITY_TEST_REASON_FIRST_RUN = 0
+SANITY_TEST_REASON_FIREFOX_CHANGED = 1
+SANITY_TEST_REASON_DEVICE_CHANGED = 2
+SANITY_TEST_REASON_DRIVER_CHANGED = 3
+SANITY_TEST_REASON_LAST_VALUE = 4
 
 
 # We don't want to fold FAILED_LAYERS and FAILED_VIDEO into the same
@@ -894,7 +899,6 @@ timed_export(
 
 # ### Helpers for Compositor/Acceleration fields
 
-
 # Build graphics feature statistics.
 def get_compositor(p):
     compositor = p[FeaturesKey].get("compositor", "none")
@@ -966,7 +970,6 @@ def advanced_layers_status(p):
 
 
 # ## Windows Compositor and Blacklisting Statistics
-
 
 # Get pings with graphics features. This landed in roughly the 7-19-2015 nightly.
 def windows_feature_filter(p):
