@@ -80,10 +80,7 @@ SANITY_TEST = "payload/histograms/GRAPHICS_SANITY_TEST"
 STARTUP_TEST_KEY = "payload/histograms/GRAPHICS_DRIVER_STARTUP_TEST"
 WebGLSuccessKey = "payload/histograms/CANVAS_WEBGL_SUCCESS"
 WebGL2SuccessKey = "payload/histograms/CANVAS_WEBGL2_SUCCESS"
-PluginModelKey = "payload/histograms/PLUGIN_DRAWING_MODEL"
 MediaDecoderKey = "payload/histograms/MEDIA_DECODER_BACKEND_USED"
-LayersD3D11FailureKey = "payload/keyedHistograms/D3D11_COMPOSITING_FAILURE_ID"
-LayersOGLFailureKey = "payload/keyedHistograms/OPENGL_COMPOSITING_FAILURE_ID"
 WebGLAcclFailureKey = "payload/keyedHistograms/CANVAS_WEBGL_ACCL_FAILURE_ID"
 WebGLFailureKey = "payload/keyedHistograms/CANVAS_WEBGL_FAILURE_ID"
 
@@ -99,10 +96,7 @@ PropertyList = [
     STARTUP_TEST_KEY,
     WebGLSuccessKey,
     WebGL2SuccessKey,
-    PluginModelKey,
     MediaDecoderKey,
-    LayersD3D11FailureKey,
-    LayersOGLFailureKey,
     WebGLAcclFailureKey,
     WebGLFailureKey,
 ]
@@ -1019,19 +1013,6 @@ def get_windows_features():
     blocked_pings = repartition(blocked_pings)
     blocked_vendors = map_x_to_count(blocked_pings, "vendorID")
 
-    # Plugin models.
-    def aggregate_plugin_models(rdd):
-        rdd = rdd.filter(lambda p: p.get(PluginModelKey) is not None)
-        rdd = rdd.map(lambda p: p.get(PluginModelKey))
-
-        if rdd.isEmpty():
-            return list()
-
-        result = rdd.reduce(lambda x, y: x + y)
-        return [int(count) for count in result]
-
-    plugin_models = aggregate_plugin_models(windows_features)
-
     # Media decoder backends.
     def get_media_decoders(rdd):
         rdd = rdd.filter(lambda p: p.get(MediaDecoderKey, None) is not None)
@@ -1061,7 +1042,9 @@ def get_windows_features():
         results = {
             "count": subset.count(),
             "compositors": subset.map(lambda p: (get_compositor(p),)).countByKey(),
-            "plugin_models": aggregate_plugin_models(subset),
+            # Setting to empty list due to histogram deprecation.
+            # For more info see: https://bugzilla.mozilla.org/show_bug.cgi?id=1914369
+            "plugin_models": [],
             "content_backends": get_content_backends(subset),
             "media_decoders": get_media_decoders(subset),
             "gpu_process": gpu_process_map(subset),
@@ -1094,7 +1077,9 @@ def get_windows_features():
             "d2d": d2d_status_map,
             "textureSharing": texture_sharing_map,
             "warp": warp_status_map,
-            "plugin_models": plugin_models,
+            # Setting to empty list due to histogram deprecation.
+            # For more info see: https://bugzilla.mozilla.org/show_bug.cgi?id=1914369
+            "plugin_models": [],
             "media_decoders": media_decoders,
             "gpu_process": gpu_process_map(windows_features),
             "advanced_layers": advanced_layers_map(windows_features),
@@ -1219,33 +1204,6 @@ def get_web_gl_statistics():
 timed_export(
     filename="webgl-statistics",
     callback=get_web_gl_statistics,
-    pings=(general_pings, general_ping_info),
-)
-
-
-def get_layers_status():
-    d3d11_status_rdd = general_pings.filter(
-        lambda p: p.get(LayersD3D11FailureKey, None) is not None
-    )
-    d3d11_status_rdd = d3d11_status_rdd.map(lambda p: p[LayersD3D11FailureKey])
-    d3d11_status_map = d3d11_status_rdd.reduce(combiner)
-    ogl_status_rdd = general_pings.filter(
-        lambda p: p.get(LayersOGLFailureKey, None) is not None
-    )
-    ogl_status_rdd = ogl_status_rdd.map(lambda p: p[LayersOGLFailureKey])
-    ogl_status_map = ogl_status_rdd.reduce(combiner)
-    print(d3d11_status_map)
-    print(ogl_status_map)
-    return {"layers": {"d3d11": d3d11_status_map, "opengl": ogl_status_map}}
-
-
-def get_layers_statistics():
-    return {"general": get_layers_status()}
-
-
-timed_export(
-    filename="layers-failureid-statistics",
-    callback=get_layers_statistics,
     pings=(general_pings, general_ping_info),
 )
 
