@@ -1042,6 +1042,9 @@ def get_windows_features():
         results = {
             "count": subset.count(),
             "compositors": subset.map(lambda p: (get_compositor(p),)).countByKey(),
+            # Setting to empty list due to histogram deprecation.
+            # For more info see: https://bugzilla.mozilla.org/show_bug.cgi?id=1914369
+            "plugin_models": [],
             "content_backends": get_content_backends(subset),
             "media_decoders": get_media_decoders(subset),
             "gpu_process": gpu_process_map(subset),
@@ -1074,6 +1077,9 @@ def get_windows_features():
             "d2d": d2d_status_map,
             "textureSharing": texture_sharing_map,
             "warp": warp_status_map,
+            # Setting to empty list due to histogram deprecation.
+            # For more info see: https://bugzilla.mozilla.org/show_bug.cgi?id=1914369
+            "plugin_models": [],
             "media_decoders": media_decoders,
             "gpu_process": gpu_process_map(windows_features),
             "advanced_layers": advanced_layers_map(windows_features),
