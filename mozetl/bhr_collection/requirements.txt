@@ -1,0 +1,2 @@
+click==7.1.2
+google-cloud-storage==2.7.0

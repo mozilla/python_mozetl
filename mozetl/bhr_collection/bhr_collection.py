@@ -1,7 +1,7 @@
 # Migrated from Databricks to run on dataproc
 # pip install:
-# boto3==1.16.20
 # click==7.1.2
+# google-cloud-storage==2.7.0
 
 import contextlib
 import gc
@@ -17,9 +17,7 @@ from bisect import bisect
 from datetime import datetime, timedelta
 from io import BytesIO
 
-import boto3
 import click
-from boto3.s3.transfer import S3Transfer
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import array, collect_list
 from pyspark.sql.types import Row
@@ -28,8 +26,9 @@ from google.cloud import storage
 UNSYMBOLICATED = "<unsymbolicated>"
 SYMBOL_TRUNCATE_LENGTH = 200
 
-spark = SparkSession.builder.appName("bhr-collection").getOrCreate()
-sc = spark.sparkContext
+# These are set in the start_job function since runtime args may affect the config
+spark = None
+sc = None
 
 
 def to_struct_of_arrays(a):
@@ -527,16 +526,32 @@ def get_data(sc, sql_context, config, date, end_date=None):
     date_str = date.strftime("%Y%m%d")
     end_date_str = end_date.strftime("%Y%m%d")
 
+    max_sample_slices = 10000
+    sample_slices = int(
+        max(min(max_sample_slices * config["sample_size"], max_sample_slices), 1)
+    )
+
+    sql = f"""
+    SELECT
+      environment,
+      application,
+      payload,
+    FROM
+      `moz-fx-data-shared-prod.telemetry_stable.bhr_v4`
+    WHERE
+      -- Use document_id to sample
+      ABS(MOD(FARM_FINGERPRINT(document_id), {max_sample_slices})) < {sample_slices}
+      AND submission_timestamp BETWEEN '{submission_start_str}' AND '{submission_end_str}'
+    """
+
     pings_df = (
         spark.read.format("bigquery")
-        .option("table", "moz-fx-data-shared-prod.telemetry_stable.bhr_v4")
+        .option("query", sql)
+        .option("viewsEnabled", True)
+        # sql results need to be saved to a table
+        .option("materializationProject", "moz-fx-data-shared-prod")
+        .option("materializationDataset", "tmp")
         .load()
-        .where(
-            "submission_timestamp>=to_date('%s') and submission_timestamp<=to_date('%s')"
-            % (submission_start_str, submission_end_str)
-        )
-        .where("normalized_channel='nightly'")
-        .sample(config["sample_size"])
     )
 
     if config["exclude_modules"]:
@@ -1119,19 +1134,7 @@ def write_file(name, stuff, config):
     with open(filename, "w", encoding="utf8") as json_file:
         json.dump(stuff, json_file, ensure_ascii=False)
 
-    if config["use_s3"]:
-        bucket = "telemetry-public-analysis-2"
-        s3_key = "bhr/data/hang_aggregates/" + name + ".json"
-        client = boto3.client("s3", "us-west-2")
-        transfer = S3Transfer(client)
-        extra_args = {"ContentType": "application/json"}
-        transfer.upload_file(filename, bucket, s3_key, extra_args=extra_args)
-        if config["uuid"] is not None:
-            s3_uuid_key = (
-                "bhr/data/hang_aggregates/" + name + "_" + config["uuid"] + ".json"
-            )
-            transfer.upload_file(filename, bucket, s3_uuid_key, extra_args=extra_args)
-    elif config["use_gcs"]:
+    if config["use_gcs"]:
         bucket_name = "moz-fx-data-static-websit-8565-analysis-output"
         gcs_key = "bhr/data/hang_aggregates/" + name + ".json"
         extra_args = {"content_type": "application/json"}
@@ -1143,8 +1146,6 @@ def write_file(name, stuff, config):
             gcs_key = (
                 "bhr/data/hang_aggregates/" + name + "_" + config["uuid"] + ".json"
             )
-            storage_client = storage.Client()
-            bucket = storage_client.bucket(bucket_name)
             blob = bucket.blob(gcs_key)
             blob.upload_from_filename(filename, **extra_args)
 
@@ -1241,16 +1242,35 @@ def etl_job_daily(sc, sql_context, config=None):
     default=0.5,
     help="Proportion of pings to use (1.0 is 100%)",
 )
-@click.option("--use_gcs", is_flag=True, default=False)
+@click.option(
+    "--use_gcs",
+    is_flag=True,
+    default=False,
+    help="Output results to GCS.  Only writes locally if not set.",
+)
 @click.option(
     "--thread-filter",
     default="Gecko",
     help="Specifies which thread we are processing hangs from",
 )
 @click.option("--output-tag", default="main", help="Tags the output filename")
-def start_job(date, sample_size, use_gcs, thread_filter, output_tag):
+@click.option(
+    "--bq-connector-jar",
+    help="If present, add to spark.jars config.  Used for local testing, "
+    "e.g. --bq-connector-jar=spark-bigquery-latest.jar",
+)
+def start_job(date, sample_size, use_gcs, thread_filter, output_tag, bq_connector_jar):
     print(f"Running for {date}")
     print(f"Using sample size {sample_size}")
+
+    spark_builder = SparkSession.builder.appName("bhr-collection")
+    if bq_connector_jar:
+        spark_builder = spark_builder.config("spark.jars", bq_connector_jar)
+    global spark
+    global sc
+    spark = spark_builder.getOrCreate()
+    sc = spark.sparkContext
+
     etl_job_daily(
         sc,
         spark,
@@ -1264,7 +1284,6 @@ def start_job(date, sample_size, use_gcs, thread_filter, output_tag):
             "hang_upper_bound": 65536,
             "sample_size": sample_size,
             "use_gcs": use_gcs,
-            "use_s3": not use_gcs,
         },
     )
 
