@@ -33,8 +33,8 @@
   <h1>Source code for mozetl.bhr_collection.bhr_collection</h1><div class="highlight"><pre>
 <span></span><span class="c1"># Migrated from Databricks to run on dataproc</span>
 <span class="c1"># pip install:</span>
-<span class="c1"># boto3==1.16.20</span>
 <span class="c1"># click==7.1.2</span>
+<span class="c1"># google-cloud-storage==2.7.0</span>
 
 <span class="kn">import</span> <span class="nn">contextlib</span>
 <span class="kn">import</span> <span class="nn">gc</span>
@@ -50,9 +50,7 @@
 <span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span>
 <span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">BytesIO</span>
 
-<span class="kn">import</span> <span class="nn">boto3</span>
 <span class="kn">import</span> <span class="nn">click</span>
-<span class="kn">from</span> <span class="nn">boto3.s3.transfer</span> <span class="kn">import</span> <span class="n">S3Transfer</span>
 <span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="kn">import</span> <span class="n">SparkSession</span>
 <span class="kn">from</span> <span class="nn">pyspark.sql.functions</span> <span class="kn">import</span> <span class="n">array</span><span class="p">,</span> <span class="n">collect_list</span>
 <span class="kn">from</span> <span class="nn">pyspark.sql.types</span> <span class="kn">import</span> <span class="n">Row</span>
@@ -61,8 +59,9 @@
 <span class="n">UNSYMBOLICATED</span> <span class="o">=</span> <span class="s2">&quot;&lt;unsymbolicated&gt;&quot;</span>
 <span class="n">SYMBOL_TRUNCATE_LENGTH</span> <span class="o">=</span> <span class="mi">200</span>
 
-<span class="n">spark</span> <span class="o">=</span> <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">appName</span><span class="p">(</span><span class="s2">&quot;bhr-collection&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
-<span class="n">sc</span> <span class="o">=</span> <span class="n">spark</span><span class="o">.</span><span class="n">sparkContext</span>
+<span class="c1"># These are set in the start_job function since runtime args may affect the config</span>
+<span class="n">spark</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">sc</span> <span class="o">=</span> <span class="kc">None</span>
 
 
 <div class="viewcode-block" id="to_struct_of_arrays"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.to_struct_of_arrays">[docs]</a><span class="k">def</span> <span class="nf">to_struct_of_arrays</span><span class="p">(</span><span class="n">a</span><span class="p">):</span>
@@ -560,16 +559,32 @@
     <span class="n">date_str</span> <span class="o">=</span> <span class="n">date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="n">end_date_str</span> <span class="o">=</span> <span class="n">end_date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span>
 
+    <span class="n">max_sample_slices</span> <span class="o">=</span> <span class="mi">10000</span>
+    <span class="n">sample_slices</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>
+        <span class="nb">max</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">max_sample_slices</span> <span class="o">*</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;sample_size&quot;</span><span class="p">],</span> <span class="n">max_sample_slices</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="n">sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    SELECT</span>
+<span class="s2">      environment,</span>
+<span class="s2">      application,</span>
+<span class="s2">      payload,</span>
+<span class="s2">    FROM</span>
+<span class="s2">      `moz-fx-data-shared-prod.telemetry_stable.bhr_v4`</span>
+<span class="s2">    WHERE</span>
+<span class="s2">      -- Use document_id to sample</span>
+<span class="s2">      ABS(MOD(FARM_FINGERPRINT(document_id), </span><span class="si">{</span><span class="n">max_sample_slices</span><span class="si">}</span><span class="s2">)) &lt; </span><span class="si">{</span><span class="n">sample_slices</span><span class="si">}</span>
+<span class="s2">      AND submission_timestamp BETWEEN &#39;</span><span class="si">{</span><span class="n">submission_start_str</span><span class="si">}</span><span class="s2">&#39; AND &#39;</span><span class="si">{</span><span class="n">submission_end_str</span><span class="si">}</span><span class="s2">&#39;</span>
+<span class="s2">    &quot;&quot;&quot;</span>
+
     <span class="n">pings_df</span> <span class="o">=</span> <span class="p">(</span>
         <span class="n">spark</span><span class="o">.</span><span class="n">read</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;bigquery&quot;</span><span class="p">)</span>
-        <span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;table&quot;</span><span class="p">,</span> <span class="s2">&quot;moz-fx-data-shared-prod.telemetry_stable.bhr_v4&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;query&quot;</span><span class="p">,</span> <span class="n">sql</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;viewsEnabled&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># sql results need to be saved to a table</span>
+        <span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;materializationProject&quot;</span><span class="p">,</span> <span class="s2">&quot;moz-fx-data-shared-prod&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;materializationDataset&quot;</span><span class="p">,</span> <span class="s2">&quot;tmp&quot;</span><span class="p">)</span>
         <span class="o">.</span><span class="n">load</span><span class="p">()</span>
-        <span class="o">.</span><span class="n">where</span><span class="p">(</span>
-            <span class="s2">&quot;submission_timestamp&gt;=to_date(&#39;</span><span class="si">%s</span><span class="s2">&#39;) and submission_timestamp&lt;=to_date(&#39;</span><span class="si">%s</span><span class="s2">&#39;)&quot;</span>
-            <span class="o">%</span> <span class="p">(</span><span class="n">submission_start_str</span><span class="p">,</span> <span class="n">submission_end_str</span><span class="p">)</span>
-        <span class="p">)</span>
-        <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="s2">&quot;normalized_channel=&#39;nightly&#39;&quot;</span><span class="p">)</span>
-        <span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;sample_size&quot;</span><span class="p">])</span>
     <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;exclude_modules&quot;</span><span class="p">]:</span>
@@ -1152,19 +1167,7 @@
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">json_file</span><span class="p">:</span>
         <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">stuff</span><span class="p">,</span> <span class="n">json_file</span><span class="p">,</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;use_s3&quot;</span><span class="p">]:</span>
-        <span class="n">bucket</span> <span class="o">=</span> <span class="s2">&quot;telemetry-public-analysis-2&quot;</span>
-        <span class="n">s3_key</span> <span class="o">=</span> <span class="s2">&quot;bhr/data/hang_aggregates/&quot;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;.json&quot;</span>
-        <span class="n">client</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;s3&quot;</span><span class="p">,</span> <span class="s2">&quot;us-west-2&quot;</span><span class="p">)</span>
-        <span class="n">transfer</span> <span class="o">=</span> <span class="n">S3Transfer</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>
-        <span class="n">extra_args</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;ContentType&quot;</span><span class="p">:</span> <span class="s2">&quot;application/json&quot;</span><span class="p">}</span>
-        <span class="n">transfer</span><span class="o">.</span><span class="n">upload_file</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">bucket</span><span class="p">,</span> <span class="n">s3_key</span><span class="p">,</span> <span class="n">extra_args</span><span class="o">=</span><span class="n">extra_args</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;uuid&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">s3_uuid_key</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="s2">&quot;bhr/data/hang_aggregates/&quot;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;uuid&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;.json&quot;</span>
-            <span class="p">)</span>
-            <span class="n">transfer</span><span class="o">.</span><span class="n">upload_file</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">bucket</span><span class="p">,</span> <span class="n">s3_uuid_key</span><span class="p">,</span> <span class="n">extra_args</span><span class="o">=</span><span class="n">extra_args</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;use_gcs&quot;</span><span class="p">]:</span>
+    <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;use_gcs&quot;</span><span class="p">]:</span>
         <span class="n">bucket_name</span> <span class="o">=</span> <span class="s2">&quot;moz-fx-data-static-websit-8565-analysis-output&quot;</span>
         <span class="n">gcs_key</span> <span class="o">=</span> <span class="s2">&quot;bhr/data/hang_aggregates/&quot;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;.json&quot;</span>
         <span class="n">extra_args</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;content_type&quot;</span><span class="p">:</span> <span class="s2">&quot;application/json&quot;</span><span class="p">}</span>
@@ -1176,8 +1179,6 @@
             <span class="n">gcs_key</span> <span class="o">=</span> <span class="p">(</span>
                 <span class="s2">&quot;bhr/data/hang_aggregates/&quot;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;uuid&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;.json&quot;</span>
             <span class="p">)</span>
-            <span class="n">storage_client</span> <span class="o">=</span> <span class="n">storage</span><span class="o">.</span><span class="n">Client</span><span class="p">()</span>
-            <span class="n">bucket</span> <span class="o">=</span> <span class="n">storage_client</span><span class="o">.</span><span class="n">bucket</span><span class="p">(</span><span class="n">bucket_name</span><span class="p">)</span>
             <span class="n">blob</span> <span class="o">=</span> <span class="n">bucket</span><span class="o">.</span><span class="n">blob</span><span class="p">(</span><span class="n">gcs_key</span><span class="p">)</span>
             <span class="n">blob</span><span class="o">.</span><span class="n">upload_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="o">**</span><span class="n">extra_args</span><span class="p">)</span></div>
 
@@ -1274,16 +1275,35 @@
     <span class="n">default</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
     <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Proportion of pings to use (1.0 is 100%)&quot;</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--use_gcs&quot;</span><span class="p">,</span> <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+    <span class="s2">&quot;--use_gcs&quot;</span><span class="p">,</span>
+    <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Output results to GCS.  Only writes locally if not set.&quot;</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
     <span class="s2">&quot;--thread-filter&quot;</span><span class="p">,</span>
     <span class="n">default</span><span class="o">=</span><span class="s2">&quot;Gecko&quot;</span><span class="p">,</span>
     <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Specifies which thread we are processing hangs from&quot;</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--output-tag&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;main&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Tags the output filename&quot;</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">start_job</span><span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="n">sample_size</span><span class="p">,</span> <span class="n">use_gcs</span><span class="p">,</span> <span class="n">thread_filter</span><span class="p">,</span> <span class="n">output_tag</span><span class="p">):</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+    <span class="s2">&quot;--bq-connector-jar&quot;</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;If present, add to spark.jars config.  Used for local testing, &quot;</span>
+    <span class="s2">&quot;e.g. --bq-connector-jar=spark-bigquery-latest.jar&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">start_job</span><span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="n">sample_size</span><span class="p">,</span> <span class="n">use_gcs</span><span class="p">,</span> <span class="n">thread_filter</span><span class="p">,</span> <span class="n">output_tag</span><span class="p">,</span> <span class="n">bq_connector_jar</span><span class="p">):</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Running for </span><span class="si">{</span><span class="n">date</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using sample size </span><span class="si">{</span><span class="n">sample_size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">spark_builder</span> <span class="o">=</span> <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">appName</span><span class="p">(</span><span class="s2">&quot;bhr-collection&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">bq_connector_jar</span><span class="p">:</span>
+        <span class="n">spark_builder</span> <span class="o">=</span> <span class="n">spark_builder</span><span class="o">.</span><span class="n">config</span><span class="p">(</span><span class="s2">&quot;spark.jars&quot;</span><span class="p">,</span> <span class="n">bq_connector_jar</span><span class="p">)</span>
+    <span class="k">global</span> <span class="n">spark</span>
+    <span class="k">global</span> <span class="n">sc</span>
+    <span class="n">spark</span> <span class="o">=</span> <span class="n">spark_builder</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
+    <span class="n">sc</span> <span class="o">=</span> <span class="n">spark</span><span class="o">.</span><span class="n">sparkContext</span>
+
     <span class="n">etl_job_daily</span><span class="p">(</span>
         <span class="n">sc</span><span class="p">,</span>
         <span class="n">spark</span><span class="p">,</span>
@@ -1297,7 +1317,6 @@
             <span class="s2">&quot;hang_upper_bound&quot;</span><span class="p">:</span> <span class="mi">65536</span><span class="p">,</span>
             <span class="s2">&quot;sample_size&quot;</span><span class="p">:</span> <span class="n">sample_size</span><span class="p">,</span>
             <span class="s2">&quot;use_gcs&quot;</span><span class="p">:</span> <span class="n">use_gcs</span><span class="p">,</span>
-            <span class="s2">&quot;use_s3&quot;</span><span class="p">:</span> <span class="ow">not</span> <span class="n">use_gcs</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
 
