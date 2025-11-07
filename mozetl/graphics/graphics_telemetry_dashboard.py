@@ -225,6 +225,10 @@ def reduce_pings(pings):
             "payload/info/revision",
         ]
         + PropertyList,
+        histograms_url=(
+            "https://raw.githubusercontent.com/mozilla-firefox/firefox/"
+            "refs/heads/main/toolkit/components/telemetry/Histograms.json"
+        ),
     )
 
 
