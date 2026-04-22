@@ -910,7 +910,7 @@ def get_usage_hours_by_date(pings):
     return pings.map(get_usage_hours).reduceByKey(merge_usage_hours).collectAsMap()
 
 
-def make_sym_map(data):
+def make_sym_map(data, url=None):
     public_symbols = {}
     func_symbols = {}
 
@@ -924,8 +924,13 @@ def make_sym_map(data):
                 m_offset = 1
                 fields = line.split(" ", 4)
             if len(fields) < 4 + m_offset:
-                raise ValueError("Failed to parse address - line: {}".format(line))
-            address = int(fields[1 + m_offset], 16)
+                print(f"Skipping malformed PUBLIC line from {url}: {line!r}")
+                continue
+            try:
+                address = int(fields[1 + m_offset], 16)
+            except ValueError:
+                print(f"Skipping PUBLIC line with non-hex address from {url}: {line!r}")
+                continue
             symbol = fields[3 + m_offset]
             public_symbols[address] = symbol[:SYMBOL_TRUNCATE_LENGTH]
         elif line.startswith("FUNC "):
@@ -938,10 +943,15 @@ def make_sym_map(data):
             if len(fields) == 4 + m_offset:
                 symbol = "(no symbol)"
             elif len(fields) < 4 + m_offset:
-                raise ValueError("Failed to parse address - line: {}".format(line))
+                print(f"Skipping malformed FUNC line from {url}: {line!r}")
+                continue
             else:
                 symbol = fields[4 + m_offset]
-            address = int(fields[1 + m_offset], 16)
+            try:
+                address = int(fields[1 + m_offset], 16)
+            except ValueError:
+                print(f"Skipping FUNC line with non-hex address from {url}: {line!r}")
+                continue
             func_symbols[address] = symbol[:SYMBOL_TRUNCATE_LENGTH]
     # Prioritize PUBLIC symbols over FUNC ones
     sym_map = func_symbols
@@ -991,7 +1001,7 @@ def process_module(module, offsets, config):
         success = False
 
     if success:
-        sorted_keys, sym_map = make_sym_map(response)
+        sorted_keys, sym_map = make_sym_map(response, file_url)
 
         for offset in offsets:
             try:
