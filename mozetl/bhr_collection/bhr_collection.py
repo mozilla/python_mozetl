@@ -1002,7 +1002,11 @@ def process_module(module, offsets, config):
 
     if success:
         sorted_keys, sym_map = make_sym_map(response, file_url)
+        if not sym_map:
+            print(f"Warning: Empty sym map from {file_url}; treating as failure")
+            success = False
 
+    if success:
         for offset in offsets:
             try:
                 i = bisect(sorted_keys, int(offset, 16))
