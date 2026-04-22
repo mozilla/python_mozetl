@@ -943,7 +943,7 @@
     <span class="k">return</span> <span class="n">pings</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">get_usage_hours</span><span class="p">)</span><span class="o">.</span><span class="n">reduceByKey</span><span class="p">(</span><span class="n">merge_usage_hours</span><span class="p">)</span><span class="o">.</span><span class="n">collectAsMap</span><span class="p">()</span></div>
 
 
-<div class="viewcode-block" id="make_sym_map"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.make_sym_map">[docs]</a><span class="k">def</span> <span class="nf">make_sym_map</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+<div class="viewcode-block" id="make_sym_map"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.make_sym_map">[docs]</a><span class="k">def</span> <span class="nf">make_sym_map</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="n">public_symbols</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">func_symbols</span> <span class="o">=</span> <span class="p">{}</span>
 
@@ -957,8 +957,13 @@
                 <span class="n">m_offset</span> <span class="o">=</span> <span class="mi">1</span>
                 <span class="n">fields</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">4</span> <span class="o">+</span> <span class="n">m_offset</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Failed to parse address - line: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">line</span><span class="p">))</span>
-            <span class="n">address</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">fields</span><span class="p">[</span><span class="mi">1</span> <span class="o">+</span> <span class="n">m_offset</span><span class="p">],</span> <span class="mi">16</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Skipping malformed PUBLIC line from </span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">line</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">continue</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">address</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">fields</span><span class="p">[</span><span class="mi">1</span> <span class="o">+</span> <span class="n">m_offset</span><span class="p">],</span> <span class="mi">16</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Skipping PUBLIC line with non-hex address from </span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">line</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">continue</span>
             <span class="n">symbol</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="mi">3</span> <span class="o">+</span> <span class="n">m_offset</span><span class="p">]</span>
             <span class="n">public_symbols</span><span class="p">[</span><span class="n">address</span><span class="p">]</span> <span class="o">=</span> <span class="n">symbol</span><span class="p">[:</span><span class="n">SYMBOL_TRUNCATE_LENGTH</span><span class="p">]</span>
         <span class="k">elif</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;FUNC &quot;</span><span class="p">):</span>
@@ -971,10 +976,15 @@
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span> <span class="o">+</span> <span class="n">m_offset</span><span class="p">:</span>
                 <span class="n">symbol</span> <span class="o">=</span> <span class="s2">&quot;(no symbol)&quot;</span>
             <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">4</span> <span class="o">+</span> <span class="n">m_offset</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Failed to parse address - line: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">line</span><span class="p">))</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Skipping malformed FUNC line from </span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">line</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">continue</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">symbol</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="mi">4</span> <span class="o">+</span> <span class="n">m_offset</span><span class="p">]</span>
-            <span class="n">address</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">fields</span><span class="p">[</span><span class="mi">1</span> <span class="o">+</span> <span class="n">m_offset</span><span class="p">],</span> <span class="mi">16</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">address</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">fields</span><span class="p">[</span><span class="mi">1</span> <span class="o">+</span> <span class="n">m_offset</span><span class="p">],</span> <span class="mi">16</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Skipping FUNC line with non-hex address from </span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">line</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">continue</span>
             <span class="n">func_symbols</span><span class="p">[</span><span class="n">address</span><span class="p">]</span> <span class="o">=</span> <span class="n">symbol</span><span class="p">[:</span><span class="n">SYMBOL_TRUNCATE_LENGTH</span><span class="p">]</span>
     <span class="c1"># Prioritize PUBLIC symbols over FUNC ones</span>
     <span class="n">sym_map</span> <span class="o">=</span> <span class="n">func_symbols</span>
@@ -1024,8 +1034,12 @@
         <span class="n">success</span> <span class="o">=</span> <span class="kc">False</span>
 
     <span class="k">if</span> <span class="n">success</span><span class="p">:</span>
-        <span class="n">sorted_keys</span><span class="p">,</span> <span class="n">sym_map</span> <span class="o">=</span> <span class="n">make_sym_map</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+        <span class="n">sorted_keys</span><span class="p">,</span> <span class="n">sym_map</span> <span class="o">=</span> <span class="n">make_sym_map</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="n">file_url</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">sym_map</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Warning: Empty sym map from </span><span class="si">{</span><span class="n">file_url</span><span class="si">}</span><span class="s2">; treating as failure&quot;</span><span class="p">)</span>
+            <span class="n">success</span> <span class="o">=</span> <span class="kc">False</span>
 
+    <span class="k">if</span> <span class="n">success</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">offset</span> <span class="ow">in</span> <span class="n">offsets</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">i</span> <span class="o">=</span> <span class="n">bisect</span><span class="p">(</span><span class="n">sorted_keys</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">offset</span><span class="p">,</span> <span class="mi">16</span><span class="p">))</span>
