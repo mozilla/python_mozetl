@@ -566,11 +566,11 @@
 
     <span class="n">sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">    SELECT</span>
-<span class="s2">      environment,</span>
-<span class="s2">      application,</span>
-<span class="s2">      payload,</span>
+<span class="s2">      client_info,</span>
+<span class="s2">      ping_info,</span>
+<span class="s2">      metrics,</span>
 <span class="s2">    FROM</span>
-<span class="s2">      `moz-fx-data-shared-prod.telemetry_stable.bhr_v4`</span>
+<span class="s2">      `moz-fx-data-shared-prod.firefox_desktop_stable.hang_report_v1`</span>
 <span class="s2">    WHERE</span>
 <span class="s2">      -- Use document_id to sample</span>
 <span class="s2">      ABS(MOD(FARM_FINGERPRINT(document_id), </span><span class="si">{</span><span class="n">max_sample_slices</span><span class="si">}</span><span class="s2">)) &lt; </span><span class="si">{</span><span class="n">sample_slices</span><span class="si">}</span>
@@ -582,29 +582,28 @@
         <span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;query&quot;</span><span class="p">,</span> <span class="n">sql</span><span class="p">)</span>
         <span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;viewsEnabled&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
         <span class="c1"># sql results need to be saved to a table</span>
-        <span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;materializationProject&quot;</span><span class="p">,</span> <span class="s2">&quot;moz-fx-data-shared-prod&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;materializationProject&quot;</span><span class="p">,</span> <span class="s2">&quot;mozdata&quot;</span><span class="p">)</span>
         <span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;materializationDataset&quot;</span><span class="p">,</span> <span class="s2">&quot;tmp&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;billingProject&quot;</span><span class="p">,</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;billing_project&quot;</span><span class="p">])</span>
         <span class="o">.</span><span class="n">load</span><span class="p">()</span>
     <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;exclude_modules&quot;</span><span class="p">]:</span>
         <span class="n">properties</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="s2">&quot;environment/system/os/name&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;environment/system/os/version&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;application/architecture&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;application/build_id&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;payload/hangs&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;payload/time_since_last_ping&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;client_info/os&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;client_info/os_version&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;client_info/architecture&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;client_info/app_build&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;metrics/object/hangs_reports&quot;</span><span class="p">,</span>
         <span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">properties</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="s2">&quot;environment/system/os/name&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;environment/system/os/version&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;application/architecture&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;application/build_id&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;payload/modules&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;payload/hangs&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;payload/time_since_last_ping&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;client_info/os&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;client_info/os_version&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;client_info/architecture&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;client_info/app_build&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;metrics/object/hangs_modules&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;metrics/object/hangs_reports&quot;</span><span class="p">,</span>
         <span class="p">]</span>
 
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2"> results total&quot;</span> <span class="o">%</span> <span class="n">pings_df</span><span class="o">.</span><span class="n">rdd</span><span class="o">.</span><span class="n">count</span><span class="p">())</span>
@@ -614,8 +613,8 @@
 
     <span class="k">try</span><span class="p">:</span>
         <span class="n">result</span> <span class="o">=</span> <span class="n">mapped</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
-            <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;application/build_id&quot;</span><span class="p">][:</span><span class="mi">8</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">date_str</span>
-            <span class="ow">and</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;application/build_id&quot;</span><span class="p">][:</span><span class="mi">8</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">end_date_str</span>
+            <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;client_info/app_build&quot;</span><span class="p">][:</span><span class="mi">8</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">date_str</span>
+            <span class="ow">and</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;client_info/app_build&quot;</span><span class="p">][:</span><span class="mi">8</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">end_date_str</span>
         <span class="p">)</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2"> results after first filter&quot;</span> <span class="o">%</span> <span class="n">result</span><span class="o">.</span><span class="n">count</span><span class="p">())</span>
         <span class="k">return</span> <span class="n">result</span>
@@ -624,13 +623,13 @@
 
 
 <div class="viewcode-block" id="ping_is_valid"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.ping_is_valid">[docs]</a><span class="k">def</span> <span class="nf">ping_is_valid</span><span class="p">(</span><span class="n">ping</span><span class="p">):</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ping</span><span class="p">[</span><span class="s2">&quot;environment/system/os/version&quot;</span><span class="p">],</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ping</span><span class="p">[</span><span class="s2">&quot;client_info/os_version&quot;</span><span class="p">],</span> <span class="nb">str</span><span class="p">):</span>
         <span class="k">return</span> <span class="kc">False</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ping</span><span class="p">[</span><span class="s2">&quot;environment/system/os/name&quot;</span><span class="p">],</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ping</span><span class="p">[</span><span class="s2">&quot;client_info/os&quot;</span><span class="p">],</span> <span class="nb">str</span><span class="p">):</span>
         <span class="k">return</span> <span class="kc">False</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ping</span><span class="p">[</span><span class="s2">&quot;application/build_id&quot;</span><span class="p">],</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ping</span><span class="p">[</span><span class="s2">&quot;client_info/app_build&quot;</span><span class="p">],</span> <span class="nb">str</span><span class="p">):</span>
         <span class="k">return</span> <span class="kc">False</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ping</span><span class="p">[</span><span class="s2">&quot;payload/time_since_last_ping&quot;</span><span class="p">],</span> <span class="nb">int</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">ping</span><span class="p">[</span><span class="s2">&quot;metrics/object/hangs_reports&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">False</span>
 
     <span class="k">return</span> <span class="kc">True</span></div>
@@ -652,37 +651,64 @@
 
 
 <div class="viewcode-block" id="process_frame"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.process_frame">[docs]</a><span class="k">def</span> <span class="nf">process_frame</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="n">modules</span><span class="p">):</span>
+    <span class="c1"># Glean format:</span>
+    <span class="c1"># {&quot;frame&quot;: &quot;...&quot;, &quot;module&quot;: 0}</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="n">module_index</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;module&quot;</span><span class="p">)</span>
+        <span class="n">offset</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;frame&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">module_index</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">((</span><span class="s2">&quot;pseudo&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="n">offset</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">module_index</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">module_index</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">modules</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">offset</span><span class="p">)</span>
+
+        <span class="n">debug_name</span><span class="p">,</span> <span class="n">breakpad_id</span> <span class="o">=</span> <span class="n">modules</span><span class="p">[</span><span class="n">module_index</span><span class="p">]</span>
+        <span class="k">return</span> <span class="p">((</span><span class="n">debug_name</span><span class="p">,</span> <span class="n">breakpad_id</span><span class="p">),</span> <span class="n">offset</span><span class="p">)</span>
+
+    <span class="c1"># Legacy telemetry format:</span>
+    <span class="c1"># [module_index, offset]</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
         <span class="n">module_index</span><span class="p">,</span> <span class="n">offset</span> <span class="o">=</span> <span class="n">frame</span>
         <span class="k">if</span> <span class="n">module_index</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">module_index</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">module_index</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">modules</span><span class="p">):</span>
             <span class="k">return</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">offset</span><span class="p">)</span>
         <span class="n">debug_name</span><span class="p">,</span> <span class="n">breakpad_id</span> <span class="o">=</span> <span class="n">modules</span><span class="p">[</span><span class="n">module_index</span><span class="p">]</span>
         <span class="k">return</span> <span class="p">((</span><span class="n">debug_name</span><span class="p">,</span> <span class="n">breakpad_id</span><span class="p">),</span> <span class="n">offset</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">return</span> <span class="p">((</span><span class="s2">&quot;pseudo&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="n">frame</span><span class="p">)</span></div>
+
+    <span class="c1"># Pseudo frame fallback.</span>
+    <span class="k">return</span> <span class="p">((</span><span class="s2">&quot;pseudo&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="n">frame</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="filter_hang"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.filter_hang">[docs]</a><span class="k">def</span> <span class="nf">filter_hang</span><span class="p">(</span><span class="n">hang</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+    <span class="n">stack</span> <span class="o">=</span> <span class="n">hang</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;stack&quot;</span><span class="p">)</span>
     <span class="k">return</span> <span class="p">(</span>
-        <span class="n">hang</span><span class="p">[</span><span class="s2">&quot;thread&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;thread_filter&quot;</span><span class="p">]</span>
-        <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">hang</span><span class="p">[</span><span class="s2">&quot;stack&quot;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span>
-        <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">hang</span><span class="p">[</span><span class="s2">&quot;stack&quot;</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mi">300</span>
+        <span class="n">hang</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;thread&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;thread_filter&quot;</span><span class="p">]</span>
+        <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">stack</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
+        <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">stack</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">stack</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">300</span>
     <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="process_hang"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.process_hang">[docs]</a><span class="k">def</span> <span class="nf">process_hang</span><span class="p">(</span><span class="n">hang</span><span class="p">):</span>
-    <span class="n">result</span> <span class="o">=</span> <span class="n">hang</span><span class="o">.</span><span class="n">asDict</span><span class="p">()</span>
-    <span class="n">result</span><span class="p">[</span><span class="s2">&quot;stack&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">hang</span><span class="p">[</span><span class="s2">&quot;stack&quot;</span><span class="p">])</span>
-    <span class="k">return</span> <span class="n">result</span></div>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">hang</span><span class="p">,</span> <span class="s2">&quot;asDict&quot;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">hang</span><span class="o">.</span><span class="n">asDict</span><span class="p">(</span><span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">hang</span></div>
 
 
 <div class="viewcode-block" id="process_hangs"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.process_hangs">[docs]</a><span class="k">def</span> <span class="nf">process_hangs</span><span class="p">(</span><span class="n">ping</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
-    <span class="n">build_date</span> <span class="o">=</span> <span class="n">ping</span><span class="p">[</span><span class="s2">&quot;application/build_id&quot;</span><span class="p">][:</span><span class="mi">8</span><span class="p">]</span>  <span class="c1"># &quot;YYYYMMDD&quot; : 8 characters</span>
+    <span class="n">build_date</span> <span class="o">=</span> <span class="n">ping</span><span class="p">[</span><span class="s2">&quot;client_info/app_build&quot;</span><span class="p">][:</span><span class="mi">8</span><span class="p">]</span>  <span class="c1"># &quot;YYYYMMDD&quot; : 8 characters</span>
 
-    <span class="n">platform</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ping</span><span class="p">[</span><span class="s2">&quot;environment/system/os/name&quot;</span><span class="p">])</span>
+    <span class="n">platform</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ping</span><span class="p">[</span><span class="s2">&quot;client_info/os&quot;</span><span class="p">])</span>
 
-    <span class="n">modules</span> <span class="o">=</span> <span class="n">ping</span><span class="p">[</span><span class="s2">&quot;payload/modules&quot;</span><span class="p">]</span>
-    <span class="n">hangs</span> <span class="o">=</span> <span class="p">[</span><span class="n">process_hang</span><span class="p">(</span><span class="n">h</span><span class="p">)</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">ping</span><span class="p">[</span><span class="s2">&quot;payload/hangs&quot;</span><span class="p">]]</span>
+    <span class="n">modules</span> <span class="o">=</span> <span class="n">ping</span><span class="p">[</span><span class="s2">&quot;metrics/object/hangs_modules&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">modules</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">modules</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">modules</span><span class="p">)</span>
+
+    <span class="n">raw_hangs</span> <span class="o">=</span> <span class="n">ping</span><span class="p">[</span><span class="s2">&quot;metrics/object/hangs_reports&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw_hangs</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">raw_hangs</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">raw_hangs</span><span class="p">)</span>
+
+    <span class="n">hangs</span> <span class="o">=</span> <span class="p">[</span><span class="n">process_hang</span><span class="p">(</span><span class="n">h</span><span class="p">)</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">raw_hangs</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">hangs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">[]</span>
 
@@ -697,7 +723,7 @@
             <span class="n">h</span><span class="p">[</span><span class="s2">&quot;thread&quot;</span><span class="p">],</span>
             <span class="s2">&quot;&quot;</span><span class="p">,</span>
             <span class="n">h</span><span class="p">[</span><span class="s2">&quot;process&quot;</span><span class="p">],</span>
-            <span class="n">h</span><span class="p">[</span><span class="s2">&quot;annotations&quot;</span><span class="p">],</span>
+            <span class="n">h</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;annotations&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[],</span>
             <span class="n">build_date</span><span class="p">,</span>
             <span class="n">platform</span><span class="p">,</span>
         <span class="p">)</span>
@@ -836,10 +862,9 @@
 
 
 <div class="viewcode-block" id="process_hang_value"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.process_hang_value">[docs]</a><span class="k">def</span> <span class="nf">process_hang_value</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">usage_hours_by_date</span><span class="p">):</span>
-    <span class="n">stack</span><span class="p">,</span> <span class="n">runnable_name</span><span class="p">,</span> <span class="n">thread</span><span class="p">,</span> <span class="n">build_date</span><span class="p">,</span> <span class="n">annotations</span><span class="p">,</span> <span class="n">platform</span> <span class="o">=</span> <span class="n">key</span>
     <span class="k">return</span> <span class="p">(</span>
-        <span class="n">val</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">usage_hours_by_date</span><span class="p">[</span><span class="n">build_date</span><span class="p">],</span>
-        <span class="n">val</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">usage_hours_by_date</span><span class="p">[</span><span class="n">build_date</span><span class="p">],</span>
+        <span class="n">val</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+        <span class="n">val</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
     <span class="p">)</span></div>
 
 
@@ -927,20 +952,6 @@
     <span class="p">)</span>
     <span class="n">items</span> <span class="o">=</span> <span class="p">[(</span><span class="n">k</span><span class="p">,</span> <span class="n">process_hang_value</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">usage_hours_by_date</span><span class="p">))</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">reduced</span><span class="p">]</span>
     <span class="k">return</span> <span class="p">[</span><span class="n">k</span> <span class="o">+</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">items</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span></div>
-
-
-<div class="viewcode-block" id="get_usage_hours"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.get_usage_hours">[docs]</a><span class="k">def</span> <span class="nf">get_usage_hours</span><span class="p">(</span><span class="n">ping</span><span class="p">):</span>
-    <span class="n">build_date</span> <span class="o">=</span> <span class="n">ping</span><span class="p">[</span><span class="s2">&quot;application/build_id&quot;</span><span class="p">][:</span><span class="mi">8</span><span class="p">]</span>  <span class="c1"># &quot;YYYYMMDD&quot; : 8 characters</span>
-    <span class="n">usage_hours</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">ping</span><span class="p">[</span><span class="s2">&quot;payload/time_since_last_ping&quot;</span><span class="p">])</span> <span class="o">/</span> <span class="mf">3600000.0</span>
-    <span class="k">return</span> <span class="p">(</span><span class="n">build_date</span><span class="p">,</span> <span class="n">usage_hours</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="merge_usage_hours"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.merge_usage_hours">[docs]</a><span class="k">def</span> <span class="nf">merge_usage_hours</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span></div>
-
-
-<div class="viewcode-block" id="get_usage_hours_by_date"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.get_usage_hours_by_date">[docs]</a><span class="k">def</span> <span class="nf">get_usage_hours_by_date</span><span class="p">(</span><span class="n">pings</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">pings</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">get_usage_hours</span><span class="p">)</span><span class="o">.</span><span class="n">reduceByKey</span><span class="p">(</span><span class="n">merge_usage_hours</span><span class="p">)</span><span class="o">.</span><span class="n">collectAsMap</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="make_sym_map"><a class="viewcode-back" href="../../../source/mozetl.bhr_collection.html#mozetl.bhr_collection.bhr_collection.make_sym_map">[docs]</a><span class="k">def</span> <span class="nf">make_sym_map</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -1093,9 +1104,7 @@
 
     <span class="n">hangs</span> <span class="o">=</span> <span class="n">symbolicate_hang_keys</span><span class="p">(</span><span class="n">hangs</span><span class="p">,</span> <span class="n">processed_modules</span><span class="p">)</span>
 
-    <span class="n">usage_hours_by_date</span> <span class="o">=</span> <span class="n">time_code</span><span class="p">(</span>
-        <span class="s2">&quot;Getting usage hours&quot;</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">get_usage_hours_by_date</span><span class="p">(</span><span class="n">filtered</span><span class="p">)</span>
-    <span class="p">)</span>
+    <span class="n">usage_hours_by_date</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="n">result</span> <span class="o">=</span> <span class="n">time_code</span><span class="p">(</span>
         <span class="s2">&quot;Grouping stacks&quot;</span><span class="p">,</span>
@@ -1221,6 +1230,7 @@
     <span class="s2">&quot;exclude_modules&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
     <span class="s2">&quot;uuid&quot;</span><span class="p">:</span> <span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">,</span>
     <span class="s2">&quot;thread_filter&quot;</span><span class="p">:</span> <span class="s2">&quot;Gecko&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;billing_project&quot;</span><span class="p">:</span> <span class="s2">&quot;mozdata&quot;</span><span class="p">,</span>
 <span class="p">}</span>
 
 
@@ -1268,6 +1278,12 @@
             <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;No data&quot;</span><span class="p">)</span>
             <span class="k">continue</span>
         <span class="n">transformed</span><span class="p">,</span> <span class="n">usage_hours</span> <span class="o">=</span> <span class="n">transform_pings</span><span class="p">(</span><span class="n">sc</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">final_config</span><span class="p">)</span>
+
+        <span class="c1"># Glean hang_report_v1 does not currently provide usage hours in the</span>
+        <span class="c1"># same shape as the legacy telemetry. Keep a dummy value for</span>
+        <span class="c1"># compatibility with the existing BHR output schema/UI.</span>
+        <span class="n">usage_hours</span> <span class="o">=</span> <span class="p">{</span><span class="n">date_str</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">}</span>
+
         <span class="n">profile_processor</span> <span class="o">=</span> <span class="n">ProfileProcessor</span><span class="p">(</span><span class="n">final_config</span><span class="p">)</span>
         <span class="n">profile_processor</span><span class="o">.</span><span class="n">ingest</span><span class="p">(</span><span class="n">transformed</span><span class="p">,</span> <span class="n">usage_hours</span><span class="p">)</span>
         <span class="n">profile</span> <span class="o">=</span> <span class="n">profile_processor</span><span class="o">.</span><span class="n">process_into_profile</span><span class="p">()</span>
@@ -1282,6 +1298,11 @@
 
 
 <span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">()</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+    <span class="s2">&quot;--billing-project&quot;</span><span class="p">,</span>
+    <span class="n">default</span><span class="o">=</span><span class="s2">&quot;mozdata&quot;</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;GCP project to use for BigQuery billing.&quot;</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--date&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">fromisoformat</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
     <span class="s2">&quot;--sample-size&quot;</span><span class="p">,</span>
@@ -1306,7 +1327,15 @@
     <span class="n">help</span><span class="o">=</span><span class="s2">&quot;If present, add to spark.jars config.  Used for local testing, &quot;</span>
     <span class="s2">&quot;e.g. --bq-connector-jar=spark-bigquery-latest.jar&quot;</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">start_job</span><span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="n">sample_size</span><span class="p">,</span> <span class="n">use_gcs</span><span class="p">,</span> <span class="n">thread_filter</span><span class="p">,</span> <span class="n">output_tag</span><span class="p">,</span> <span class="n">bq_connector_jar</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">start_job</span><span class="p">(</span>
+    <span class="n">billing_project</span><span class="p">,</span>
+    <span class="n">date</span><span class="p">,</span>
+    <span class="n">sample_size</span><span class="p">,</span>
+    <span class="n">use_gcs</span><span class="p">,</span>
+    <span class="n">thread_filter</span><span class="p">,</span>
+    <span class="n">output_tag</span><span class="p">,</span>
+    <span class="n">bq_connector_jar</span><span class="p">,</span>
+<span class="p">):</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Running for </span><span class="si">{</span><span class="n">date</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using sample size </span><span class="si">{</span><span class="n">sample_size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
@@ -1331,6 +1360,7 @@
             <span class="s2">&quot;hang_upper_bound&quot;</span><span class="p">:</span> <span class="mi">65536</span><span class="p">,</span>
             <span class="s2">&quot;sample_size&quot;</span><span class="p">:</span> <span class="n">sample_size</span><span class="p">,</span>
             <span class="s2">&quot;use_gcs&quot;</span><span class="p">:</span> <span class="n">use_gcs</span><span class="p">,</span>
+            <span class="s2">&quot;billing_project&quot;</span><span class="p">:</span> <span class="n">billing_project</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
 
