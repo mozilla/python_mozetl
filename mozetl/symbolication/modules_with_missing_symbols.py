@@ -4,7 +4,6 @@
 
 import argparse
 import os
-import sys
 from datetime import datetime, timedelta
 from urllib.parse import urljoin
 
@@ -29,17 +28,24 @@ def parse_args():
         default=datetime.utcnow(),
         help="Run date, defaults to current dat",
     )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Build the report and print it, but don't send the email",
+    )
     return parser.parse_args()
 
 
 args = parse_args()
 
+# On days the job isn't scheduled to report, still urn it without emailing
+dry_run = args.dry_run
 if args.date.isoweekday() % 7 not in args.run_on_days:
     print(
-        f"Skipping because run date day of week"
+        f"Dry run because run date day of week"
         f" {args.date} is not in {args.run_on_days}"
     )
-    sys.exit(0)
+    dry_run = True
 
 os.system("git clone https://github.com/marco-c/missing_symbols.git")
 
@@ -172,6 +178,37 @@ subject = (
     f"Weekly report of modules with missing symbols in crash reports: {today_date}"
 )
 
+
+def module_type(name):
+    """The category the email conveys with colour, as a word for the text output."""
+    if name.lower() in firefox_modules:
+        return "firefox"
+    if name.lower() in windows_modules:
+        return "windows"
+    return "other"
+
+
+# Log the report as text as well as emailing it, so the driver logs show what was sent.
+# The email body is HTML and doesn't read well in logs.
+print(subject)
+print(f"{len(top_missing_with_avail_info)} modules over the past 3 days")
+print(
+    "{:<40} {:<16} {:<34} {:>7} {:<8} {}".format(
+        "NAME", "VERSION", "DEBUG ID", "COUNT", "TYPE", "SYMBOLS NOW"
+    )
+)
+for name, version, debug_id, count, are_available_now in top_missing_with_avail_info:
+    print(
+        "{:<40} {:<16} {:<34} {:>7} {:<8} {}".format(
+            name,
+            version or "",
+            debug_id or "",
+            count,
+            module_type(name),
+            "yes" if are_available_now else "no",
+        )
+    )
+
 body = """
 <table style="border-collapse:collapse;">
   <tr>
@@ -227,20 +264,25 @@ a PR to add them to https://github.com/marco-c/missing_symbols/tree/master/known
 
 body += "</pre>"
 
-client = boto3.client("ses", region_name="us-west-2")
+if dry_run:
+    print("Dry run, not sending email")
+else:
+    client = boto3.client("ses", region_name="us-west-2")
 
-client.send_email(
-    Source="telemetry-alerts@mozilla.com",
-    Destination={
-        "ToAddresses": [
-            "mcastelluccio@mozilla.com",
-            "release-mgmt@mozilla.com",
-            "stability@mozilla.org",
-        ],
-        "CcAddresses": [],
-    },
-    Message={
-        "Subject": {"Data": subject, "Charset": "UTF-8"},
-        "Body": {"Html": {"Data": body, "Charset": "UTF-8"}},
-    },
-)
+    client.send_email(
+        Source="telemetry-alerts@mozilla.com",
+        Destination={
+            "ToAddresses": [
+                "mcastelluccio@mozilla.com",
+                "release-mgmt@mozilla.com",
+                "stability@mozilla.org",
+            ],
+            "CcAddresses": [
+                "bewu@mozilla.com",
+            ],
+        },
+        Message={
+            "Subject": {"Data": subject, "Charset": "UTF-8"},
+            "Body": {"Html": {"Data": body, "Charset": "UTF-8"}},
+        },
+    )
