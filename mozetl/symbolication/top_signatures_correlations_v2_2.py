@@ -2,22 +2,22 @@
 #
 # Changes from the original:
 #   - crashcorrelations is vendored into this repo instead of being cloned from master at
-#     runtime. See crashcorrelations/README.md. It's submitted to Dataproc as a zip, see
-#     "Submitting" below.
+#     runtime. See crashcorrelations/README.md. It's pip installed onto the cluster from
+#     this repo, see "Submitting" below.
 #   - The top words analysis is gone. It read user_comments, which has been entirely null
 #     for years, so it never produced anything. That also removes the stemming download,
 #     the addPyFile of porter2, and a second 30 day scan of the table.
 #
 # Submitting:
-#   crashcorrelations is a plain package with no setup.py, so it can't be pip installed the
-#   way the graphics jobs install their git dependencies. Zip it and pass it as --py-files,
-#   which puts it on sys.path on the driver and the executors:
+#   The vendored crashcorrelations has a pyproject.toml, so it installs straight from the
+#   repo. The DAG puts this in PIP_PACKAGES, pointing at the same ref it fetches this driver
+#   from so the two can't drift:
 #
-#     cd mozetl/symbolication && zip -r crashcorrelations.zip crashcorrelations -x '*.pyc'
-#     gsutil cp crashcorrelations.zip gs://<bucket>/
+#     pip install "git+https://github.com/mozilla/python_mozetl.git\
+#     #subdirectory=mozetl/symbolication/crashcorrelations"
 #
-#   moz_dataproc_pyspark_runner in telemetry-airflow doesn't expose py_files, so the DAG
-#   needs either a small change there or an equivalent submit. See migration_plan.md.
+#   No egg= fragment: pip doesn't need it, and an & in PIP_PACKAGES breaks the Dataproc
+#   pip-install init action, which expands the value unquoted.
 #
 # See migration_plan.md in this directory.
 #
@@ -75,17 +75,23 @@ def parse_args():
         default=datetime.datetime.now(datetime.timezone.utc),
         help="Run date, defaults to current date",
     )
+    parser.add_argument(
+        "--results-bucket",
+        default=RESULTS_GCS_BUCKET,
+        help="GCS bucket to write results to. Point this at a scratch bucket when testing, "
+        "the default is the one Crash Stats reads and the job clears it before uploading.",
+    )
     return parser.parse_args()
 
 
-def remove_results_gcs(gcs_client, job_name):
-    bucket = gcs_client.bucket(RESULTS_GCS_BUCKET)
+def remove_results_gcs(gcs_client, bucket_name, job_name):
+    bucket = gcs_client.bucket(bucket_name)
     for key in bucket.list_blobs(prefix=job_name + "/data/"):
         key.delete()
 
 
-def upload_results_gcs(gcs_client, job_name, directory):
-    bucket = gcs_client.bucket(RESULTS_GCS_BUCKET)
+def upload_results_gcs(gcs_client, bucket_name, job_name, directory):
+    bucket = gcs_client.bucket(bucket_name)
     for root, dirs, files in os.walk(directory):
         for name in files:
             full_path = os.path.join(root, name)
@@ -193,11 +199,15 @@ def main():
 
     print(datetime.datetime.now(datetime.timezone.utc).isoformat())
 
-    # Will be uploaded under
+    # With the default bucket this ends up under
     # https://analysis-output.telemetry.mozilla.org/top-signatures-correlations/data/
-    remove_results_gcs(gcs_client, "top-signatures-correlations")
+    print(f"Writing results to gs://{args.results_bucket}")
+    remove_results_gcs(gcs_client, args.results_bucket, "top-signatures-correlations")
     upload_results_gcs(
-        gcs_client, "top-signatures-correlations", "top-signatures-correlations_output"
+        gcs_client,
+        args.results_bucket,
+        "top-signatures-correlations",
+        "top-signatures-correlations_output",
     )
 
 

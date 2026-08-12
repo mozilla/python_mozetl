@@ -1,0 +1,37 @@
+# Packaging metadata so this vendored copy can be pip installed straight from the repo,
+# which is how it gets onto the Dataproc cluster. Upstream has no setup.py or pyproject.toml,
+# so this file only exists here.
+#
+#   pip install "git+https://github.com/mozilla/python_mozetl.git\
+#   #subdirectory=mozetl/symbolication/crashcorrelations"
+#
+# Note there's no egg= fragment. It isn't needed, pip reads the name from this file, and
+# leaving it out avoids an & in the URL. The pip-install init action on Dataproc expands
+# PIP_PACKAGES unquoted, so an & there would background the command and silently drop the
+# subdirectory fragment.
+#
+# In the DAG this goes in PIP_PACKAGES rather than being zipped and passed as py_files.
+# See ../migration_plan.md.
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "crashcorrelations"
+version = "0.1.0"
+description = "Vendored copy of marco-c/crashcorrelations, patched for Spark 3"
+
+# pyspark is provided by the Dataproc image, so it's deliberately not listed here.
+dependencies = [
+    "scipy",
+    "requests",
+]
+
+[tool.setuptools]
+packages = ["crashcorrelations"]
+
+# The package lives in this directory rather than a src/ or crashcorrelations/ subdirectory,
+# so point setuptools at the parent and let it pick this directory up by name.
+[tool.setuptools.package-dir]
+crashcorrelations = "."
