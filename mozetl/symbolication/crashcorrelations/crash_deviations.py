@@ -212,7 +212,10 @@ def find_deviations(sc, reference, groups=None, signatures=None, min_support_dif
         return False
 
     def create_get_addon_name_udf(addon):
-        return functions.udf(lambda addons: get_addon_name_udf(addons, addon), StringType())
+        # get_addon_name_udf returns a bool, so this has to be BooleanType. Declared as
+        # StringType the values come back as the strings 'true' and 'false', which makes the
+        # `elem_val is False` check in ignore_rule silently never match.
+        return functions.udf(lambda addons: get_addon_name_udf(addons, addon), BooleanType())
 
     def get_addon_version_udf(addons, addon):
         if addons is None:
@@ -319,7 +322,9 @@ def find_deviations(sc, reference, groups=None, signatures=None, min_support_dif
                 modules_groups[group_name] = [(module, count * total_groups[group_name] / total_groups[group_name]) for module, count in modules_groups[group_name]]
 
         all_modules_groups = dict([(group_name, set([module for module, count in modules_groups[group_name] if float(count) / total_groups[group_name] > min_support_diff])) for group_name in group_names])
-        all_modules = set.union(*all_modules_groups.values())
+        # set.union on the class needs at least one argument, so an empty sequence raises
+        # TypeError. Seed with an empty set. See migration_plan.md, "Empty channel crash".
+        all_modules = set.union(set(), *all_modules_groups.values())
 
         module_ids = {}
         i = 0
@@ -337,6 +342,9 @@ def find_deviations(sc, reference, groups=None, signatures=None, min_support_dif
         print('[DONE ' + str(time.time() - t) + ']: ' + str(len(all_modules)) + '\n')
     else:
         all_modules = set()
+        # priors_graph below reads module_ids unconditionally, so it has to exist even when
+        # there's no json_dump column to build it from.
+        module_ids = {}
 
 
     priors_graph = {
@@ -423,7 +431,9 @@ def find_deviations(sc, reference, groups=None, signatures=None, min_support_dif
                             return 'x86'
                         else:
                             return 'amd64'
-                    except:
+                    except (ValueError, TypeError):
+                        # Only guarding the int() conversion. A bare except here hid real
+                        # errors during the Spark 3 port.
                         return 'unknown'
                 elif platform == 'Mac OS X':
                     return 'amd64'

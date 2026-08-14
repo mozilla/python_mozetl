@@ -24,7 +24,21 @@ anything. `plot.py` is only used from notebooks.
 
 * `crash_deviations.py`: dropped `SQLContext` from the `pyspark.sql` import. It was never
   used and `SQLContext` no longer exists in Spark 3, so the import failed outright.
+* `crash_deviations.py` line 322: seeded `set.union` with an empty set. Called on the class
+  it needs at least one argument, so a channel with no groups above the support threshold
+  crashed the job. This took down production on 2026-08-13. The driver also skips empty
+  channels now. See "Empty channel crash" in `../migration_plan.md`.
 
-Further Spark 3 fixes are expected here. See the step 6 list in `../migration_plan.md` for
-what to look at, in particular the use of `Row` as a type discriminator after `reduceByKey`
-and a UDF that declares `StringType` while returning a bool.
+* `crash_deviations.py`: `create_get_addon_name_udf` now declares `BooleanType()` instead of
+  `StringType()`, which is what the function actually returns. Under `StringType` the values
+  arrive as `'true'`/`'false'` and the `elem_val is False` test in `ignore_rule` never
+  matches.
+* `crash_deviations.py`: narrowed the bare `except:` in `get_arch` to
+  `(ValueError, TypeError)`.
+* `crash_deviations.py`: the `else` branch of the modules block now sets `module_ids = {}`.
+  `priors_graph` reads it unconditionally, so a dataset with no `json_dump` column raised
+  `NameError`.
+
+The `Row` type discriminator after `reduceByKey`, `dropDuplicates` on the exploded module
+column, and the `crash_date` handling were all checked against PySpark 3.5 on Python 3.11 and
+work unchanged. See the step 7 list in `../migration_plan.md`.

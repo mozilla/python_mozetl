@@ -30,9 +30,9 @@
 # source build fails. The chi2_contingency and fisher_exact return shapes crash_deviations
 # unpacks are unchanged in 1.11.
 #
-# The DAG also needs spark.jars pointed at a Spark 3.5 build of the BigQuery connector,
-# gs://spark-lib/bigquery/spark-3.5-bigquery-0.44.2.jar. The spark-bigquery-latest_2.12.jar
-# it currently uses is the Spark 2.4 line and won't load.
+# Unlike the image 1.5 job, the DAG must not set spark.jars for the BigQuery connector.
+# Image 2.2 ships one in /usr/lib/spark/jars, and a second one on the classpath makes the
+# read fail with "Multiple sources found for bigquery" because both register that name.
 
 import argparse
 import datetime
@@ -149,6 +149,20 @@ def main():
         dataset = crash_deviations.get_telemetry_crashes(
             spark, versions=channel_to_versions[channel], days=TOP_SIGNATURE_PERIOD_DAYS
         )
+
+        # A channel with no crashes for the versions we asked for used to take the whole run
+        # down, losing the channels that had already succeeded. Happens when product-details
+        # advertises a new nightly before builds with that version have crashed. See
+        # migration_plan.md, "Empty channel crash".
+        channel_crashes = dataset.count()
+        if channel_crashes == 0:
+            print(
+                f"No crashes for {channel} versions"
+                f" {channel_to_versions[channel]}, skipping the channel"
+            )
+            totals[channel] = 0
+            continue
+
         results, total_reference, total_groups = crash_deviations.find_deviations(
             sc, dataset, signatures=signatures[channel]
         )
