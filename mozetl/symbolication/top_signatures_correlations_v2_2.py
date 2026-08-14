@@ -7,6 +7,9 @@
 #   - The top words analysis is gone. It read user_comments, which has been entirely null
 #     for years, so it never produced anything. That also removes the stemming download,
 #     the addPyFile of porter2, and a second 30 day scan of the table.
+#   - boto3 is gone. The vendored utils.py imported it at module load for two S3 functions
+#     that nothing called, left behind when this job moved to GCS. The job writes to GCS via
+#     google-cloud-storage and needs no AWS credentials.
 #
 # Submitting:
 #   The vendored crashcorrelations has a pyproject.toml, so it installs straight from the
@@ -22,7 +25,6 @@
 # See migration_plan.md in this directory.
 #
 # pip install (set as PIP_PACKAGES in the DAG):
-# boto3==1.35.36
 # scipy==1.11.4
 # google-cloud-storage==2.18.2
 #

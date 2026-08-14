@@ -7,7 +7,6 @@ from datetime import datetime, timedelta
 import requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
-import boto3
 
 
 def utc_today():
@@ -62,21 +61,3 @@ def rmdir(path):
 def write_json(path, obj):
     with gzip.open(path, 'wt') as f:
         json.dump(obj, f)
-
-
-def upload_results(job_name, directory):
-    client = boto3.client('s3', 'us-west-2')
-    transfer = boto3.s3.transfer.S3Transfer(client)
-
-    for root, dirs, files in os.walk(directory):
-        for name in files:
-            full_path = os.path.join(root, name)
-
-            transfer.upload_file(full_path, 'telemetry-public-analysis-2', '{}/data/{}'.format(job_name, full_path[len(directory) + 1:]), extra_args={'ContentType': 'application/json', 'ContentEncoding': 'gzip'})
-
-
-def remove_results(job_name):
-    bucket = boto3.resource('s3').Bucket('telemetry-public-analysis-2')
-
-    for key in bucket.objects.filter(Prefix=job_name + '/data/'):
-        key.delete()
