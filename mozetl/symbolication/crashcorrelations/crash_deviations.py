@@ -20,6 +20,10 @@ from . import app_notes
 from . import utils
 from functools import reduce
 
+# TEMPORARY diagnostic hook for the production NULL undercount. None in normal operation;
+# the driver sets it to a count_trace.Tracer. See ../count_trace.py.
+TRACE = None
+
 
 MIN_COUNT = 5  # 5 for chi-squared test.
 
@@ -90,6 +94,12 @@ def find_deviations(sc, reference, groups=None, signatures=None, min_support_dif
     def save_count(candidate, count, df):
         if df not in saved_counts:
             saved_counts[df] = {}
+        # TEMPORARY, for diagnosing the production NULL undercount. Records every write so
+        # an overwrite with a smaller value is visible. Remove with the other TRACE hooks
+        # once the cause is found; see ../count_trace.py.
+        if TRACE is not None:
+            TRACE.note_write(candidate, count, df,
+                             previous=saved_counts[df].get(candidate))
         saved_counts[df][candidate] = float(count)
 
 
@@ -676,6 +686,14 @@ def find_deviations(sc, reference, groups=None, signatures=None, min_support_dif
         .filter(lambda k_v: k_v[1] >= MIN_COUNT)\
         .collect()
 
+        # TEMPORARY. This is the pivotal measurement: `results` is straight off collect(),
+        # before saved_counts or any filtering. If the NULL counts are already wrong here
+        # the fault is in Spark or the dataframe; if they're right, it's downstream in
+        # Python. See ../count_trace.py.
+        if TRACE is not None:
+            TRACE.note_rdd('level1_collect', results)
+            TRACE.note_independent_counts('level1_independent', dfReference, columns)
+
         results_ref += [r for r in results if isinstance(r[0], frozenset)]
         for group_name in group_names:
             results_groups[group_name] += [(r[0][1], r[1]) for r in results if not isinstance(r[0], frozenset) and r[0][0] == group_name]
@@ -774,6 +792,12 @@ def find_deviations(sc, reference, groups=None, signatures=None, min_support_dif
             elif isinstance(val, datetime.date):
                 dict_candidate[key] = str(val)
         return dict_candidate
+
+    # TEMPORARY. saved_counts as it stands just before the final filtering, so a count that
+    # was right after level 1 but wrong in the output can be localised to the filtering.
+    if TRACE is not None:
+        TRACE.note_saved_counts('before_final_filtering', saved_counts, group_names,
+                                total_reference, total_groups)
 
     print('Final rules filtering...')
     t = time.time()

@@ -48,6 +48,23 @@ from crashcorrelations import (  # noqa E402
     comments,
 )
 
+# TEMPORARY, for diagnosing the NULL undercount. Dataproc stages only this driver file, so
+# fetch the tracer from the same ref rather than assuming it's next to us. Any failure here
+# is non-fatal: the job must still run if the diagnostic can't load.
+count_trace_prod = None
+if os.environ.get("TRACE_COUNTS"):
+    try:
+        _trace_ref = os.environ.get("TRACE_REF", "main")
+        os.system(
+            "curl -sSf -o count_trace_prod.py "
+            "https://raw.githubusercontent.com/mozilla/python_mozetl/"
+            "{}/mozetl/symbolication/count_trace_prod.py".format(_trace_ref)
+        )
+        import count_trace_prod  # noqa E402
+    except Exception as _error:
+        print("count_trace_prod unavailable, continuing without it: {!r}".format(_error))
+        count_trace_prod = None
+
 
 # workaround airflow not able to different schedules for tasks in a dag
 def parse_args():
@@ -128,6 +145,21 @@ for channel in channels:
     dataset = crash_deviations.get_telemetry_crashes(
         spark, versions=channel_to_versions[channel], days=5
     )
+
+    # TEMPORARY. Count nulls four ways on this exact dataframe before find_deviations sees
+    # it, to find where the published NULL counts lose rows. Release only: that's where the
+    # discrepancy was measured. Writes to its own prefix and can't affect the output.
+    # Remove with count_trace_prod.py once the cause is known.
+    if count_trace_prod is not None and channel == "release":
+        try:
+            tracer = count_trace_prod.Tracer(
+                channel, versions=channel_to_versions[channel], days=5
+            )
+            tracer.measure(spark, dataset)
+            tracer.flush(os.environ.get("TRACE_BUCKET", RESULTS_GCS_BUCKET))
+        except Exception as error:
+            print("count_trace_prod failed, continuing: {!r}".format(error))
+
     results, total_reference, total_groups = crash_deviations.find_deviations(
         sc, dataset, signatures=signatures[channel]
     )

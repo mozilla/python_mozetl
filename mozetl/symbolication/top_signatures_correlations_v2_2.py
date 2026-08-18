@@ -49,6 +49,10 @@ from google.cloud import storage
 
 from crashcorrelations import crash_deviations, download_data, utils
 
+# TEMPORARY, see count_trace.py. Vendored next to this file so the Dataproc
+# submission picks it up from the same directory.
+import count_trace
+
 
 # Number of top signatures to look at. Lower this if the job runs out of memory: the
 # correlation code generates candidates per signature, so cost grows with this number.
@@ -76,6 +80,18 @@ def parse_args():
         type=datetime.datetime.fromisoformat,
         default=datetime.datetime.now(datetime.timezone.utc),
         help="Run date, defaults to current date",
+    )
+    parser.add_argument(
+        "--trace-counts",
+        action="store_true",
+        help="TEMPORARY. Trace the level 1 counts for the release channel and write them to "
+        "a count-trace/ prefix, to diagnose the production NULL undercount. See "
+        "count_trace.py.",
+    )
+    parser.add_argument(
+        "--trace-bucket",
+        default=None,
+        help="Bucket for --trace-counts output. Defaults to --results-bucket.",
     )
     parser.add_argument(
         "--results-bucket",
@@ -165,9 +181,22 @@ def main():
             totals[channel] = 0
             continue
 
+        # TEMPORARY, remove with count_trace.py once the NULL undercount is understood.
+        # Only release is traced: it's where the discrepancy was measured, and the witness
+        # signature lives there. Writes to a separate prefix so it can't affect the output.
+        if args.trace_counts and channel == "release":
+            crash_deviations.TRACE = count_trace.Tracer(channel)
+        else:
+            crash_deviations.TRACE = None
+
         results, total_reference, total_groups = crash_deviations.find_deviations(
             sc, dataset, signatures=signatures[channel]
         )
+
+        if crash_deviations.TRACE is not None:
+            crash_deviations.TRACE.note_results(results, total_reference, total_groups)
+            crash_deviations.TRACE.flush(args.trace_bucket or args.results_bucket)
+            crash_deviations.TRACE = None
 
         totals[channel] = total_reference
 
