@@ -44,7 +44,11 @@ def main(path):
     trace = load(path)
     env = trace.get("environment", {})
 
-    print("channel: {}   versions: {}".format(trace["channel"], trace["versions"]))
+    print("channel: {}   versions: {}{}".format(
+        trace["channel"],
+        trace["versions"],
+        "  (pinned via --override-versions)" if trace.get("versions_overridden") else "",
+    ))
     print("witness: {}\n".format(trace["witness_signature"]))
 
     print("environment:")

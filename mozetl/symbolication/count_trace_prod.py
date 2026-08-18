@@ -88,10 +88,13 @@ def _null_count(df, column):
 
 
 class Tracer(object):
-    def __init__(self, channel, versions, days):
+    def __init__(self, channel, versions, days, versions_overridden=False):
         self.channel = channel
         self.versions = list(versions)
         self.days = days
+        # Whether these versions came from --override-versions rather than product-details.
+        # Recorded so a trace can't later be mistaken for one of a scheduled run.
+        self.versions_overridden = versions_overridden
         self.measurements = []
         self.environment = {}
         self.errors = []
@@ -344,6 +347,7 @@ class Tracer(object):
         payload = {
             "channel": self.channel,
             "versions": self.versions,
+            "versions_overridden": self.versions_overridden,
             "days": self.days,
             "witness_signature": WITNESS_SIGNATURE,
             "environment": self.environment,

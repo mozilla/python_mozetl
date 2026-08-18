@@ -108,17 +108,37 @@ def parse_args():
         help="GCS bucket for --trace-counts output. Use a scratch bucket; the default is "
         "the one Crash Stats reads.",
     )
+    parser.add_argument(
+        "--override-versions",
+        nargs="+",
+        default=None,
+        metavar="VERSION",
+        help="TEMPORARY. Use these versions for the release channel instead of asking "
+        "product-details. get_versions() fetches the current version live and ignores "
+        "--date, so once a new major ships, the release channel resolves to a version "
+        "with almost no crashes and a rerun can't reproduce an earlier run. Pin the "
+        "versions to reproduce one, e.g. --override-versions 153.0 153.0.1 153.0.3 "
+        "153.0.4. Requires --results-bucket to be a scratch bucket, since the output "
+        "won't match what the schedule would have produced.",
+    )
+    parser.add_argument(
+        "--results-bucket",
+        default=RESULTS_GCS_BUCKET,
+        help="GCS bucket to write results to. Point this at a scratch bucket when "
+        "testing; the default is the one Crash Stats reads and the job clears it before "
+        "uploading.",
+    )
     return parser.parse_args()
 
 
-def remove_results_gcs(job_name):
-    bucket = gcs_client.bucket(RESULTS_GCS_BUCKET)
+def remove_results_gcs(job_name, bucket_name=RESULTS_GCS_BUCKET):
+    bucket = gcs_client.bucket(bucket_name)
     for key in bucket.list_blobs(prefix=job_name + "/data/"):
         key.delete()
 
 
-def upload_results_gcs(job_name, directory):
-    bucket = gcs_client.bucket(RESULTS_GCS_BUCKET)
+def upload_results_gcs(job_name, directory, bucket_name=RESULTS_GCS_BUCKET):
+    bucket = gcs_client.bucket(bucket_name)
     for root, dirs, files in os.walk(directory):
         for name in files:
             full_path = os.path.join(root, name)
@@ -145,11 +165,30 @@ print(datetime.utcnow())
 # TEMPORARY, see count_trace_prod.py.
 count_trace_prod = load_count_trace(args.trace_ref) if args.trace_counts else None
 
+# --override-versions exists to reproduce an earlier run, so its output deliberately doesn't
+# match the schedule. Refuse to publish that to the bucket Crash Stats reads.
+if args.override_versions and args.results_bucket == RESULTS_GCS_BUCKET:
+    sys.exit(
+        "--override-versions writes results that don't match the current versions. "
+        "Pass --results-bucket with a scratch bucket to use it."
+    )
+
 channels = ["release", "beta", "nightly", "esr"]
 channel_to_versions = {}
 
 for channel in channels:
     channel_to_versions[channel] = download_data.get_versions(channel)
+
+# TEMPORARY, with --override-versions. Applied here so the pinned versions reach everything
+# downstream from one place: get_top, get_telemetry_crashes, and the count trace. Release
+# only, since that's the channel being reproduced.
+if args.override_versions:
+    print(
+        "Overriding release versions {} with {}".format(
+            channel_to_versions["release"], args.override_versions
+        )
+    )
+    channel_to_versions["release"] = list(args.override_versions)
 
 signatures = {}
 
@@ -182,7 +221,10 @@ for channel in channels:
     if count_trace_prod is not None and channel == "release":
         try:
             tracer = count_trace_prod.Tracer(
-                channel, versions=channel_to_versions[channel], days=5
+                channel,
+                versions=channel_to_versions[channel],
+                days=5,
+                versions_overridden=bool(args.override_versions),
             )
             tracer.measure(spark, dataset)
             tracer.flush(args.trace_bucket)
@@ -252,7 +294,12 @@ utils.write_json(
 
 print(datetime.utcnow())
 
-# Will be uploaded under
+# With the default bucket this is served under
 # https://analysis-output.telemetry.mozilla.org/top-signatures-correlations/data/
-remove_results_gcs("top-signatures-correlations")
-upload_results_gcs("top-signatures-correlations", "top-signatures-correlations_output")
+print("Writing results to gs://{}".format(args.results_bucket))
+remove_results_gcs("top-signatures-correlations", args.results_bucket)
+upload_results_gcs(
+    "top-signatures-correlations",
+    "top-signatures-correlations_output",
+    args.results_bucket,
+)
