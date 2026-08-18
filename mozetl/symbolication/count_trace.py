@@ -51,6 +51,9 @@ TRACKED_COLUMNS = frozenset({
     "address",
     "reason",
     "cpu_microcode_version",
+    # augment() renames dom_ipc_enabled to e10s_enabled, and these hooks run after that, so
+    # the post-rename name is the one that appears. Both are listed because which one shows
+    # up is itself informative.
     "dom_ipc_enabled",
     "e10s_enabled",
     "process_type",
@@ -60,7 +63,7 @@ TRACKED_COLUMNS = frozenset({
 # The clearest case: 121 crashes, all 121 with moz_crash_reason NULL, production says 54.
 WITNESS_SIGNATURE = "EdgePool::Iterator::operator*"
 
-TRACE_PREFIX = "count-trace"
+TRACE_PREFIX = "count-trace-inlib"
 
 
 def _describe(candidate):

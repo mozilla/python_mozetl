@@ -16,7 +16,40 @@ from pyspark.sql import SparkSession
 from google.cloud import storage
 
 sys.path += [os.path.abspath("."), os.path.abspath("crashcorrelations")]
-os.system("git clone https://github.com/marco-c/crashcorrelations.git")
+
+# TEMPORARY, for the NULL undercount investigation. Normally this clones upstream
+# crashcorrelations, which has no trace hooks, so there's no way to see inside
+# find_deviations. With --trace-counts the driver instead fetches the vendored copy in
+# crashcorrelations_traced/, which is upstream 5684259 plus three additive TRACE hooks (see
+# crashcorrelations_traced/README.md). Anything else about the run is unchanged.
+#
+# argparse runs later (the SparkContext below has to exist first), so check argv directly.
+_TRACING = "--trace-counts" in sys.argv
+if _TRACING:
+    _ref = "main"
+    if "--trace-ref" in sys.argv:
+        _ref = sys.argv[sys.argv.index("--trace-ref") + 1]
+    # A tarball of one directory, rather than a clone of this whole repo.
+    _url = (
+        "https://github.com/mozilla/python_mozetl/archive/{}.tar.gz".format(_ref)
+    )
+    # strip-components=3 drops the "<repo>-<ref>/mozetl/symbolication" prefix, leaving
+    # crashcorrelations_traced/ as a directory. Verified against the real tarball layout.
+    if os.system(
+        "curl -sSfL -o repo.tar.gz '{}' && "
+        "tar xzf repo.tar.gz --strip-components=3 "
+        "'*/mozetl/symbolication/crashcorrelations_traced/*' "
+        "'*/mozetl/symbolication/count_trace.py' && "
+        "mv crashcorrelations_traced crashcorrelations".format(_url)
+    ) != 0:
+        sys.exit(
+            "--trace-counts: could not fetch crashcorrelations_traced from ref "
+            "{}. Refusing to fall back to the untraced upstream clone, since the run "
+            "would silently produce no trace.".format(_ref)
+        )
+    print("Using crashcorrelations_traced from ref {}".format(_ref))
+else:
+    os.system("git clone https://github.com/marco-c/crashcorrelations.git")
 
 os.system("pip download stemming==1.0.1")
 os.system("tar xf stemming-1.0.1.tar.gz")
@@ -47,6 +80,15 @@ from crashcorrelations import (  # noqa E402
     crash_deviations,
     comments,
 )
+
+# TEMPORARY. Extracted from the same tarball as crashcorrelations_traced above, so it's only
+# importable when tracing. See count_trace.py.
+count_trace = None
+if _TRACING:
+    try:
+        import count_trace  # noqa E402
+    except ImportError as _error:
+        sys.exit("--trace-counts: count_trace.py did not import: {!r}".format(_error))
 
 
 # TEMPORARY, for diagnosing the NULL undercount. Remove with count_trace_prod.py.
@@ -214,6 +256,37 @@ for channel in channels:
         spark, versions=channel_to_versions[channel], days=5
     )
 
+    # find_deviations drops every signature with fewer than MIN_COUNT crashes, and if that
+    # leaves none it fails on `set.union(*{}.values())` with "descriptor 'union' of 'set'
+    # object needs an argument", taking down the channels that already succeeded. Channels
+    # hit this whenever get_versions() resolves to a version that has just shipped: it
+    # fetches the current version from product-details live, so a new release makes the
+    # channel almost empty until crashes accumulate. Counting rows isn't enough, since the
+    # channel can have a few crashes spread thinly across many signatures and still leave
+    # nothing above MIN_COUNT.
+    signature_counts = dict(
+        dataset.select("signature")
+        .filter(dataset["signature"].isin(signatures[channel]))
+        .groupBy("signature")
+        .count()
+        .rdd.map(lambda row: (row["signature"], row["count"]))
+        .collect()
+    )
+    usable = [s for s, n in signature_counts.items() if n >= crash_deviations.MIN_COUNT]
+    if not usable:
+        print(
+            "No signature in {} has {} or more crashes for versions {} ({} crashes over {}"
+            " signatures), skipping the channel".format(
+                channel,
+                crash_deviations.MIN_COUNT,
+                channel_to_versions[channel],
+                sum(signature_counts.values()),
+                len(signature_counts),
+            )
+        )
+        totals[channel] = 0
+        continue
+
     # TEMPORARY. Count nulls four ways on this exact dataframe before find_deviations sees
     # it, to find where the published NULL counts lose rows. Release only: that's where the
     # discrepancy was measured. Writes to its own prefix and can't affect the output.
@@ -231,9 +304,25 @@ for channel in channels:
         except Exception as error:
             print("count_trace_prod failed, continuing: {!r}".format(error))
 
+    # TEMPORARY. The in-library trace, which is the point of crashcorrelations_traced. Unlike
+    # the external tracer above it sees dfReference (post-augment) and every write to
+    # saved_counts, so it covers the steps the external trace couldn't reach.
+    if count_trace is not None and channel == "release":
+        crash_deviations.TRACE = count_trace.Tracer(channel)
+    else:
+        crash_deviations.TRACE = None
+
     results, total_reference, total_groups = crash_deviations.find_deviations(
         sc, dataset, signatures=signatures[channel]
     )
+
+    if crash_deviations.TRACE is not None:
+        try:
+            crash_deviations.TRACE.note_results(results, total_reference, total_groups)
+            crash_deviations.TRACE.flush(args.trace_bucket)
+        except Exception as error:
+            print("count_trace flush failed, continuing: {!r}".format(error))
+        crash_deviations.TRACE = None
 
     totals[channel] = total_reference
 

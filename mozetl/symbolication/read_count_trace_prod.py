@@ -13,7 +13,8 @@ import subprocess
 import sys
 
 
-METHODS = ["sql_direct", "connector_full", "connector_pruned", "rdd_path"]
+METHODS = ["sql_direct", "connector_full", "connector_pruned", "rdd_path",
+           "level1_rdd_expr"]
 
 # Columns production publishes correctly. If these diverge too, it isn't null-specific.
 CONTROLS = {"process_type", "platform"}
@@ -140,7 +141,7 @@ def main(path):
         return
 
     # Report the earliest layer that breaks, since later ones inherit its error.
-    for method in ["connector_full", "connector_pruned", "rdd_path"]:
+    for method in ["connector_full", "connector_pruned", "rdd_path", "level1_rdd_expr"]:
         if method not in diverged:
             continue
         columns = diverged[method]
@@ -157,10 +158,16 @@ def main(path):
             print("  get_telemetry_crashes' .select() lets the connector push a column")
             print("  subset down, and that pushdown is losing null rows. Dropping the")
             print("  .select() or disabling pushdown would fix it.")
-        else:
+        elif method == "rdd_path":
             print("  the dataframe is correct but counting through the RDD is not")
             print("  ({} columns). The fault is in the row conversion, not the read.".format(
                 len(columns)))
+        else:
+            print("  the read and the plain RDD counts are correct, but find_deviations'")
+            print("  own level 1 expression is not ({} columns). That expression is the".format(
+                len(columns)))
+            print("  bug: it builds frozenset([(key, p[key])]) over every column at once,")
+            print("  so the fault is in how it keys or reduces, not in the data.")
         if controls:
             print("  note: controls {} also diverge, so this is not".format(controls))
             print("  specific to nulls.")
