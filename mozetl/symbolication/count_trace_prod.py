@@ -168,21 +168,26 @@ class Tracer(object):
     def measure(self, spark, dataset):
         """Count nulls four ways on the dataframe find_deviations is about to consume."""
         self.note_environment(spark, dataset)
-        self._measure_pruned(dataset)
-        self._measure_full(spark)
-        self._measure_rdd(dataset)
-        self._measure_sql(spark)
+        # Drive everything off the columns the read actually produced. TRACKED_COLUMNS is a
+        # wish list and has at least one name this table doesn't have (e10s_enabled).
+        columns = [c for c in TRACKED_COLUMNS if c in dataset.columns]
+        self.environment["columns_measured"] = columns
+        self.environment["columns_absent"] = [
+            c for c in TRACKED_COLUMNS if c not in dataset.columns
+        ]
+        self._measure_pruned(dataset, columns)
+        self._measure_full(spark, columns)
+        self._measure_rdd(dataset, columns)
+        self._measure_sql(spark, columns)
 
-    def _measure_pruned(self, dataset):
+    def _measure_pruned(self, dataset, columns):
         """The suspect path: the dataframe as find_deviations receives it."""
         try:
             witness = dataset.filter(dataset["signature"] == WITNESS_SIGNATURE)
             self.environment["total_reference"] = dataset.count()
             self.environment["total_witness_group"] = witness.count()
             witness.cache()
-            for column in TRACKED_COLUMNS:
-                if column not in dataset.columns:
-                    continue
+            for column in columns:
                 try:
                     self._record(
                         "connector_pruned",
@@ -196,7 +201,7 @@ class Tracer(object):
         except Exception as error:
             self._fail("connector_pruned", error)
 
-    def _measure_full(self, spark):
+    def _measure_full(self, spark, columns):
         """A fresh read with no .select(), so the connector cannot prune columns.
 
         get_telemetry_crashes drops the android_* columns with a .select(), which lets the
@@ -217,9 +222,7 @@ class Tracer(object):
             witness.cache()
             self.environment["total_reference_unpruned"] = full.count()
             self.environment["total_witness_group_unpruned"] = witness.count()
-            for column in TRACKED_COLUMNS:
-                if column not in full.columns:
-                    continue
+            for column in columns:
                 try:
                     self._record(
                         "connector_full",
@@ -233,7 +236,7 @@ class Tracer(object):
         except Exception as error:
             self._fail("connector_full", error)
 
-    def _measure_rdd(self, dataset):
+    def _measure_rdd(self, dataset, columns):
         """Count through the RDD, the shape find_deviations actually uses.
 
         find_deviations counts with flatMap/reduceByKey over dataset.rdd rather than with
@@ -241,7 +244,6 @@ class Tracer(object):
         is in the RDD conversion, not the read.
         """
         try:
-            columns = [c for c in TRACKED_COLUMNS if c in dataset.columns]
             if not columns:
                 return
 
@@ -276,36 +278,27 @@ class Tracer(object):
             utils.get_day(self.days).strftime("%Y-%m-%d")
         )
 
-    def _measure_sql(self, spark):
-        """Ground truth: count in BigQuery, no Spark data path involved."""
+    def _measure_sql(self, spark, columns):
+        """Ground truth: count in BigQuery, no Spark data path involved.
+
+        One query per column. A single combined query is cheaper, but one unrecognised
+        column name fails the whole statement and leaves no ground truth at all, which is
+        exactly what happened on the first run (e10s_enabled is not in this table).
+        `columns` therefore comes from the dataframe's own schema, and each column is
+        queried separately so a surprise can only cost that one column.
+        """
         try:
             from crashcorrelations import utils
+            from google.cloud import bigquery
 
             start = utils.get_day(self.days).strftime("%Y-%m-%d")
             versions = ", ".join("'{}'".format(v) for v in self.versions)
-            selects = []
-            for column in TRACKED_COLUMNS:
-                selects.append(
-                    "COUNTIF({0} IS NULL) AS ref_{0}".format(column)
-                )
-                selects.append(
-                    "COUNTIF({0} IS NULL AND signature = @witness) AS grp_{0}".format(
-                        column
-                    )
-                )
-            query = (
-                "SELECT COUNT(*) AS total_reference, "
-                "COUNTIF(signature = @witness) AS total_witness, "
-                + ", ".join(selects)
-                + " FROM `{}`".format(TABLE)
+            where = (
+                " FROM `{}`".format(TABLE)
                 + " WHERE crash_date >= DATE('{}')".format(start)
                 + " AND product = 'Firefox'"
                 + " AND version IN ({})".format(versions)
             )
-            self.environment["sql"] = query
-
-            from google.cloud import bigquery
-
             client = bigquery.Client()
             config = bigquery.QueryJobConfig(
                 query_parameters=[
@@ -314,16 +307,34 @@ class Tracer(object):
                     )
                 ]
             )
-            row = list(client.query(query, job_config=config).result())[0]
-            self.environment["total_reference_sql"] = row["total_reference"]
-            self.environment["total_witness_group_sql"] = row["total_witness"]
-            for column in TRACKED_COLUMNS:
-                self._record(
-                    "sql_direct",
-                    column,
-                    row["ref_" + column],
-                    row["grp_" + column],
+
+            totals_query = (
+                "SELECT COUNT(*) AS total_reference, "
+                "COUNTIF(signature = @witness) AS total_witness" + where
+            )
+            self.environment["sql_window"] = where
+            try:
+                row = list(client.query(totals_query, job_config=config).result())[0]
+                self.environment["total_reference_sql"] = row["total_reference"]
+                self.environment["total_witness_group_sql"] = row["total_witness"]
+            except Exception as error:
+                self._fail("sql_direct:totals", error)
+
+            for column in columns:
+                query = (
+                    "SELECT COUNTIF({0} IS NULL) AS ref_null, "
+                    "COUNTIF({0} IS NULL AND signature = @witness) AS grp_null".format(
+                        column
+                    )
+                    + where
                 )
+                try:
+                    row = list(client.query(query, job_config=config).result())[0]
+                    self._record(
+                        "sql_direct", column, row["ref_null"], row["grp_null"]
+                    )
+                except Exception as error:
+                    self._fail("sql_direct:" + column, error)
         except Exception as error:
             self._fail("sql_direct", error)
 

@@ -79,18 +79,52 @@ def main(path):
                 cells.append("{:>21}".format("-"))
                 continue
             mark = ""
-            if truth is not None and method != "sql_direct" and value != truth:
-                mark = " *"
-                diverged.setdefault(method, []).append(column)
+            if method != "sql_direct":
+                if truth is None:
+                    # No ground truth for this column, so "no mark" must not read as
+                    # "agrees". The verdict below refuses to conclude in this case.
+                    mark = " ?"
+                elif value != truth:
+                    mark = " *"
+                    diverged.setdefault(method, []).append(column)
             cells.append("{:>21}".format("{}/{}{}".format(value[0], value[1], mark)))
         flag = "  (control)" if column in CONTROLS else ""
         print("{:26}".format(column) + "".join(cells) + flag)
 
-    print("\n* = disagrees with BigQuery's own count\n")
+    print("\n* = disagrees with BigQuery's own count"
+          "   ? = no ground truth, cannot say\n")
     print("verdict:")
 
     if not table:
         print("  no measurements recorded; check the errors above.")
+        return
+
+    # Refuse to conclude anything without ground truth. Agreement among the three Spark
+    # paths means nothing on its own: they share the read, so a read bug moves all three
+    # together. Only sql_direct is independent.
+    missing_truth = [c for c in table if "sql_direct" not in table[c]]
+    if missing_truth:
+        print("  INCONCLUSIVE: no BigQuery ground truth for {} of {} columns".format(
+            len(missing_truth), len(table)))
+        print("  ({}).".format(", ".join(sorted(missing_truth))))
+        print("  The Spark paths all share the same read, so their agreeing with each")
+        print("  other says nothing. Fix the sql_direct errors above and rerun.")
+        return
+
+    # An empty or witness-free window can't show a discrepancy either way.
+    total_reference = env.get("total_reference")
+    total_witness = env.get("total_witness_group")
+    if total_reference is not None and total_reference < 1000:
+        print("  INCONCLUSIVE: only {} rows in the reference set.".format(total_reference))
+        print("  Release normally has tens of thousands. The job asked for versions {}"
+              .format(trace["versions"]))
+        print("  which have barely shipped, so this window has almost no data. Rerun")
+        print("  against a window whose versions carry real volume.")
+        return
+    if not total_witness:
+        print("  INCONCLUSIVE: the witness signature has 0 crashes in this window, so")
+        print("  there is nothing to compare for the group counts. Pick a window and")
+        print("  versions where it appears, or change WITNESS_SIGNATURE.")
         return
 
     if not diverged:
