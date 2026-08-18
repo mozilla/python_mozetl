@@ -29,19 +29,26 @@ if _TRACING:
     _ref = "main"
     if "--trace-ref" in sys.argv:
         _ref = sys.argv[sys.argv.index("--trace-ref") + 1]
-    # A tarball of one directory, rather than a clone of this whole repo.
+    # A tarball of one directory, rather than a clone of this whole repo. -L matters: the
+    # archive URL redirects, including for refs containing a slash.
     _url = (
         "https://github.com/mozilla/python_mozetl/archive/{}.tar.gz".format(_ref)
     )
-    # strip-components=3 drops the "<repo>-<ref>/mozetl/symbolication" prefix, leaving
-    # crashcorrelations_traced/ as a directory. Verified against the real tarball layout.
-    if os.system(
-        "curl -sSfL -o repo.tar.gz '{}' && "
-        "tar xzf repo.tar.gz --strip-components=3 "
-        "'*/mozetl/symbolication/crashcorrelations_traced/*' "
-        "'*/mozetl/symbolication/count_trace.py' && "
-        "mv crashcorrelations_traced crashcorrelations".format(_url)
-    ) != 0:
+    # Extract by exact path, not by glob. GNU tar (on the cluster) ignores wildcards unless
+    # given --wildcards, while BSD tar (macOS) rejects that flag outright, so no single
+    # pattern-based invocation works on both. The archive's own top-level directory name is
+    # read from the tarball rather than derived from the ref, since GitHub rewrites slashes
+    # in branch names. strip-components=3 then drops "<root>/mozetl/symbolication".
+    _cmd = (
+        "set -e; "
+        "curl -sSfL -o repo.tar.gz '{url}'; "
+        'root=$(tar tzf repo.tar.gz | head -1 | cut -d/ -f1); '
+        'tar xzf repo.tar.gz --strip-components=3 '
+        '"$root/mozetl/symbolication/crashcorrelations_traced" '
+        '"$root/mozetl/symbolication/count_trace.py"; '
+        "mv crashcorrelations_traced crashcorrelations"
+    ).format(url=_url)
+    if os.system(_cmd) != 0:
         sys.exit(
             "--trace-counts: could not fetch crashcorrelations_traced from ref "
             "{}. Refusing to fall back to the untraced upstream clone, since the run "
