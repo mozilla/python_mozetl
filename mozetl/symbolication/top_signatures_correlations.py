@@ -48,22 +48,29 @@ from crashcorrelations import (  # noqa E402
     comments,
 )
 
-# TEMPORARY, for diagnosing the NULL undercount. Dataproc stages only this driver file, so
-# fetch the tracer from the same ref rather than assuming it's next to us. Any failure here
-# is non-fatal: the job must still run if the diagnostic can't load.
-count_trace_prod = None
-if os.environ.get("TRACE_COUNTS"):
+
+# TEMPORARY, for diagnosing the NULL undercount. Remove with count_trace_prod.py.
+def load_count_trace(ref):
+    """Fetch and import count_trace_prod from the given git ref.
+
+    Dataproc stages only the driver file, so the tracer isn't on disk next to us and has to
+    be fetched. Returns None on any failure: the job must still run if the diagnostic
+    can't load.
+    """
+    url = (
+        "https://raw.githubusercontent.com/mozilla/python_mozetl/"
+        "{}/mozetl/symbolication/count_trace_prod.py".format(ref)
+    )
     try:
-        _trace_ref = os.environ.get("TRACE_REF", "main")
-        os.system(
-            "curl -sSf -o count_trace_prod.py "
-            "https://raw.githubusercontent.com/mozilla/python_mozetl/"
-            "{}/mozetl/symbolication/count_trace_prod.py".format(_trace_ref)
-        )
-        import count_trace_prod  # noqa E402
-    except Exception as _error:
-        print("count_trace_prod unavailable, continuing without it: {!r}".format(_error))
-        count_trace_prod = None
+        if os.system("curl -sSf -o count_trace_prod.py '{}'".format(url)) != 0:
+            print("count_trace_prod: curl failed for {}, continuing without it".format(url))
+            return None
+        import count_trace_prod
+
+        return count_trace_prod
+    except Exception as error:
+        print("count_trace_prod unavailable, continuing without it: {!r}".format(error))
+        return None
 
 
 # workaround airflow not able to different schedules for tasks in a dag
@@ -81,6 +88,25 @@ def parse_args():
         type=datetime.fromisoformat,
         default=datetime.utcnow(),
         help="Run date, defaults to current dat",
+    )
+    parser.add_argument(
+        "--trace-counts",
+        action="store_true",
+        help="TEMPORARY. Count nulls four ways on the release dataframe to diagnose the "
+        "published NULL undercount, and write the result to a count-trace-prod/ prefix. "
+        "See count_trace_prod.py.",
+    )
+    parser.add_argument(
+        "--trace-ref",
+        default="main",
+        help="Git ref to fetch count_trace_prod.py from. Should match the ref this driver "
+        "was fetched from.",
+    )
+    parser.add_argument(
+        "--trace-bucket",
+        default=RESULTS_GCS_BUCKET,
+        help="GCS bucket for --trace-counts output. Use a scratch bucket; the default is "
+        "the one Crash Stats reads.",
     )
     return parser.parse_args()
 
@@ -115,6 +141,9 @@ if args.date.isoweekday() % 7 not in args.run_on_days:
     sys.exit(0)
 
 print(datetime.utcnow())
+
+# TEMPORARY, see count_trace_prod.py.
+count_trace_prod = load_count_trace(args.trace_ref) if args.trace_counts else None
 
 channels = ["release", "beta", "nightly", "esr"]
 channel_to_versions = {}
@@ -156,7 +185,7 @@ for channel in channels:
                 channel, versions=channel_to_versions[channel], days=5
             )
             tracer.measure(spark, dataset)
-            tracer.flush(os.environ.get("TRACE_BUCKET", RESULTS_GCS_BUCKET))
+            tracer.flush(args.trace_bucket)
         except Exception as error:
             print("count_trace_prod failed, continuing: {!r}".format(error))
 
